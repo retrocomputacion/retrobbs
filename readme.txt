@@ -8,7 +8,7 @@
 
                                 VERSION 0.10
 
-      (C)2020-2021 By Pablo Roldan(Durandal) & Jorge Castillo(Pastbytes)
+      (C)2020-2021 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 ===============================================================================
 
 -----------------
