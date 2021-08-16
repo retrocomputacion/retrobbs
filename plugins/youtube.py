@@ -27,6 +27,8 @@ def plugFunction(conn,url, crop):
 
 	conn.Sendall(chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))#"yOUTUBE"
 	loop = True
+	if crop != None:
+		crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 	while loop == True:
 		try:
 			cimg = YTframe(url,crop)
@@ -82,7 +84,10 @@ def YTframe(url = "https://www.youtube.com/watch?v=46kn3thI-Mo",crop = None, met
         #img = adjust_gamma(img, 1.2)
         im_pil = Image.fromarray(img)
         if crop != None:
-            im_pil = im_pil.crop(crop)
+            try:
+                im_pil = im_pil.crop(crop)
+            except:
+                pass
     else:
         _LOG('YouTube plugin - '+bcolors.FAIL+'ERROR'+bcolors.ENDC)
     capture.release()

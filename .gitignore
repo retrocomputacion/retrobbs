@@ -38,3 +38,5 @@ sids/Son_of_Flynn.sid
 sound/Susumu Hirasawa - Vertical Storm-JIXyB45choM.mp3
 sound/01-blue.mp3
 sids/Promises_Promises.sid
+plugins/__pycache__/youtube.cpython-38.pyc
+.gitignore
