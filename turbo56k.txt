@@ -1,5 +1,5 @@
 =============================================================
-TURBO56K PROTOCOL v0.5 for RETROBBS v0.9 & RETROTERM v0.13+
+TURBO56K PROTOCOL v0.5 for RETROBBS v0.10 & RETROTERM v0.13+
 =============================================================
 
 Reserved characters:
