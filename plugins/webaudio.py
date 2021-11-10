@@ -98,12 +98,13 @@ def plugFunction(conn,url):
         t2 = time.time()-t1
         if t2 > 15:
             streaming = False
-        len(audio)
-        for b in range(0,CHUNK//2,2):
+        a_len = len(audio)
+        print(a_len)
+        for b in range(0,a_len,2):
             lnibble = int(audio[b])
             if lnibble == 0:
                 lnibble = 1
-            if b+1 <= CHUNK:
+            if b+1 <= a_len:
                 hnibble = int(audio[b+1])
             else:
                 hnibble = 0
