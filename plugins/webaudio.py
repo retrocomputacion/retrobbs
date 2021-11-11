@@ -99,7 +99,6 @@ def plugFunction(conn,url):
         if t2 > 15:
             streaming = False
         a_len = len(audio)
-        print(a_len)
         for b in range(0,a_len,2):
             lnibble = int(audio[b])
             if lnibble == 0:
