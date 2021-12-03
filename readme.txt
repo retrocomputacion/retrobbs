@@ -108,6 +108,12 @@ Python modules:
   * numpy
   * opencv-python
   * pafy (For the YouTube plug-in)
+    Due to the removal of dislikes count from YouTube videos, the current (as of this writting) release of pafy (0.5.5)
+    crashes when trying to open a video.
+    As a workaround, install the development version of pafy using the following command:
+    (if you already have pafy installed you need to uninstall it first)
+    pip install git+git://www.github.com/mps-youtube/pafy@110bf7c01dcf57ec4e6e327e0c7907a4099d6933
+  
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)
   * hitherdither (https://www.github.com/hbldh/hitherdither)
   * beautifulsoup4
