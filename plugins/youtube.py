@@ -29,23 +29,65 @@ def plugFunction(conn,url, crop):
 	loop = True
 	if crop != None:
 		crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
+
+	try:
+		video = pafy.new(url)
+	except:
+		_LOG(bcolors.WARNING+"Error YouTube video not found"+bcolors.ENDC,id=conn.id,v=1)
+		conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+		return()
+	
+	tmsecs = video.length*1000
+	best = video.getbestvideo()
+	if best == None:
+		best = video.getbest()
+
+	capture = cv2.VideoCapture()
+	capture.open(best.url)
+
+
 	while loop == True:
 		try:
-			cimg = YTframe(url,crop)
-		except:
-			_LOG(bcolors.WARNING+"Error connecting to YouTube"+bcolors.ENDC,id=conn.id)
-			conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
-			return()
+			if tmsecs != 0.0:
+				capture.set(cv2.CAP_PROP_POS_MSEC,randrange(0,tmsecs-1))
+			else:
+				capture.set(cv2.CAP_PROP_POS_MSEC,randrange(0,10000))
 
-		FT.SendBitmap(conn,cimg)
-		if conn.connected == False:
+			ret, frame = capture.read()
+			if ret:
+				img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+				#img = adjust_gamma(img, 1.2)
+				cimg = Image.fromarray(img)
+				if crop != None:
+					try:
+						cimg = cimg.crop(crop)
+					except:
+						pass
+			else:
+				_LOG('YouTube plugin - '+bcolors.FAIL+'ERROR'+bcolors.ENDC,v=1)
+
+		except:
+			_LOG(bcolors.WARNING+"Error connecting to YouTube"+bcolors.ENDC,id=conn.id,v=1)
+			conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+			capture.release()
+			cv2.destroyAllWindows()
 			return()
-		_LOG("Waiting for a key to continue",id=conn.id)
-		tecla = conn.ReceiveKey(b'\r_')
-		if conn.connected == False:
-			return()
-		if tecla == b'_' or tecla == b'':
+		if cimg != None:
+			FT.SendBitmap(conn,cimg)
+			if conn.connected == False:
+				return()
+			_LOG("Waiting for a key to continue",id=conn.id,v=4)
+			tecla = conn.ReceiveKey(b'\r_')
+			if conn.connected == False:
+				return()
+			if tecla == b'_' or tecla == b'':
+				loop = False
+		else:
+			conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
 			loop = False
+			#return()
+	capture.release()
+	cv2.destroyAllWindows()
 	conn.Sendall(chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
 	return(1)
 
@@ -59,37 +101,3 @@ def adjust_gamma(image, gamma=1.0):
 	# apply gamma correction using the lookup table
 	return cv2.LUT(image, table)
 
-def YTframe(url = "https://www.youtube.com/watch?v=46kn3thI-Mo",crop = None, method=0):
-    
-    im_pil = None
-
-    video = pafy.new(url)
-
-    tmsecs = video.length*1000
-
-    #print(tmsecs)
-
-    best = video.getbest(preftype="mp4")
-
-    capture = cv2.VideoCapture()
-    capture.open(best.url)
-
-
-    if tmsecs != 0.0:
-        capture.set(cv2.CAP_PROP_POS_MSEC,randrange(0,tmsecs-1))
-
-    ret, frame = capture.read()
-    if ret:
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        #img = adjust_gamma(img, 1.2)
-        im_pil = Image.fromarray(img)
-        if crop != None:
-            try:
-                im_pil = im_pil.crop(crop)
-            except:
-                pass
-    else:
-        _LOG('YouTube plugin - '+bcolors.FAIL+'ERROR'+bcolors.ENDC)
-    capture.release()
-    cv2.destroyAllWindows()
-    return(im_pil)
