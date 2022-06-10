@@ -1,0 +1,13 @@
+version: "3.3"
+
+services:
+
+  retrobbs:
+    image: idolpx/retrobbs:latest
+    container_name: retrobbs
+    hostname: retrobbs
+    volumes:
+      - ./data:/data
+    ports:
+      - 6400:6400
+    restart: unless-stopped
