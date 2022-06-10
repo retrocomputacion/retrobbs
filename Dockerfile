@@ -3,7 +3,7 @@ FROM python:3
 WORKDIR /usr/src/app
 
 RUN apt-get update \
-    &&  apt-get install -y --no-install-recommends libsndfile1-dev libgl-dev \
+    &&  apt-get install -y --no-install-recommends libsndfile1-dev libgl-dev ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
