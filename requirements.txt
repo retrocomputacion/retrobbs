@@ -1,0 +1,16 @@
+beautifulsoup4
+feedparser
+hitherdither
+irc
+jaraco.util
+librosa
+mutagen
+numpy
+opencv_python
+pafy
+Pillow
+requests
+streamlink
+tinydb
+wikipedia
+Wikipedia_API

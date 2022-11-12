@@ -172,13 +172,20 @@ Python modules:
   * numpy
   * opencv-python
   * pafy (For the YouTube plug-in)
-  * streamlink (Will catch YouTube links if pafy fails, it also supports other stream services such as Twitch)
+  * streamlink (Will catch YouTube links if pafy fails, it also supports other
+    stream services such as Twitch)
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)
   * hitherdither (https://www.github.com/hbldh/hitherdither)
   * beautifulsoup4
   * feedparser (For the RSS feeds plug-in)
   * irc (For IRC client plug-in)
   * tinydb
+
+  A requirements.txt file is available for quick installation of the required
+  modules using
+  
+    pip install -r requirements.txt
+
 
 External software:
 
