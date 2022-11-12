@@ -1,6 +1,6 @@
 beautifulsoup4
 feedparser
-hitherdither
+hitherdither @ git+https://www.github.com/hbldh/hitherdither
 irc
 jaraco.util
 librosa
