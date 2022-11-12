@@ -6,9 +6,9 @@
             R  R   E        T    R  R   R   R  B   B  B   B      B
             R   R  EEEEE    T    R   R   RRR   BBBB   BBBB   BBBB
 
-                                VERSION 0.10
+                                VERSION 0.20
 
-      (C)2020-2021 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+      (C)2020-2022 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 ===============================================================================
 
 ------------------
@@ -176,11 +176,11 @@ Python modules:
   * beautifulsoup4
   * feedparser (For the RSS feeds plug-in)
   * irc (For IRC client plug-in)
-  * TinyDB
+  * tinydb
 
 External software:
 
-  * FFmpeg (for WebAudio plug-in)
+  * FFmpeg (for PCM audio streaming)
   * SIDDump (for SID streaming): https://github.com/cadaver/siddump replace the
     makefile with the one included in /siddump and compile. If you're using
     Linux, remove the .exe extension and copy the executable to usr/bin. 
