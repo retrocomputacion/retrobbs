@@ -25,7 +25,7 @@ def setup():
 
 ##########################################
 #Plugin callable function
-def plugFunction(conn,server,port,channel):
+def plugFunction(conn:Connection,server,port,channel):
 
     running = False
 
@@ -51,7 +51,6 @@ def plugFunction(conn,server,port,channel):
                     conn.Sendall('\r')
         else:
             conn.Sendall(text)
-        #print(curcolumn,curline)
         conn.Sendall(TT.set_Window(23,24)+TT.set_CRSR(curcolumn,curline)+chr(P.GREY3))
 
     def on_currenttopic(c, event):
@@ -107,7 +106,6 @@ def plugFunction(conn,server,port,channel):
         printchat(txt)
 
     def on_connect(connection, event):
-        #print(event)
         printchat(chr(P.CYAN)+'cONNECTED TO: '+P.toPETSCII(server)+'\r')
         txt = H.formatX(event.arguments[0])
         txt[0] = chr(P.CYAN)+txt[0]
@@ -117,7 +115,6 @@ def plugFunction(conn,server,port,channel):
         #main_loop(connection)
 
     def on_names(connection, event):
-        #print(event)
         text = H.formatX(chr(P.CYAN)+'uSERS IN '+P.toPETSCII(channel)+': '+chr(P.GREEN)+P.toPETSCII(event.arguments[2]),convert=False)
         printchat(text)
 
@@ -205,10 +202,13 @@ Accepted commands:
 
 
     ####
-    S.RenderMenuTitle(conn,'irc')
+    S.RenderMenuTitle(conn,'IRC')
     conn.Sendall(chr(P.GREEN)+TT.Fill_Line(22,64))
-    conn.Sendall(TT.set_Window(23,24)+chr(P.YELLOW)+'eNTER NICK: '+chr(P.GREY3))
-    nickname = conn.ReceiveStr(bytes(keys,'ascii'), 9) #Get nick
+    if conn.userclass > 0:
+        nickname = P.toPETSCII(conn.username[0:9])
+    else:
+        conn.Sendall(TT.set_Window(23,24)+chr(P.YELLOW)+'eNTER NICK: '+chr(P.GREY3))
+        nickname = conn.ReceiveStr(bytes(keys,'ascii'), 9) #Get nick
     nickname = nickname.translate({ord(i): None for i in '#?!@/()&$"'})
     conn.Sendall(TT.set_Window(0,24))
     if nickname == '':
@@ -229,7 +229,7 @@ Accepted commands:
     except irc.client.ServerConnectionError:
         printchat(chr(P.PINK)+'*** error cONNECTING TO SERVER ***\r')
         conn.Sendall(TT.set_Window(0,24))
-        _LOG(bcolors.FAIL+'Connection to IRC FAILED'+bcolors.ENDC,id=conn.id)
+        _LOG(bcolors.FAIL+'Connection to IRC FAILED'+bcolors.ENDC,id=conn.id,v=1)
         time.sleep(2)
         return
     #Add handlers
@@ -256,7 +256,7 @@ Accepted commands:
         time.sleep(0.1)
         if time.process_time()-t0 > 60.0:       #Abandon if connection takes more than a minute
             printchat(chr(P.PINK)+'*** timeout cONNECTING TO SERVER ***\r')
-            _LOG(bcolors.FAIL+'Connection to IRC FAILED - TIMEOUT'+bcolors.ENDC,id=conn.id)
+            _LOG(bcolors.FAIL+'Connection to IRC FAILED - TIMEOUT'+bcolors.ENDC,id=conn.id,v=2)
             conn.Sendall(TT.set_Window(0,24))
             time.sleep(1)
             return
@@ -266,7 +266,7 @@ Accepted commands:
     printchat('*** uSE /HELP FOR HELP ***\r')
 
     conn.socket.setblocking(0)
-    _LOG('Connected to IRC',id=conn.id)
+    _LOG('Connected to IRC',id=conn.id,v=4)
     message = ''
     while running and conn.connected:
         r,w,e= select.select((conn.socket,), (), (), 0)
@@ -321,7 +321,7 @@ Accepted commands:
 
 
     conn.Sendall(TT.set_Window(0,24))            
-    _LOG('Leaving IRC',id=conn.id)
+    _LOG('Leaving IRC',id=conn.id,v=4)
     conn.socket.setblocking(1)
     conn.socket.settimeout(60*5)
 #################

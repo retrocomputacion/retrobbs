@@ -5,9 +5,33 @@
 import subprocess
 #import os.path
 
-def SIDParser(filename,ptime):
+def SIDParser(filename,ptime,order = 0):
 
-    RTable = [1,6,4,5,7,12,10,11,13,18,16,17,19,21,22]
+    V1f = [1,1] # Voice 1 Frequency
+    V1p = [6,1] # Voice 1 Pulse Width
+    V1c = [4,0] # Voice 1 Control
+    V1e = [5,1] # Voice 1 Envelope
+
+    V2f = [7,1] # Voice 2 Frequency
+    V2p = [12,1] # Voice 2 Pulse Width
+    V2c = [10,0] # Voice 2 Control
+    V2e = [11,1] # Voice 2 Envelope
+
+    V3f = [13,1] # Voice 3 Frequency
+    V3p = [18,1] # Voice 3 Pulse Width
+    V3c = [16,0] # Voice 3 Control
+    V3e = [17,1] # Voice 3 Envelope
+
+    Fco = [19,1] # Filter Cutoff Frequency
+    Frs = [20,0] # Filter Resonance
+    Vol = [21,0] # Filter and Volume Control
+
+
+    #RTable = [[[V1f,0],[V1p,2],[V1c,4],[V1e,5] , [V2f,7],[V2p,9],[V2c,11],[V2e,12] , [V3f,14],[V3p,16],[V3c,18],[V3e,19] , [Fco,21],[Frs,23],[Vol,24]], #Default
+    #          [[Frs,0],[Fco,1] , [V3f,3],[V3p,5],[V3c,7],[V3e,8] , [V2f,10],[V2p,12],[V2c,14],[V2e,15] , [V1f,17],[V1p,19],[V1c,21],[V1e,22] , [Vol,24]]] #MoN/Bjerregaard
+
+    RTable = [[V1f,V1p,V1c,V1e , V2f,V2p,V2c,V2e , V3f,V3p,V3c,V3e , Fco,Frs,Vol], #Default
+              [Frs,Fco , V3e,V3c,V3f,V3p , V2e,V2c,V2f,V2p , V1e,V1c,V1f,V1p , Vol]] #MoN/Bjerregaard
 
     FilterMode = {'Off':b'\x00', 'Low':b'\x10', 'Bnd':b'\x20', 'L+B':b'\x30', 'Hi':b'\x40', 'L+H':b'\x50', 'B+H':b'\x60', 'LBH':b'\x70'}
 
@@ -19,7 +43,6 @@ def SIDParser(filename,ptime):
     # else:
     #     ptime = str(60*3)
 
-    # print(ptime)
 
     try:
         sidsub = subprocess.Popen('siddump '+filename+' -t'+str(ptime), shell=True, stdout=subprocess.PIPE)
@@ -53,181 +76,166 @@ def SIDParser(filename,ptime):
         rcount = 0
         temp = line.split()[1:-1]
         frame = [y for y in temp if y !=b'|']
-        #print(frame)
         #Fill in registers
-        #<<<<<<<<<<<<<<<Voz 1 - Frecuencia
-        if frame[1] != b'....':
-            #rbitmap |= 2**0 | 2**1  
-            tt = bytes.fromhex(frame[1].decode("utf-8"))
-            if oldv1f[1] != tt[1]:
-                rbitmap |= 2**0
-                sidregs += bytes([tt[1]]) #Byte bajo
-                rcount += 1
-            if oldv1f[0] != tt[0]:
-                rbitmap |= 2**1
-                sidregs += bytes([tt[0]]) #Byte alto
-                rcount += 1
-            oldv1f = tt
-        #<<<<<<<<<<<<<<<Voz 1 - Ancho de pulso
-        if frame[6] != b'...':
-            #rbitmap |= 2**2 | 2**3
-            tt = bytes.fromhex('0'+frame[6].decode("utf-8"))
-            if oldv1pw[1] != tt[1]:
-                rbitmap |= 2**2
-                sidregs += bytes([tt[1]]) #Byte bajo
-                rcount += 1
-            if oldv1pw[0] != tt[0]:
-                rbitmap |= 2**3
-                sidregs += bytes([tt[0]]) #Byte alto
-                rcount += 1
-            oldv1pw = tt
-        #<<<<<<<<<<<<<<<Voz 1 - Control
-        if frame[4] != b'..':
-            rbitmap |= 2**4
-
-            sidregs += bytes.fromhex(frame[4].decode("utf-8"))
-            rcount += 1
-        #<<<<<<<<<<<<<<<Voz 1 - ADSR
-        if frame[5] != b'....':
-            #rbitmap |= 2**5 | 2**6
-            tt = bytes.fromhex(frame[5].decode("utf-8"))
-            if oldv1adsr[0] != tt[0]:
-                rbitmap |= 2**5
-                sidregs += bytes([tt[0]]) #Attack/Decay
-                rcount += 1
-            if oldv1adsr[1] != tt[1]:
-                rbitmap |= 2**6
-                sidregs += bytes([tt[1]]) #Sustain/Release
-                rcount += 1
-            oldv1adsr = tt
-        #<<<<<<<<<<<<<<<Voz 2 - Frecuencia
-        if frame[7] != b'....':
-            #rbitmap |= 2**7 | 2**8  
-            tt = bytes.fromhex(frame[7].decode("utf-8"))
-            if oldv2f[1] != tt[1]:
-                rbitmap |= 2**7
-                sidregs += bytes([tt[1]]) #Byte bajo
-                rcount += 1
-            if oldv2f[0] != tt[0]:
-                rbitmap |= 2**8
-                sidregs += bytes([tt[0]]) #Byte alto
-                rcount += 1
-            oldv2f = tt
-        #<<<<<<<<<<<<<<<Voz 2 - Ancho de pulso
-        if frame[12] != b'...':
-            #rbitmap |= 2**9 | 2**10
-            tt = bytes.fromhex('0'+frame[12].decode("utf-8"))
-            if oldv2pw[1] != tt[1]:
-                rbitmap |= 2**9
-                sidregs += bytes([tt[1]]) #Byte bajo
-                rcount += 1
-            if oldv2pw[0] != tt[0]:
-                rbitmap |= 2**10
-                sidregs += bytes([tt[0]]) #Byte alto
-                rcount += 1
-            oldv2pw = tt
-        #<<<<<<<<<<<<<<<Voz 2 - Control
-        if frame[10] != b'..':
-            rbitmap |= 2**11
-            sidregs += bytes.fromhex(frame[10].decode("utf-8"))
-            rcount += 1
-        #<<<<<<<<<<<<<<<Voz 2 - ADSR
-        if frame[11] != b'....':
-            #rbitmap |= 2**12 | 2**13
-            tt = bytes.fromhex(frame[11].decode("utf-8"))
-            if oldv2adsr[0] != tt[0]:
-                rbitmap |= 2**12
-                sidregs += bytes([tt[0]]) #Attack/Decay
-                rcount += 1
-            if oldv2adsr[1] != tt[1]:
-                rbitmap |= 2**13
-                sidregs += bytes([tt[1]]) #Sustain/Release
-                rcount += 1
-            oldv2adsr = tt
-        #<<<<<<<<<<<<<<<Voz 3 - Frecuencia
-        if frame[13] != b'....':
-            #rbitmap |= 2**14 | 2**15  
-            tt = bytes.fromhex(frame[13].decode("utf-8"))
-            if oldv3f[1] != tt[1]:
-                rbitmap |= 2**14
-                sidregs += bytes([tt[1]]) #Byte bajo
-                rcount += 1
-            if oldv3f[0] != tt[0]:
-                rbitmap |= 2**15
-                sidregs += bytes([tt[0]]) #Byte alto
-                rcount += 1
-            oldv3f = tt
-        #<<<<<<<<<<<<<<<Voz 3 - Ancho de pulso
-        if frame[18] != b'...':
-            #rbitmap |= 2**16 | 2**17
-            tt = bytes.fromhex('0'+frame[18].decode("utf-8"))
-            if oldv3pw[1] != tt[1]:
-                rbitmap |= 2**16
-                sidregs += bytes([tt[1]]) #Byte bajo
-                rcount += 1
-            if oldv3pw[0] != tt[0]:
-                rbitmap |= 2**17
-                sidregs += bytes([tt[0]]) #Byte alto
-                rcount += 1
-            oldv3pw = tt
-        #<<<<<<<<<<<<<<<Voz 3 - Control
-        if frame[16] != b'..':
-            rbitmap |= 2**18
-            sidregs += bytes.fromhex(frame[16].decode("utf-8"))
-            rcount += 1
-        #<<<<<<<<<<<<<<<Voz 3 - ADSR
-        if frame[17] != b'....':
-            #rbitmap |= 2**19 | 2**20
-            tt = bytes.fromhex(frame[17].decode("utf-8"))
-            if oldv3adsr[0] != tt[0]:
-                rbitmap |= 2**19
-                sidregs += bytes([tt[0]]) #Attack/Decay
-                rcount += 1
-            if oldv3adsr[1] != tt[1]:
-                rbitmap |= 2**20
-                sidregs += bytes([tt[1]]) #Sustain/Release
-                rcount += 1
-            oldv3adsr = tt
-
-        #<<<<<<<<<<<<<<< Frecuencia de corte del filtro
-        if frame[19] != b'....':
-            #rbitmap |= 2**21 | 2**22
-            tt = bytes.fromhex(frame[19].decode("utf-8"))
-            if oldff[1] != tt[1]:
-                rbitmap |= 2**21
-                sidregs += bytes([tt[1]]) # Nibble bajo
-                rcount += 1
-            if oldff[0] != tt[0]:
-                rbitmap |= 2**22
-                sidregs += bytes([tt[0]]) # Byte alto
-                rcount += 1
-            oldff = tt
-        #<<<<<<<<<<<<<<< Resonancia y control del filtro
-        if frame[20] != b'..':
-            rbitmap |= 2**23
-            sidregs += bytes.fromhex(frame[20].decode("utf-8"))
-            rcount += 1
-        #<<<<<<<<<<<<<<< Modo filtro y volumen
-        if frame[21] != b'...' or frame[22] != b'.':
-            rbitmap |= 2**24
-            if frame[21] != b'...':
-                mode = FilterMode[frame[21].decode("utf-8")]
-            else:
-                mode = oldmode
-            if frame[22] != b'.':
-                vol = bytes.fromhex('0'+frame[22].decode("utf-8"))
-            else:
-                vol = oldvol
-            sidregs += bytes([ord(mode) | ord(vol)])
-            rcount += 1
-            oldmode = mode
-            oldvol = vol
+        offset = 0
+        for ix,rp in enumerate(RTable[order]):
+            rsection = rp[0]
+            rbit = ix + offset  #rp[1]
+            #<<<<<<<<<<<<<<<<<< Voices 1-3 Frequency
+            if rsection == 1:
+                if frame[1] != b'....':
+                    tt = bytes.fromhex(frame[1].decode("utf-8"))
+                    #if oldv1f[1] != tt[1]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[1]]) #Low Byte
+                    rcount += 1
+                    #if oldv1f[0] != tt[0]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[0]]) #High Byte
+                    rcount += 1
+                    oldv1f = tt
+            if rsection == 7:
+                if frame[7] != b'....':
+                    tt = bytes.fromhex(frame[7].decode("utf-8"))
+                    #if oldv2f[1] != tt[1]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[1]]) #Low Byte
+                    rcount += 1
+                    #if oldv2f[0] != tt[0]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[0]]) #High Byte
+                    rcount += 1
+                    oldv2f = tt
+            if rsection == 13:
+                if frame[13] != b'....':
+                    tt = bytes.fromhex(frame[13].decode("utf-8"))
+                    #if oldv3f[1] != tt[1]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[1]]) #Low Byte
+                    rcount += 1
+                    #if oldv3f[0] != tt[0]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[0]]) #High Byte
+                    rcount += 1
+                    oldv3f = tt
+            #<<<<<<<<<<<<<<<<<< Voices 1-3 Pulse Width
+            if rsection == 6:
+                if frame[6] != b'...':
+                    tt = bytes.fromhex('0'+frame[6].decode("utf-8"))
+                    #if oldv1pw[1] != tt[1]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[1]]) #Low Byte
+                    rcount += 1
+                    #if oldv1pw[0] != tt[0]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[0]]) #High Byte
+                    rcount += 1
+                    oldv1pw = tt
+            if rsection == 12:
+                if frame[12] != b'...':
+                    tt = bytes.fromhex('0'+frame[12].decode("utf-8"))
+                    #if oldv2pw[1] != tt[1]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[1]]) #Low Byte
+                    rcount += 1
+                    #if oldv2pw[0] != tt[0]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[0]]) #High Byte
+                    rcount += 1
+                    oldv2pw = tt
+            if rsection == 18:
+                if frame[18] != b'...':
+                    tt = bytes.fromhex('0'+frame[18].decode("utf-8"))
+                    #if oldv3pw[1] != tt[1]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[1]]) #Low Byte
+                    rcount += 1
+                    #if oldv3pw[0] != tt[0]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[0]]) #High Byte
+                    rcount += 1
+                    oldv3pw = tt
+            #<<<<<<<<<<<<<<< Voices 1-3 control
+            if rsection == 4 or rsection == 10 or rsection == 16:
+                if frame[rsection] != b'..':
+                    rbitmap |= 2**rbit
+                    sidregs += bytes.fromhex(frame[rsection].decode("utf-8"))
+                    rcount += 1
+            #<<<<<<<<<<<<<<< Voices 1-3 ADSR
+            if rsection == 5:
+                if frame[5] != b'....':
+                    tt = bytes.fromhex(frame[5].decode("utf-8"))
+                    #if oldv1adsr[0] != tt[0]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[0]]) #Attack/Decay
+                    rcount += 1
+                    #if oldv1adsr[1] != tt[1]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[1]]) #Sustain/Release
+                    rcount += 1
+                    oldv1adsr = tt
+            if rsection == 11:
+                if frame[11] != b'....':
+                    tt = bytes.fromhex(frame[11].decode("utf-8"))
+                    #if oldv2adsr[0] != tt[0]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[0]]) #Attack/Decay
+                    rcount += 1
+                    #if oldv2adsr[1] != tt[1]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[1]]) #Sustain/Release
+                    rcount += 1
+                    oldv2adsr = tt
+            if rsection == 17:
+                if frame[17] != b'....':
+                    tt = bytes.fromhex(frame[17].decode("utf-8"))
+                    #if oldv3adsr[0] != tt[0]:
+                    rbitmap |= 2**rbit
+                    sidregs += bytes([tt[0]]) #Attack/Decay
+                    rcount += 1
+                    #if oldv3adsr[1] != tt[1]:
+                    rbitmap |= 2**(rbit+1)
+                    sidregs += bytes([tt[1]]) #Sustain/Release
+                    rcount += 1
+                    oldv3adsr = tt
+            #<<<<<<<<<<<<<<< Filter cutoff frequency
+            if rsection == 19:
+                if frame[19] != b'....':
+                    tt = bytes.fromhex(frame[19].decode("utf-8"))
+                    if oldff[1] != tt[1]:
+                        rbitmap |= 2**rbit
+                        sidregs += bytes([tt[1]]) # Low Nibble
+                        rcount += 1
+                    if oldff[0] != tt[0]:
+                        rbitmap |= 2**(rbit+1)
+                        sidregs += bytes([tt[0]]) # High Byte
+                        rcount += 1
+                    oldff = tt
+            #<<<<<<<<<<<<<<< Filter resonance and control
+            if rsection == 20:
+                if frame[20] != b'..':
+                    rbitmap |= 2**rbit
+                    sidregs += bytes.fromhex(frame[20].decode("utf-8"))
+                    rcount += 1
+            #<<<<<<<<<<<<<<< Volume and filter mode
+            if rsection == 21:
+                if frame[21] != b'...' or frame[22] != b'.':
+                    rbitmap |= 2**rbit
+                    if frame[21] != b'...':
+                        mode = FilterMode[frame[21].decode("utf-8")]
+                    else:
+                        mode = oldmode
+                    if frame[22] != b'.':
+                        vol = bytes.fromhex('0'+frame[22].decode("utf-8"))
+                    else:
+                        vol = oldvol
+                    sidregs += bytes([ord(mode) | ord(vol)])
+                    rcount += 1
+                    oldmode = mode
+                    oldvol = vol
+            offset += rp[1]
         
         rcount += 4 #Add the 4 bytes from the register bitmap
-        #print(format(rcount,'02d'), format(rbitmap,'025b'), sidregs)
         dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(4,'big'),sidregs])
-    #print(dump)
-    #print(len(dump))
     return(dump)
-
 #SIDParser('sids/leparc.sid')

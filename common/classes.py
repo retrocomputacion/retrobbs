@@ -1,6 +1,8 @@
         ############ Classes ############
 # any generic classses without companion functions here
 
+from common.dbase import DBase
+
 ########### BBS Class ###########
 
 class BBS:
@@ -12,3 +14,12 @@ class BBS:
 		self.MenuList = None
 		self.WMess = ''		#Welcome Message
 		self.GBMess = ''	#Logoff Message
+		self.TOut = 60*5	#Default Connection Timeout
+		self.Paths = {'bbsfiles': 'bbsfiles/', 'plugins': 'plugins/', }
+		self.PlugOptions = {}	#Plugins options from the config file
+		self.BoardOptions = {}	#Message boards options from the config file
+		self.dateformat = 0	#Date format
+		self.database = DBase()
+
+	def __del__(self):
+		self.database.closeDB()

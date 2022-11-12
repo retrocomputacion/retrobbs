@@ -11,6 +11,34 @@
       (C)2020-2021 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 ===============================================================================
 
+------------------
+Table of contents
+------------------
+1-1 Introduction
+1-2 Release history
+1-3 The Turbo56K protocol
+1-4 Features
+1-5 Requirements
+
+2-1 Configuration file
+2-2 Internal Functions
+
+3-1 Plug-In System
+3-2 Included Plug-Ins
+
+4-1 Common modules
+
+5-1 Installation/Usage
+5-2  The intro/login sequence
+5-3  SID SongLength
+5-4  User accounts / Database management
+5-5  Messaging system
+
+6-1 TO-DO List
+6-2 Known bugs
+
+7-1 Acknowledgements
+
 -----------------
 1-1 Introduction
 -----------------
@@ -25,8 +53,40 @@ Even though this is the third rewrite of this script, it is still in an early
 development stage, expect to find many bugs and ugly/non-pythonic code inside. 
 
 
+--------------------
+1-2 Release history
+--------------------
+
+v0.10 (16/08/2021): Initial release
+
+v0.20 (xx/11/2022):
+  New features:
+  - Added Login/User functionality
+  - Added userclass/userlevel settings for the config file, select which menu
+    is accessible to admins/sysops, registered users and/or guests
+  - Added a verbosity command line switch, see section 5-1
+  - Added Turbo56K v0.6 support, terminal features are queried and displayed
+    on connection. Basic support added for SID stream register remapping.
+  - Messaging system, supports public boards and private messages.
+    Public boards can have independent Read/Post user class permissions.
+
+  Changes/Bug fixes:
+  - Improvements to c64cvt
+  - Fixed problems retrieving YouTube videos metadata due to removal of
+    dislikes count.
+  - YouTube frame capture now is faster after the 1st frame.
+  - Core PCM audio and SID file streaming functions moved to their own script.
+  - PCM audio decoding is done using FFmpeg
+  - Updated example config file with valid links to YouTube videos and
+    RSS feeds.
+  - Misc. code cleanup
+  - AudioList now supports HVSC style path to songlength files
+  - Most text parameters other than in calls to the Connection class is
+    expected to be ASCII, not PETSCII, this also counts for the config
+    file
+
 --------------------------
-1-2 The Turbo56K protocol
+1-3 The Turbo56K protocol
 --------------------------
 Turbo56K was created by Jorge Castillo as a simple protocol to provide high
 speed file transfer functionality to his bitbanging 57600bps RS232 routine
@@ -39,7 +99,7 @@ terminals.
 
 
 -------------
-1-3 Features
+1-4 Features
 -------------
 RetroBBS is quite customizable and expandable already at this early stage. The
 use of a configuration file (config.ini) and built-in file transfer, stream
@@ -53,6 +113,8 @@ connections.
 
 Current built-in functions:
 
+    - User signup and signin. Plain text JSON database, salted password storage
+ 
     - Program transfer: Send Commodore 64 .prg files to the computer memory at
       the correct memory address.
 
@@ -96,7 +158,7 @@ Current included plug-ins:
 
 
 -----------------
-1-4 Requirements
+1-5 Requirements
 -----------------
 
 Python modules:
@@ -108,17 +170,13 @@ Python modules:
   * numpy
   * opencv-python
   * pafy (For the YouTube plug-in)
-    Due to the removal of dislikes count from YouTube videos, the current (as of this writting) release of pafy (0.5.5)
-    crashes when trying to open a video.
-    As a workaround, install the development version of pafy using the following command:
-    (if you already have pafy installed you need to uninstall it first)
-    pip install git+git://www.github.com/mps-youtube/pafy@110bf7c01dcf57ec4e6e327e0c7907a4099d6933
-  
+  * streamlink (Will catch YouTube links if pafy fails, it also supports other stream services such as Twitch)
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)
   * hitherdither (https://www.github.com/hbldh/hitherdither)
   * beautifulsoup4
   * feedparser (For the RSS feeds plug-in)
   * irc (For IRC client plug-in)
+  * TinyDB
 
 External software:
 
@@ -147,14 +205,24 @@ Sections:
 
 [MAIN] > Global BBS settings
   keys:
-    bbsname  > Name of the BBS, in PETSCII format.
-    menues   > Total number of menu pages, not counting the main menu page.
-    ip       > IP V4 address on which the BBS will be accessible, default is
-               0.0.0.0
-    port     > port number on which the BBS will be accessible.
-    language > language for remote texts, only partialy implemented as of 0.10
-    welcome  > Welcome message on connection, in PETSCII format.
-    goodbye  > Log off message.
+    bbsname     > Name of the BBS, in PETSCII format.
+    menues      > Total number of menu pages, not counting the main menu page.
+    ip          > IP V4 address on which the BBS will be accessible, default is
+                  0.0.0.0
+    port        > port number on which the BBS will be accessible.
+    language    > language for remote texts, only partialy implemented as of 0.10
+    welcome     > Welcome message on connection, in PETSCII format.
+    goodbye     > Log off message.
+    dateformat  > Format in which dates will be printed out, client side:
+                 0 = dd/mm/yyyy
+                 1 = mm/dd/yyyy
+                 2 = yyyy/mm/dd
+
+[BOARDS] > Settings for the available messaging boards
+  keys:
+    boardX      > (Where X > 0) Board name
+    boardXview  > Minimum userclass that can read messages in this board (0 = public)
+    boardXpost  > Minimum userclass that can post messages in this board (No less than 1)
 
 [PATHS] > Directory paths to different BBS files, some are referenced in menu
           entry definitions. All paths must end with '/'.
@@ -192,6 +260,8 @@ Sections:
     entryZfunc  > Internal function or plug-in associated to this entry.
                   Depending on the function specific entry keys may be needed.
                   (See next chapter)
+    entryZlevel > (Optional) Minimum useclass needed to access this entry,
+                  default 0 (public)
 
   function/plug-in specific entry keys:
     entryZpath > A filesystem path.
@@ -206,7 +276,7 @@ Sections:
 [MENUxSECTIONy] > (Where 1 <= x <= {MAIN:menues} and
                   1 <= y <= {MAINMENU:sections}) Defines section 'y' of menu
                   'x'.
-  keys: Same as MAINMENUy.
+  keys: Same as MAINMENUSECTIONy.
 
 
 -----------------------
@@ -260,6 +330,17 @@ functionality from the config file.
                   user selected file will be streamed.
       config.ini parameter keys:
           entryZpath > Path to the audio files, default is '/sound'.
+
+- Function USEREDIT:  Display the user profile editor
+
+- Function USERLIST:  Display the list of registered users
+
+- Function INBOX: Display the user's personal message inbox
+
+- Function BOARD: Display the message list for the specified board
+      config.ini parameter keys:
+          entryZid > Board ID (>0)
+      See the example config.ini for recommended usage.
 
 (*)Replace Z in the config.ini parameters with the entry ID number.
 
@@ -327,8 +408,8 @@ All plug-in modules should implement at least two functions:
       config.ini [PLUGINS] options: none
 
 - WebAudio streamer (webaudio.py):
-      On the fly conversion and streaming of on-line audio sources (Shoutcast
-      or YouTube).
+      On the fly conversion and streaming of on-line audio sources (Shoutcast,
+      YouTube or other sources).
       config.ini function: WEBAUDIO
       config.ini parameters:
         entryZurl = full URL to the audio stream
@@ -361,8 +442,31 @@ Located inside the <common> directory you'll find modules which integrate what
 could be called the BBS' API. The use of some of these modules is mandatory
 when writing a new plug-in.
 
-- common.bbsdebug: Log output to stdout, implements a single function:
-    _LOG(message, _end='\n', date=True, id=0):
+- common.audio: Audio/SID streaming:
+    AudioList(conn,title,speech,logtext,path):
+        Creates and manages an PCM audio/SID file browser.
+        <conn>: Connection object
+        <title>: String to be used as title for the file browser
+        <speech>: Optional string for the voice synthesizer
+        <logtext>: String to output in the log
+        <path>: Path to the directory to browse
+    PlayAudio(conn,filename, length = 60.0, dialog=False):
+        Converts and streams a PCM audio file to <conn>.
+        <filename>: Path to the file to stream, file can be either 4-bit .RAW,
+        or any audio fileformat supported by librosa
+        <length>: Length of the audio to stream in seconds, RAW files are
+        streamed in they interity
+        <dialog>: Boolean, display audio metadata and instructions before
+        starting streaming
+    SIDStream(conn, filename,ptime, dialog=True):
+        Stream a SID file to <conn>
+        <filename>: Path to the SID file
+        <ptime>: Playtime in seconds
+        <dialog>: Display SID file metadata and instructions before startings
+        streaming
+
+- common.bbsdebug: Log output to stdout:
+    _LOG(message, _end='\n', date=True, id=0, v=1):
         Prints <message> on stdout. <message> can be any expression valid for
         the print function.
         The message will end in a newline by default, you change this by
@@ -371,6 +475,8 @@ when writing a new plug-in.
         disable this by passing False in the <date> parameter.
         <id> Should be the connection id corresponding to this message.
         Defaults to 0 -> general message.
+        <v> Verbosity level for this message. If greater than the level
+        selected on startup the log message will not be printed.
 
     Also defined in this module is the <bcolors> class, which enumerates a few
     ANSI codes for use in the log messages.
@@ -409,11 +515,14 @@ when writing a new plug-in.
         Sendallbin(cadena): Sends binary string <cadena> to the client.
         Receive(count): Receives <count> binary chars from the client.
                         Returns: binary string.
-        ReceiveKey(lista=b'\r'): Wait for a received character from the client
+        ReceiveKey(keys=b'\r'): Wait for a received character from the client
                         matching any of the characters in the <lista> binary
                         string.
                         Returns: The received matching char as a binary string.
-        ReceiveStr(self, keys, maxlen = 20, pw = False): Interactive reception
+        ReceiveKeyQuiet(keys=b'\r'): Same as ReceiveKey but no logging is ever
+                        performed, disregarding logging level. Use it when
+                        password or other sensitive user data must be received.
+        ReceiveStr(keys, maxlen = 20, pw = False): Interactive reception
                         with echo. Call is completed on reception of a carriage
                         return.
                         <keys> is a binary string with the valid input
@@ -422,6 +531,17 @@ when writing a new plug-in.
                         Set <pw> to True to echo '*' for each character
                         received, ie. for password entry.
                         Returns: ascii string received.
+        ReceiveInt(minv, maxv, defv, auto = False): Interactive reception of
+                        a positive integer with echo. The user will be
+                        restricted to enter a number between minv and maxv,
+                        if the user presses RETURN instead, the function will
+                        return defv.
+                        If auto is True, the function will return automatically
+                        if the user enters the maximun number of digits
+                        possible within the limits, or by pressing DEL when
+                        there's no digit entered. In which case this function
+                        will return None.
+
 - common.filetools: Functions related to file transfer, only bitmap transfer
                     has been moved to this module so far.
     SendBitmap(conn, filename, lines = 25, display = True, dialog = False,
@@ -460,8 +580,9 @@ when writing a new plug-in.
     PALETTE: A tuple containing the C64 palette control codes in the correct
              order
     NONPRINTABLE: A list of all the non-printable PETSCII characters
-    toPETSCII(text): Converts <text> from UTF-8 to PETSCII, some visually
-             similar characters are replaced for their PETSCII equivalent
+    toPETSCII(text,full = True): Converts <text> from UTF-8 to PETSCII, if
+             <full> is TRUE, some characters are replaced with a visually
+             similar PETSCII equivalent.
     toASCII(text): Converts <text> from PETSCII to plain ASCII, no extra care
              is taken to convert PETSCII graphic characters to their ASCII
              equivalents
@@ -478,6 +599,10 @@ when writing a new plug-in.
     KeyPrompt(text,style=default_style): Returns the key prompt string for
                 <text>. The prompt takes the form [<text>] using the colors
                 defined by <style>
+    KeyLabel(conn,key,label,toggle,style=default_style): Renders menu option
+                <label> for assigned <key> in the selected <style>, boolean
+                <toggle> switch between odd/even styles.
+                The result is sent to <conn> 
 
 - common.turbo56k: Defines the Turbo56K protocol constants and helper functions
                 See turbo56k.txt for more information.
@@ -516,6 +641,9 @@ when writing a new plug-in.
       to_Speech(bin = False): Selects the optional hardware speech synthesizer
                 as text output.
                 <bin> selects the return string type
+      reset_Turbo56K(bin = False): Return a command sequence that enables the
+                cursor, disables split screen and resets text window limits.
+                <bin> selects the return string type
       set_CRSR(column, row, bin= False): Sets the client text cursor position
                 to <column>, <row> coordinates
                 <bin> selects the return string type
@@ -545,6 +673,9 @@ when writing a new plug-in.
 -----------------------
 After making sure you have installed all the required python modules, and extra
 software, just unpack this archive into a directory of your choice.
+If you're upgrading a previous installation, make sure to not overwrite your
+configuration files with the ones included as example.
+
 You can run this script from a command line by navigating to the Installation
 directory and then issuing:
 
@@ -556,10 +687,14 @@ or
 
 depending of your python install.
 
+The only available command line option right now is -v[1-4], which sets the
+verbosity of the log messages, a value of 1 will only output error messages,
+while a value of 4 will output every log line.
+
 -----------------------------
 5-2 The intro/login sequence
 -----------------------------
-Once a connection with a client is established, and the correct version of
+Once a connection with a client is established, and a supported version of
 retroterm is detected, the client will enter into split screen mode and display
 the splash.art bitmap file found in the <bbsfiles> subdirectory.
 The user will then be asked if he wants to view the intro sequence or skip it.
@@ -574,9 +709,72 @@ internal function. This function will set the songlength by searching for the
 .ssl files corresponding the the .sid files found, defaulting to 3 minutes if
 not found.
 The .ssl format is used by the songlength files part of the High Voltage SID
-Collection (http//:hvsc.c64.com). But while the HVSC uses a 'SONGLENGTHS'
-subdirectory to store the .ssl files, RetroBBS needs these files located in the
-same directory than the .sid files.
+Collection (http//:hvsc.c64.com). HVSC uses a 'SONGLENGTHS' subdirectory to 
+store the .ssl files, RetroBBS can also read these files in the same directory
+where the .sid files are located.
+
+----------------------------------------
+5-4 User accounts / Database management
+----------------------------------------
+RetroBBS now supports the creation of user accounts, this allows for the
+restriction of BBS areas according to user classes and the incorporation of the
+messaging system.
+
+TinyDB is used as the database backend. The database is a JSON file located in
+the "bbsfiles" directory.
+
+Upon registering the user will be shown the file rules.txt located in
+"bbsfiles/terms", you should edit this file according to your needs.
+When registering the user will be asked the following data:
+
+  - Password (stored as a salted hash in the database)
+  - First and last names
+  - Country of origin
+  - Date of birth (Date format is defined by the "dateformat" parameter in the
+                   config file)
+
+A registered user will have a userclass=1 by default. Unregistered users
+(guests) have a userclass=0.
+Admins/Sysops are those with a userclass=10.
+
+You can use userclasses 2 to 9 for more access granurality as you see fit.
+
+A separate script for database management is included in the form of
+dbmaintenance.py
+Run it by issuing the following command (while the BBS is not running):
+
+  python dbmaintenance.py
+
+With this script you can:
+
+  * Edit user data, and change their userclass.
+  * Delete users
+  * Add users
+
+The script will also do a quick integrity check on the database file.
+
+IMPORTANT: When setting up a new BBS (or upgrading from v0.10) use
+dbmaintenance.py to create your account and set your class as 10 to assign
+yourself as admin/sysop.
+
+---------------------
+5-5 Messaging system
+---------------------
+The messaging system permits unlimited public or semipublic boards plus a
+personal messages board for each registered user.
+
+At the time of writing, this early implementation supports messages of up to
+720 characters in length, organized in 18 rows of 40 columns each.
+The message editor works on per line basis, a line being completed by pressing
+<RETURN>, passing the 40 characters limit, or selecting another line to edit
+(by pressing <F3>).
+On entering the editor, if the user is starting a new message thread they will
+be asked to first enter a topic for the thread.
+Once done with the editing the user should press <F8> and will be prompted if
+they want to continue editing, send the message, or cancel the message.
+
+An user with admin/sysop userclass (10) can delete threads or individual
+messages (deleting the first message in a thread will delete the whole thread).
 
 ---------------
 6-1 TO-DO List
@@ -584,10 +782,9 @@ same directory than the .sid files.
 
  * Further code cleanup, move more functions out of the main script and into
    their corresponding modules.
- * Add user login capability
  * Work towards user style customization
- * Selectable log verbosity levels
  * Subtune selection for SID Streaming
+ * Localization
 
 ---------------
 6-2 Known bugs

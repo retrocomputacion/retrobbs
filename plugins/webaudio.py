@@ -1,12 +1,14 @@
 import urllib
-import subprocess
 
-import librosa
-import numpy as np
 import time
 import pafy
+import streamlink
 
 import sys
+import random
+import re
+from queue import Queue
+import threading
 
 import common.petscii as P
 import common.turbo56k as TT
@@ -15,16 +17,71 @@ import common.connection
 import common.filetools as FT
 from common.helpers import formatX
 from common.style import KeyPrompt
+import common.audio as AA
 
-#p = pyaudio.PyAudio()
 
-#stream = p.open(format=pyaudio.paInt16,channels=1,rate=11520,output=True)
+
+class AudioStreams:
+    def __init__(self) -> None:
+        self.streams = {}
+        self.sthread = None
+        self.refresh = False
+        #self.lock = threading.Lock()
+
+    def new(self, url, rate, id):
+        #self.lock.acquire()
+        if not(url in self.streams):    #If url not in dict
+            self.streams[url] = [AA.PcmStream(url,rate),{id:Queue()}]   #Create new FFMPEG stream with url as key, and a Queue for id
+            self.refresh = True
+        else:                           #if url already in dict
+            self.streams[url][1][id] = Queue()  #Just add a Queue for id to the url key
+            self.refresh = True
+
+        if len(self.streams) == 1:  #If True, we just added the first stream, we need to start the StreamThread
+            self.sthread = threading.Thread(target = self.StreamThread, args = ())
+            self.sthread.start()
+
+        #self.lock.release()
+        return self.streams[url][1][id]
+
+    def delete(self, url, id):
+        #self.lock.acquire()
+        if url in self.streams:
+            self.streams[url][1].pop(id)        #Remove the Queue for id
+            self.refresh = True
+            if len(self.streams[url][1]) == 0:  #If no more users
+                self.streams[url][0].stop()     #stop FFMPEG stream
+                self.streams.pop(url)           #remove URL from dict
+                if len(self.streams) == 0:      # No more streams
+                    self.sthread.join()             #Finish the StreamThread
+        #self.lock.release()
+
+
+    # Multi user streaming thread
+    # (yes my naming standards are all over the place)
+    def StreamThread(self):
+        CHUNK = 16384
+
+        while len(self.streams) > 0:
+            #self.lock.acquire()
+            S = self.streams.copy()
+            for url in S:    #Iterate thru streams
+                data = S[url][0].read(CHUNK)    #Get data from FFMPEG stream
+                for id in S[url][1]:    #Iterate thru Queues
+                    S[url][1][id].put(data)        #Push data into the Queue
+            #self.lock.release()
+
+
+slsession = None
+AStreams = AudioStreams()
 
 #############################
 #Plugin setup
 def setup():
+    global slsession
     fname = "WEBAUDIO" #UPPERCASE function name for config.ini
     parpairs = [('url',"http://relay4.slayradio.org:8000/")] #config.ini Parameter pairs (name,defaultvalue)
+    slsession = streamlink.Streamlink()
     return(fname,parpairs)
 #############################
 
@@ -32,10 +89,12 @@ def setup():
 #Plugin callable function
 
 #Send Audio file
-def plugFunction(conn,url):
+def plugFunction(conn:common.connection.Connection,url):
     time.sleep(1)
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
+
+    bnoise = b'\x10\x01'
 
     conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
@@ -46,27 +105,50 @@ def plugFunction(conn,url):
         pa = pafy.new(url)
         s= pa.streams[0]
         sURL = s.url
-        _LOG("WebAudio - Now streaming from YouTube: "+pa.title,id=conn.id)
+        _LOG("WebAudio - Now streaming from YouTube: "+pa.title,id=conn.id,v=3)
         #logo = 'plugins/youtubelogo.png'
         sTitle = formatX('YouTube Stream: '+pa.title)
     except:
         sURL = None
+    # Pafy failed, try with streamlink
+    # streamlink lacks metadata functionality
+    if sURL == None:
+        try:
+            stl = slsession.resolve_url(url)
+            source = stl[0].__name__
+        except:
+            source = ""
+        if source != "":
+            try:
+                pa = slsession.streams(url)
+                for k in list(pa.keys()):
+                    s = pa[k]
+                    try:
+                        sURL = s.url
+                    except:
+                        sURL = None
+                    if sURL != None:
+                        _LOG("WebAudio - Now streaming from "+source, id=conn.id,v=3)
+                        sTitle = formatX(source+' Stream')
+                        break
+            except:
+                sURL = None
+    #streamlink failed try icecast/shoutcast
     if sURL == None:
         try:
             req = urllib.request.Request(url)
             req.add_header('Icy-MetaData', '1')
             req.add_header('User-Agent', 'WinAmp/5.565')
             req_data = urllib.request.urlopen(req)
-            #print(req_data.headers)
             if req_data.msg != 'OK':
-                _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id)
+                _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
                 return
             sURL = url
-            _LOG("WebAudio - Now streaming from Icecast/Shoutcast: "+req_data.getheader('icy-name'),id=conn.id)
+            _LOG("WebAudio - Now streaming from Icecast/Shoutcast: "+req_data.getheader('icy-name'),id=conn.id,v=3)
             #logo = 'plugins/shoutlogo.png'
             sTitle = formatX('Shoutcast Stream: '+req_data.getheader('icy-name'))
         except:
-            _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id)
+            _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
             return
 
     #Display info
@@ -78,15 +160,15 @@ def plugFunction(conn,url):
         if len(l)<40:
             conn.Sendall('\r')
     conn.Sendall('\r\rpRESS '+KeyPrompt('return')+chr(P.YELLOW)+' TO START\r')
-    conn.Sendall('\rpRESS '+KeyPrompt('x')+chr(P.YELLOW)+' TO STOP\r')
+    conn.Sendall('\rpRESS '+KeyPrompt('x')+chr(P.YELLOW)+' TO STOP/CANCEL\r')
 
-    conn.ReceiveKey()
+    if conn.ReceiveKey(b'\rX') == b'X':
+        return
     #conn.Sendall(TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
 
 
-    audioP = subprocess.Popen(["ffmpeg", "-i", sURL, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(conn.samplerate), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
-                            stdout=subprocess.PIPE)
-    pcm_stream = MiniaudioDecoderPcmStream(audioP,conn.samplerate)
+    #pcm_stream = AA.PcmStream(sURL,conn.samplerate)
+    pcm_stream = AStreams.new(sURL,conn.samplerate, conn.id)
 
     t0 = time.time()
 
@@ -94,22 +176,26 @@ def plugFunction(conn,url):
 
     while streaming == True:
         t1 = time.time()
-        audio = pcm_stream.read(CHUNK)
+        #audio = pcm_stream.read(CHUNK)
+        try:
+            audio = pcm_stream.get(True, 15)
+        except:
+            audio = []
         t2 = time.time()-t1
         if t2 > 15:
             streaming = False
         a_len = len(audio)
         for b in range(0,a_len,2):
             lnibble = int(audio[b])
-            if lnibble == 0:
-                lnibble = 1
+            #if lnibble == 0:
+            #    lnibble = 1
             if b+1 <= a_len:
                 hnibble = int(audio[b+1])
             else:
                 hnibble = 0
             binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
-            conn.Sendallbin(binario)
+            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
             sys.stderr.flush()
             #Check for terminal cancelation
             conn.socket.setblocking(0)	# Change socket to non-blocking
@@ -118,7 +204,7 @@ def plugFunction(conn,url):
                 if hs == b'\xff':
                     conn.socket.setblocking(1)
                     binario = b''
-                    _LOG('USER CANCEL',id=conn.id)
+                    _LOG('USER CANCEL',id=conn.id,v=3)
                     streaming = False
                     break
             except:
@@ -128,38 +214,10 @@ def plugFunction(conn,url):
 
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
-    audioP.terminate()
-    #print(bcolors.ENDC)
-    #print('['+str(conn.id)+'] ',datetime.datetime.now().isoformat(sep=' ', timespec='milliseconds'),'Stream completed in '+bcolors.OKGREEN+str(t)+bcolors.ENDC+' seconds')	#This one cannot be replaced by _LOG()... yet
-    _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id)
+    #pcm_stream.stop()
+    AStreams.delete(sURL,conn.id)
+    _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
     conn.Sendallbin(binario)
     time.sleep(1)
-    conn.socket.settimeout(60*5)    #Needs access to _tout
-
-
-
-class MiniaudioDecoderPcmStream:
-    def __init__(self, stream, sr):
-        self.pcm_stream = stream
-
-    def read(self, size):
-        try:
-            a = self.pcm_stream.stdout.read(size)
-            na = np.frombuffer(a, dtype=np.short)
-            #nl = na[::2]
-            #nr = na[1::2]
-            na = na/32768
-            np.clip(na,-1,1,na)
-            #print(na.max())
-            
-            norm = librosa.mu_compress(na,mu=15, quantize=True)
-            #norm = norm*2048
-            norm = norm +8
-
-            bin8 = np.uint8(norm)
-
-            #norm = norm.astype(np.short)
-            return bin8
-        except StopIteration:
-            return b""
+    conn.socket.settimeout(conn.bbs.TOut)
 

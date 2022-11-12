@@ -1,4 +1,3 @@
-#Based on apod.py by Rajat Goyal
 #Retrieves an APOD and converts it to c64 gfx format
 
 import sys
@@ -17,10 +16,10 @@ from common.style import default_style, RenderMenuTitle
 import common.filetools as FT
 from common.helpers import formatX, More
 from common.bbsdebug import _LOG,bcolors
+from common.connection import Connection
 
 
 url = 'https://api.nasa.gov/planetary/apod'
-key = 'DGOkUrjIeLMTJhL4ZzAVZmKgkjLNixHJAiYpfust'    #'TRUeFmW0K72G8JRKOYfhZymkQUFM9bGxF05QrbNo'
 
 #############################
 #Plugin setup
@@ -35,7 +34,7 @@ end_date = datetime.today().toordinal()
 
 ##########################################
 #Plugin callable function
-def plugFunction(conn):
+def plugFunction(conn:Connection):
 
 
 
@@ -60,22 +59,22 @@ def plugFunction(conn):
     while loop == True:
         # # Text mode
         conn.Sendall(TT.to_Text(0,0,0))
-        RenderMenuTitle(conn,'apod')
+        RenderMenuTitle(conn,'APOD')
         conn.Sendall(apod_lang.get(conn.bbs.lang,'en')[0]+chr(P.YELLOW)+"..."+chr(P.COMM_B)+chr(P.CRSR_LEFT))
         i = 0
         idata = None
-        _LOG("Receiving APOD info",id=conn.id)
+        _LOG("Receiving APOD info",id=conn.id,v=4)
         while idata == None and i<5:
-            idata = apod_info(rdate,conn.bbs.PlugOptions.get('nasakey','DEMO_KEY')) #<<<< Change this to custom ini
+            idata = apod_info(rdate,conn.bbs.PlugOptions.get('nasakey','DEMO_KEY'))
             rdate = datetime.fromordinal(random.randint(start_date, end_date))
             if idata == None:
-                _LOG(bcolors.OKBLUE+"Retrying..."+bcolors.ENDC,id=conn.id)
+                _LOG(bcolors.OKBLUE+"APOD Retrying..."+bcolors.ENDC,id=conn.id,v=3)
             i += 1
             conn.Sendall(".")
         conn.Sendall('\a'+chr(P.DELETE)*(23+i))
         if idata != None:
             date = idata["date"]
-            _LOG("Showing APOD info for "+date,id=conn.id)
+            _LOG("Showing APOD info for "+date,id=conn.id,v=4)
             imurl = idata["url"]
             title = idata["title"]
             desc = idata["explanation"]
@@ -106,18 +105,18 @@ def plugFunction(conn):
                 loop = False
             if loop == True:
                 conn.Sendall("\rcONVERTING IMAGE"+chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
-                _LOG("Downloading and generating image",id=conn.id)
+                _LOG("Downloading and generating image",id=conn.id,v=4)
                 try:
-                    img = apod_img(imurl) #img, bm, scr, cram, bg
+                    img = apod_img(conn, imurl)
                     FT.SendBitmap(conn, img)
                 except:
-                    _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id)
+                    _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id,v=2)
                     conn.Sendall("\rerror, UNABLE TO RECEIVE IMAGE")
 
                 tecla = conn.ReceiveKey(b'\r_')
                 conn.Sendall(TT.enable_CRSR())
                 if conn.connected == False:
-                    _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id)
+                    _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id,v=1)
                     return()
                 if tecla == b'_' or tecla == b'':
                     loop = False
@@ -125,7 +124,7 @@ def plugFunction(conn):
             #	rdate = datetime.datetime.fromordinal(random.randint(apod.start_date, apod.end_date))
         else:
             conn.Sendall("\rerror, UNABLE TO CONNECT WITH nasa")
-            _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id)
+            _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id,v=2)
             loop = False
 ##########################################
 
@@ -133,7 +132,6 @@ def plugFunction(conn):
 def apod_info(idate, key='DEMO_KEY', retry = False):
 
     global url
-    #global key
 
     date = idate.strftime("%Y-%m-%d")
     resp = None
@@ -147,12 +145,12 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
             else:
                 m_type = ''
             if m_type != 'image' and retry == True:
-                print(datetime.now(),'APOD - Not an image, retrying...', file=sys.stderr)
+                _LOG('APOD - Not an image, retrying...')
                 resp = None
                 date = datetime.fromordinal(random.randint(start_date, end_date)).strftime("%Y-%m-%d")
         except :
             if retry == True:
-                print(datetime.now(),'APOD - Error, retrying...', file=sys.stderr)
+                _LOG('APOD - Error, retrying...')
             else:
                 m_type = ''
                 resp = -1
@@ -161,9 +159,8 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
 
     return(resp)
 
-#apod_link = f'https://apod.nasa.gov/apod/ap{date.replace("-", "")[2:]}.html'
 
-def apod_img(url):
+def apod_img(conn:Connection,url):
 
     cv_img = None
     bitmap = None
@@ -172,20 +169,15 @@ def apod_img(url):
     background = 0
     try:
         apod_im = requests.get(url, allow_redirects=True)
-        print(datetime.now(),'APOD - Image retrieved', file=sys.stderr)
-
+        _LOG('APOD - Image retrieved', id=conn.id, v=4)
     except:
-        print(datetime.now(),'APOD - Error retreiving image', file=sys.stderr)
+        _LOG('APOD - Error retreiving image', id=conn.id, v=2)
         return(cv_img, bitmap, screen, colorRAM, background)
     try:
         img = Image.open(BytesIO(apod_im.content))
-
         img = img.convert("RGB")
-
-        #cv_img, bitmap, screen, colorRAM, background = c64imconvert(img,1)
-
     except:
-        print(datetime.now(),'APOD - Error converting image', file=sys.stderr)
+        _LOG('APOD - Error converting image', id=conn.id, v=1)
 
     return (img)
 

@@ -1,5 +1,5 @@
 =============================================================
-TURBO56K PROTOCOL v0.5 for RETROBBS v0.10 & RETROTERM v0.13+
+TURBO56K PROTOCOL v0.6 for RETROTERM v0.14+
 =============================================================
 
 Reserved characters:
@@ -24,7 +24,9 @@ $82	130	Start a memory transfer, requires 2 bytes as parameter:
 		Transfer size in bytes (low, high)
 $83	131	Starts audio streaming until receiving a $00 character
 
-$84     132	Starts SID streaming until receiving a data block with size 0, or interrupted by the user
+$84	132	Starts SID streaming until receiving a data block with size 0, or interrupted by the user
+$85	133	--NEW v0.6-- Sets the stream and write order of the registers for SID streaming, takes a stream of 25
+		bytes as parameters.
 ==============================================================================================================
 					GRAPHIC MODE COMMANDS
 ==============================================================================================================
@@ -46,7 +48,11 @@ $A1	161	Selects the optional hardware voice synthesizer as the output for the re
                 exits command mode
 		(valid only for the microsint + rs232/wifi board)
 $A2	162	Request terminal ID and version
-$A3     163     RESERVED - Future command: Requests terminal features
+$A3	163	--NEW v0.6-- Query if the command passed as parameter is implemented in the terminal. If the returned
+		value has its 7th bit clear then the value is the number of parameters required by the command (max 8
+		in the current retroterm implementation).
+		If the 7th bit is set the command is not implemented.
+
 ==============================================================================================================
 				      SCREEN MANAGEMENT COMMANDS
 ==============================================================================================================

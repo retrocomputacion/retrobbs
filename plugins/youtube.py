@@ -12,6 +12,7 @@ from random import randrange
 from common.bbsdebug import _LOG,bcolors
 import common.petscii as P
 import common.turbo56k as TT
+from common.connection import Connection
 
 #############################
 #Plugin setup
@@ -23,7 +24,7 @@ def setup():
 
 ##########################################
 #Plugin callable function
-def plugFunction(conn,url, crop):
+def plugFunction(conn:Connection,url, crop):
 
 	conn.Sendall(chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))#"yOUTUBE"
 	loop = True
@@ -47,11 +48,12 @@ def plugFunction(conn,url, crop):
 
 
 	while loop == True:
+		cimg = None
 		try:
 			if tmsecs != 0.0:
 				capture.set(cv2.CAP_PROP_POS_MSEC,randrange(0,tmsecs-1))
 			else:
-				capture.set(cv2.CAP_PROP_POS_MSEC,randrange(0,10000))
+				capture.set(cv2.CAP_PROP_POS_MSEC,randrange(0,1000))
 
 			ret, frame = capture.read()
 			if ret:

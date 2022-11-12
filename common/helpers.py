@@ -26,8 +26,16 @@ valid_keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\*;/'
 #Menu alternating colors
 menu_colors = [[P.LT_BLUE,P.GREY3],[P.CYAN,P.YELLOW]]
 
+# Paginate current menu
+def SetPage(conn:Connection,page):
+    #global MenuParameters
+
+    if conn.MenuParameters != {}:
+        conn.MenuParameters['current'] = page
+
+
 # Go back to previous/main menu
-def MenuBack(conn):
+def MenuBack(conn:Connection):
 
 	conn.MenuDefs,conn.menu = conn.MenuStack[-1]#0
 	conn.MenuStack.pop()
@@ -57,7 +65,7 @@ def formatX(text, columns = 40, convert = True):
 	return(output)
 
 #Text pagination
-def More(conn, text, lines, colors=default_style):
+def More(conn:Connection, text, lines, colors=default_style):
 
 	l = 0
 	conn.Sendall(chr(P.PALETTE[colors.TxtColor]))

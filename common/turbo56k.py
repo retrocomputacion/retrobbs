@@ -12,6 +12,7 @@ PRADDR = 0x81   #Preset Transfer Address - Parameter: Preset number
 BLKTR = 0x82    #Transfer block - Parameters: lenght-lo, lenght-hi
 STREAM = 0x83   #Audio Stream, byte 0 stops the stream
 SIDSTREAM = 0x84 #SID Stream
+SIDORD = 0x85   #Set the register write order for the SID Stream 
 
 TEXT = 0x90     #Set Text mode - Parameters: page, border, background
 HIRES = 0x91    #Set Hi-Res bitmap mode - Parameters: page, border
@@ -21,6 +22,8 @@ SCREEN = 0xA0   #Set the screen as output device, exits command mode
 SPEECH = 0xA1   #Set the speech synthetizer as output device, exits command mode.
 
 VERSION = 0xA2  #Queries de client for ID and version
+
+QUERYCMD = 0xA3 #Queries the client if a given command exists
 
 SET_CRSR = 0xB0 #Sets cursor position, exits command mode: Parameters: column, row
 
@@ -32,6 +35,19 @@ SPLIT_SCR = 0xB3 #Splits screen - Parameters: split line/graphic mode, backgroun
 
 SET_WIN = 0xB5 #Sets Text window limits - Parameters: window top and window bottom lines
 
+
+TURBO56K_LCMD = 0xB5 #Highest CMD number implemented
+
+
+# Command descriptors
+# command numbers - $80
+
+T56K_CMD = {0:'Custom transfer address', 1:'Preset transfer address', 2:'Block transfer', 3:'PCM audio stream', 4:'SID stream', 5:'SID register write order',
+            16:'Set text mode', 17:'Set Hi-Res bitmap mode', 18:'Set multicolor bitmap mode',
+            32:'Set screen as output', 33:'Set voice synth as output', 34:'Terminal ID', 35:'Command query',
+            48:'Set cursor', 49:'Line fill', 50:'Cursor enable', 51:'Split screen', 53:'Set window'}
+
+###################################################
 
 def to_Text(page, border, background, bin = False):
     if bin == True:
@@ -71,6 +87,13 @@ def to_Screen(bin = False):
         return(bytes([CMDON,SCREEN]))
     else:
         return(chr(CMDON)+chr(SCREEN))
+
+# Reset some Turbo56K parameters: cursor, split screen and text window
+def reset_Turbo56K(bin = False):
+    if bin == True:
+        return(bytes([CMDON,CURSOR_EN,1,CMDOFF,CMDON,SPLIT_SCR,0,0,CMDOFF,CMDON,SET_WIN,0,24,CMDOFF,CMDON,SCREEN]))
+    else:
+        return(chr(CMDON)+chr(CURSOR_EN)+chr(1)+chr(CMDOFF)+chr(CMDON)+chr(SPLIT_SCR)+chr(0)+chr(0)+chr(CMDOFF)+chr(CMDON)+chr(SET_WIN)+chr(0)+chr(24)+chr(CMDOFF)+chr(CMDON)+chr(SCREEN))
 
 def to_Speech(bin = False):
     if bin == True:

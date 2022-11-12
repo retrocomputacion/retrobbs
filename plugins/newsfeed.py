@@ -33,28 +33,28 @@ def setup():
 
 ##########################################
 #Plugin callable function
-def plugFunction(conn,url):
+def plugFunction(conn:Connection,url):
     
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
 
     MenuDic = {
-			    b'_': (H.MenuBack,(conn,),"pREVIOUS mENU",True,False),
-				b'\r': (plugFunction,(conn,url),"",False,False)
+			    b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
+				b'\r': (plugFunction,(conn,url),"",0,False)
 			  }
 
 
     #conn.Sendall(chr(0))
     # # Text mode
     conn.Sendall(TT.to_Text(0,0,0))
-    S.RenderMenuTitle(conn,"nEWSFEED")
+    S.RenderMenuTitle(conn,"Newsfeed")
     conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
     nfeed = feedparser.parse(url)
     try:
         lines = 5
-        _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id)
+        _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
 
         conn.Sendall("rECENT FROM:\r")
         title = H.formatX(nfeed.feed.get('title','No title'))
@@ -77,21 +77,19 @@ def plugFunction(conn,url):
             for t in text:
                 conn.Sendall(' '*(3*x)+t+'\r')
                 x=1
-            MenuDic[H.valid_keys[i-1].encode('ascii','ignore')] = (feedentry,(conn,e,P.toPETSCII(nfeed.feed.get('title','No title'))),H.valid_keys[i-1],True,False)
+            MenuDic[H.valid_keys[i-1].encode('ascii','ignore')] = (feedentry,(conn,e,P.toPETSCII(nfeed.feed.get('title','No title'))),H.valid_keys[i-1],0,False)
             i+=1
-            #print(entries[-1]['href'])
         conn.Sendall(chr(P.RVS_ON)+chr(H.menu_colors[i%2][0])+chr(181)+'_'+chr(182)+chr(P.RVS_OFF)+chr(H.menu_colors[i%2][1])+'bACK\r')
         conn.Sendall(chr(P.WHITE)+'\ryOUR CHOICE: ')
-        #print(MenuDic)
         return MenuDic
 
     except:
-        _LOG('Newsfeed - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id)
+        _LOG('Newsfeed - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)
 
 ##############################################
 
-def feedentry(conn,entry,feedname):
-    _LOG('NewsFeeds - Entry: '+entry.get('title','-no title-'),id=conn.id)
+def feedentry(conn:Connection,entry,feedname):
+    _LOG('NewsFeeds - Entry: '+entry.get('title','-no title-'),id=conn.id,v=4)
 
     mtitle = textwrap.shorten(feedname,width=38-(len(conn.bbs.name)+7),placeholder='...')
 
@@ -127,7 +125,7 @@ def feedentry(conn,entry,feedname):
 
 ### Try to scrap data from wordpress and some other CMS sites,
 ### returns False if entry title or body cannot be found 
-def webarticle(conn,url, feedname):
+def webarticle(conn:Connection,url, feedname):
     conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
     resp = requests.get(url, allow_redirects = False, headers = hdrs)
     r = 0   # Redirect loop disconnector
@@ -162,10 +160,10 @@ def webarticle(conn,url, feedname):
             if t_soup != None:
                 a_title = t_soup.find('a').get_text()
                 if a_title == None:
-                    _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - no title - defaulting to rss data'+bcolors.ENDC, id=conn.id)
+                    _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - no title - defaulting to rss data'+bcolors.ENDC, id=conn.id,v=2)
                     return(False)
             else:
-                _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - no title - defaulting to rss data'+bcolors.ENDC, id=conn.id)
+                _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - no title - defaulting to rss data'+bcolors.ENDC, id=conn.id,v=2)
                 return(False)
         #####   Author   #####
         a_author = None
@@ -185,7 +183,7 @@ def webarticle(conn,url, feedname):
         if a_body == None:
             a_body = soup.find('article')
             if a_body == None:
-                _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - no body - defaulting to rss data'+bcolors.ENDC, id=conn.id)
+                _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - no body - defaulting to rss data'+bcolors.ENDC, id=conn.id,v=2)
                 return(False)
         a_headers = a_body.find_all(['h2','h4'])
         body = []
@@ -209,7 +207,6 @@ def webarticle(conn,url, feedname):
                 body +=  H.formatX(p.get_text())+['\r']
             if body == []:
                 body = H.formatX(a_body.get_text())
-        #print(soup.find('div',{'class':'entry-content'}))
         #####   Entry image   #####
         d_img = soup.find('div',{'class':'entry-featured-image'})
         if d_img != None:
@@ -230,7 +227,6 @@ def webarticle(conn,url, feedname):
         #body = H.formatX(a_body)
         title = H.formatX(a_title)
         title[0] = chr(P.WHITE)+title[0]
-        #print(a_title)
         title.append(chr(P.YELLOW)+chr(P.HLINE)*40)
         if a_author != None:
             title.append(chr(P.PALETTE[S.default_style.TxtColor])+'BY: '+chr(P.YELLOW)+P.toPETSCII(a_author))
@@ -242,15 +238,15 @@ def webarticle(conn,url, feedname):
     else:
         conn.Sendall(chr(P.DELETE)+str(resp.status_code))
         time.sleep(1)
-        _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - defaulting to rss description'+bcolors.ENDC, id=conn.id)
+        _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - defaulting to rss description'+bcolors.ENDC, id=conn.id,v=2)
         return(False)
     return(True)
 
 
 def getImg(url,img_t):
     src = img_t['src']
-    print(url)
-    print(src)
+    #print(url)
+    #print(src)
     src = urljoin(url, src)
     #if src.startswith('//'):
     #    src = 'http:'+src

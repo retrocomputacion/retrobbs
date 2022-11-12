@@ -10,7 +10,7 @@ from io import BytesIO
 import common.turbo56k as TT
 
 # Display image dialog
-def ImageDialog(conn, title, width=0, height=0):
+def ImageDialog(conn:Connection, title, width=0, height=0):
 	conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
 	for y in range(0,10):
 		conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
@@ -24,7 +24,7 @@ def ImageDialog(conn, title, width=0, height=0):
 	return 1
 
 #Send bitmap image
-def SendBitmap(conn, filename, lines = 25, display = True, dialog = False, multi = True):
+def SendBitmap(conn:Connection, filename, lines = 25, display = True, dialog = False, multi = True):
 
 
 	ftype = {'.ocp':1,'.OCP':1,	#Advanced Art Studio
@@ -110,7 +110,6 @@ def SendBitmap(conn, filename, lines = 25, display = True, dialog = False, multi
 		# or bytes/image object sent as filename parameter
 		conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 		try:
-			#print(type(filename))
 			if type(filename)==str:
 				Source = Image.open(filename)
 			elif type(filename)==bytes:
@@ -174,6 +173,5 @@ def SendBitmap(conn, filename, lines = 25, display = True, dialog = False, multi
 	binariofinal += b'\xFE'
 	if display:
 		conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
-	#print(binariofinal)
 	conn.Sendallbin(binariofinal)
 	return bgcolor

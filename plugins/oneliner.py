@@ -21,7 +21,7 @@ def setup():
 
 ##########################################
 #Plugin callable function
-def plugFunction(conn):
+def plugFunction(conn:Connection):
 
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
 
@@ -30,7 +30,7 @@ def plugFunction(conn):
         title = f.read()
         conn.Sendallbin(title)
     except:
-        S.RenderMenuTitle(conn,'oNELINER')
+        S.RenderMenuTitle(conn,'Oneliner')
         conn.Sendall(chr(P.PURPLE))
     conn.Sendall(TT.Fill_Line(3,192)+TT.Fill_Line(22,192)) # Window borders
  
@@ -44,7 +44,6 @@ def plugFunction(conn):
                 olf.close()
             except:
                 onelines = []
-            #print(onelines)
             sendOneliners(conn, onelines)
             refr = False
 
@@ -52,17 +51,25 @@ def plugFunction(conn):
         if comm == b'_':
             break
         conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR))
-        conn.Sendall(chr(P.GREEN)+'nICK: '+chr(P.WHITE))
-        nick = conn.ReceiveStr(bytes(keys,'ascii'),20)
+        if conn.userclass > 0:
+            nick = conn.username
+        else:
+            conn.Sendall(chr(P.GREEN)+'nICK: '+chr(P.WHITE))
+            nick = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),20))
         if nick != '':
             conn.Sendall(chr(P.CLEAR)+chr(P.GREEN)+'mESSAGE:\r'+chr(P.WHITE))
-            line = conn.ReceiveStr(bytes(keys,'ascii'), 39)
+            line = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 39))
             if line != '':
+                try:    # Refresh oneliners in case another user posted in the meanwhile
+                    olf = open('plugins/oneliners.json','r')
+                    onelines = json.load(olf)
+                    olf.close()
+                except:
+                    onelines = []
                 onelines.append([nick,line])
-                #print(onelines)
                 if len(onelines) > 9:
                     onelines.pop(0) #If there's more than 9 onelines, remove the oldest.
-                olf = open('plugins/oneliners.json','w')
+                olf = open('plugins/oneliners.json','w')        
                 json.dump(onelines,olf)
                 olf.close()
                 refr = True
@@ -72,11 +79,9 @@ def plugFunction(conn):
 
 def sendOneliners(conn,lines):
     conn.Sendall(TT.set_Window(4,21)+chr(P.CLEAR))
-    i = 0
-    for l in lines:
-        conn.Sendall(chr(P.YELLOW)+l[0]+' SAYS:\r'+chr(P.GREY3)+l[1])
+    for i,l in enumerate(lines):
+        conn.Sendall(chr(P.YELLOW)+P.toPETSCII(l[0])+' SAYS:\r'+chr(P.GREY3)+P.toPETSCII(l[1]))
         if len(l[1]) and i<8:
             conn.Sendall('\r')
-        i+=1
-        if i == 9:  #Just in case the json file has more than 9 entries
+        if i == 8:  #Just in case the json file has more than 9 entries
             continue

@@ -86,12 +86,16 @@ MAPPING = { '{WHITE}':0x05,'{CRSRD}':0x11,'{RVSON}':0x12,'{HOME}':0x13,
             '{GREY3}':0x9b,'{PURPLE}':0x9c,'{CRSRL}':0x9d,'{YELLOW}':0x9e,
             '{CYAN}':0x9f}
 
-def toPETSCII(text):
-    text = text.replace('×','x').replace('÷','/')
-    text = text.replace('—','-').replace('–','-') #Em/En dash
-    text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
-    text = text.replace('|', chr(VLINE))
-    text = text.replace('_', chr(164))
+# Convert ASCII/unicode text to PETSCII
+# full = True for aditional glyph visual conversion
+#        False for simple upper-lower case swapping
+def toPETSCII(text,full=True):
+    if full:
+        text = text.replace('×','x').replace('÷','/')
+        text = text.replace('—','-').replace('–','-') #Em/En dash
+        text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
+        text = text.replace('|', chr(VLINE))
+        text = text.replace('_', chr(164))
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
     return(text)
 

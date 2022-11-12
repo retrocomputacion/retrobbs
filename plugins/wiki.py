@@ -3,6 +3,7 @@ import common.turbo56k as TT
 from common.style import bbsstyle
 import common.filetools as FT
 from common.helpers import formatX, More
+from common.connection import Connection
 
 import wikipedia
 import wikipediaapi
@@ -23,9 +24,9 @@ def setup():
 
 ##########################################
 #Plugin callable function
-def plugFunction(conn):
+def plugFunction(conn:Connection):
 
-	def WikiTitle(conn):
+	def WikiTitle(conn:Connection):
 		conn.Sendall(TT.set_Window(0,24))	#Set Text Window
 		conn.Sendall(chr(P.CLEAR)+chr(P.BLACK)+"wIKIPEDIA, THE fREE eNCICLOPEDIA\r")
 		conn.Sendall(chr(P.GREY1)+TT.Fill_Line(1,64))#(chr(P.HLINE)*40))
@@ -80,9 +81,7 @@ def plugFunction(conn):
 		options += '_\r'
 		conn.Sendall('\rpLEASE SELECT:')
 
-		#print(bytes(options,'ascii'))
 		sel = conn.ReceiveKey(bytes(options, 'ascii'))
-		#print(sel)
 		
 		if sel == b'_':
 			loop = False
@@ -139,9 +138,8 @@ def plugFunction(conn):
 
 	#MenuBack()
 
-def WikiSection(conn, sections, level = 0, lines = 0):
+def WikiSection(conn:Connection, sections, level = 0, lines = 0):
 
-	#print(level)
 	tt = []
 	for s in sections:
 		title = ('-'*level)+s.title
