@@ -114,6 +114,8 @@ connections.
 Current built-in functions:
 
     - User signup and signin. Plain text JSON database, salted password storage
+
+    - Public message boards and private messaging system
  
     - Program transfer: Send Commodore 64 .prg files to the computer memory at
       the correct memory address.
