@@ -81,7 +81,7 @@ v0.20 (xx/11/2022):
     RSS feeds.
   - Misc. code cleanup
   - AudioList now supports HVSC style path to songlength files
-  - Most text parameters other than in calls to the Connection class is
+  - Now most text parameters other than in calls to the Connection class are
     expected to be ASCII, not PETSCII, this also counts for the config
     file
 
@@ -214,13 +214,13 @@ Sections:
 
 [MAIN] > Global BBS settings
   keys:
-    bbsname     > Name of the BBS, in PETSCII format.
+    bbsname     > Name of the BBS.
     menues      > Total number of menu pages, not counting the main menu page.
     ip          > IP V4 address on which the BBS will be accessible, default is
                   0.0.0.0
     port        > port number on which the BBS will be accessible.
     language    > language for remote texts, only partialy implemented as of 0.10
-    welcome     > Welcome message on connection, in PETSCII format.
+    welcome     > Welcome message on connection.
     goodbye     > Log off message.
     dateformat  > Format in which dates will be printed out, client side:
                  0 = dd/mm/yyyy
@@ -251,8 +251,7 @@ Sections:
   keys:
     title    > Title for the main menu.
     sections > Number of sections on the main menu.
-    prompt   > Prompt message to print at the bottom of the menu page in
-               PETSCII format.
+    prompt   > Prompt message to print at the bottom of the menu page.
 
 [MAINMENUSECTIONy] > (Where 1 <= y <= {MAINMENU:sections}) Defines section 'y'
                      of the main menu.
@@ -684,6 +683,11 @@ After making sure you have installed all the required python modules, and extra
 software, just unpack this archive into a directory of your choice.
 If you're upgrading a previous installation, make sure to not overwrite your
 configuration files with the ones included as example.
+
+  NOTICE: Starting at v0.20 all text parameters in the config file are expected
+  to be encoded in ASCII, if you're updating from v0.10 remember to convert
+  your PETSCII parameters.
+
 
 You can run this script from a command line by navigating to the Installation
 directory and then issuing:
