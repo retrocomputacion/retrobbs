@@ -181,8 +181,8 @@ Python modules:
   * irc (For IRC client plug-in)
   * tinydb
 
-  A requirements.txt file is available for quick installation of the required
-  modules using
+  A basic requirements.txt file is available for quick installation of the
+  required modules. Use:
   
     pip install -r requirements.txt
 

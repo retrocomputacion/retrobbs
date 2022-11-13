@@ -7,9 +7,10 @@ librosa
 mutagen
 numpy
 opencv_python
+youtube-dl
 pafy
 Pillow
-requests
+requests>=2.26.0
 streamlink
 tinydb
 wikipedia
