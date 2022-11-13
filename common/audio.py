@@ -352,48 +352,48 @@ def _DisplaySIDInfo(conn:Connection, info):
     conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r')
     conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
 
+#  SID player ID - commented out until better functionality is built into RetroTerm
+# def _SIDid(binary):
+#     with open('bbsfiles/sidid.cfg','rb') as sidf:
 
-def _SIDid(binary):
-    with open('bbsfiles/sidid.cfg','rb') as sidf:
+#         sigs = re.split(b'\s',sidf.read())
 
-        sigs = re.split(b'\s',sidf.read())
+#         escape = b'.\|*?+$^{}[]()'
 
-        escape = b'.\|*?+$^{}[]()'
-
-        name = 'default'
-        IDList = {}
-        pat = b''
-        patterns = []
-        for s in sigs:
-            t = s.decode("utf-8")
-            if t == "END":
-                patterns.append(pat)
-                pat = b''
-            elif t == "??":
-                pat += b"[\x00-\xff]"
-            elif t == "AND":
-                pat += b"+"
-            else:
-                try:
-                    h = bytearray.fromhex(t)
-                except:
-                    h = None
-                if h != None:
-                    if len(h) == 1:
-                        if h in escape:
-                            pat += b'\x5c'
-                        pat += h
-                else:
-                    IDList[name]  = patterns
-                    name = t
-                    patterns = []
+#         name = 'default'
+#         IDList = {}
+#         pat = b''
+#         patterns = []
+#         for s in sigs:
+#             t = s.decode("utf-8")
+#             if t == "END":
+#                 patterns.append(pat)
+#                 pat = b''
+#             elif t == "??":
+#                 pat += b"[\x00-\xff]"
+#             elif t == "AND":
+#                 pat += b"+"
+#             else:
+#                 try:
+#                     h = bytearray.fromhex(t)
+#                 except:
+#                     h = None
+#                 if h != None:
+#                     if len(h) == 1:
+#                         if h in escape:
+#                             pat += b'\x5c'
+#                         pat += h
+#                 else:
+#                     IDList[name]  = patterns
+#                     name = t
+#                     patterns = []
 
 
-        for st in IDList:
-            for pat in IDList[st]:
-                if re.search(pat, binary) != None:
-                    return st
-    return 'default'
+#         for st in IDList:
+#             for pat in IDList[st]:
+#                 if re.search(pat, binary) != None:
+#                     return st
+#     return 'default'
 
 def SIDStream(conn:Connection, filename,ptime, dialog=True):
 
@@ -432,19 +432,20 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
             info['songlength'] = ptime
             _DisplaySIDInfo(conn, info)
             conn.ReceiveKey()
-        player = _SIDid(content)
-        if (conn.T56KVer > 0.5):
-            # If Turbo56K > 0.5 send SID register write order
-            if (player == "MoN/Bjerregaard"):
-                conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
-                conn.Sendall(Frs+Fco + V3e+V3c+V3f+V3p + V2e+V2c+V2f+V2p + V1e+V1c+V1f+V1p + Vol)
-                conn.Sendall(chr(TT.CMDOFF))
-                order = 1
-            else:
-                #Sending the default write sequence shouldnt be needed, but is here just in case, and as reference
-                conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
-                conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
-                conn.Sendall(chr(TT.CMDOFF))
+        #  SID player register order - commented out until better functionality is built into RetroTerm
+        # player = _SIDid(content)
+        # if (conn.T56KVer > 0.5):
+        #     # If Turbo56K > 0.5 send SID register write order
+        #     if (player == "MoN/Bjerregaard"):
+        #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
+        #         conn.Sendall(Frs+Fco + V3e+V3c+V3f+V3p + V2e+V2c+V2f+V2p + V1e+V1c+V1f+V1p + Vol)
+        #         conn.Sendall(chr(TT.CMDOFF))
+        #         order = 1
+        #     else:
+        #         #Sending the default write sequence shouldnt be needed, but is here just in case, and as reference
+        #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
+        #         conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
+        #         conn.Sendall(chr(TT.CMDOFF))
 
     if player != "":
         data = sd.SIDParser(filename,ptime, order)
