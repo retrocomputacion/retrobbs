@@ -446,6 +446,7 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
         #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
         #         conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
         #         conn.Sendall(chr(TT.CMDOFF))
+        player = 'x'    # <<<< Delete this line when player ID is properly implemented
 
     if player != "":
         data = sd.SIDParser(filename,ptime, order)
