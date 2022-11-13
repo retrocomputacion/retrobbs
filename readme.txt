@@ -163,6 +163,8 @@ Current included plug-ins:
 1-5 Requirements
 -----------------
 
+Python version 3.7 or above
+
 Python modules:
 
   * librosa (might need to install llvm before)
