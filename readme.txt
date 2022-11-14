@@ -173,7 +173,7 @@ Python modules:
   * mutagen
   * numpy
   * opencv-python
-  * pafy (For the YouTube plug-in)
+  * pafy (For the YouTube plug-in) (use this version: https://github.com/Cupcakus/pafy)
   * streamlink (Will catch YouTube links if pafy fails, it also supports other
     stream services such as Twitch)
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)
@@ -187,6 +187,10 @@ Python modules:
   required modules. Use:
   
     pip install -r requirements.txt
+
+  If you already have pafy installed, you'll need to uninstall it beforehand:
+
+    pip uninstall -y pafy
 
 
 External software:
