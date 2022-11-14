@@ -8,7 +8,7 @@ mutagen
 numpy
 opencv_python
 youtube-dl
-pafy
+pafy -e git+git://github.com/mohamed-challal/pafy.git@develop#egg=pafy
 Pillow
 requests>=2.26.0
 streamlink

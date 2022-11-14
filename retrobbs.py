@@ -1372,7 +1372,7 @@ set_verbosity(args.verb)
 
 bbs_instance = BBS('','',0)
 
-print('\n\nRetroBBS v0.10 (c)2021\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n')
+print('\n\nRetroBBS v0.20 (c)2021\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n')
 
 
 # Parse plugins
