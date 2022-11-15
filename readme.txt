@@ -76,7 +76,8 @@ v0.20 (xx/11/2022):
     dislikes count.
   - YouTube frame capture now is faster after the 1st frame.
   - Core PCM audio and SID file streaming functions moved to their own script.
-  - PCM audio decoding is done using FFmpeg
+  - All PCM audio decoding is done using FFmpeg
+  - WebAudio plugin can share any given PCM stream between multiple clients.
   - Updated example config file with valid links to YouTube videos and
     RSS feeds.
   - Misc. code cleanup
@@ -805,12 +806,14 @@ messages (deleting the first message in a thread will delete the whole thread).
  * Subtune selection for SID Streaming
  * Localization
 
----------------
-6-2 Known bugs
----------------
+----------------------
+6-2 Known bugs/issues
+----------------------
 
   * Config file parser doesnt check for errors, a badly built config.ini will
     cause a crash on startup.
+  * If updating from v0.10, the messages already existing in the oneliners.json
+    file will have the wrong encoding. New messages will display correctly.
 
 
 ---------------------
@@ -835,3 +838,4 @@ Thanks go to the following persons who helped in the testing of RetroBBS
   * Juan Musso
   * Vaporatorius
   * Gabriel Garcia
+  * Roberto Mandracchia
