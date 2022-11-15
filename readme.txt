@@ -59,7 +59,7 @@ development stage, expect to find many bugs and ugly/non-pythonic code inside.
 
 v0.10 (16/08/2021): Initial release
 
-v0.20 (xx/11/2022):
+v0.20 (15/11/2022):
   New features:
   - Added Login/User functionality
   - Added userclass/userlevel settings for the config file, select which menu
