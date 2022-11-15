@@ -66,7 +66,7 @@ v0.20 (15/11/2022):
     is accessible to admins/sysops, registered users and/or guests
   - Added a verbosity command line switch, see section 5-1
   - Added Turbo56K v0.6 support, terminal features are queried and displayed
-    on connection. Basic support added for SID stream register remapping.
+    on connection.
   - Messaging system, supports public boards and private messages.
     Public boards can have independent Read/Post user class permissions.
 
@@ -75,7 +75,7 @@ v0.20 (15/11/2022):
   - Fixed problems retrieving YouTube videos metadata due to removal of
     dislikes count.
   - YouTube frame capture now is faster after the 1st frame.
-  - Core PCM audio and SID file streaming functions moved to their own script.
+  - Core PCM audio and SID file streaming functions moved to their own module.
   - All PCM audio decoding is done using FFmpeg
   - WebAudio plugin can share any given PCM stream between multiple clients.
   - Updated example config file with valid links to YouTube videos and
