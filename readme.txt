@@ -6,7 +6,7 @@
             R  R   E        T    R  R   R   R  B   B  B   B      B
             R   R  EEEEE    T    R   R   RRR   BBBB   BBBB   BBBB
 
-                                VERSION 0.20
+                              VERSION 0.2x dev
 
       (C)2020-2022 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 ===============================================================================
@@ -85,6 +85,15 @@ v0.20 (15/11/2022):
   - Now most text parameters other than in calls to the Connection class are
     expected to be ASCII, not PETSCII, this also counts for the config
     file
+
+v0.2x (In development):
+  New features:
+  - ...
+
+  Changes/Bug fixes:
+  - Librosa module replaced by audioread and use of ffmpeg audio filters.
+    PCM streaming no longers use mu-law compression.
+  - Removed legacy raw audio streaming code.
 
 --------------------------
 1-3 The Turbo56K protocol
@@ -168,7 +177,6 @@ Python version 3.7 or above
 
 Python modules:
 
-  * librosa (might need to install llvm before)
   * audioread
   * soundfile
   * mutagen

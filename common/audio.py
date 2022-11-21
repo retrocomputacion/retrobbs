@@ -19,12 +19,8 @@ import common.filetools as FT
 from common.style import bbsstyle, default_style, RenderMenuTitle, KeyLabel
 
 
-#Audio
-try:
-    import librosa
-    wavs = True
-except:
-    wavs = False
+import audioread
+wavs = True
 #Audio Metadata
 try:
     import mutagen
@@ -34,10 +30,6 @@ except:
 
 #SIDStreaming
 import common.siddumpparser as sd
-
-#Ignore LibRosa filetype Warnings
-warnings.filterwarnings("ignore", message="PySoundFile failed. Trying audioread instead.")
-
 
 def AudioList(conn:Connection,title,speech,logtext,path):
 
@@ -126,10 +118,10 @@ def AudioList(conn:Connection,title,speech,logtext,path):
                 tsecs = int(audio.info.length)
             else:
                 #Load and compute audio playtime
-                y, sr = librosa.load(path+audios[x], sr = None, mono= True)
-                tsecs = int(librosa.get_duration(y=y, sr=sr))
+                with audioread.audio_open(path+audios[x]) as f:
+                    tsecs = int(f.duration)
             tmins = int(tsecs / 60)
-            length[x] = tsecs
+            length[x] = int(tsecs)
             tsecs = tsecs - (tmins * 60)
         else:	#SID file
             afunc = SIDStream
@@ -192,110 +184,98 @@ def _AudioDialog(conn:Connection, data):
 #Send Audio file
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     bnoise = b'\x10\x01'
-    CHUNK = 16384
+    CHUNK = 1<<(conn.samplerate).bit_length()   #16384
 
     conn.socket.settimeout(conn.bbs.TOut+length)	#<<<< This might be pointless
     _LOG('Timeout set to:'+bcolors.OKGREEN+str(length)+bcolors.ENDC+' seconds',id=conn.id,v=3)
-    if filename[-4:] == '.raw' or filename[-4:] == '.RAW':
-        conn.Sendall(chr(255) + chr(161) + '..enviando,')
-        time.sleep(1)
-        # Select screen output
-        conn.Sendall(chr(255) + chr(160))
-        # Send selected raw audio
-        _LOG('Sending RAW audio: '+filename,id=conn.id,v=3)
-        archivo=open(filename,"rb")
-        binario = b'\xFF\x83'
-        binario += archivo.read()
-        binario += b'\x00\x00\x00\x00\x00\x00\xFE'
-        archivo.close()
-    else:
-        #Send any other supported audio file format
-        conn.Sendall(chr(255) + chr(161) + '..enviando,')
-        time.sleep(1)
-        # Select screen output
-        conn.Sendall(chr(255) + chr(160))
-        _LOG('Sending audio: '+filename,id=conn.id,v=3)
 
-        if (dialog == True) and (meta == True):
-            a_meta = {}
-            a_data = mutagen.File(filename)
-            a_min = int(a_data.info.length/60)
-            a_sec = int(round(a_data.info.length,0)-(a_min*60))
-            a_meta['length'] = ('00'+str(a_min))[-2:]+':'+('00'+str(a_sec))[-2:]
-            a_meta['sr'] = str(a_data.info.sample_rate)+'hZ'
-            a_meta['title'] = P.toPETSCII(filename[filename.rfind('/')+1:filename.rfind('/')+39])
-            a_meta['album'] = ''
-            a_meta['artist'] = ''
-            if a_data.tags != None:
-                if a_data.tags.getall('TIT2') != []:
-                    a_meta['title'] = P.toPETSCII(a_data.tags.getall('TIT2')[0][0][:38])
-                if a_data.tags.getall('TALB') != []:
-                    a_meta['album'] = P.toPETSCII(a_data.tags.getall('TALB')[0][0][:38])
-                for ar in range(1,5):
-                    ars = 'TPE'+str(ar)
-                    if a_data.tags.getall(ars) != []:
-                        a_meta['artist'] = P.toPETSCII(a_data.tags.getall(ars)[0][0][:38])
-                        break
-            if not _AudioDialog(conn,a_meta):
-                return()
-            if not conn.connected:
-                return()
-            conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+    #Send any other supported audio file format
+    conn.Sendall(chr(255) + chr(161) + '..enviando,')
+    time.sleep(1)
+    # Select screen output
+    conn.Sendall(chr(255) + chr(160))
+    _LOG('Sending audio: '+filename,id=conn.id,v=3)
+
+    if (dialog == True) and (meta == True):
+        a_meta = {}
+        a_data = mutagen.File(filename)
+        a_min = int(length/60)
+        a_sec = int(round(length,0)-(a_min*60))
+        a_meta['length'] = ('00'+str(a_min))[-2:]+':'+('00'+str(a_sec))[-2:]
+        a_meta['sr'] = str(a_data.info.sample_rate)+'hZ'
+        a_meta['title'] = P.toPETSCII(filename[filename.rfind('/')+1:filename.rfind('/')+39])
+        a_meta['album'] = ''
+        a_meta['artist'] = ''
+        if a_data.tags != None:
+            if a_data.tags.getall('TIT2') != []:
+                a_meta['title'] = P.toPETSCII(a_data.tags.getall('TIT2')[0][0][:38])
+            if a_data.tags.getall('TALB') != []:
+                a_meta['album'] = P.toPETSCII(a_data.tags.getall('TALB')[0][0][:38])
+            for ar in range(1,5):
+                ars = 'TPE'+str(ar)
+                if a_data.tags.getall(ars) != []:
+                    a_meta['artist'] = P.toPETSCII(a_data.tags.getall(ars)[0][0][:38])
+                    break
+        if not _AudioDialog(conn,a_meta):
+            return()
+        if not conn.connected:
+            return()
+        conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
 
-        #Streaming mode
-        binario = b'\xFF\x83'
+    #Streaming mode
+    binario = b'\xFF\x83'
 
-        pcm_stream = PcmStream(filename,conn.samplerate)
+    pcm_stream = PcmStream(filename,conn.samplerate)
 
-        t0 = time.time()
+    t0 = time.time()
 
-        streaming = True
+    streaming = True
 
-        while streaming == True:
-            t1 = time.time()
-            audio = pcm_stream.read(CHUNK)
-            t2 = time.time()-t1
-            if t2 > 15:
-                streaming = False
-            a_len = len(audio)
-            if a_len == 0:
-                streaming = False
-            if (a_len % 2) != 0:    #Odd number of samples
-                audio = numpy.append(audio, 0)
-            for b in range(0,a_len,2):
-                lnibble = int(audio[b])
-                #if lnibble == 0:
-                #    lnibble = 1
-                if b+1 <= a_len:
-                    hnibble = int(audio[b+1])
-                else:
-                    hnibble = 0
-                binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
+    while streaming == True:
+        t1 = time.time()
+        audio = pcm_stream.read(CHUNK)
+        t2 = time.time()-t1
+        if t2 > 15:
+            streaming = False
+        a_len = len(audio)
+        if a_len == 0:
+            streaming = False
+        if (a_len % 2) != 0:    #Odd number of samples
+            audio = numpy.append(audio, 0)
+        for b in range(0,a_len,2):
+            lnibble = int(audio[b])
+            #if lnibble == 0:
+            #    lnibble = 1
+            if b+1 <= a_len:
+                hnibble = int(audio[b+1])
+            else:
+                hnibble = 0
+            binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
-                conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
-                sys.stderr.flush()
-                #Check for terminal cancelation
-                conn.socket.setblocking(0)	# Change socket to non-blocking
-                try:
-                    hs = conn.socket.recv(1)
-                    if hs == b'\xff':
-                        conn.socket.setblocking(1)
-                        binario = b''
-                        _LOG('USER CANCEL',id=conn.id,v=3)
-                        streaming = False
-                        break
-                except:
-                    pass
-                conn.socket.setblocking(1)
-                binario = b''
-            #time.sleep(0.60)    #Dont send all the stream at once. Untested for 7680Hz
-            while time.time()-t1 < (conn.samplerate/CHUNK): #This method should work for all samplerates
-                pass                                        #and with different host performances
-        binario += b'\x00\x00\x00\x00\x00\x00\xFE'
-        t = time.time() - t0
-        pcm_stream.stop()
-        _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
+            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
+            sys.stderr.flush()
+            #Check for terminal cancelation
+            conn.socket.setblocking(0)	# Change socket to non-blocking
+            try:
+                hs = conn.socket.recv(1)
+                if hs == b'\xff':
+                    conn.socket.setblocking(1)
+                    binario = b''
+                    _LOG('USER CANCEL',id=conn.id,v=3)
+                    streaming = False
+                    break
+            except:
+                pass
+            conn.socket.setblocking(1)
+            binario = b''
+        #time.sleep(0.60)    #Dont send all the stream at once. Untested for 7680Hz
+        while time.time()-t1 < (conn.samplerate/CHUNK)*2: #This method should work for all samplerates
+            pass                                        #and with different host performances
+    binario += b'\x00\x00\x00\x00\x00\x00\xFE'
+    t = time.time() - t0
+    pcm_stream.stop()
+    _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
     conn.Sendallbin(binario)
     time.sleep(1)
     #conn.Sendall(chr(P.DELETE))
@@ -305,25 +285,17 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 # Receive an audio stream through FFMPEG
 class PcmStream:
     def __init__(self, fn, sr):
-        self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
+        # self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
+        #                 stdout=subprocess.PIPE, preexec_fn=os.setsid)
+        self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1"],
                         stdout=subprocess.PIPE, preexec_fn=os.setsid)
-
     def read(self, size):
         try:
             a = self.pcm_stream.stdout.read(size)
-            na = numpy.frombuffer(a, dtype=numpy.short)
-            #nl = na[::2]
-            #nr = na[1::2]
-            na = na/32768
-            numpy.clip(na,-1,1,na)
-            
-            norm = librosa.mu_compress(na,mu=15, quantize=True)
-            #norm = norm*2048
-            norm = norm +8
-
+            na = numpy.frombuffer(a, dtype=numpy.ubyte)
+            norm = na/16
             bin8 = numpy.uint8(norm)
 
-            #norm = norm.astype(numpy.short)
             return bin8
         except StopIteration:
             return b""

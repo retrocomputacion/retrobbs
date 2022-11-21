@@ -3,7 +3,7 @@ feedparser
 hitherdither @ git+https://www.github.com/hbldh/hitherdither
 irc
 jaraco.util
-librosa
+audioread
 mutagen
 numpy
 opencv_python
