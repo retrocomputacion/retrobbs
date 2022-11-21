@@ -107,11 +107,12 @@ def AudioList(conn:Connection,title,speech,logtext,path):
             page = conn.MenuParameters['current']+1
         MenuDic[b'>'] = (H.SetPage,(conn,page),'Next Page',0,False)
 
+    row = 3
     for x in range(start, end + 1, 1):
         afunc = PlayAudio
-        KeyLabel(conn, H.valid_keys[x-start],(audios[x][:len(P.toPETSCII(audios[x]))-4]+' '*30)[:30]+' ', x % 2)
+        KeyLabel(conn, H.valid_keys[x-start],(audios[x][:len(P.toPETSCII(audios[x]))-4])[:30]+' ', x % 2)
         if (wavs == True) and (audios[x].endswith(wext)):
-            conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+            conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
             if meta == True and (audios[x])[-4:] != '.wav' and (audios[x])[-4:] != '.WAV':
                 #Load metadata
                 audio = mutagen.File(path+audios[x], easy = True)
@@ -124,6 +125,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
             length[x] = int(tsecs)
             tsecs = tsecs - (tmins * 60)
         else:	#SID file
+            conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
             afunc = SIDStream
             tstr = None
             if os.path.isfile(path+(audios[x])[:-3]+'ssl') == True:
@@ -144,6 +146,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
                 tsecs = 0
 
         conn.Sendall(chr(P.WHITE)+('00'+str(tmins))[-2:]+':'+('00'+str(tsecs))[-2:]+'\r')
+        row += 1
         #Add keybinding to MenuDic
         MenuDic[H.valid_keys[x-start].encode('ascii','ignore')] = (afunc,(conn,path+audios[x],length[x],True),H.valid_keys[x-start],0,False)
     else:
