@@ -115,7 +115,7 @@ def plugFunction(conn:common.connection.Connection,url):
     if sURL == None:
         try:
             stl = slsession.resolve_url(url)
-            source = stl[0].__name__
+            source = stl[0]
         except:
             source = ""
         if source != "":

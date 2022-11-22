@@ -92,8 +92,11 @@ v0.2x (In development):
 
   Changes/Bug fixes:
   - Librosa module replaced by audioread and use of ffmpeg audio filters.
-    PCM streaming no longers use mu-law compression.
+    PCM streaming no longers uses mu-law compression.
   - Removed legacy raw audio streaming code.
+  - Fixed broken AUDIOLIBRARY formatting when a filename contains non-latin
+    characters.
+  - Fixed broken Streamlink support. Added Twitch stream example to config.ini
 
 --------------------------
 1-3 The Turbo56K protocol
