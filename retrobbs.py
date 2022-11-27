@@ -650,10 +650,11 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
     bin_e = ('.bin','.BIN','.raw','.raw')
     pet_e = ('.c','.C','.pet','.PET')
     aud_e = ('.mp3','.wav','.MP3','.WAV')
+    sid_e = ('.sid','.SID')
 
     #Keeps only the files with matching extension 
     for f in files:
-        if f.endswith(pics_e + text_e + bin_e + pet_e + aud_e):
+        if f.endswith(pics_e + text_e + bin_e + pet_e + aud_e + sid_e):
             slides.append(f)
 
     slides.sort()	#Sort list
@@ -678,7 +679,10 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         elif ext in pet_e[2:4]:
             w = SendPETPetscii(conn,path+p)
         elif ext in aud_e:
-            AA.PlayAudio(conn,path+p)
+            AA.PlayAudio(conn,path+p,None)
+            w = 1
+        elif ext in sid_e:
+            AA.SIDStream(conn,path+p,None,False)
             w = 1
         # Wait for the user to press RETURN
         if waitkey == True and w == 0:

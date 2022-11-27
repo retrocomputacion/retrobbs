@@ -88,7 +88,7 @@ v0.20 (15/11/2022):
 
 v0.2x (In development):
   New features:
-  - ...
+  - SLIDESHOW now supports SID files
 
   Changes/Bug fixes:
   - Librosa module replaced by audioread and use of ffmpeg audio filters.
@@ -97,6 +97,8 @@ v0.2x (In development):
   - Fixed broken AUDIOLIBRARY formatting when a filename contains non-latin
     characters.
   - Fixed broken Streamlink support. Added Twitch stream example to config.ini
+  - SLIDESHOW now plays PCMAUDIO for the correct amount of time.
+  - SIDStreaming flushes the input buffer when the stream is canceled.
 
 --------------------------
 1-3 The Turbo56K protocol

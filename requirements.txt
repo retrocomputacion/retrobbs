@@ -9,7 +9,7 @@ numpy
 opencv_python
 youtube-dl
 pafy @ git+https://github.com/Cupcakus/pafy
-Pillow
+Pillow>=8.0.0
 requests>=2.26.0
 streamlink
 tinydb

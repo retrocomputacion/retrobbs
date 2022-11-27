@@ -113,38 +113,17 @@ def AudioList(conn:Connection,title,speech,logtext,path):
         KeyLabel(conn, H.valid_keys[x-start],(audios[x][:len(P.toPETSCII(audios[x]))-4])[:30]+' ', x % 2)
         if (wavs == True) and (audios[x].endswith(wext)):
             conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
-            if meta == True and (audios[x])[-4:] != '.wav' and (audios[x])[-4:] != '.WAV':
-                #Load metadata
-                audio = mutagen.File(path+audios[x], easy = True)
-                tsecs = int(audio.info.length)
-            else:
-                #Load and compute audio playtime
-                with audioread.audio_open(path+audios[x]) as f:
-                    tsecs = int(f.duration)
+            tsecs = _GetPCMLength(path+audios[x])
             tmins = int(tsecs / 60)
             length[x] = int(tsecs)
             tsecs = tsecs - (tmins * 60)
         else:	#SID file
             conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
             afunc = SIDStream
-            tstr = None
-            if os.path.isfile(path+(audios[x])[:-3]+'ssl') == True:
-                tf = open(path+(audios[x])[:-3]+'ssl')
-                tstr = tf.read()
-                tf.close()
-            elif os.path.isfile(path+'SONGLENGTHS/'+(audios[x])[:-3]+'ssl') == True:
-                tf = open(path+(audios[x])[:-3]+'ssl')
-                tstr = tf.read()
-                tf.close()
-            if tstr != None:
-                tmins = int(hex(ord(tstr[0]))[2:])
-                tsecs = int(hex(ord(tstr[1]))[2:])
-                length[x] = (tmins*60)+tsecs # Playtime for the 1st subtune
-            else:
-                length[x] = 60*3
-                tmins = 3
-                tsecs = 0
-
+            tsecs = _GetSIDLength(path+audios[x])
+            tmins = int(tsecs / 60)
+            length[x] = int(tsecs)
+            tsecs = tsecs - (tmins * 60)
         conn.Sendall(chr(P.WHITE)+('00'+str(tmins))[-2:]+':'+('00'+str(tsecs))[-2:]+'\r')
         row += 1
         #Add keybinding to MenuDic
@@ -182,12 +161,26 @@ def _AudioDialog(conn:Connection, data):
     if conn.ReceiveKey(b'\r_') == b'_':
         return False
     return True
-    
+
+# Get audio length for PCM file in seconds
+def _GetPCMLength(filename):
+    if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
+        #Load metadata
+        audio = mutagen.File(filename, easy = True)
+        tsecs = int(audio.info.length)
+    else:
+        #Load and compute audio playtime
+        with audioread.audio_open(filename) as f:
+            tsecs = int(f.duration)
+    return tsecs
 
 #Send Audio file
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     bnoise = b'\x10\x01'
     CHUNK = 1<<(conn.samplerate).bit_length()   #16384
+
+    if length == None:
+        length = _GetPCMLength(filename)
 
     conn.socket.settimeout(conn.bbs.TOut+length)	#<<<< This might be pointless
     _LOG('Timeout set to:'+bcolors.OKGREEN+str(length)+bcolors.ENDC+' seconds',id=conn.id,v=3)
@@ -309,7 +302,24 @@ class PcmStream:
         self.pcm_stream.terminate()
         #os.killpg(self.pcm_stream.pid, signal.SIGKILL)
 
-
+def _GetSIDLength(filename):
+    tstr = None
+    if os.path.isfile(filename[:-3]+'ssl') == True:
+        tf = open(filename[:-3]+'ssl')
+        tstr = tf.read()
+        tf.close()
+    elif os.path.isfile(os.path.dirname(filename)+'SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') == True:
+        tf = open(os.path.dirname(filename)+'SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl')
+        tstr = tf.read()
+        tf.close()
+    if tstr != None:
+        tmins = int(hex(ord(tstr[0]))[2:])
+        tsecs = int(hex(ord(tstr[1]))[2:])
+        length = (tmins*60)+tsecs # Playtime for the 1st subtune
+    else:
+        length = 60*3
+    
+    return length
 
 def _DisplaySIDInfo(conn:Connection, info):
     minutes = int(info['songlength']/60)
@@ -393,6 +403,10 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
 
     player = ""
     order = 0
+
+    if ptime == None:
+        ptime = _GetSIDLength(filename)
+
     with open(filename, "rb") as fh:
         content = fh.read()
         if dialog == True:
@@ -441,7 +455,17 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
                 ack = conn.Receive(1)
                 count = 0
                 if (b'\xff' in ack) or not conn.connected:
-                    break	#Abort stream
+                    #Abort stream
+                    conn.socket.setblocking(0)	# Change socket to non-blocking
+                    try:
+                        t0 = time.time()
+                        while time.time()-t0 < 1:   # Flush receive buffer for 1 second
+                            conn.socket.recv(10)
+                    except:
+                        pass
+                    conn.socket.setblocking(1)	# Change socket to blocking
+                    conn.socket.settimeout(conn.bbs.TOut)
+                    break
             
         conn.Sendall(chr(0))	#End stream
         #conn.Receive(1)	#Receive last frame ack character
