@@ -89,6 +89,7 @@ v0.20 (15/11/2022):
 v0.2x (In development):
   New features:
   - SLIDESHOW now supports SID files
+  - WEATHER plugin, display current weather and forecast for the next 2-3 days.
 
   Changes/Bug fixes:
   - Librosa module replaced by audioread and use of ffmpeg audio filters.
@@ -196,6 +197,8 @@ Python modules:
   * feedparser (For the RSS feeds plug-in)
   * irc (For IRC client plug-in)
   * tinydb
+  * geopy (For the weather plugin)
+  * python_weather (For the weather plugin)
 
   A basic requirements.txt file is available for quick installation of the
   required modules. Use:
@@ -434,6 +437,13 @@ All plug-in modules should implement at least two functions:
       config.ini function: ONELINER
       config.ini parameters: none
       config.ini [PLUGINS] options: none
+
+- Weather (weather.py) (new 0.2x):
+      Displays current weather and forecast for the next 2-3 days as a HiRes
+      image. On first run it will display the weather corresponding to the
+      passed connection IP. Further weather forecasts can be queried by typing
+      a new location.
+      Currently limited to metric system.
 
 - WebAudio streamer (webaudio.py):
       On the fly conversion and streaming of on-line audio sources (Shoutcast,
