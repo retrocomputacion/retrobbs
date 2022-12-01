@@ -285,6 +285,7 @@ class PcmStream:
         #                 stdout=subprocess.PIPE, preexec_fn=os.setsid)
         self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1"],
                         stdout=subprocess.PIPE, preexec_fn=os.setsid)
+ 
     def read(self, size):
         try:
             a = self.pcm_stream.stdout.read(size)

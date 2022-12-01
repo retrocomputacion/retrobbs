@@ -219,7 +219,7 @@ Python modules:
 
 External software:
 
-  * FFmpeg (for PCM audio streaming)
+  * FFmpeg >= 4.0 (for PCM audio streaming)
   * SIDDump (for SID streaming): https://github.com/cadaver/siddump replace the
     makefile with the one included in /siddump and compile. If you're using
     Linux, remove the .exe extension and copy the executable to usr/bin. 
