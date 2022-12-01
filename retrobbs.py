@@ -1,5 +1,5 @@
 #################################################################################################
-# RetroBBS 0.10 (compatible with TURBO56K 0.5 and retroterm 0.13                              	#
+# RetroBBS 0.20 (compatible with TURBO56K 0.6 and retroterm 0.14                              	#
 #                                                                                           	#
 # Coded by pastbytes and Durandal, from retrocomputacion.com                                  	#
 #################################################################################################
@@ -82,6 +82,8 @@ import select
 import os
 import errno
 import re
+import platform
+import subprocess
 from os import walk
 import datetime
 import signal
@@ -132,12 +134,17 @@ def iter_namespace(ns_pkg):
     return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
 
 
+##################################
+# BBS Version                    #
+_version = 0.20                  #
+##################################
+
+
 #Threads running flag
 _run = True
 
 #Timeout default value (secs)
 _tout = 60.0*5
-
 
 
 #Plugins dictionary
@@ -1217,6 +1224,8 @@ def BBSLoop(conn:Connection):
         conn.Sendall(chr(P.CLEAR) + chr(P.TOLOWER))
         # Cyan ink
         conn.Sendall(chr(P.CYAN) + '\r'+P.toPETSCII(bbs_instance.WMess)+'\r')
+        conn.Sendall(P.toPETSCII('RetroBBS v%.2f\r'%bbs_instance.version))
+        conn.Sendall(P.toPETSCII('running under:\r'+bbs_instance.OSText+'\r'))
         # Light blue ink
         if bbs_instance.lang == 'es':
             conn.Sendall(chr(P.LT_BLUE) + '\rpRESIONE return...\r')
@@ -1375,9 +1384,19 @@ args = parser.parse_args()
 set_verbosity(args.verb)
 
 bbs_instance = BBS('','',0)
+bbs_instance.version = _version
+#Check OS type
+bbs_instance.OSText = platform.system()
+if 'Linux' in bbs_instance.OSText:
+    #Get distro
+    mi = subprocess.check_output(["hostnamectl", "status"], universal_newlines=True)
+    m = re.search('Operating System: (.+?)\n', mi)
+    bbs_instance.OSText = m.group(1)
+else:
+    #Add OS version
+    bbs_instance.OSText = bbs_instance.OSText + platform.release()
 
-print('\n\nRetroBBS v0.20 (c)2021\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n')
-
+print('\n\nRetroBBS v%.2f (c)2021-2022\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
 
 # Parse plugins
 p_mods = [importlib.import_module(name) for finder, name, ispkg in iter_namespace(plugins)]
