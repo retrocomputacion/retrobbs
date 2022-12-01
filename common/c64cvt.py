@@ -157,41 +157,42 @@ def custom_dithering(image, palette, thresholds, type=0):
 
 
 ######################################
-def c64imconvert(Source, gfxmode = 1, lumaD = 0, fullD = 6):
+def c64imconvert(Source, gfxmode = 1, lumaD = 0, fullD = 6, preproc = True):
 
     tstPic = Source.convert('RGB')
 
     o_img = frameResize(tstPic)
 
-    stat = ImageStat.Stat(o_img)
+    if preproc:
+        stat = ImageStat.Stat(o_img)
 
-    r,g,b = stat.rms
-    perbright = math.sqrt(0.241*(r**2) + 0.691*(g**2) + 0.068*(b**2))
+        r,g,b = stat.rms
+        perbright = math.sqrt(0.241*(r**2) + 0.691*(g**2) + 0.068*(b**2))
 
-    if perbright < 25:
-        perbright = 25
-    elif perbright > 128:
-        perbright = 128
+        if perbright < 25:
+            perbright = 25
+        elif perbright > 128:
+            perbright = 128
 
-    #Saturation
-    tmpImg = o_img.convert('HSV')
-    stat = ImageStat.Stat(tmpImg)
-    h,s,v = stat.rms
-    tmpImg.close()
+        #Saturation
+        tmpImg = o_img.convert('HSV')
+        stat = ImageStat.Stat(tmpImg)
+        h,s,v = stat.rms
+        tmpImg.close()
 
-    if s < 96:
-        s = 96
-    elif s > 128:
-        s = 128
+        if s < 96:
+            s = 96
+        elif s > 128:
+            s = 128
 
-    enhPic = ImageEnhance.Brightness(o_img)
-    tPic = enhPic.enhance(1.9*(64/perbright))
-    enhPic = ImageEnhance.Contrast(tPic)
-    tPic = enhPic.enhance(1+(s/256))
-    enhPic = ImageEnhance.Color(tPic)
-    tPic = enhPic.enhance(3-(2*(s/128)))
-    enhPic = ImageEnhance.Sharpness(tPic)
-    o_img = enhPic.enhance(3)
+        enhPic = ImageEnhance.Brightness(o_img)
+        tPic = enhPic.enhance(1.9*(64/perbright))
+        enhPic = ImageEnhance.Contrast(tPic)
+        tPic = enhPic.enhance(1+(s/256))
+        enhPic = ImageEnhance.Color(tPic)
+        tPic = enhPic.enhance(3-(2*(s/128)))
+        enhPic = ImageEnhance.Sharpness(tPic)
+        o_img = enhPic.enhance(3)
 
     if gfxmode == 1:
         o_img = o_img.resize((160,200),Image.ANTIALIAS)

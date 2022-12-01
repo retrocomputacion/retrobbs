@@ -1,6 +1,7 @@
 # Messaging sub-system
 from pydoc import doc
 from common.connection import Connection
+from datetime import datetime
 import common.turbo56k as TT
 import common.petscii as P
 from common.bbsdebug import _LOG
@@ -21,7 +22,7 @@ import difflib
 # msg_from:     sender user id
 # msg_board:    destination board (0 for PM)
 # msg_to:       destination user id (only for PM)
-# msg_sent:     send datestamp
+# msg_sent:     send timestamp
 # msg_read:     list of user ids that have read this msg
 # msg_parent:   parent message (which this msg is replying to), 0 for first message
 # msg_next:     next message in thread or 0 if none
@@ -65,12 +66,20 @@ def readMessage(conn:Connection, msg_id:int):
 
             conn.Sendall(TT.set_Window(0,24)+chr(P.CLEAR))
             conn.Sendall(chr(P.GREEN)+P.toPETSCII(dmsg['msg_topic'])+chr(P.GREY2)+'\rBY:'+chr(P.LT_GREEN)+ (('*'+P.toPETSCII(user)) if type(user) == str else ' '+P.toPETSCII(user['uname'])))
+            if conn.bbs.dateformat == 1:
+                datestr = "%m/%d/%Y"
+            elif conn.bbs.dateformat == 2:
+                datestr = "%Y/%m/%d"
+            else:
+                datestr = "%d/%m/%Y"
             if dmsg['msg_board'] == 0:  # private message, display recipient
                 if type(dmsg['msg_to'])==int:
                     rcp = utable.get(doc_id = dmsg['msg_to'])
                 else:
                     rcp = dmsg['msg_to']
                 conn.Sendall(TT.set_CRSR(20,1)+chr(P.GREY3)+chr(P.RVS_ON)+'TO:'+chr(P.LT_GREEN)+ (('*'+P.toPETSCII(rcp)) if type(rcp) == str else ' '+P.toPETSCII(rcp['uname']))+chr(P.RVS_OFF))
+            else:   # public message, display post date
+                conn.Sendall(TT.set_CRSR(20,1)+chr(P.GREY3)+chr(P.RVS_ON)+'ON:'+chr(P.LT_GREEN)+ datetime.utcfromtimestamp(dmsg['msg_sent']).strftime(datestr) +chr(P.RVS_OFF))
             conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(2,64)+TT.Fill_Line(22,64))
             conn.Sendall(TT.set_CRSR(0,23)+chr(P.GREY3))
             for i,o in enumerate(ol):
@@ -408,6 +417,7 @@ def inbox(conn:Connection, board):
     page = 0
     done = False
     refresh = True
+    utable = db.db.table('USERS')
     while not done and conn.connected:
         # display thread list
         msgs = table.search(dbQ.fragment(query)|dbQ.fragment(q2))
@@ -418,8 +428,16 @@ def inbox(conn:Connection, board):
                 tt = ' '+chr(P.GREY1)+chr(188)+(chr(P.LT_BLUE) if i['msg_from']==conn.userid else chr(P.GREEN))+' '
             else:
                 tt = ' '+chr(P.GREEN)+chr(188)+(chr(P.CYAN) if i['msg_to']==conn.userid else chr(P.LT_GREEN))+' '
-            tt = tt+P.toPETSCII(i['msg_topic'])
-            threads.append([tt,i.doc_id,um,i['msg_sent']])  #topic - thread_id, first unread, timestamp
+            to = i['msg_topic'] if len(i['msg_topic'])<25 else i['msg_topic'][0:21]+'...'
+            tl = table.get(doc_id=i['msg_prev'])
+            if type(tl['msg_from'])==int:
+                user = utable.get(doc_id = tl['msg_from'])['uname']
+            else:
+                user = tl['msg_from']
+            tu = user if len(user)<12 else user[0:8]+'...'
+            tt = tt+P.toPETSCII(to)+chr(P.YELLOW)+(chr(P.CRSR_RIGHT)*(24-len(to)))+chr(P.VLINE)+chr(P.WHITE)+P.toPETSCII(tu)
+            ts = tl['msg_sent']    # Get timestamp of last message in thread
+            threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
 
         # sort by sent timestamp, newest thread first
         threads.sort(key=lambda threads: threads[3],reverse=True)

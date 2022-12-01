@@ -23,8 +23,18 @@ def ImageDialog(conn:Connection, title, width=0, height=0):
 		return 0
 	return 1
 
-#Send bitmap image
-def SendBitmap(conn:Connection, filename, lines = 25, display = True, dialog = False, multi = True):
+###########################################################
+# Send bitmap image
+# #########################################################
+# conn: Connection to send the image/dialog to
+# filename: file name or image object
+# lines: Number of "text" lines to send, from the top
+# display: Display the image after transfer
+# dialog: Show convert options dialog before file transfer
+# multi: Multicolor mode
+# preproc: Preprocess image before converting
+###########################################################
+def SendBitmap(conn:Connection, filename, lines = 25, display = True, dialog = False, multi = True, preproc = True):
 
 
 	ftype = {'.ocp':1,'.OCP':1,	#Advanced Art Studio
@@ -122,7 +132,7 @@ def SendBitmap(conn:Connection, filename, lines = 25, display = True, dialog = F
 				conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 			else:
 				mode = 1 if multi == True else 0
-			Convert = c64imconvert(Source,mode)
+			Convert = c64imconvert(Source,mode,preproc=preproc)
 			Source.close()
 			bgcolor = Convert[4].to_bytes(1,'little')
 			borde = bgcolor

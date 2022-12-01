@@ -84,7 +84,7 @@ v0.20 (15/11/2022):
   - AudioList now supports HVSC style path to songlength files
   - Now most text parameters other than in calls to the Connection class are
     expected to be ASCII, not PETSCII, this also counts for the config
-    file
+    file.
 
 v0.2x (In development):
   New features:
@@ -100,6 +100,12 @@ v0.2x (In development):
   - Fixed broken Streamlink support. Added Twitch stream example to config.ini
   - SLIDESHOW now plays PCMAUDIO for the correct amount of time.
   - SIDStreaming flushes the input buffer when the stream is canceled.
+  - Fixed board/inbox message list order changed from newest thread first to
+    thread with newest message first.
+  - Board/Inbox message list now displays author of the latest message in each
+    thread.
+  - When reading a public board message thread, the date for the current 
+    message is displayed in the header next to the author.
 
 --------------------------
 1-3 The Turbo56K protocol
