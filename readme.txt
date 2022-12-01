@@ -90,6 +90,7 @@ v0.2x (In development):
   New features:
   - SLIDESHOW now supports SID files
   - WEATHER plugin, display current weather and forecast for the next 2-3 days.
+  - BBS version and host OS are shown after the welcome message.
 
   Changes/Bug fixes:
   - Librosa module replaced by audioread and use of ffmpeg audio filters.
