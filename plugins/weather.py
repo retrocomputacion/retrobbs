@@ -109,7 +109,8 @@ def plugFunction(conn:Connection):
 async def getweather(conn:Connection,locquery,geoLoc:Nominatim):
 
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
-    client = python_weather.Client(format=python_weather.METRIC)
+    units = conn.bbs.PlugOptions.get('wxunits',python_weather.METRIC)
+    client = python_weather.Client(format=units)
     img = GetIndexedImg(0) #Image.new('1', (320,200), color = 'black')
     draw = ImageDraw.Draw(img)
     # fetch a weather forecast from a city
@@ -149,32 +150,46 @@ async def getweather(conn:Connection,locquery,geoLoc:Nominatim):
 
     #Current temperature
     ctemp = weather.current.temperature
-    if ctemp < 0:
-        tco = 4
-    elif ctemp < 5:
-        tco = 14
-    elif ctemp < 15:
-        tco = 3
-    elif ctemp < 25:
-        tco = 7
-    elif ctemp < 30:
-        tco = 8
+    if units == 'F':
+        if ctemp < 32:
+            tco = 4
+        elif ctemp < 41:
+            tco = 14
+        elif ctemp < 59:
+            tco = 3
+        elif ctemp < 77:
+            tco = 7
+        elif ctemp < 86:
+            tco = 8
+        else:
+            tco = 2
     else:
-        tco = 2
-    draw.text((40, 24),str(ctemp)+'°C',tco,font=font_temp)
+        if ctemp < 0:
+            tco = 4
+        elif ctemp < 5:
+            tco = 14
+        elif ctemp < 15:
+            tco = 3
+        elif ctemp < 25:
+            tco = 7
+        elif ctemp < 30:
+            tco = 8
+        else:
+            tco = 2
+    draw.text((40, 24),str(ctemp)+'°'+units,tco,font=font_temp)
     #Current weather type
     tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(weather.current.type.value,8)]))
     img.paste(tmp,(8,24))
     #Current wind conditions
     tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
     img.paste(tmp,(104,24))
-    draw.text((136,28),str(weather.current.wind_speed)+'km/h',1,font=font_title)
+    draw.text((136,28),str(weather.current.wind_speed)+('km/h' if units == 'C' else 'mph'),1,font=font_title)
     tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[weather.current.wind_direction]]))
     img.paste(tmp,(184,32))
     #Pressure
     tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
     img.paste(tmp,(224,24))
-    draw.text((256,28),str(weather.current.pressure)+'hPa',1,font=font_title)
+    draw.text((256,28),str(weather.current.pressure)+('hPa' if units == 'C' else 'Hg'),1,font=font_title)
     draw.line(((0,55),(319,55)),fill=6)
 
     # get the weather forecast for a few days

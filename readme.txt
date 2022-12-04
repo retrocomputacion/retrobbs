@@ -91,6 +91,9 @@ v0.2x (In development):
   - SLIDESHOW now supports SID files
   - WEATHER plugin, display current weather and forecast for the next 2-3 days.
   - BBS version and host OS are shown after the welcome message.
+  - Total BBS uptime is saved in the database. Session uptime is available as
+    an attribute of the BBS class.
+  - Total data transferred for each user account is saved in the database. 
 
   Changes/Bug fixes:
   - Librosa module replaced by audioread and use of ffmpeg audio filters.
@@ -450,7 +453,9 @@ All plug-in modules should implement at least two functions:
       image. On first run it will display the weather corresponding to the
       passed connection IP. Further weather forecasts can be queried by typing
       a new location.
-      Currently limited to metric system.
+      Units can be selected from the config file setting the 'wxunits'
+      parameter in the [PLUGINS] section as either 'C' or 'F' for metric or
+      customary respectively.
 
 - WebAudio streamer (webaudio.py):
       On the fly conversion and streaming of on-line audio sources (Shoutcast,

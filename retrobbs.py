@@ -1208,6 +1208,7 @@ def SendTerminalFeatures(conn:Connection):
 
 def BBSLoop(conn:Connection):
     global bbs_instance
+
     try:
         # Sync
         conn.Sendall(chr(0)*2)
@@ -1251,6 +1252,10 @@ def BBSLoop(conn:Connection):
             _LOG('TURBO56K version: '+ bcolors.OKGREEN + str(ord(dato1)) + '.' + str(ord(dato2)) + bcolors.ENDC,id=conn.id,v=4) 
 
             t56kver = ord(dato1)+((ord(dato2))/10)
+
+            #Increment visit counters
+            bbs_instance.visits += 1            #Session counter
+            bbs_instance.database.newVisit()    #Total counter
 
             if t56kver > 0.4:
                 conn.TermString = datos
@@ -1354,7 +1359,7 @@ def ConnTask():
                 if not conlist[t][0].is_alive():
                     conlist[t][1].Close()
                     if conlist[t][1].userclass != 0:
-                        bbs_instance.database.logoff(conlist[t][1].userid)
+                        bbs_instance.database.logoff(conlist[t][1].userid,conlist[t][1].outbytes,conlist[t][1].inbytes)
                     del conlist[t][1]
                     try:
                         conlist[t][0].join()

@@ -32,6 +32,10 @@ class DBase:
         #Only the main script should call this
         self.db.close()
 
+    ################################
+    # User related functions
+    ################################
+
     #Get all users
     #Return list of [id,username] pairs
     def getUsers(self):
@@ -63,9 +67,11 @@ class DBase:
         return(False)
 
     #Logoff user (by id)
-    def logoff(self, id):
+    #updates total data transferred
+    def logoff(self, id, dbytes, ubytes):
         table = self.db.table('USERS')
-        table.update({'online':0}, doc_ids=[id])
+        ud = table.get(doc_id=id)
+        table.update({'online':0, 'upbytes':ud.get('upbytes',0)+ubytes, 'downbytes':ud.get('downbytes',0)+dbytes}, doc_ids=[id])
 
     #Creates a new user
     def newUser(self, uname, pw, fname, lname, bday, country):
@@ -96,4 +102,26 @@ class DBase:
         #dbQ = Query()
         params.pop('self')
         table.update(params, doc_ids=[id])
-        
+    
+    ################################
+    # BBS session functions
+    ################################
+
+    #Increment visitor count
+    def newVisit(self):
+        table = self.db
+        dbQ = Query()
+        if table.get(dbQ.record == 'bbs_stats') == None:
+            table.insert({'record':'bbs_stats','visits':1})
+        else:
+            table.update(increment('visits'), dbQ.record == 'bbs_stats')
+    
+    #Update total uptime
+    def uptime(self, stime):
+        table = self.db
+        dbQ = Query()
+        ut = table.get(dbQ.record == 'bbs_stats')
+        if ut == None:
+            table.insert({'record':'bbs_stats','uptime':stime})
+        else:
+            table.update({'uptime':ut.get('uptime',0)+stime}, dbQ.record == 'bbs_stats')

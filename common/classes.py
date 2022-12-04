@@ -2,6 +2,7 @@
 # any generic classses without companion functions here
 
 from common.dbase import DBase
+import time
 
 ########### BBS Class ###########
 
@@ -22,6 +23,9 @@ class BBS:
 		self.dateformat = 0		#Date format
 		self.database = DBase()
 		self.version = 0		#BBS version
+		self.runtime = time.time()	#Timestamp this BBS session started
+		self.visits = 0			#Number of visits in this session
 
 	def __del__(self):
+		self.database.uptime(time.time() - self.runtime)	#Update total uptime
 		self.database.closeDB()
