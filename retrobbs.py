@@ -183,7 +183,7 @@ def ConfigRead():
             elif efunc == 'FILES':			#Show file list
                 exts = tuple((cfg.get(key,'entry'+str(e+1)+'ext', fallback='.prg,.PRG')).split(','))
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs')
-                parms = [tentry,'','Displaying file list',p,exts,SendProgram]
+                parms = [tentry,'','Displaying file list',p,exts,FT.SendProgram]
             elif efunc == 'AUDIOLIBRARY':	#Show audio file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound')
                 parms = [tentry,'','Displaying audio list',p]
@@ -227,7 +227,7 @@ def ConfigRead():
     func_dic = {'IMAGEGALLERY': FileList,	#+
                 'AUDIOLIBRARY': AA.AudioList,	#+
                 'FILES': FileList,			#+
-                'SENDRAW': SendRAWFile,
+                'SENDRAW': FT.SendRAWFile,
                 'SWITCHMENU': SwitchMenu,	#+
                 'SLIDESHOW': SlideShow,		#+
                 'SIDPLAY': AA.SIDStream,
@@ -379,7 +379,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler):
             page = conn.MenuParameters['current']+1
         MenuDic[b'>'] = (SetPage,(conn,page),'Next Page',0,False)
 
-    if fhandler == SendProgram:
+    if fhandler == FT.SendProgram:
         keywait = False
     else:
         keywait = True
@@ -395,7 +395,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler):
             color2 = P.YELLOW
         KeyLabel(conn, valid_keys[x-start], (programs[x][:len(programs[x])-4]+' '*16)[:16]+('\r'if x%2 else ' '), (x % 4)<2)
         #Add keybinding to MenuDic
-        if fhandler == SendProgram:
+        if fhandler == FT.SendProgram:
             parameters = (conn,path+programs[x],)
         else:
             parameters = (conn,path+programs[x],25,True,True,)
@@ -699,57 +699,6 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
 
         conn.Sendall(TT.to_Text(0,0,0))
     conn.Sendall(TT.enable_CRSR())
-
-
-# Sends program file into the client memory at the correct address
-def SendProgram(conn:Connection,filename):
-    # Verify .prg extension
-    if filename[-4:] == '.prg' or filename[-4:] == '.PRG':
-        _LOG('Filename: '+filename, id=conn.id,v=3)
-        # Open file
-        archivo=open(filename,"rb")
-        # Read load address
-        binario=archivo.read(2)
-        # Sync
-        binariofinal = b'\x00'
-        # Enter command mode
-        binariofinal += b'\xFF'
-
-        # Set the transfer pointer + load address (low:high)
-        filesize = os.path.getsize(filename) - 2
-        binariofinal += b'\x80'
-        if isinstance(binario[0],str) == False:
-            binariofinal += binario[0].to_bytes(1,'big')
-            binariofinal += binario[1].to_bytes(1,'big')
-        else:
-            binariofinal += binario[0]
-            binariofinal += binario[1]
-        # Set the transfer pointer + program size (low:high)
-        binariofinal += b'\x82'
-        binariofinal += filesize.to_bytes(2,'little')
-        _LOG('Load Address: '+bcolors.OKGREEN+str(binario[1]*256+binario[0])+bcolors.ENDC, '/ Bytes: '+bcolors.OKGREEN+str(filesize)+bcolors.ENDC,id=conn.id,v=4)
-        # Program data
-        binariofinal += archivo.read(filesize)
-
-        # Exit command mode
-        binariofinal += b'\xFE'
-        # Close file
-        archivo.close()
-        # Send the data
-        conn.Sendallbin(binariofinal)
-
-# Sends a file directly
-def SendRAWFile(conn:Connection,filename, wait=True):
-    _LOG('Sending RAW file: ', filename, id=conn.id,v=3)
-
-    archivo=open(filename,"rb")
-    binario=archivo.read()
-    conn.Sendallbin(binario)
-
-    # Wait for the user to press RETURN
-    if wait == True:
-        WaitRETURN(conn)
-
 
 def WaitRETURN(conn:Connection,timeout = 60.0):
     # Wait for user to press RETURN

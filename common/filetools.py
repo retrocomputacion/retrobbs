@@ -2,12 +2,14 @@
 #       File transfer tools       #
 ###################################
 
+import os
 from common.connection import Connection
 import common.petscii as P
 from PIL import Image
 from common.c64cvt import c64imconvert
 from io import BytesIO
 import common.turbo56k as TT
+from common.bbsdebug import _LOG, bcolors
 
 # Display image dialog
 def ImageDialog(conn:Connection, title, width=0, height=0):
@@ -25,7 +27,7 @@ def ImageDialog(conn:Connection, title, width=0, height=0):
 
 ###########################################################
 # Send bitmap image
-# #########################################################
+###########################################################
 # conn: Connection to send the image/dialog to
 # filename: file name or image object
 # lines: Number of "text" lines to send, from the top
@@ -185,3 +187,63 @@ def SendBitmap(conn:Connection, filename, lines = 25, display = True, dialog = F
 		conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
 	conn.Sendallbin(binariofinal)
 	return bgcolor
+
+##################################################################################
+# Sends program file into the client memory at the correct address in turbo mode
+##################################################################################
+#conn: Connection to send the file to
+#filename: name+path of the file to be sent
+##################################################################################
+def SendProgram(conn:Connection,filename):
+    # Verify .prg extension
+    if filename[-4:] == '.prg' or filename[-4:] == '.PRG':
+        _LOG('Filename: '+filename, id=conn.id,v=3)
+        # Open file
+        archivo=open(filename,"rb")
+        # Read load address
+        binario=archivo.read(2)
+        # Sync
+        binariofinal = b'\x00'
+        # Enter command mode
+        binariofinal += b'\xFF'
+
+        # Set the transfer pointer + load address (low:high)
+        filesize = os.path.getsize(filename) - 2
+        binariofinal += b'\x80'
+        if isinstance(binario[0],str) == False:
+            binariofinal += binario[0].to_bytes(1,'big')
+            binariofinal += binario[1].to_bytes(1,'big')
+        else:
+            binariofinal += binario[0]
+            binariofinal += binario[1]
+        # Set the transfer pointer + program size (low:high)
+        binariofinal += b'\x82'
+        binariofinal += filesize.to_bytes(2,'little')
+        _LOG('Load Address: '+bcolors.OKGREEN+str(binario[1]*256+binario[0])+bcolors.ENDC, '/ Bytes: '+bcolors.OKGREEN+str(filesize)+bcolors.ENDC,id=conn.id,v=4)
+        # Program data
+        binariofinal += archivo.read(filesize)
+
+        # Exit command mode
+        binariofinal += b'\xFE'
+        # Close file
+        archivo.close()
+        # Send the data
+        conn.Sendallbin(binariofinal)
+
+#########################################################
+# Sends a file directly without processing
+#########################################################
+#conn: Connection to send the file to
+#filename: name+path of the file to be sent
+#wait: boolean, wait for RETURN after sending the file
+#########################################################
+def SendRAWFile(conn:Connection,filename, wait=True):
+    _LOG('Sending RAW file: ', filename, id=conn.id,v=3)
+
+    archivo=open(filename,"rb")
+    binario=archivo.read()
+    conn.Sendallbin(binario)
+
+    # Wait for the user to press RETURN
+    if wait == True:
+        conn.ReceiveKey()

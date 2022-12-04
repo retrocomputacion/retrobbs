@@ -110,6 +110,8 @@ v0.2x (In development):
     thread.
   - When reading a public board message thread, the date for the current 
     message is displayed in the header next to the author.
+  - SendProgram and SendRAWFile moved from main script to the common.filetools
+    module.
 
 --------------------------
 1-3 The Turbo56K protocol
@@ -533,11 +535,14 @@ when writing a new plug-in.
     ANSI codes for use in the log messages.
 
 - common.c64cvt: Image conversion to raw C64 formats.
-    c64imconvert(Source, gfxmode=1, dmode = 0):
+    c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
         Converts PIL image object <Source> into C64 graphic data.
         <gfxmode> selects the C64 graphic mode to use:
                   0 = HiRes
                   1 = MultiColor (default)
+        <lumaD>   dithering type for the luminance channel, defaults 0, none.
+        <fullD>   color dithering type, defaults to 6, bayer8x8.
+        <preproc> Auto preprocessing of the image brightness/contrast.
         Returns a tuple (e_img,cells,screen,color,bg_color) where:
             <e_img>:  PIL image object, rendering of the converted image
             <cells>:  c64 bitmap data (8000 bytes)
@@ -595,19 +600,20 @@ when writing a new plug-in.
 
 - common.filetools: Functions related to file transfer, only bitmap transfer
                     has been moved to this module so far.
-    SendBitmap(conn, filename, lines = 25, display = True, dialog = False,
-               multi = True): Convert image to C64 mode and sends it to the 
-                              client.
-            <conn>: Connection object
+    SendBitmap(conn, filename, lines=25, display=True, dialog=False,
+               multi=True, preproc=True): Convert image to C64 mode and sends
+                        it to the client.
+            <conn>:     Connection object
             <filename>: Path to image file/bytes object/PIL image object
-            <lines>: Total number of lines (1 line = 8 pixels) to transfer
-                     starting from the top of the screen, max/default = 25
-            <display>: Set to True to send Turbo56K commands to display the
-                       image after the transfer is completed
-            <dialog>: Set to True to send a dialog asking for graphics mode
-                      selection before converting and transfering the image
-            <multi>: Set to True for multicolor mode. Overridden by user
-                     selection if <dialog> = True
+            <lines>:    Total number of lines (1 line = 8 pixels) to transfer
+                        starting from the top of the screen, max/default = 25
+            <display>:  Set to True to send Turbo56K commands to display the
+                        image after the transfer is completed
+            <dialog>:   Set to True to send a dialog asking for graphics mode
+                        selection before converting and transfering the image
+            <multi>:    Set to True for multicolor mode. Overridden by user
+                        selection if <dialog> = True
+            <preproc>:  Auto preprocess image brightness/contrast, default True
 
 - common.helpers: Misc functions that do not fit anywhere else at this point,
                   functions might get deprecated and moved to other modules in
