@@ -453,9 +453,10 @@ All plug-in modules should implement at least two functions:
       image. On first run it will display the weather corresponding to the
       passed connection IP. Further weather forecasts can be queried by typing
       a new location.
-      Units can be selected from the config file setting the 'wxunits'
-      parameter in the [PLUGINS] section as either 'C' or 'F' for metric or
-      customary respectively.
+      config.ini function: WEATHER
+      config.ini parameters: none
+      config.ini [PLUGINS] options: wxunits = 'C' or 'F' for metric or
+                  customary units respectively.
 
 - WebAudio streamer (webaudio.py):
       On the fly conversion and streaming of on-line audio sources (Shoutcast,
