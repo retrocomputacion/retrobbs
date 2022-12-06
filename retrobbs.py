@@ -74,36 +74,24 @@
 from __future__ import print_function
 
 import argparse
-from glob import glob
 import time
 import socket
 import sys
-import select
-import os
-import errno
 import re
 import platform
 import subprocess
 from os import walk
 import datetime
 import signal
-import numpy
-import warnings
-import math
-import unicodedata
 import string
 import itertools
 import configparser #INI file parser
 import threading
-from io import BytesIO
 
-from PIL import Image
-
-#Petscii constants
+#Petscii
 import common.petscii as P
 
-#Turbo56K constants and helper routines
-#import common.turbo56k as TT
+#Turbo56K
 from common import turbo56k as TT
 
 from common.classes import BBS
@@ -116,8 +104,6 @@ from common import messaging as MM
 
 #File transfer functions
 import common.filetools as FT
-
-import common.dbase as DB
 
 import importlib
 import pkgutil
@@ -311,7 +297,6 @@ def signal_handler(sig, frame):
         sock.close()
     except:
         pass
-    #DB.closeDB(bbs_instance.dbase)
     sys.exit(0)
 
 
@@ -1355,12 +1340,11 @@ print('\n\nRetroBBS v%.2f (c)2021-2022\nby Pablo Roldán(durandal) and\nJorge Ca
 # Parse plugins
 p_mods = [importlib.import_module(name) for finder, name, ispkg in iter_namespace(plugins)]
 for a in p_mods:
-    fname,parms = a.setup()
-    PlugDict[fname] = [a.plugFunction,parms] 
-    _LOG('Loaded plugin: '+fname,v=4)
+    if 'setup' in dir(a):
+        fname,parms = a.setup()
+        PlugDict[fname] = [a.plugFunction,parms] 
+        _LOG('Loaded plugin: '+fname,v=4)
 
-# Open DataBase
-#bbs_instance.dbase = DB.openDB()
 
 # Read config file
 ConfigRead()
