@@ -1,27 +1,47 @@
-SID Streaming:
+# SID Streaming Protocol:
 
-Del lado del BBS
--Usando SIDDump para obtener un volcado de registros usados en cada cuadro por el .sid
--Se usa la base de datos de HVSC para saber el tiempo de reproducción de cada .sid, si no se encuentra, el tiempo por defecto es 3 minutos
--Se interpreta el volcado de SIDDump y por cada cuadro se genera una lista valores a escribir, y un bit-map de que registros se van a escribir.
--Se envia cada lista con el siguiente formato:
-    1er byte = cantidad de bytes que se envian (30max)
+## Host Side
 
-    2do a 5to byte = bit-map de registros a escribir - 1bit = un registro (Big Endian)
-    Siguen los valores a escribir en cada registro usado
-    Como maximo 30 bytes a transmitir por cuadro
--Se envian 100 paquetes seguidos y luego
--Se espera que la c64 responda que recibio los datos, si la C64 responde con $FF, se detiene el envio de datos enviando un $00
--Repetir hasta completar el volcado, enviando 0 como primer (y unico) caracter del ultimo paquete.
+1. Using *SIDDump* get a dump of SID registers used for each frame.
+2. *HVSC* song length files are used to know the playtime. If no song length file is found the default is 3 minutes.
+3. The dump is interpreted and a list of values to transmit is generated for each frame. Along with a corresponding bitmap defining which registers are used each frame.
+
+4. Each frame register list is built a data packet taking this form:
+
+|Position | Length (bytes)| Description
+|:---:|:---:|---
+| 1 | 1 | Length of this data packet (max 30)
+| 2 | 4 | Bitmap of SID registers sent.<br>1bit = 1 register (Big endian)
+| 6 onwards | 1 to 24 | Values of each register, in incremental order by default 
+
+5. Send the packets acording to this flowchart:
+
+```mermaid
+flowchart TD
+ id1([Start])
+ id2(Send SID streaming command)
+ id3(Set count to 100)
+ id4(Send Packet)
+ id5{Last Packet?}
+ id6(Decrement count)
+ id7{Count == 0?}
+ id8(Receive client sync)
+ id9{Sync == $FF?}
+ id10(Send $00)
+ id11(Flush receive buffer)
+ id12([End])
+ id1-->id2-->id3-->id4-->id5
+ id5-- No -->id6-->id7
+ id7-- No -->id4
+ id7-- Yes -->id8-->id9
+ id9-- No -->id3
+ id5 & id9-- Yes -->id10-->id11-->id12
+
+```
 
 
-Del lado de la terminal
-
--Al inicio usar un comando desde la BBS para setear la terminal en el modo adecuado.
--Iniciar la cuenta de paquetes en 50, apagar pantalla
--Leer datos del paquete en una rutina de interrupción propia del modo
--Si la cuenta de paquetes llego a 0 y si el usuario no ha cancelado la reproducción, enviar un byte cualquiera menos $FF, de lo contrario enviar $FF
--Repetir hasta que se reciba un paquete de tamaño $00
+---
+## Client side flowchart:
 
 ```mermaid
 flowchart TD
@@ -32,11 +52,11 @@ flowchart TD
     id5(Decrement count)
     id6{count == 0?}
     id7{user cancel?}
-    id8(Send $00)
+    id8(Send $00 sync)
     id9(Set count to 100)
     id10{Packet size == 0?}
     id11([End streaming])
-    id12(Send $FF)
+    id12(Send $FF sync)
     id1 ---> id2 --> id3 --> id10 
     id10 -- No --> id4 --> id5 --> id6
     id10 -- Yes --------> id11
