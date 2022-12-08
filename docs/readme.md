@@ -13,14 +13,14 @@
 ---
 # Table of contents
 
-1. [Introduction](#markdown-header-1-introduction)
-   1. [Release history](#markdown-header-1.1-release-history)
+1. [Introduction](#1-introduction)
+   1. [Release history](#1.1-release-history)
    2. The Turbo56K protocol
    3. Features
    4. Requirements
-2. [Configuration file](#markdown-header-2-configuration-file)
-   1. [Internal Functions](#markdown-header-2.1-internal-functions)
-3. [Plug-in System](#markdonw-header-3-plug-in-system)
+2. [Configuration file](#2-configuration-file)
+   1. [Internal Functions](#2.1-internal-functions)
+3. [Plug-in System](#3-plug-in-system)
    1. Included Plug-Ins
 4. Common modules
 5. Installation/Usage
