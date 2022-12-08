@@ -1,13 +1,14 @@
 
-            RRRR   EEEEE  TTTTT  RRRR    RRR   BBBB   BBBB    BBBB
-            R   R  E        T    R   R  R   R  B   B  B   B  B
-            RRRR   EEEE     T    RRRR   R   R  BBBB   BBBB    BBB
-            R  R   E        T    R  R   R   R  B   B  B   B      B
-            R   R  EEEEE    T    R   R   RRR   BBBB   BBBB   BBBB
+<div align = center>
 
-                              VERSION 0.2x dev
+![logo](retrobbs.png)
 
-      (C)2020-2022 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+# RetroBBS
+
+VERSION 0.2x dev
+
+(C)2020-2022 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+</div>
 
 
 ---
@@ -17,7 +18,7 @@
    1. [Release history](#11-release-history)
    2. [The *Turbo56K* protocol](#12-the-turbo56k-protocol)
    3. [Features](#13-features)
-   4. Requirements
+   4. [Requirements](#14-requirements)
 2. [Configuration file](#2-configuration-file)
    1. [Internal Functions](#21-internal-functions)
 3. [Plug-in System](#3-plug-in-system)
@@ -44,7 +45,17 @@ Even though this is the third rewrite of this script, it is still in an early de
 
 ---
 # 1.1 Release history
+Version numbers are organized this way:
 
+    vX.YZ
+
+where:
+
+    X = Major milestone (ie: when all the basic desired features are present X will be bumped to 1)
+    Y = Major release (important new features added)
+    Z = Minor release (bug fixing, new plugins, etc)
+
+In development versions will be identified with an actual `x` as the minor revision number in the documentation but will report as the last actual release at runtime.
 
 ### **v0.10** (16/08/2021):
   Initial release
@@ -84,13 +95,14 @@ Even though this is the third rewrite of this script, it is still in an early de
   - Librosa module replaced by audioread and use of *FFmpeg* audio filters, PCM streaming no longers uses mu-law compression.
   - Removed legacy raw audio streaming code.
   - Fixed broken AUDIOLIBRARY formatting when a filename contains non-latin characters.
-  - Fixed broken Streamlink support. Added Twitch stream example to config.ini
+  - Fixed broken Streamlink support. Added Twitch stream example to `config.ini`
   - SLIDESHOW now plays PCMAUDIO for the correct amount of time.
   - SIDStreaming flushes the input buffer when the stream is canceled.
   - Fixed board/inbox message list order changed from newest thread first to thread with newest message first.
   - Board/Inbox message list now displays author of the latest message in each thread.
   - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
   - SendProgram and SendRAWFile moved from main script to the common.filetools module.
+  - Documentation rewriten in markdown format
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -104,7 +116,7 @@ Over time, the protocol has been extended to include 4-bit PCM audio streaming, 
 ---
 # 1.3 Features
 
-*RetroBBS* is quite customizable and expandable already at this early stage. The use of a configuration file (config.ini) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
+*RetroBBS* is quite customizable and expandable already at this early stage. The use of a configuration file (`config.ini`) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
 In addition, the plug-in system allows the addition of extra functionality with full support from the config file.
 
 The BBS is multi-threaded and supports up to **five** simultaneous incoming 
@@ -126,7 +138,7 @@ Current built-in functions:
 
 - PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
-- SID music streaming: SID files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the SIDDump executable in the system path.
+- SID music streaming: SID files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* executable in the system path.
 
 Current included plug-ins:
 
@@ -185,7 +197,7 @@ External software:
     [SECTION]
     key = value
 
-Please study the example config.ini file included in this package for
+Please study the example `config.ini` file included in this package for
 more information.
 
 ## Sections:
@@ -280,16 +292,16 @@ The following are the function names providing access to internal BBS functional
 ### Function PCMPLAY:
 Enters PCM streaming mode and streams the audio file specified in the parameters.
 
-config.ini parameter keys:
+`config.ini` parameter keys:
 
 | key | description
 |:---:|:---
-| `entryZpath` | Path to the audio file to stream (must be one of the supported formats)
+| `entryZpath`[^1] | Path to the audio file to stream (must be one of the supported formats)
 
 ### Function SWITCHMENU:
 Switches the BBS to a different menu.
 
-config.ini parameter keys:
+`config.ini` parameter keys:
 
 | key | description
 |:---:|:---
@@ -298,12 +310,12 @@ config.ini parameter keys:
 ### Function BACK:
 Switches the BBS back to the previous menu.
 
-config.ini parameter keys: NONE
+`config.ini` parameter keys: NONE
 
 ### Function EXIT:
 Shows the logoff prompt, and terminates the connection if the user confirms to do so.
 
-config.ini parameter keys: NONE
+`config.ini` parameter keys: NONE
 
 ### Function SLIDESHOW:
 Display/streams all the supported files in the specified directory in sequential (alphabetical) order, user must press `RETURN` to skip to the next file.
@@ -324,7 +336,7 @@ Supported filetypes are:
 ### Function FILES:
 Display the list of program files in a directory, the user selected file will be transferred to memory.
 
-config.ini parameter keys:
+`config.ini` parameter keys:
 
 | key | description
 |:---:|:---
@@ -333,7 +345,7 @@ config.ini parameter keys:
 ### Function IMAGEGALLERY:
 Display the list of images in a directory, the user selected file will be transferred and displayed.
 
-config.ini parameter keys:
+`config.ini` parameter keys:
 
 | key | description
 |:---:|:---
@@ -342,7 +354,7 @@ config.ini parameter keys:
 ### Function AUDIOLIBRARY:
 Display the list of audio files in a directory, the user selected file will be streamed.
 
-config.ini parameter keys:
+`config.ini` parameter keys:
 
 | key | description
 |:---:|:---
@@ -351,29 +363,29 @@ config.ini parameter keys:
 ### Function USEREDIT:
 Display the user profile editor.
 
-config.ini parameter keys: NONE
+`config.ini` parameter keys: NONE
 
 ### Function USERLIST:
 Display the list of registered users.
 
-config.ini parameter keys: NONE
+`config.ini` parameter keys: NONE
 
 ### Function INBOX:
 Display the user's personal message inbox
 
-config.ini parameter keys: NONE
+`config.ini` parameter keys: NONE
 
 ### Function BOARD:
 Display the message list for the specified board.
 
-config.ini parameter keys:
+`config.ini` parameter keys:
 | key | description
 |:---:|:---
 | `entryZid` | Board ID (>0)
 
-See the example config.ini for recommended usage.
+See the example `config.ini` for recommended usage.
 
-(*)Replace Z in the config.ini parameters with the entry ID number.
+[^1]:Replace Z in the `config.ini` parameters with the entry ID number.
 <br>
 
 ---
@@ -384,7 +396,7 @@ All plug-in modules should implement at least two functions:
 
 __setup()__ : Calling this function returns a tuple consisting of the plug-in name in uppercase, which will be used as the callable function on the config file. And a list of parameters, each element being a tuple itself. This tuple is made of the parameter name to use in the config file and the corresponding default value in case the parameter is not found.
   
-__plugfunction(conn, \<extra parameters\>)__ : This is the function that is called by the BBS to perform the plug-in's task.<br>The first parameter \<conn\> is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
+__plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function to perform the plug-in's task.<br>The first parameter **\<conn\>** is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
 
 ---
 # 3.1 Included Plug-Ins
@@ -392,75 +404,72 @@ __plugfunction(conn, \<extra parameters\>)__ : This is the function that is call
 ### Astronomy Picture Of the Day (apod.py): 
 Retrieves and displays the text and picture from NASA's Astronomy Picture Of the Day.
 
-- config.ini function: APOD
-- config.ini parameters: NONE
-- config.ini \[PLUGINS\] options: `nasakey` = Your NASA API key, obtained from https://api.nasa.gov/. Default is `DEMO_KEY`
+- `config.ini` function: APOD
+- `config.ini` parameters: NONE
+- `config.ini` \[PLUGINS\] options: `nasakey` = Your NASA API key, obtained from https://api.nasa.gov/. Default is `DEMO_KEY`
 
 ### IRC Client (irc_client.py):
 Basic and very experimental IRC client.
 
-- config.ini function: IRC
-- config.ini parameters:
+- `config.ini` function: IRC
+- `config.ini` parameters:
 
 | key | description
 |:---:|:---
-| `entryZserver` | IRC server URL. Default is irc.libera.chat
+| `entryZserver`[^1] | IRC server URL. Default is irc.libera.chat
 | `entryZport` | IRC server port. Default is 6667
 | `entryZchannel` | IRC channel to enter upon connection. Default is NONE
 
-- config.ini \[PLUGINS\] options: NONE
+- `config.ini` \[PLUGINS\] options: NONE
 
 ### RSS feed reader (newsfeed.py):
 Retrieves the latest 10 entries from the specified RSS feed, upon user selection of the entry it scrapes the target web site for text and relevant picture. The plug-in is mostly targeted at Wordpress sites, if it can't find the content it expects in the linked URL then the article text from the RSS feed itself will be displayed.
 
-- config.ini function: NEWSFEED
-- config.ini parameters: `entryZurl` = URL to the RSS feed
-- config.ini \[PLUGINS\] options: NONE
+- `config.ini` function: NEWSFEED
+- `config.ini` parameters: `entryZurl` = URL to the RSS feed
+- `config.ini` \[PLUGINS\] options: NONE
 
 ### Oneliner (oneliner.py):
 Permits for user generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
 
-- config.ini function: ONELINER
-- config.ini parameters: NONE
-- config.ini \[PLUGINS\] options: NONE
+- `config.ini` function: ONELINER
+- `config.ini` parameters: NONE
+- `config.ini` \[PLUGINS\] options: NONE
 
 ### Weather (weather.py) (new 0.2x):
-Displays current weather and forecast for the next 2-3 days as a HiRes image. On first run it will display the weather corresponding to the passed connection IP. Further weather forecasts can be queried by typing a new location.
+Displays current weather and forecast for the next 2-3 days as a HiRes image. On first run it will display the weather corresponding to the passed Connection Object's IP. Further weather forecasts can be queried by typing a new location.
 
-- config.ini function: WEATHER
-- config.ini parameters: NONE
-- config.ini \[PLUGINS\] options: `wxunits` = `C` or `F` for metric or customary units respectively.
+- `config.ini` function: WEATHER
+- `config.ini` parameters: NONE
+- `config.ini` \[PLUGINS\] options: `wxunits` = `C` or `F` for metric or customary units respectively.
 
 ### WebAudio streamer (webaudio.py):
  On the fly conversion and streaming of on-line audio sources (*Shoutcast*,
  *YouTube* or other sources).
 
-- config.ini function: WEBAUDIO
-- config.ini parameters: `entryZurl` = full URL to the audio stream
-- config.ini \[PLUGINS\] options: NONE
+- `config.ini` function: WEBAUDIO
+- `config.ini` parameters: `entryZurl` = full URL to the audio stream
+- `config.ini` \[PLUGINS\] options: NONE
 
 ### Wikipedia (wiki.py):
 Search and display *Wikipedia* articles, displays relevant article image if found.
 
-- config.ini function: WIKI
-- config.ini parameters: NONE
-- config.ini \[PLUGINS\] options: NONE
+- `config.ini` function: WIKI
+- `config.ini` parameters: NONE
+- `config.ini` \[PLUGINS\] options: NONE
 
 ### YouTube snapshot (youtube.py):
 Display a frame from the specified *YouTube* video. It will grab the latest frame if the video is a livestream, otherwise it grabs a random frame.
 
-- config.ini function: GRABYT
-- config.ini parameters:
+- `config.ini` function: GRABYT
+- `config.ini` parameters:
 
 | key | description
 |:---:|:---
 | `entryZurl` | full URL to the *YouTube* video
 | `entryZcrop` | comma separated list of image coordinates for cropping the video frame
 
-- config.ini \[PLUGINS\] options: NONE
-
-
-(*)Replace Z in the config.ini parameters with the entry ID number.
+- `config.ini` \[PLUGINS\] options: NONE
 
 ---
 # 4 Common modules
@@ -487,6 +496,8 @@ Stream a SID file to **\<conn\>**
 - **\<filename\>**: Path to the SID file
 - **\<ptime\>**: Playtime in seconds
 - **\<dialog\>**: Display SID file metadata and instructions before starting streaming
+
+Check the [sid streaming](SID%20Streaming.md) protocol
 
 ## common.bbsdebug - Log output to stdout:
 
@@ -558,8 +569,21 @@ Convert image to C64 mode and sends it to the client.
 - **\<multi\>**: Set to `True` for multicolor mode. Overridden by user selection if **\<dialog\>** = `True`
 - **\<preproc\>**: Auto preprocess image brightness/contrast, default `True`
 
+### SendProgram(conn:Connection,filename):
+Sends program file into the client memory at the correct address in turbo mode
+
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path of the program file to be sent
+
+### SendRAWFile(conn:Connection,filename, wait=True):
+Sends a file directly without processing
+
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path of the file to be sent
+- **\<wait\>**: Boolean, wait for `RETURN` after sendind the file
+
 ## common.helpers
-Misc functions that do not fit anywhere else at this point functions might get deprecated and/or moved to other modules in the future.
+Misc functions that do not fit anywhere else at this point. Functions might get deprecated and/or moved to other modules in the future.
 
 **valid_keys**: A string containing the valid characters to be used as user input.
 
@@ -634,7 +658,7 @@ Set the destination address for the next block transfer to the one defined by **
 - **\<bin\>** selects the return string type
 
 ### blockTransfer(data):
-Transfer the binary string <data> to the client.<br>This function returns the complete command sequence to complete the transfer, including **\<data\>**. Normal usage is calling `SendAllbin` with the result of this function as the parameter
+Transfer the binary string <data> to the client.<br>This function returns the entire command sequence to complete the transfer as a byte string, including **\<data\>**. Normal usage is calling `SendAllbin` with the result of this function as the parameter
 
 ### to_Screen(bin = False):
 Selects the client screen as the output.
@@ -768,7 +792,7 @@ An user with admin/sysop userclass (10) can delete threads or individual message
 ---
 # 6.1 Known bugs/issues
 
-  * Config file parser doesnt check for errors, a badly built config.ini will cause a crash on startup.
+  * Config file parser doesnt check for errors, a badly built `config.ini` will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * SID files that use the hard restart technique will sound wrong or not play at all.
 
@@ -791,3 +815,5 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Vaporatorius
   * Gabriel Garcia
   * Roberto Mandracchia
+
+---
