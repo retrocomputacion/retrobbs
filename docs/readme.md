@@ -27,7 +27,7 @@ VERSION 0.2x dev
 5. [Installation/Usage](#5-installationusage)
    1. [The intro/login sequence](#51-the-intrologin-sequence)
    2. [SID SongLength](#52-sid-songlength)
-   3. [User accounts / Database management](#53)
+   3. [User accounts / Database management](#53-user-accounts--database-management)
    4. [Messaging system](#54-messaging-system)
 6. [TO-DO List](#6-to-do-list)
    1. [Known bugs](#61-known-bugsissues)
@@ -419,7 +419,7 @@ Retrieves the latest 10 entries from the specified RSS feed, upon user selection
 - `config.ini` \[PLUGINS\] options: NONE
 
 ### Oneliner (oneliner.py):
-Permits for user generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
+User generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
 
 - `config.ini` function: ONELINER
 - `config.ini` parameters: NONE
