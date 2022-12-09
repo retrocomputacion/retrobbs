@@ -497,7 +497,19 @@ Stream a SID file to **\<conn\>**
 - **\<ptime\>**: Playtime in seconds
 - **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
-Check the [sid streaming](SID%20Streaming.md) protocol
+check the [sid streaming](sid_streaming.md) protocol
+
+
+### class PCMStream(fn, sr) :
+Receive an audio stream from *FFmpeg* in chunks.
+- **fn**: Path to the audio, can either be a local filename path or an online stream.
+- **sr**: Target sample rate
+
+**PCMStream.read(size)**:
+Read a chunk of data **size** bytes in length. Returns a byte string
+
+**PCMStream.stop()**:
+Terminates an audio stream, closes *FFmpeg*.
 
 ## common.bbsdebug - Log output to stdout:
 
@@ -559,7 +571,7 @@ Set **\<pw\>** to `True` to echo `*` for each character received, *ie for passwo
 
 ## common.filetools - Functions related to file transfer:
 ### SendBitmap(conn, filename, lines=25, display=True, dialog=False, multi=True, preproc=True):
-Convert image to C64 mode and sends it to the client.
+Convert image to C64 mode and send it to the client.
 
 - **\<conn\>**: Connection object
 - **\<filename\>**: Path to image file/bytes object/PIL image object
@@ -598,7 +610,7 @@ Paginates **\<text\>**, sends it to **\<conn\>**, user must press `RETURN` to ge
 - **\<colors\>**: a `bbsstyle` object defining the color set to use.
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
-Many control codes and graphic characters are defined as constants in this module, is recommended to inspect it to learn more.
+Many control codes and graphic characters are defined as constants in this module, it is recommended to inspect it to learn more.
 
 **PALETTE**: A tuple containing the C64 palette control codes in the correct order
 
