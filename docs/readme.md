@@ -40,22 +40,11 @@ VERSION 0.2x dev
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8 bit computers.
 
-Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside. 
+Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside. Viewer discretrion is adviced.
 
 
 ---
 # 1.1 Release history
-Version numbers are organized this way:
-
-    vX.YZ
-
-where:
-
-    X = Major milestone (ie: when all the basic desired features are present X will be bumped to 1)
-    Y = Major release (important new features added)
-    Z = Minor release (bug fixing, new plugins, etc)
-
-In development versions will be identified with an actual `x` as the minor revision number in the documentation but will report as the last actual release at runtime.
 
 ### **v0.10** (16/08/2021):
   Initial release
@@ -98,7 +87,7 @@ In development versions will be identified with an actual `x` as the minor revis
   - Fixed broken Streamlink support. Added Twitch stream example to `config.ini`
   - SLIDESHOW now plays PCMAUDIO for the correct amount of time.
   - SIDStreaming flushes the input buffer when the stream is canceled.
-  - Fixed board/inbox message list order changed from newest thread first to thread with newest message first.
+  - Fixed board/inbox message list order, changed from newest thread first to thread with newest message first.
   - Board/Inbox message list now displays author of the latest message in each thread.
   - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
   - SendProgram and SendRAWFile moved from main script to the common.filetools module.
@@ -116,7 +105,7 @@ Over time, the protocol has been extended to include 4-bit PCM audio streaming, 
 ---
 # 1.3 Features
 
-*RetroBBS* is quite customizable and expandable already at this early stage. The use of a configuration file (`config.ini`) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
+*RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini`) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
 In addition, the plug-in system allows the addition of extra functionality with full support from the config file.
 
 The BBS is multi-threaded and supports up to **five** simultaneous incoming 
@@ -385,8 +374,8 @@ Display the message list for the specified board.
 
 See the example `config.ini` for recommended usage.
 
-[^1]:Replace Z in the `config.ini` parameters with the entry ID number.
-<br>
+[^1]: Replace Z in the `config.ini` parameters with the entry ID number.
+
 
 ---
 # 3 Plug-In system
