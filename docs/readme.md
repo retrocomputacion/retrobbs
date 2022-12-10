@@ -817,4 +817,11 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Gabriel Garcia
   * Roberto Mandracchia
 
+## External software, support files
+
+  * SIDdump by Lasse Öörni (cadaver)
+  * FFmpeg by the FFmpeg team
+  * Betterpixels font by AmericanHamster
+  * karen2blackint font by PaulSpades
+
 ---
