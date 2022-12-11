@@ -36,7 +36,7 @@ VERSION 0.2x dev
 
 # 1 Introduction
 
-*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](turbo56k.md)* protocol capable terminals, such as *Retroterm* for the Commodore 64.
+*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](turbo56k.md)* protocol capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8 bit computers.
 
