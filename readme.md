@@ -36,11 +36,11 @@ VERSION 0.2x dev
 
 # 1 Introduction
 
-*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
+*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol-capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
 
-*RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8 bit computers.
+*RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
-Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside. Viewer discretrion is adviced.
+Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside. Viewer discretion is advised.
 
 
 ---
@@ -60,14 +60,12 @@ Even though this is the third rewrite of this script, it is still in an early de
 
   __Changes/Bug fixes__:
   - Improvements to c64cvt
-  - Fixed problems retrieving *YouTube* videos metadata due to removal of
-    dislikes count.
-  - *YouTube* frame capture now is faster after the 1st frame.
+  - Fixed problems retrieving *YouTube* videos metadata due to the removal of the dislikes count.
+  - *YouTube* frame capture is now faster after the 1st frame.
   - Core PCM audio and SID file streaming functions moved to their own module.
   - All PCM audio decoding is done using *FFmpeg*
   - WebAudio plugin can share any given PCM stream between multiple clients.
-  - Updated example config file with valid links to *YouTube* videos and
-    RSS feeds.
+  - Updated example config file with valid links to *YouTube* videos and RSS feeds.
   - Misc. code cleanup
   - AudioList now supports *HVSC* style path to songlength files
   - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
@@ -75,7 +73,7 @@ Even though this is the third rewrite of this script, it is still in an early de
 ### **v0.2x** (In development):
   __New features__:
   - **SLIDESHOW** now supports SID files
-  - **WEATHER** plugin, display current weather and forecast for the next 2-3 days.
+  - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
   - BBS version and host OS are shown after the welcome message.
   - Total BBS uptime is saved in the database. Session uptime is available as an attribute of the BBS class.
   - Total data transferred for each user account is saved in the database.
@@ -83,20 +81,20 @@ Even though this is the third rewrite of this script, it is still in an early de
   __Changes/Bug fixes__:
   - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longers uses mu-law compression.
   - Removed legacy RAW audio streaming code.
-  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-latin characters.
+  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-Latin characters.
   - Fixed broken Streamlink support. Added Twitch stream example to `config.ini`
   - **SLIDESHOW** now plays PCM audio for the correct amount of time.
   - SIDStreaming flushes the input buffer when the stream is canceled.
   - Fixed board/inbox message list order, changed from newest thread first to thread with newest message first.
-  - Board/Inbox message list now displays author of the latest message in each thread.
+  - Board/Inbox message list now displays the author of the latest message in each thread.
   - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
-  - **SendProgram** and **SendRAWFile** moved from main script to the common.filetools module.
-  - Documentation rewriten in markdown format
+  - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
+  - Documentation rewritten in markdown format
 
 ---
 # 1.2 The *Turbo56K* protocol
 
-*[Turbo56k](turbo56k.md)* was created by Jorge Castillo as a simple protocol to provide high speed file transfer functionality to his bitbanging 57600bps RS232 routine for the C64.
+*[Turbo56k](turbo56k.md)* was created by Jorge Castillo as a simple protocol to provide high-speed file transfer functionality to his bit-banging 57600bps RS232 routine for the C64.
 Over time, the protocol has been extended to include 4-bit PCM audio streaming, bitmap graphics transfer and display, SID music streaming and more.
 
 *RetroBBS* will refuse incoming connections from non-*Turbo56K* compliant terminals.
@@ -106,14 +104,14 @@ Over time, the protocol has been extended to include 4-bit PCM audio streaming, 
 # 1.3 Features
 
 *RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini`) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
-In addition, the plug-in system allows the addition of extra functionality with full support from the config file.
+In addition, the plug-in system allows adding extra functionality with full support from the config file.
 
 The BBS is multi-threaded and supports up to **five** simultaneous incoming 
 connections.
 
 Current built-in functions:
 
-- User signup and signin. Plain text JSON database, salted password storage
+- User signup and sign in. Plain text JSON database, salted password storage
 
 - Public message boards and private messaging system
 
@@ -129,15 +127,15 @@ Current built-in functions:
 
 - SID music streaming: SID files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* executable in the system path.
 
-Current included plug-ins:
+Currently included plug-ins:
 
-- Astronomy Picture Of the Day (apod.py): Retrieves and display the text and picture from NASA's Astronomy Picture Of the Day.
+- Astronomy Picture Of the Day (apod.py): Retrieves and displays the text and picture from NASA's Astronomy Picture Of the Day.
 - IRC Client (irc_client.py): Basic and very experimental IRC client.
-- RSS feed reader (newsfeed.py): Retrieves the latest 10 entries from the specified RSS feed, upon user selection of the entry it scrapes the target web site for text and relevant picture.
-- Oneliner (oneliner.py): Permits for user generated messages of up to 39 characters.
-- WebAudio streamer (webaudio.py): On the fly conversion and streaming of on-line audio sources (*Shoutcast*, *YouTube* or other sources)
-- Wikipedia (wiki.py): Search and display *Wikipedia* articles, displays relevant article image if found.
-- YouTube snapshot (youtube.py): Display a frame from the specified *YouTube* video. It grabs the latest frame if the video is a livestream, otherwise it grabs a random frame.
+- RSS feed reader (newsfeed.py): Retrieves the latest 10 entries from the specified RSS feed, upon user selection of the entry, it scrapes the target website for text and relevant picture.
+- Oneliner (oneliner.py): User-generated messages of up to 39 characters.
+- WebAudio streamer (webaudio.py): On-the-fly conversion and streaming of online audio sources (*Shoutcast*, *YouTube* or other sources)
+- Wikipedia (wiki.py): Search and display *Wikipedia* articles, displaying relevant article image if found.
+- YouTube snapshot (youtube.py): Display a frame from the specified *YouTube* video. It grabs the latest frame if the video is a live stream, otherwise it grabs a random frame.
 
 
 ---
@@ -200,10 +198,10 @@ Global BBS settings
 | `menues` | Total number of menu pages, not counting the main menu page
 | `ip` | IP V4 address on which the BBS will be accessible, default is `127.0.0.1`
 | `port` | port number on which the BBS will be accessible
-| `language` | language for transmitted texts, only partialy implemented as of 0.20
+| `language` | language for transmitted texts, only partially implemented as of 0.20
 | `welcome` | Welcome message on connection
 | `goodbye` | Log off message
-| `dateformat` | Format in which dates will be printed out, client side:<br>0 = dd/mm/yyyy<br>1 = mm/dd/yyyy<br>2 = yyyy/mm/dd
+| `dateformat` | Format in which dates will be printed out, client-side:<br>0 = dd/mm/yyyy<br>1 = mm/dd/yyyy<br>2 = yyyy/mm/dd
 
 ### **\[BOARDS\]**
 Settings for the available messaging boards
@@ -211,8 +209,8 @@ Settings for the available messaging boards
 | key | description
 |:---:|:---
 | `boardX` | (Where X > 0) Board name
-| `boardXview` | Minimum userclass that can read messages in this board (0 = public)
-| `boardXpost` | Minimum userclass that can post messages in this board (No less than 1)
+| `boardXview` | Minimum userclass that can read messages on this board (0 = public)
+| `boardXpost` | Minimum userclass that can post messages on this board (No less than 1)
 
 ### **\[PATHS\]**
 Directory paths to different BBS files, some are referenced in menu entry definitions. All paths must end with '/'.
@@ -251,14 +249,14 @@ Common menu entry keys:
 | `entryZtitle` | (Where 1 <= Z <= {entries}) Entry title
 | `entryZkey` | Keypress associated with this entry (UPPERCASE only)
 | `entryZdesc` | Entry description text, optional, only when the section is configured for 1 column
-| `entryZfunc` | Internal function or plug-in associated to this entry.<br>Depending on the function specific entry keys may be needed (See next chapter)
-| `entryZlevel` | (Optional) Minimum useclass needed to access this entry, default 0 (public)
+| `entryZfunc` | Internal function or plug-in associated with this entry.<br>Depending on the function,specific entry keys may be needed (See next chapter)
+| `entryZlevel` | (Optional) Minimum useclass required to access this entry, default 0 (public)
 
 Function/plug-in specific entry keys:
 | key | description
 |:---:|:---
 | `entryZpath` | A filesystem path
-| `entryZext` | File extensions to match, comma separated list
+| `entryZext` | File extensions to match, comma-separated list
 | `entryZid` | Menu ID number
 | `entryZurl` | An URL address
 
@@ -302,12 +300,12 @@ Switches the BBS back to the previous menu.
 `config.ini` parameter keys: NONE
 
 ### Function EXIT:
-Shows the logoff prompt, and terminates the connection if the user confirms to do so.
+Shows the logoff prompt and terminates the connection if the user confirms to do so.
 
 `config.ini` parameter keys: NONE
 
 ### Function SLIDESHOW:
-Display/streams all the supported files in the specified directory in sequential (alphabetical) order, user must press `RETURN` to skip to the next file.
+Display/streams all the supported files in the specified directory in sequential (alphabetical) order, the user must press `RETURN` to skip to the next file.
 
 Supported filetypes are:
 - *ArtStudio*, *Advanced Art Studio*, *Koala Paint*, *GIF*, *PNG* and *JPEG* images
@@ -316,14 +314,14 @@ Supported filetypes are:
 - *ASCII* and *PETSCII* text files
 - *PETMate* and C syntax *PETSCII* screens
 
-`config.ini` paramater keys:
+`config.ini` parameter keys:
 
 | key | description
 |:---:|:---
 | `entryZpath` | Path to the slideshow files
 
 ### Function FILES:
-Display the list of program files in a directory, the user selected file will be transferred to memory.
+Display the list of program files in a directory, the user-selected file will be transferred to memory.
 
 `config.ini` parameter keys:
 
@@ -332,7 +330,7 @@ Display the list of program files in a directory, the user selected file will be
 | `entryZpath` | Path to the program files, default is '/programs'
 
 ### Function IMAGEGALLERY:
-Display the list of images in a directory, the user selected file will be transferred and displayed.
+Display the list of images in a directory, the user-selected file will be transferred and displayed.
 
 `config.ini` parameter keys:
 
@@ -341,7 +339,7 @@ Display the list of images in a directory, the user selected file will be transf
 | `entryZpath` | Path to the image directory, default is '/images'
 
 ### Function AUDIOLIBRARY:
-Display the list of audio files in a directory, the user selected file will be streamed.
+Display the list of audio files in a directory, the user-selected file will be streamed.
 
 `config.ini` parameter keys:
 
@@ -383,14 +381,14 @@ See the example `config.ini` for recommended usage.
 
 All plug-in modules should implement at least two functions:
 
-__setup()__ : Calling this function returns a tuple consisting of the plug-in name in uppercase, which will be used as the callable function on the config file. And a list of parameters, each element being a tuple itself. This tuple is made of the parameter name to use in the config file and the corresponding default value in case the parameter is not found.
+__setup()__ : Calling this function returns a tuple consisting of the plug-in name in uppercase, which will be used as the callable function on the config file. And a list of parameters, each element being a tuple itself. This tuple is made of the parameter name to use in the config file, and the corresponding default value in case the parameter is not found.
 
-Example of the returned tuble for a plugin that will use the name 'CHAT' with parameters 'channel' and 'nick', which default to 'offtopic' and 'John' respectively:
+Example of the returned tuple for a plugin that will use the name 'CHAT' with parameters 'channel' and 'nick', which default to 'offtopic' and 'John' respectively:
 ```python
 ('CHAT',[('channel','offtopic'),('nick','John')])
 ```
 
-__plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function to perform the plug-in's task.<br>The first parameter **\<conn\>** is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
+__plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function to perform the plug-in task.<br>The first parameter **\<conn\>** is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
 
 ---
 # 3.1 Included Plug-Ins
@@ -417,25 +415,25 @@ Basic and very experimental IRC client.
 - `config.ini` \[PLUGINS\] options: NONE
 
 ### RSS feed reader (newsfeed.py):
-Retrieves the latest 10 entries from the specified RSS feed, upon user selection of the entry it scrapes the target web site for text and relevant picture. The plug-in is mostly targeted at Wordpress sites, if it can't find the content it expects in the linked URL then the article text from the RSS feed itself will be displayed.
+Retrieves the latest ten entries from the specified RSS feed, upon user selection of the entry, it scrapes the target website for text and relevant picture. The plug-in is primarily targeted at Wordpress sites, if it can't find the content it expects in the linked URL then the article text from the RSS feed itself will be displayed.
 
 - `config.ini` function: NEWSFEED
 - `config.ini` parameters: `entryZurl` = URL to the RSS feed
 - `config.ini` \[PLUGINS\] options: NONE
 
 ### Oneliner (oneliner.py):
-User generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
+User-generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
 
 - `config.ini` function: ONELINER
 - `config.ini` parameters: NONE
 - `config.ini` \[PLUGINS\] options: NONE
 
 ### Weather (weather.py) (new 0.2x):
-Displays current weather and forecast for the next 2-3 days as a HiRes image. On first run it will display the weather corresponding to the passed Connection Object's IP. Further weather forecasts can be queried by typing a new location.
+Displays current weather and forecast for the next 2-3 days as a HiRes image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
 
 - `config.ini` function: WEATHER
 - `config.ini` parameters: NONE
-- `config.ini` \[PLUGINS\] options: `wxunits` = `C` or `F` for metric or customary units respectively.
+- `config.ini` \[PLUGINS\] options: `wxunits` = `C` or `F` for metric or customary units, respectively.
 
 ### WebAudio streamer (webaudio.py):
  On the fly conversion and streaming of on-line audio sources (*Shoutcast*,
@@ -453,7 +451,7 @@ Search and display *Wikipedia* articles, displays relevant article image if foun
 - `config.ini` \[PLUGINS\] options: NONE
 
 ### YouTube snapshot (youtube.py):
-Display a frame from the specified *YouTube* video. It will grab the latest frame if the video is a livestream, otherwise it grabs a random frame.
+Display a frame from the specified *YouTube* video. It will grab the latest frame if the video is a live stream. Otherwise it grabs a random frame.
 
 - `config.ini` function: GRABYT
 - `config.ini` parameters:
@@ -461,7 +459,7 @@ Display a frame from the specified *YouTube* video. It will grab the latest fram
 | key | description
 |:---:|:---
 | `entryZurl` | full URL to the *YouTube* video
-| `entryZcrop` | comma separated list of image coordinates for cropping the video frame
+| `entryZcrop` | comma-separated list of image coordinates for cropping the video frame
 
 - `config.ini` \[PLUGINS\] options: NONE
 
@@ -474,14 +472,14 @@ Located inside the \<common\> directory you'll find modules which integrate what
 ### AudioList(conn,title,speech,logtext,path):
 Creates and manages an PCM audio/SID file browser.
   - **\<conn\>**: Connection object
-  - **\<title\>**: String to be used as title for the file browser
+  - **\<title\>**: String to be used as the title for the file browser
   - **\<speech\>**: Optional string for the voice synthesizer
   - **\<logtext\>**: String to output in the log
   - **\<path\>**: Path to the directory to browse
 
 ### PlayAudio(conn,filename, length = 60.0, dialog=False):
 Converts and streams a PCM audio file to **\<conn\>**.
-- **\<filename\>**: Path to the file to stream, file can be either 4-bit, or any audio fileformat supported by audioread/*FFmpeg*
+- **\<filename\>**: Path to the file to stream, file can be any audio fileformat supported by audioread/*FFmpeg*
 - **\<length\>**: Length of the audio to stream in seconds
 - **\<dialog\>**: Boolean, display audio metadata and instructions before starting streaming
 
@@ -503,14 +501,14 @@ Receive an audio stream from *FFmpeg* in chunks.
 Read a chunk of data **size** bytes in length. Returns a byte string
 
 **PCMStream.stop()**:
-Terminates an audio stream, closes *FFmpeg*.
+Terminates an audio stream, and closes *FFmpeg*.
 
 ## common.bbsdebug - Log output to stdout:
 
 ### _LOG(message, _end='\n', date=True, id=0, v=1):
-Prints **\<message\>** on stdout. **\<message\>** can be any expression valid for the print function.<br>The message will end in a newline by default, you can change this by passing a different end string in the **\<_end\>** parameter.<br>By default the message will be preceded by the current date and time, disable this by passing `False` in the **\<date\>** parameter.
+Prints **\<message\>** on stdout. **\<message\>** can be any expression valid for the print function.<br>The message will end in a newline by default, you can change this by passing a different end string in the **\<_end\>** parameter.<br>By default, the message will be preceded by the current date and time, disable this by passing `False` in the **\<date\>** parameter.
 - **\<id\>**: Should be the connection id corresponding to this message. Defaults to 0 -> general message.
-- **\<v\>**: Verbosity level for this message. If greater than the level selected on startup the log message will not be printed.
+- **\<v\>**: Verbosity level for this message. If greater than the level selected on startup, the log message will not be printed.
 
 Also defined in this module is the <bcolors> class, which enumerates a few ANSI codes for use in the log messages.
 
@@ -536,7 +534,7 @@ Returns a tuple `(e_img,cells,screen,color,bg_color)` where:
 Implements the Connection class, this is the class used to communicate with clients, all plug-ins must include this module. Only properties and methods to be used by plug-ins are described below.
 
 ### Connection class properties:
-- **\<socket\>**: Socket object for this connection. Socket is set to blocking mode by default, with a timeout of 5 minutes.
+- **\<socket\>**: Socket object for this connection. The socket is set to blocking mode by default, with a timeout of 5 minutes.
 - **\<addr\>**: Client's IP address **-READ ONLY-**
 - **\<id\>**: ID for this connection **-READ ONLY-**
 - **\<outbytes\>**: Total number of bytes sent to this client **-READ ONLY-**
@@ -552,16 +550,16 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** binary string.<br>Returns: The received matching char as a binary string.
 
-**ReceiveKeyQuiet(keys=b'\r')**: Same as `ReceiveKey` but no logging is ever performed, disregarding logging level. Use it when a password or other sensitive user data must be received.
+**ReceiveKeyQuiet(keys=b'\r')**: Same as `ReceiveKey`, but no logging is ever performed, disregarding logging level. Use it when a password or other sensitive user data must be received.
 
-**ReceiveStr(keys, maxlen = 20, pw = False)**: Interactive reception with echo. Call is completed on reception of a carriage return.
+**ReceiveStr(keys, maxlen = 20, pw = False)**: Interactive reception with echo. The call is completed on reception of a carriage return.
 
 - **\<keys\>** is a binary string with the accepted input characters
-- **\<maxlen\>** is the maximun input string length
+- **\<maxlen\>** is the maximum input string length
 
-Set **\<pw\>** to `True` to echo `*` for each character received, *ie for password entry*.<br>Returns: *ASCII* string received.
+Set **\<pw\>** to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
 
-**ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to enter a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximun number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case this function will return `None`.
+**ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
 ## common.filetools - Functions related to file transfer:
 ### SendBitmap(conn, filename, lines=25, display=True, dialog=False, multi=True, preproc=True):
@@ -571,7 +569,7 @@ Convert image to C64 mode and send it to the client.
 - **\<filename\>**: Path to image file/bytes object/PIL image object
 - **\<lines\>**: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
 - **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
-- **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transfering the image
+- **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
 - **\<multi\>**: Set to `True` for multicolor mode. Overridden by user selection if **\<dialog\>** = `True`
 - **\<preproc\>**: Auto preprocess image brightness/contrast, default `True`
 
@@ -586,7 +584,7 @@ Sends a file directly without processing
 
 - **\<conn\>**: Connection object
 - **\<filename\>**: Path of the file to be sent
-- **\<wait\>**: Boolean, wait for `RETURN` after sendind the file
+- **\<wait\>**: Boolean, wait for `RETURN` after sending the file
 
 ## common.helpers
 Misc functions that do not fit anywhere else at this point. Functions might get deprecated and/or moved to other modules in the future.
@@ -596,10 +594,10 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 **menu_colors**: List containing the odd/even color pairs for menu entries.
 
 ### formatX(text, columns = 40, convert = True)
-Formats the **\<text\>** into **\<columns\>** columns with wordwrapping, **\<convert\>** selects if *PETSCII* conversion is performed.
+Formats the **\<text\>** into **\<columns\>** columns with word wrapping, **\<convert\>** selects if *PETSCII* conversion is performed.
 
 ### More(conn, text, lines, colors=default_style):
-Paginates **\<text\>**, sends it to **\<conn\>**, user must press `RETURN` to get next page(s). Supports most *PETSCII* control codes, including color and cursor movement.
+Paginates **\<text\>**, sends it to **\<conn\>**, the user must press `RETURN` to get next page(s). Supports most *PETSCII* control codes, including color and cursor movement.
 - **\<lines\>**: how many lines per page to transfer. Useful when using the windowing commands of *Turbo56K*.
 - **\<colors\>**: a `bbsstyle` object defining the color set to use.
   
@@ -622,18 +620,18 @@ Defines the BBS style, this module is in a very early stage.
 The `bbsstyle` class is defined here, and the default_style instance of this class is initialized. Read the module source to find about the different class properties.
 
 ### RenderMenuTitle(conn,title):
-Sends the menu title header with text **\<title\>** to **\<conn\>**, using the default style. Client screen is cleared and charset is switched to lowercase. Text mode is not enforced, the caller must ensure that text mode or a text window is active on the client.
+Sends the menu title header with text **\<title\>** to **\<conn\>**, using the default style. The client screen is cleared and charset is switched to lowercase. Text mode is not enforced, the caller must ensure that text mode or a text window is active on the client.
 
 ### KeyPrompt(text,style=default_style):
 Returns the key prompt string for **\<text\>**. The prompt takes the form `[<text>]` using the colors defined by **\<style\>**
 
 ### KeyLabel(conn,key,label,toggle,style=default_style):
-Renders menu option **\<label\>** for assigned **\<key\>** in the selected **\<style\>**, boolean **\<toggle\>** switchs between odd/even styles.<br>The result is sent to **\<conn\>**
+Renders menu option **\<label\>** for assigned **\<key\>** in the selected **\<style\>**, boolean **\<toggle\>** switches between odd/even styles.<br>The result is sent to **\<conn\>**
 
 ## common.turbo56k:
 Defines the *[Turbo56k](turbo56k.md)* protocol constants and helper functions
 
-The following functions all return either a string or a binary string for
+The following functions return either a string or a binary string for
 use with the Connection.Sendall() or Connection.Sendallbin() methods.
 
 ### to_Text(page, border, background, bin = False):
@@ -708,10 +706,10 @@ Set the **\<top\>** and **\<bottom\>** limits for the client text output, this i
 
 ---
 # 5 Installation/Usage
-After making sure you have installed all the required python modules, and extra software, just unpack this archive into a directory of your choice.<br>
+After ensuring you have installed all the required python modules and extra software, just unpack this archive into a directory of your choice.<br>
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
-  **NOTICE**: Starting at v0.20 all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10 remember to convert your *PETSCII* parameters.
+  **NOTICE**: Starting at v0.20, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
 
 
 You can run this script from a command line by navigating to the Installation
@@ -723,20 +721,20 @@ or
 
     python3 retrobbs.py
 
-depending of your python install.
+depending on your python install.
 
 The only available command line option right now is `-v[1-4]`, which sets the verbosity of the log messages, a value of 1 will only output error messages, while a value of 4 will output every log line.
 
 ---
 # 5.1 The intro/login sequence
-Once a connection with a client is established, and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` subdirectory.
-The user will then be asked if he wants to login or continue as a guest.
+Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` subdirectory.
+The user will then be asked if he wants to log in or continue as a guest.
 
-After a successful login, or directly after choosing guest access, the supported files in the subdirectory `bbsfiles/intro` will be shown/played in alphabetical order.
+After a successful login or directly after choosing guest access, the supported files in the subdirectory `bbsfiles/intro` will be shown/played in alphabetical order.
 
 ---
 # 5.2 SID SongLength
-Currently the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the songlength by searching for the `.ssl` files corresponding the the `.sid` files found, defaulting to 3 minutes when not found.<br>
+Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the songlength by searching for the `.ssl` files corresponding the `.sid` files found, defaulting to 3 minutes when not found.<br>
 The `.ssl` format is used by the songlength files part of the *High Voltage SID Collection* (http://hvsc.c64.com). *HVSC* uses a `SONGLENGTHS` subdirectory to store the `.ssl` files, *RetroBBS* can also read these files in the same directory where the `.sid` files are located.
 
 ---
@@ -745,9 +743,9 @@ The `.ssl` format is used by the songlength files part of the *High Voltage SID 
 
 *TinyDB* is used as the database backend. The database is a *JSON* file located in the `bbsfiles` directory.
 
-Upon registering the user will be shown the file `rules.txt` located in `bbsfiles/terms`, you should edit this file according to your needs.
+Upon registering, the user will be shown the file `rules.txt` located in `bbsfiles/terms`, you should edit this file according to your needs.
 
-When registering the user will be asked the following data:
+When registering, the user will be asked the following data:
 
   - Password (stored as a salted hash in the database)
   - First and last names
@@ -757,7 +755,7 @@ When registering the user will be asked the following data:
 A registered user will have a userclass=1 by default. Unregistered users (guests) have a userclass=0.
 Admins/Sysops are those with a userclass=10.
 
-You can use userclasses 2 to 9 for more access granurality as you see fit.
+You can use userclasses 2 to 9 for more access granularity as you see fit.
 
 A separate script for database management is included in the form of `dbmaintenance.py`<br>Execute it by issuing the following command (while the BBS is not running):
 
@@ -778,9 +776,9 @@ The script will also do a quick integrity check on the database file.
 The messaging system permits unlimited public or semipublic boards plus a personal messages board for each registered user.
 
 At the time of writing, this early implementation supports messages of up to 720 characters in length, organized in 18 rows of 40 columns each.
-The message editor works on per line basis, a line being completed by pressing `RETURN`, passing the 40 characters limit, or selecting another line to edit (by pressing `F3`).
-On entering the editor, if the user is starting a new message thread they will be asked to first enter a topic for the thread.
-Once done with the editing the user should press `F8` and will be prompted if they want to continue editing, send the message, or cancel the message.
+The message editor works on a per line basis, completing a by pressing `RETURN`, passing the 40 characters limit, or selecting another line to edit (by pressing `F3`).
+On entering the editor, if the user is starting a new message thread, they will be asked first to enter a topic for the thread.
+Once done with the editing, the user should press `F8` and will be prompted if they want to continue editing, send the message, or cancel the message.
 
 An user with admin/sysop userclass (10) can delete threads or individual messages (deleting the first message in a thread will delete the whole thread).
 
@@ -798,7 +796,7 @@ An user with admin/sysop userclass (10) can delete threads or individual message
 ---
 # 6.1 Known bugs/issues
 
-  * Config file parser doesnt check for errors, a badly built `config.ini` will cause a crash on startup.
+  * Config file parser doesn't check for errors, a poorly built `config.ini` will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * SID files that use the hard restart technique will sound wrong or not play at all.
 
