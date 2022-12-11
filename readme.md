@@ -1,7 +1,7 @@
 
 <div align = center>
 
-![logo](retrobbs.png)
+![logo](docs/retrobbs.png)
 
 # RetroBBS
 
@@ -36,7 +36,7 @@ VERSION 0.2x dev
 
 # 1 Introduction
 
-*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](turbo56k.md)* protocol capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
+*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8 bit computers.
 
@@ -54,7 +54,7 @@ Even though this is the third rewrite of this script, it is still in an early de
   - Added Login/User functionality
   - Added userclass/userlevel settings for the config file, select which menu is accessible to admins/sysops, registered users and/or guests.
   - Added a verbosity command line switch, see section 5
-  - Added *[Turbo56k](turbo56k.md)* v0.6 support, terminal features are queried and displayed on connection.
+  - Added *[Turbo56k](docs/turbo56k.md)* v0.6 support, terminal features are queried and displayed on connection.
   - Messaging system, supports public boards and private messages.
     Public boards can have independent Read/Post user class permissions.
 
@@ -81,16 +81,16 @@ Even though this is the third rewrite of this script, it is still in an early de
   - Total data transferred for each user account is saved in the database.
 
   __Changes/Bug fixes__:
-  - Librosa module replaced by audioread and use of *FFmpeg* audio filters, PCM streaming no longers uses mu-law compression.
-  - Removed legacy raw audio streaming code.
-  - Fixed broken AUDIOLIBRARY formatting when a filename contains non-latin characters.
+  - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longers uses mu-law compression.
+  - Removed legacy RAW audio streaming code.
+  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-latin characters.
   - Fixed broken Streamlink support. Added Twitch stream example to `config.ini`
-  - SLIDESHOW now plays PCMAUDIO for the correct amount of time.
+  - **SLIDESHOW** now plays PCM audio for the correct amount of time.
   - SIDStreaming flushes the input buffer when the stream is canceled.
   - Fixed board/inbox message list order, changed from newest thread first to thread with newest message first.
   - Board/Inbox message list now displays author of the latest message in each thread.
   - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
-  - SendProgram and SendRAWFile moved from main script to the common.filetools module.
+  - **SendProgram** and **SendRAWFile** moved from main script to the common.filetools module.
   - Documentation rewriten in markdown format
 
 ---
@@ -491,7 +491,7 @@ Stream a SID file to **\<conn\>**
 - **\<ptime\>**: Playtime in seconds
 - **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
-check the [sid streaming](sid_streaming.md) protocol
+check the [sid streaming](docs/sid_streaming.md) protocol
 
 
 ### class PCMStream(fn, sr) :
