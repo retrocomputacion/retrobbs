@@ -175,7 +175,7 @@ Python modules:
 External software:
 
   * *FFmpeg* >= 4.0 (for PCM audio streaming)
-  * *SIDDump* (for SID streaming): https://github.com/cadaver/siddump replace the makefile with the one included in /siddump and compile. If you're using *Linux*, remove the .exe extension and copy the executable to usr/bin. 
+  * *[SIDDump](https://github.com/cadaver/siddump)* (for SID streaming): Replace the makefile with the one included in `/siddump` and compile. If you're using *Linux*, remove the .exe extension and copy the executable to usr/bin.
 
 
 ---
@@ -379,12 +379,17 @@ See the example `config.ini` for recommended usage.
 
 ---
 # 3 Plug-In system
-*RetroBBS* implements a simple plug-in system, on startup the BBS will import all python modules found in the \<plugins\> directory.
+*RetroBBS* implements a simple plug-in system, on startup the BBS will import all python modules found in the **\<plugins\>** directory.
 
 All plug-in modules should implement at least two functions:
 
 __setup()__ : Calling this function returns a tuple consisting of the plug-in name in uppercase, which will be used as the callable function on the config file. And a list of parameters, each element being a tuple itself. This tuple is made of the parameter name to use in the config file and the corresponding default value in case the parameter is not found.
-  
+
+Example of the returned tuble for a plugin that will use the name 'CHAT' with parameters 'channel' and 'nick', which default to 'offtopic' and 'John' respectively:
+```python
+('CHAT',[('channel','offtopic'),('nick','John')])
+```
+
 __plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function to perform the plug-in's task.<br>The first parameter **\<conn\>** is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
 
 ---
