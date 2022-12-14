@@ -70,7 +70,7 @@ Even though this is the third rewrite of this script, it is still in an early de
   - AudioList now supports *HVSC* style path to songlength files
   - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
 
-### **v0.25** (12/11/2022):
+### **v0.25** (14/11/2022):
   __New features__:
   - **SLIDESHOW** now supports SID files
   - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
@@ -198,7 +198,7 @@ Global BBS settings
 | `menues` | Total number of menu pages, not counting the main menu page
 | `ip` | IP V4 address on which the BBS will be accessible, default is `127.0.0.1`
 | `port` | port number on which the BBS will be accessible
-| `language` | language for transmitted texts, only partially implemented as of 0.20
+| `language` | language for transmitted texts, only partially implemented as of 0.25
 | `welcome` | Welcome message on connection
 | `goodbye` | Log off message
 | `dateformat` | Format in which dates will be printed out, client-side:<br>0 = dd/mm/yyyy<br>1 = mm/dd/yyyy<br>2 = yyyy/mm/dd
