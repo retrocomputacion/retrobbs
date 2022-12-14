@@ -5,7 +5,7 @@
 
 # RetroBBS
 
-VERSION 0.2x dev
+VERSION 0.25
 
 (C)2020-2022 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
@@ -40,7 +40,7 @@ VERSION 0.2x dev
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
-Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside. Viewer discretion is advised.
+Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside.
 
 
 ---
@@ -70,13 +70,13 @@ Even though this is the third rewrite of this script, it is still in an early de
   - AudioList now supports *HVSC* style path to songlength files
   - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
 
-### **v0.2x** (In development):
+### **v0.25** (12/11/2022):
   __New features__:
   - **SLIDESHOW** now supports SID files
   - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
   - BBS version and host OS are shown after the welcome message.
-  - Total BBS uptime is saved in the database. Session uptime is available as an attribute of the BBS class.
-  - Total data transferred for each user account is saved in the database.
+  - Total BBS uptime is stored in the database. Session uptime is available as an attribute of the BBS class.
+  - Total data transferred for each user account is stored in the database.
 
   __Changes/Bug fixes__:
   - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longers uses mu-law compression.
@@ -180,10 +180,10 @@ External software:
 # 2 Configuration file
 
 *RetroBBS* uses a file named `config.ini` located in the root install directory, this file follows the standard INI format (accepts the extended value interpolation method as used by the configparse Python module):
-
-    [SECTION]
-    key = value
-
+```ini 
+[SECTION]
+key = value
+```
 Please study the example `config.ini` file included in this package for
 more information.
 
