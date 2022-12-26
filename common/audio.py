@@ -177,7 +177,7 @@ def _GetPCMLength(filename):
 #Send Audio file
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     bnoise = b'\x10\x01'
-    CHUNK = 1<<(conn.samplerate).bit_length()   #16384
+    CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
 
     if length == None:
         length = _GetPCMLength(filename)
@@ -256,17 +256,23 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             try:
                 hs = conn.socket.recv(1)
                 if hs == b'\xff':
-                    conn.socket.setblocking(1)
                     binario = b''
                     _LOG('USER CANCEL',id=conn.id,v=3)
                     streaming = False
+                    try:
+                        t3 = time.time()
+                        while time.time()-t3 < 1:   # Flush receive buffer for 1 second
+                            conn.socket.recv(10)
+                    except:
+                        pass
+                    conn.socket.setblocking(1)
                     break
             except:
                 pass
             conn.socket.setblocking(1)
             binario = b''
         #time.sleep(0.60)    #Dont send all the stream at once. Untested for 7680Hz
-        while time.time()-t1 < (conn.samplerate/CHUNK)*2: #This method should work for all samplerates
+        while streaming and (time.time()-t1 < (CHUNK/conn.samplerate)): #This method should work for all samplerates
             pass                                        #and with different host performances
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0

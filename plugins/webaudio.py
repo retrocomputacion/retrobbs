@@ -27,6 +27,7 @@ class AudioStreams:
         self.sthread = None
         self.refresh = False
         #self.lock = threading.Lock()
+        self.CHUNK = 16384
 
     def new(self, url, rate, id):
         #self.lock.acquire()
@@ -40,6 +41,8 @@ class AudioStreams:
         if len(self.streams) == 1:  #If True, we just added the first stream, we need to start the StreamThread
             self.sthread = threading.Thread(target = self.StreamThread, args = ())
             self.sthread.start()
+
+        self.CHUNK = 1<<int(rate*1.4).bit_length()
 
         #self.lock.release()
         return self.streams[url][1][id]
@@ -60,13 +63,12 @@ class AudioStreams:
     # Multi user streaming thread
     # (yes my naming standards are all over the place)
     def StreamThread(self):
-        CHUNK = 16384
 
         while len(self.streams) > 0:
             #self.lock.acquire()
             S = self.streams.copy()
             for url in S:    #Iterate thru streams
-                data = S[url][0].read(CHUNK)    #Get data from FFMPEG stream
+                data = S[url][0].read(self.CHUNK)    #Get data from FFMPEG stream
                 for id in S[url][1]:    #Iterate thru Queues
                     S[url][1][id].put(data)        #Push data into the Queue
             #self.lock.release()
@@ -202,10 +204,16 @@ def plugFunction(conn:common.connection.Connection,url):
             try:
                 hs = conn.socket.recv(1)
                 if hs == b'\xff':
-                    conn.socket.setblocking(1)
                     binario = b''
+                    try:
+                        t3 = time.time()
+                        while time.time()-t3 < 1:   # Flush receive buffer for 1 second
+                            conn.socket.recv(10)
+                    except:
+                        pass
                     _LOG('USER CANCEL',id=conn.id,v=3)
                     streaming = False
+                    conn.socket.setblocking(1)
                     break
             except:
                 pass
