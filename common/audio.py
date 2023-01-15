@@ -159,6 +159,7 @@ def _AudioDialog(conn:Connection, data):
     conn.Sendall(chr(P.RVS_ON)+' pRESS <X> AND WAIT TO STOP\r')
     conn.Sendall(chr(P.RVS_ON)+' pRESS <_> TO CANCEL')
     if conn.ReceiveKey(b'\r_') == b'_':
+        conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
         return False
     return True
 
@@ -428,6 +429,7 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
             info['songlength'] = ptime
             _DisplaySIDInfo(conn, info)
             conn.ReceiveKey()
+            conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
         #  SID player register order - commented out until better functionality is built into RetroTerm
         # player = _SIDid(content)
         # if (conn.T56KVer > 0.5):

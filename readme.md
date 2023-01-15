@@ -94,7 +94,9 @@ Even though this is the third rewrite of this script, it is still in an early de
 ### **v0.2x** (In development):
 
 __Changes/Bug fixes__:
- - More reliable, albeit slower terminal feature check routine.
+ - Fixed terminal feature check, now is more reliable, albeit slower.
+ - Fixed bug where an unsupported weather type would crash the *python_weather* module, in turn crashing the weather plugin and droping the connection. 
+ - Added 'wait cursor' to the audio module and webaudio plugin
 
 ---
 # 1.2 The *Turbo56K* protocol

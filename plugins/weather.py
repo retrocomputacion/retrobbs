@@ -205,22 +205,38 @@ async def getweather(conn:Connection,locquery,geoLoc:Nominatim):
         for hourly in forecast.hourly:
             if ih == 3: # Morning
                 #print(hourly.type.value,hourly.description)
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)]))
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
                 img.paste(tmp,(32,72+(ix*32)))
                 draw.text((56,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
             elif ih == 4: #Noon
                 #print(hourly.type.value,hourly.description)
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)]))
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
                 img.paste(tmp,(104,72+(ix*32)))
                 draw.text((128,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
             elif ih == 6: #Evening
                 #print(hourly.type.value,hourly.description)
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)]))
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
                 img.paste(tmp,(176,72+(ix*32)))
                 draw.text((200,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
             elif ih == 7: #Night
                 #print(hourly.type.value,hourly.description)
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)]))
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
                 img.paste(tmp,(248,72+(ix*32)))
                 draw.text((272,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
             ih += 1

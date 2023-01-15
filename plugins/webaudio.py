@@ -168,6 +168,7 @@ def plugFunction(conn:common.connection.Connection,url):
         return
     #conn.Sendall(TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
 
+    conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
     #pcm_stream = AA.PcmStream(sURL,conn.samplerate)
     pcm_stream = AStreams.new(sURL,conn.samplerate, conn.id)
