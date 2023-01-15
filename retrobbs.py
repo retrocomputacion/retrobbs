@@ -1088,49 +1088,46 @@ def UserList(conn:Connection):
     conn.Sendall(TT.to_Screen())
     return MenuDic
 
-def GetTerminalFeatures(conn:Connection):
+def GetTerminalFeatures(conn:Connection, display = True):
 
-    if b"RETROTERM-SL" in conn.TermString:
-        _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
-        conn.samplerate = 7680
-    if conn.T56KVer > 0.5:
-        result = [b'\x80']*(TT.TURBO56K_LCMD-127)
-        conn.Sendall(chr(TT.CMDON))
-        for cmd in range(128,TT.TURBO56K_LCMD+1):
-            conn.Sendall(chr(TT.QUERYCMD)+chr(cmd))
-            result[cmd-128] = (conn.Receive(1))
-        conn.Sendall(chr(TT.CMDOFF))
-    else:
-        result = [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-                  b'\x03',b'\x02',b'\x03',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-                  b'\x00',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-                  b'\x02',b'\x02',b'\x01',b'\x02',b'\x80',b'\x02']
-    conn.TermFt = result
-
-def SendTerminalFeatures(conn:Connection):
- 
     conn.Sendall(chr(P.CLEAR)+chr(P.LT_BLUE)+"tERMINAL ID: "+chr(P.WHITE)+conn.TermString.decode("utf-8")+"\r")
     time.sleep(0.5)
     conn.Sendall(chr(P.LT_BLUE)+"tURBO56k VERSION: "+chr(P.WHITE)+str(conn.T56KVer)+"\r")
     time.sleep(0.5)
     conn.Sendall(chr(P.LT_BLUE)+"cHECKING TERMINAL FEATURES:\r")
     time.sleep(1)
-    for ix, x in enumerate(conn.TermFt):
-        if x != b'\x80':
-            if (ix % 16) == 0:
-                conn.Sendall(chr(P.WHITE)+"\r$"+hex(ix)[2:3]+"X: ")
-            if ix in TT.T56K_CMD:
-                #conn.Sendall(chr(P.GREY3)+P.toPETSCII(TT.T56K_CMD[ix])+chr(P.LT_GREEN)+chr(P.CHECKMARK)+"\r")
+
+    if b"RETROTERM-SL" in conn.TermString:
+        _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
+        conn.samplerate = 7680
+    if conn.T56KVer > 0.5:
+        result = [b'\x80']*(TT.TURBO56K_LCMD-127)
+        # for cmd in range(128,TT.TURBO56K_LCMD+1):
+        for cmd in TT.T56K_CMD:
+            time.sleep(0.5)
+            conn.Sendall(chr(TT.CMDON))
+            conn.Sendall(chr(TT.QUERYCMD)+chr(cmd+128))
+            result[cmd] = (conn.Receive(1))
+            conn.Sendall(chr(TT.CMDOFF))
+            if (cmd+128) % 16 == 0:
+                conn.Sendall(chr(P.WHITE)+"\r$"+hex(cmd+128)[2:3]+"X: ")
+            if result[cmd] != b'\x80':
                 conn.Sendall(chr(P.LT_GREEN)+chr(P.CHECKMARK))
-                #if ix == 3:
-                #    conn.Sendall(chr(P.GREY3)+"pcm AUDIO SAMPLERATE "+chr(P.YELLOW)+str(conn.samplerate)+"\r")
             else:
-                #conn.Sendall(chr(P.GREY2)+"uNKNOWN COMMAND"+chr(P.LT_GREEN)+chr(P.CHECKMARK)+"\r")
-                conn.Sendall(chr(P.YELLOW)+"?")
-        elif ix in TT.T56K_CMD:
-            #conn.Sendall(chr(P.LT_BLUE)+P.toPETSCII(TT.T56K_CMD[ix])+chr(P.RED)+"X\r")
-            conn.Sendall(chr(P.RED)+"X")
-        #time.sleep(0.1)
+                conn.Sendall(chr(P.RED)+"X")
+    else:
+        result = [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
+                  b'\x03',b'\x02',b'\x03',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
+                  b'\x00',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
+                  b'\x02',b'\x02',b'\x01',b'\x02',b'\x80',b'\x02']
+        for cmd in TT.T56K_CMD:
+            if (cmd+128) % 16 == 0:
+                conn.Sendall(chr(P.WHITE)+"\r$"+hex(cmd+128)[2:3]+"X: ")
+            if result[cmd] != b'\x80':
+                conn.Sendall(chr(P.LT_GREEN)+chr(P.CHECKMARK))
+            else:
+                conn.Sendall(chr(P.RED)+"X")
+    conn.TermFt = result
     conn.Sendall('\r')
     if conn.TermFt[3] != b'\x80':
         conn.Sendall(chr(P.GREY3)+"pcm AUDIO SAMPLERATE "+chr(P.YELLOW)+str(conn.samplerate)+"hZ\r")
@@ -1187,6 +1184,8 @@ def BBSLoop(conn:Connection):
 
             t56kver = ord(dato1)+((ord(dato2))/10)
 
+            conn.Sendall('\r'+chr(P.CHECKMARK)+'\r')
+
             #Increment visit counters
             bbs_instance.visits += 1            #Session counter
             bbs_instance.database.newVisit()    #Total counter
@@ -1195,7 +1194,6 @@ def BBSLoop(conn:Connection):
                 conn.TermString = datos
                 conn.T56KVer = t56kver
                 GetTerminalFeatures(conn)
-                SendTerminalFeatures(conn)
                 if conn.TermFt[1]!=b'\x80' and conn.TermFt[2]!=b'\x80' and conn.TermFt[51]!=b'\x80':
                     _LOG('Sending intro pic',id=conn.id,v=4)
                     bg = FT.SendBitmap(conn,'bbsfiles/splash.art',12,False)

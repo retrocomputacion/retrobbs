@@ -91,6 +91,11 @@ Even though this is the third rewrite of this script, it is still in an early de
   - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
   - Documentation rewritten in markdown format
 
+### **v0.2x** (In development):
+
+__Changes/Bug fixes__:
+ - More reliable, albeit slower terminal feature check routine.
+
 ---
 # 1.2 The *Turbo56K* protocol
 
