@@ -7,7 +7,7 @@
 
 VERSION 0.25
 
-(C)2020-2022 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+(c)2020-2023 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
 
 
@@ -97,6 +97,7 @@ __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
  - Fixed bug where an unsupported weather type would crash the *python_weather* module, in turn crashing the weather plugin and droping the connection. 
  - Added 'wait cursor' to the audio module and webaudio plugin
+ - Fixed bugs when adding and editing users in *dbmaintenance.py*
 
 ---
 # 1.2 The *Turbo56K* protocol

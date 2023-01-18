@@ -74,13 +74,13 @@ class DBase:
         table.update({'online':0, 'upbytes':ud.get('upbytes',0)+ubytes, 'downbytes':ud.get('downbytes',0)+dbytes}, doc_ids=[id])
 
     #Creates a new user
-    def newUser(self, uname, pw, fname, lname, bday, country):
+    def newUser(self, uname, pw, fname, lname, bday, country,uclass=1):
         #Make sure user doesnt already exists
         if self.chkUser(uname) == None:
             table = self.db.table('USERS')
             salt = os.urandom(32)   #New salt for this user
             upw = hashlib.pbkdf2_hmac('sha256', pw.encode('utf-8'), salt,100000)
-            return table.insert({'uname':uname,'salt':salt.hex(),'pass':upw.hex(),'fname':fname,'lname':lname,'bday':bday,'country':country,'uclass':1,
+            return table.insert({'uname':uname,'salt':salt.hex(),'pass':upw.hex(),'fname':fname,'lname':lname,'bday':bday,'country':country,'uclass':uclass,
                                 'lastlogin':time.time(),'joindate':time.time(),'visits':1,'online':1})
 
     #Update user data (by id)

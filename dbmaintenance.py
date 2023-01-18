@@ -151,7 +151,6 @@ while True:
                 break
             else:
                 print("----- User not found -----")
-        ud = ud[0]
 
         print("Username:",ud['uname'])
         while True:
