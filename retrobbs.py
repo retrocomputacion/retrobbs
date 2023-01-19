@@ -81,6 +81,7 @@ import re
 import platform
 import subprocess
 from os import walk
+from os.path import splitext
 import datetime
 import signal
 import string
@@ -560,6 +561,7 @@ def SendText(conn:Connection, filename, title='', lines=25):
 #######
 
 def SendCPetscii(conn:Connection,filename,pause=0):
+    print("<<<<<<<<<<<<<<")
     try:
         fi = open(filename,'r')
     except:
@@ -568,10 +570,11 @@ def SendCPetscii(conn:Connection,filename,pause=0):
     fi.close
     #### Falta fijarse si es upper o lower
     if text.find('upper') != -1:
-        conn.Sendall(chr(P.TOUPPER))
+        cs = P.TOUPPER
     else:
-        conn.Sendall(chr(P.TOLOWER))
+        cs = P.TOLOWER
     frames = text.split('unsigned char frame')
+    print(frames)
     for f in frames:
         if f == '':
             continue
@@ -588,6 +591,7 @@ def SendCPetscii(conn:Connection,filename,pause=0):
                 if c.isnumeric():
                     binary += int(c).to_bytes(1,'big')
                     i += 1
+        print(i)
         binary+= b'\x81\x20\x82\xe8\x03'
         i = 0
         for line in fl[26:52]:
@@ -595,17 +599,16 @@ def SendCPetscii(conn:Connection,filename,pause=0):
                 if c.isnumeric():
                     binary += int(c).to_bytes(1,'big')
                     i+=1
+        print(i)
         binary+= b'\xfe'
         conn.Sendallbin(binary)
+        conn.Sendall(chr(cs))
         if pause > 0:
             time.sleep(pause)
         else:
             conn.ReceiveKey()
     conn.Sendall(TT.enable_CRSR())
-    if pause == 0:
-        return 0
-    else:
-        return -1
+    return -1
 
 def SendPETPetscii(conn:Connection,filename):
     try:
@@ -615,17 +618,18 @@ def SendPETPetscii(conn:Connection,filename):
     pet = f.read()
     bo = pet[2].to_bytes(1,'big')
     bg = pet[3].to_bytes(1,'big')
-    if pet[4] == 1:
-        conn.Sendall(chr(P.TOUPPER))
-    else:
-        conn.Sendall(chr(P.TOLOWER))
     binary = b'\xff\xb2\x00\x90\x00'+bo+bg+b'\x81\x00\x82\xe8\x03'
     binary += pet[5:1005]
     binary += b'\x81\x20\x82\xe8\x03'
     binary += pet[1005:]
+    binary += b'\xfe'
     conn.Sendallbin(binary)
+    if pet[4] == 1:
+        conn.Sendall(chr(P.TOUPPER))
+    else:
+        conn.Sendall(chr(P.TOLOWER))
     #time.sleep(5)
-    return -1
+    return 0
 
 # Display sequentially all matching files inside a directory
 def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
@@ -656,7 +660,8 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         w = 0
         conn.Sendall(TT.enable_CRSR()+chr(P.CLEAR))
         _LOG('SlideShow - Showing: '+p,id=conn.id,v=4)
-        ext = p[-4:]
+        tmp,ext = splitext(p)
+        print(ext)
         if ext in pics_e:
             FT.SendBitmap(conn, path+p)
         elif ext in bin_e:

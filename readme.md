@@ -97,7 +97,8 @@ __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
  - Fixed bug where an unsupported weather type would crash the *python_weather* module, in turn crashing the weather plugin and droping the connection. 
  - Added 'wait cursor' to the audio module and webaudio plugin
- - Fixed bugs when adding and editing users in *dbmaintenance.py*
+ - Fixed bugs when adding and editing users in both *dbmaintenance.py* and the main script
+ - Fixed display of .c and .pet files
 
 ---
 # 1.2 The *Turbo56K* protocol
