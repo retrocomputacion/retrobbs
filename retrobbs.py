@@ -954,7 +954,7 @@ def EditUser(conn:Connection):
                         time.sleep(2)
                         conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
                     else:
-                        bbs_instance.database.updateUser(uentry.doc_id,name,None,None,None,None,None)
+                        bbs_instance.database.updateUser(uentry.doc_id,name,None,None,None,None,None,None)
                         conn.username = name
                         n = True
                 else:   #Same old username
@@ -965,7 +965,7 @@ def EditUser(conn:Connection):
             fname = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,fname,None,None,None)
+            bbs_instance.database.updateUser(uentry.doc_id,None,None,fname,None,None,None,None)
         elif k == b'C': #Last name
             conn.Sendall('\r'+chr(P.CRSR_UP))
             conn.Sendall(TT.Fill_Line(13,32)+'lAST NAME:')
@@ -979,14 +979,14 @@ def EditUser(conn:Connection):
             bday = conn.ReceiveDate('\rbIRTHDATE: ',datetime.date(1900,1,1),datetime.date.today(),datetime.date(1970,1,1))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,bday.strftime("%d/%m/%Y"),None)
+            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,bday.strftime("%d/%m/%Y"),None,None)
         elif k == b'E': #Country
             conn.Sendall('\r'+chr(P.CRSR_UP))
             conn.Sendall(TT.Fill_Line(13,32)+'cOUNTRY:')
             country = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,None,country)
+            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,None,country,None)
         elif k == b'F': #Password
             n = 0
             conn.Sendall('\r'+chr(P.CRSR_UP))
@@ -1008,7 +1008,7 @@ def EditUser(conn:Connection):
                             time.sleep(2)
                             conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
                         else:
-                            bbs_instance.database.updateUser(uentry.doc_id,None,pw,None,None,None,None)
+                            bbs_instance.database.updateUser(uentry.doc_id,None,pw,None,None,None,None,None)
                             m = True
                             n = 3
                 else:
