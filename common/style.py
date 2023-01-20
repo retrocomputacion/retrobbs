@@ -27,6 +27,8 @@ default_style.PtColor		= 14	#Key prompt text color
 
 
 def RenderMenuTitle(conn:Connection,title):
+	if type(title) == tuple:
+		title = title[0]
 	# Clear screen
 	conn.Sendall(chr(P.CLEAR))
 	# Lower/uppercase charset
