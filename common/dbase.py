@@ -9,6 +9,7 @@ import hashlib
 import os
 import inspect
 import time
+import re
 
 #Dictionary of user editable fields, for some future use?
 # [field name, field type, [field length range]]
@@ -50,7 +51,7 @@ class DBase:
     def chkUser(self, username):
         table = self.db.table('USERS')
         dbQ = Query()
-        return table.get(dbQ.uname == username)
+        return table.get(dbQ.uname.search('^'+username+'$',flags=re.IGNORECASE))
 
 
     #Check if password matches for the user, and optionally login

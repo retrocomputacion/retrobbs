@@ -1098,11 +1098,9 @@ def UserList(conn:Connection):
 def GetTerminalFeatures(conn:Connection, display = True):
 
     conn.Sendall(chr(P.CLEAR)+chr(P.LT_BLUE)+"tERMINAL ID: "+chr(P.WHITE)+conn.TermString.decode("utf-8")+"\r")
-    time.sleep(0.5)
     conn.Sendall(chr(P.LT_BLUE)+"tURBO56k VERSION: "+chr(P.WHITE)+str(conn.T56KVer)+"\r")
     time.sleep(0.5)
     conn.Sendall(chr(P.LT_BLUE)+"cHECKING TERMINAL FEATURES:\r")
-    time.sleep(1)
 
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)

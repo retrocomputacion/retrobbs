@@ -7,9 +7,168 @@ from datetime import datetime
 import common.dbase as DB
 from tinydb.table import Document
 from tinydb import Query
+import re
 
 
 
+def update():
+    global data
+
+    change = False
+    while True:
+        un = input("User Name (Enter to cancel):")
+        if un == '':
+            return
+        ud = data.chkUser(un)
+        if ud != None:
+            break
+        else:
+            print("----- User not found -----")
+
+    print("Username:",ud['uname'])
+    while True:
+        uname = input("New username (enter skip):")
+        if uname == '':
+            uname = None
+            break
+        else:
+            if 6<=len(uname)<=16:
+                if uname != '_guest_':
+                    change = True
+                    break
+            else:
+                print("Username must be 6 to 16 characters long")
+
+    print("Password: ******")
+    while True:
+        pw = input("New password (6+ chars, enter to skip):")
+        if pw == '':
+            pw = None
+            break
+        elif 6<=len(pw)<=16:
+            change = True
+            break
+        else:
+            print("Password must be 6 to 16 characters long")
+
+    print("First name:",ud['fname'])
+    while True:
+        fname = input("New first name (enter skip):")
+        if fname == '':
+            fname = None
+            break
+        elif len(fname)<=16:
+            change = True
+            break
+        else:
+            print("New first name must be 16 characters or less")
+
+    print("Last name:",ud['lname'])
+    while True:
+        lname = input("New last name (enter skip):")
+        if lname == '':
+            lname = None
+            break
+        elif len(lname)<=16:
+            change = True
+            break
+        else:
+            print("New last name must be 16 characters or less")
+    print("Birthday:",ud['bday'])
+    
+    while True:
+        bday = input("New birthday DD/MM/YYYY (enter skip):")
+        if bday == '':
+            bday = None
+            break
+        else:
+            try:
+                datetime.strptime(bday,'%d/%m/%Y')
+                change = True
+                break
+            except:
+                ...
+
+    print("Country:",ud['country'])
+    while True:
+        country = input("New country (enter skip):")
+        if country == '':
+            country = None
+            break
+        elif len(country)<=16:
+            change = True
+            break
+        else:
+            print("New country must be 16 characters or less")
+
+    print("Class:",ud['uclass'])
+    while True:
+        uclass = input("New class 1-10 (enter skip):")
+        if uclass == '':
+            uclass = None
+            break
+        elif 1<=int(uclass)<=10:
+            change = True
+            uclass = int(uclass)
+            break
+        else:
+            print("New class must be between 1 and 10(admin)")
+
+    if change:
+        data.updateUser(ud.doc_id,uname,pw,fname,lname,bday,country,uclass)
+        print("\n----- User data updated -----\n")
+
+
+def adduser():
+    global data
+
+    while True:
+        uname = input("User Name (Enter to cancel):")
+        if uname == '':
+            return
+        if not(6 <= len(uname) <= 16):
+            print("----- User name should be between 6 and 16 characters long -----")
+        else:
+            ud = data.chkUser(uname)
+            if ud != None:
+                print("----- User already exists -----")
+            else:
+                break
+    while True:
+        pw = input("Password (6 to 16 chars):")
+        if 6 <= len(pw) <= 16:
+            break
+    while True:
+        fname = input("First name (enter skip):")
+        if len(fname) < 17:
+            break
+    while True:
+        lname = input("Last name (enter skip):")
+        if len(lname) < 17:
+            break
+    bday = input("Birthday DD/MM/YYYY (warning, no sanity check performed):")
+    if bday == '':
+        bday = "01/01/1970"
+    while True:
+        country = input("Country (enter skip):")
+        if len(country) < 17:
+            break
+    while True:
+        uclass = input("New class 1-10 (enter 1):")
+        if uclass == '':
+            uclass = 1
+            break
+        elif 1<=int(uclass)<=10:
+            change = True
+            uclass = int(uclass)
+            break
+        else:
+            print("New class must be between 1 and 10(admin)")
+    data.newUser(uname,pw,fname,lname,bday,country,uclass)
+    print("\n----- New user added -----\n")
+
+
+### MAIN ###
 
 print("----RetroBBS Database maintenance tool----\n")
 
@@ -17,10 +176,11 @@ data = DB.DBase()
 print("Database open...")
 print("Checking database integrity...")
 table = data.db.table('USERS')
-print("User entries:",len(table))
+print("User entries:",len(table),'\n')
 
 if len(table)>0:
     admin = False
+    user = Query()
     for item in table:
         #print(ix, item)
         ix = item.doc_id
@@ -67,14 +227,19 @@ if len(table)>0:
             table.upsert(Document({"online":0},doc_id=ix))
         if item['uclass'] == 10:
             admin = True
+        # Find duplicate (case-insensitive) usernames
+        mu = table.search(user.uname.matches('^'+item['uname']+'$',flags=re.IGNORECASE))
+        if len(mu) > 1:
+            print("Warning: These users have undistiguishable names:")
+            for ru in mu:
+                print(ru['uname'])
+            print('')
 
     if admin == False:
         print("Warning: no admin user(s) present")
         while True:
             a= input("Select an admin user? (Y/N) ")
-            user = Query()
             if (a == 'Y') or (a == 'y'):
-                user = Query()
                 while True:
                     uname = input("Admin username: ")
                     entry = table.search(user.uname == uname)
@@ -143,108 +308,7 @@ while True:
         break
     #### UPDATE ####
     if ii == '1' and len(table) > 0:
-        change = False
-        while True:
-            un = input("User Name:")
-            ud = data.chkUser(un)
-            if ud != None:
-                break
-            else:
-                print("----- User not found -----")
-
-        print("Username:",ud['uname'])
-        while True:
-            uname = input("New username (enter skip):")
-            if uname == '':
-                uname = None
-                break
-            else:
-                if 6<=len(uname)<=16:
-                    if uname != '_guest_':
-                        change = True
-                        break
-                else:
-                    print("Username must be 6 to 16 characters long")
-
-        print("Password: ******")
-        while True:
-            pw = input("New password (6+ chars, enter to skip):")
-            if pw == '':
-                pw = None
-                break
-            elif 6<=len(pw)<=16:
-                change = True
-                break
-            else:
-                print("Password must be 6 to 16 characters long")
-
-        print("First name:",ud['fname'])
-        while True:
-            fname = input("New first name (enter skip):")
-            if fname == '':
-                fname = None
-                break
-            elif len(fname)<=16:
-                change = True
-                break
-            else:
-                print("New first name must be 16 characters or less")
-
-        print("Last name:",ud['lname'])
-        while True:
-            lname = input("New last name (enter skip):")
-            if lname == '':
-                lname = None
-                break
-            elif len(lname)<=16:
-                change = True
-                break
-            else:
-                print("New last name must be 16 characters or less")
-        print("Birthday:",ud['bday'])
-        
-        while True:
-            bday = input("New birthday DD/MM/YYYY (enter skip):")
-            if bday == '':
-                bday = None
-                break
-            else:
-                try:
-                    datetime.strptime(bday,'%d/%m/%Y')
-                    change = True
-                    break
-                except:
-                    ...
-
-        print("Country:",ud['country'])
-        while True:
-            country = input("New country (enter skip):")
-            if country == '':
-                country = None
-                break
-            elif len(country)<=16:
-                change = True
-                break
-            else:
-                print("New country must be 16 characters or less")
-
-        print("Class:",ud['uclass'])
-        while True:
-            uclass = input("New class 1-10 (enter skip):")
-            if uclass == '':
-                uclass = None
-                break
-            elif 1<=int(uclass)<=10:
-                change = True
-                uclass = int(uclass)
-                break
-            else:
-                print("New class must be between 1 and 10(admin)")
-
-        if change:
-            data.updateUser(ud.doc_id,uname,pw,fname,lname,bday,country,uclass)
-            print("\n----- User data updated -----\n")
-
+        update()
     #### DELETE ####
     if ii == '2' and len(table) > 0:
         while True:
@@ -266,48 +330,6 @@ while True:
 
     #### ADD NEW USER ####
     if ii == '3':
-        while True:
-            uname = input("User Name:")
-            if not(6 <= len(uname) <= 16):
-                print("----- User name should be between 6 and 16 characters long -----")
-            else:
-                ud = data.chkUser(uname)
-                if ud != None:
-                    print("----- User already exists -----")
-                else:
-                    break
-        while True:
-            pw = input("Password (6 to 16 chars):")
-            if 6 <= len(pw) <= 16:
-                break
-        while True:
-            fname = input("First name (enter skip):")
-            if len(fname) < 17:
-                break
-        while True:
-            lname = input("Last name (enter skip):")
-            if len(lname) < 17:
-                break
-        bday = input("Birthday DD/MM/YYYY (warning, no sanity check performed):")
-        if bday == '':
-            bday = "01/01/1970"
-        while True:
-            country = input("Country (enter skip):")
-            if len(country) < 17:
-                break
-        while True:
-            uclass = input("New class 1-10 (enter 1):")
-            if uclass == '':
-                uclass = 1
-                break
-            elif 1<=int(uclass)<=10:
-                change = True
-                uclass = int(uclass)
-                break
-            else:
-                print("New class must be between 1 and 10(admin)")
-        data.newUser(uname,pw,fname,lname,bday,country,uclass)
-        print("\n----- New user added -----\n")
-
+        adduser()
 print("Closing database")
 data.closeDB()

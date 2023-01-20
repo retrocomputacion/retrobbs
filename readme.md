@@ -103,6 +103,8 @@ __Changes/Bug fixes__:
  - Fixed bugs when adding and editing users in both *dbmaintenance.py* and the main script
  - Fixed display of .c and .pet files
  - Fixed playtime for audio files played thru the PCMPLAY function
+ - Improved *dbmaintenance.py* UI, now it is possible to cancel options 'Update user data' and 'Add user'
+ - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts
 
 ---
 # 1.2 The *Turbo56K* protocol
