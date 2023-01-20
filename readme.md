@@ -93,12 +93,16 @@ Even though this is the third rewrite of this script, it is still in an early de
 
 ### **v0.2x** (In development):
 
+__New features__:
+ - Idle BBS will reload the configuration file if it has been modified.
+
 __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
  - Fixed bug where an unsupported weather type would crash the *python_weather* module, in turn crashing the weather plugin and droping the connection. 
  - Added 'wait cursor' to the audio module and webaudio plugin
  - Fixed bugs when adding and editing users in both *dbmaintenance.py* and the main script
  - Fixed display of .c and .pet files
+ - Fixed playtime for audio files played thru the PCMPLAY function
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -195,6 +199,9 @@ key = value
 ```
 Please study the example `config.ini` file included in this package for
 more information.
+
+When the BBS is idle (no visitors connected), it will reload the config file if it detects it has been modified.
+All settings will be updated, but network settings will only take place upon restart.
 
 ## Sections:
 

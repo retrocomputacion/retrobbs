@@ -228,6 +228,8 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     t0 = time.time()
 
     streaming = True
+    t_samples = length * conn.samplerate # Total number of samples for the selected playtime
+    c_samples = 0   # Sample counter
 
     while streaming == True:
         t1 = time.time()
@@ -240,6 +242,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             streaming = False
         if (a_len % 2) != 0:    #Odd number of samples
             audio = numpy.append(audio, 0)
+            a_len += 1
         for b in range(0,a_len,2):
             lnibble = int(audio[b])
             #if lnibble == 0:
@@ -272,6 +275,10 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
                 pass
             conn.socket.setblocking(1)
             binario = b''
+        c_samples += a_len
+        if c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
+            streaming = False
+
         #time.sleep(0.60)    #Dont send all the stream at once. Untested for 7680Hz
         while streaming and (time.time()-t1 < (CHUNK/conn.samplerate)): #This method should work for all samplerates
             pass                                        #and with different host performances

@@ -81,7 +81,7 @@ import re
 import platform
 import subprocess
 from os import walk
-from os.path import splitext
+from os.path import splitext, getmtime
 import datetime
 import signal
 import string
@@ -175,7 +175,7 @@ def ConfigRead():
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound')
                 parms = [tentry,'','Displaying audio list',p]
             elif efunc == 'PCMPLAY':		#Play PCM audio
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback='bbsfiles/bbsintroaudio-eng11K8b.wav')]
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback='bbsfiles/bbsintroaudio-eng11K8b.wav'),None]
             elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
                 parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback='bbsfiles/pictures')]
             elif efunc == 'INBOX':
@@ -230,6 +230,8 @@ def ConfigRead():
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     config.read('config.ini')
+
+    bbs_instance.cfgmts = getmtime('config.ini') # Set latest config.ini modify datestamp
 
     #MAIN variables
 
@@ -1288,9 +1290,19 @@ def BBSLoop(conn:Connection):
 def ConnTask():
     global conlist
     global bbs_instance
+    global _semaphore
 
     while _run:
         time.sleep(1) # check once per second
+
+        # Reload config.ini if it has been modified and there's nobody online
+        if len(conlist) == 0:
+            if getmtime('config.ini') != bbs_instance.cfgmts:
+                _LOG('Config file modified',v=2)
+                _semaphore = True
+                ConfigRead()
+                _semaphore = False
+
         for t in range(1,6):
             if t in conlist:				#Find closed connections
                 if not conlist[t][0].is_alive():
@@ -1324,6 +1336,8 @@ if AA.meta != True:
 args = parser.parse_args()
 
 set_verbosity(args.verb)
+
+_semaphore = False  #
 
 bbs_instance = BBS('','',0)
 bbs_instance.version = _version
@@ -1376,6 +1390,9 @@ while True:
     # Wait for a connection
     _LOG('Awaiting a connection',v=3)
     c, c_addr = sock.accept()
+
+    while _semaphore:   # Wait for _semaphore to be False (config finished updating)
+        pass
 
     newid = 1
     for r in range(1,6):			#Find free id
