@@ -11,19 +11,19 @@ class bbsstyle:
 default_style = bbsstyle()
 
 	# Default colors (in c64 palette index)
-default_style.BgColor		= 0		#Background color
-default_style.BoColor		= 0		#Border color
-default_style.TxtColor		= 15	#Main text color
-default_style.HlColor		= 1		#Highlight text color
+default_style.BgColor		= P.PALETTE.index(P.BLACK)		#Background color
+default_style.BoColor		= P.PALETTE.index(P.BLACK)		#Border color
+default_style.TxtColor		= P.PALETTE.index(P.GREY3)		#Main text color
+default_style.HlColor		= P.PALETTE.index(P.WHITE)		#Highlight text color
 
-default_style.OoddColor		= 14	#Odd option key color
-default_style.ToddColor		= 15	#Odd option text color
-default_style.OevenColor	= 3		#Even option key color
-default_style.TevenColor	= 7		#Even option text color
+default_style.OoddColor		= P.PALETTE.index(P.LT_BLUE)	#Odd option key color
+default_style.ToddColor		= P.PALETTE.index(P.GREY3)		#Odd option text color
+default_style.OevenColor	= P.PALETTE.index(P.CYAN)		#Even option key color
+default_style.TevenColor	= P.PALETTE.index(P.YELLOW)		#Even option text color
 
 	### [Prompt] ###
-default_style.PbColor		= 7		#Key prompt brackets color
-default_style.PtColor		= 14	#Key prompt text color
+default_style.PbColor		= P.PALETTE.index(P.YELLOW)		#Key prompt brackets color
+default_style.PtColor		= P.PALETTE.index(P.LT_BLUE)	#Key prompt text color
 
 
 def RenderMenuTitle(conn:Connection,title):

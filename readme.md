@@ -82,7 +82,7 @@ Even though this is the third rewrite of this script, it is still in an early de
   - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longers uses mu-law compression.
   - Removed legacy RAW audio streaming code.
   - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-Latin characters.
-  - Fixed broken Streamlink support. Added Twitch stream example to `config.ini`
+  - Fixed broken Streamlink support. Added Twitch stream example to configuration file
   - **SLIDESHOW** now plays PCM audio for the correct amount of time.
   - SIDStreaming flushes the input buffer when the stream is canceled.
   - Fixed board/inbox message list order, changed from newest thread first to thread with newest message first.
@@ -96,6 +96,7 @@ Even though this is the third rewrite of this script, it is still in an early de
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified.
  - New LABEL internal function for displaying non-interactive text in menus.
+ - New command line parameter `-c`, select configuration file
 
 __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
@@ -120,8 +121,8 @@ Over time, the protocol has been extended to include 4-bit PCM audio streaming, 
 ---
 # 1.3 Features
 
-*RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini`) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
-In addition, the plug-in system allows adding extra functionality with full support from the config file.
+*RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini` by default) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
+In addition, the plug-in system allows adding extra functionality with full support from the configuration file.
 
 The BBS is multi-threaded and supports up to **five** simultaneous incoming 
 connections.
@@ -196,7 +197,8 @@ External software:
 ---
 # 2 Configuration file
 
-*RetroBBS* uses a file named `config.ini` located in the root install directory, this file follows the standard INI format (accepts the extended value interpolation method as used by the configparse Python module):
+*RetroBBS* uses the standard INI format for its configuration file (accepts the extended value interpolation method as used by the configparse Python module), the default file is `config.ini`, located in the root install directory:
+
 ```ini 
 [SECTION]
 key = value
@@ -299,7 +301,7 @@ The following are the function names providing access to internal BBS functional
 ### Function PCMPLAY:
 Enters PCM streaming mode and streams the audio file specified in the parameters.
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 
 | key | description
 |:---:|:---
@@ -308,7 +310,7 @@ Enters PCM streaming mode and streams the audio file specified in the parameters
 ### Function SWITCHMENU:
 Switches the BBS to a different menu.
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 
 | key | description
 |:---:|:---
@@ -317,12 +319,12 @@ Switches the BBS to a different menu.
 ### Function BACK:
 Switches the BBS back to the previous menu.
 
-`config.ini` parameter keys: NONE
+Configuration file parameter keys: NONE
 
 ### Function EXIT:
 Shows the logoff prompt and terminates the connection if the user confirms to do so.
 
-`config.ini` parameter keys: NONE
+Configuration file parameter keys: NONE
 
 ### Function SLIDESHOW:
 Display/streams all the supported files in the specified directory in sequential (alphabetical) order, the user must press `RETURN` to skip to the next file.
@@ -334,7 +336,7 @@ Supported filetypes are:
 - *ASCII* and *PETSCII* text files
 - *PETMate* and C syntax *PETSCII* screens
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 
 | key | description
 |:---:|:---
@@ -343,7 +345,7 @@ Supported filetypes are:
 ### Function FILES:
 Display the list of program files in a directory, the user-selected file will be transferred to memory.
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 
 | key | description
 |:---:|:---
@@ -352,7 +354,7 @@ Display the list of program files in a directory, the user-selected file will be
 ### Function IMAGEGALLERY:
 Display the list of images in a directory, the user-selected file will be transferred and displayed.
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 
 | key | description
 |:---:|:---
@@ -361,7 +363,7 @@ Display the list of images in a directory, the user-selected file will be transf
 ### Function AUDIOLIBRARY:
 Display the list of audio files in a directory, the user-selected file will be streamed.
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 
 | key | description
 |:---:|:---
@@ -370,22 +372,22 @@ Display the list of audio files in a directory, the user-selected file will be s
 ### Function USEREDIT:
 Display the user profile editor.
 
-`config.ini` parameter keys: NONE
+Configuration file parameter keys: NONE
 
 ### Function USERLIST:
 Display the list of registered users.
 
-`config.ini` parameter keys: NONE
+Configuration file parameter keys: NONE
 
 ### Function INBOX:
 Display the user's personal message inbox
 
-`config.ini` parameter keys: NONE
+Configuration file parameter keys: NONE
 
 ### Function BOARD:
 Display the message list for the specified board.
 
-`config.ini` parameter keys:
+Configuration file parameter keys:
 | key | description
 |:---:|:---
 | `entryZid` | Board ID (>0)
@@ -396,7 +398,7 @@ See the example `config.ini` for recommended usage.
 Display non-interactive text in a menu.
 Combine it with an entry description text in 1 column mode for a menu description that doesn't have an associated key.
 
-[^1]: Replace Z in the `config.ini` parameters with the entry ID number.
+[^1]: Replace Z in the configuration file parameters with the entry ID number.
 
 
 ---
@@ -420,15 +422,15 @@ __plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function t
 ### Astronomy Picture Of the Day (apod.py): 
 Retrieves and displays the text and picture from NASA's Astronomy Picture Of the Day.
 
-- `config.ini` function: APOD
-- `config.ini` parameters: NONE
-- `config.ini` \[PLUGINS\] options: `nasakey` = Your NASA API key, obtained from https://api.nasa.gov/. Default is `DEMO_KEY`
+- Configuration file function: APOD
+- Configuration file parameters: NONE
+- Configuration file \[PLUGINS\] options: `nasakey` = Your NASA API key, obtained from https://api.nasa.gov/. Default is `DEMO_KEY`
 
 ### IRC Client (irc_client.py):
 Basic and very experimental IRC client.
 
-- `config.ini` function: IRC
-- `config.ini` parameters:
+- Configuration file function: IRC
+- Configuration file parameters:
 
 | key | description
 |:---:|:---
@@ -436,56 +438,59 @@ Basic and very experimental IRC client.
 | `entryZport` | IRC server port. Default is 6667
 | `entryZchannel` | IRC channel to enter upon connection. Default is NONE
 
-- `config.ini` \[PLUGINS\] options: NONE
+- Configuration file \[PLUGINS\] options: NONE
 
 ### RSS feed reader (newsfeed.py):
 Retrieves the latest ten entries from the specified RSS feed, upon user selection of the entry, it scrapes the target website for text and relevant picture. The plug-in is primarily targeted at Wordpress sites, if it can't find the content it expects in the linked URL then the article text from the RSS feed itself will be displayed.
 
-- `config.ini` function: NEWSFEED
-- `config.ini` parameters: `entryZurl` = URL to the RSS feed
-- `config.ini` \[PLUGINS\] options: NONE
+- Configuration file function: NEWSFEED
+- Configuration file parameters: `entryZurl` = URL to the RSS feed
+- Configuration file \[PLUGINS\] options: NONE
 
 ### Oneliner (oneliner.py):
 User-generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
 
-- `config.ini` function: ONELINER
-- `config.ini` parameters: NONE
-- `config.ini` \[PLUGINS\] options: NONE
+- Configuration file function: ONELINER
+- Configuration file parameters: NONE
+- Configuration file \[PLUGINS\] options: NONE
 
 ### Weather (weather.py) (new 0.2x):
 Displays current weather and forecast for the next 2-3 days as a HiRes image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
 
-- `config.ini` function: WEATHER
-- `config.ini` parameters: NONE
-- `config.ini` \[PLUGINS\] options: `wxunits` = `C` or `F` for metric or customary units, respectively.
+- Configuration file function: WEATHER
+- Configuration file parameters: NONE
+- Configuration file \[PLUGINS\] options: 
+
+  - `wxunits` = `C` or `F` for metric or customary units, respectively. Defauls to metric
+  - `wxdefault` = Fallback location. Defaults to Meyrin, Switzerland.
 
 ### WebAudio streamer (webaudio.py):
  On the fly conversion and streaming of on-line audio sources (*Shoutcast*,
  *YouTube* or other sources).
 
-- `config.ini` function: WEBAUDIO
-- `config.ini` parameters: `entryZurl` = full URL to the audio stream
-- `config.ini` \[PLUGINS\] options: NONE
+- Configuration file function: WEBAUDIO
+- Configuration file parameters: `entryZurl` = full URL to the audio stream
+- Configuration file \[PLUGINS\] options: NONE
 
 ### Wikipedia (wiki.py):
 Search and display *Wikipedia* articles, displays relevant article image if found.
 
-- `config.ini` function: WIKI
-- `config.ini` parameters: NONE
-- `config.ini` \[PLUGINS\] options: NONE
+- Configuration file function: WIKI
+- Configuration file parameters: NONE
+- Configuration file \[PLUGINS\] options: NONE
 
 ### YouTube snapshot (youtube.py):
 Display a frame from the specified *YouTube* video. It will grab the latest frame if the video is a live stream. Otherwise it grabs a random frame.
 
-- `config.ini` function: GRABYT
-- `config.ini` parameters:
+- Configuration file function: GRABYT
+- Configuration file parameters:
 
 | key | description
 |:---:|:---
 | `entryZurl` | full URL to the *YouTube* video
 | `entryZcrop` | comma-separated list of image coordinates for cropping the video frame
 
-- `config.ini` \[PLUGINS\] options: NONE
+- Configuration file \[PLUGINS\] options: NONE
 
 ---
 # 4 Common modules
@@ -747,7 +752,9 @@ or
 
 depending on your python install.
 
-The only available command line option right now is `-v[1-4]`, which sets the verbosity of the log messages, a value of 1 will only output error messages, while a value of 4 will output every log line.
+Optional arguments:
+ - `-v[1-4]` sets the verbosity of the log messages, a value of 1 will only output error messages, while a value of 4 will output every log line.
+ - `c [file name]` sets the configuration file to be used, defaults to `config.ini`
 
 ---
 # 5.1 The intro/login sequence
@@ -820,7 +827,7 @@ An user with admin/sysop userclass (10) can delete threads or individual message
 ---
 # 6.1 Known bugs/issues
 
-  * Config file parser doesn't check for errors, a poorly built `config.ini` will cause a crash on startup.
+  * Config file parser doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * SID files that use the hard restart technique will sound wrong or not play at all.
 

@@ -75,8 +75,7 @@ def plugFunction(conn:Connection):
     result = response.content.decode()
     # Convert this data into a dictionary
     result  = json.loads(result)
-    pointd = result.get('loc','46.23,6.08')  #str(result['latitude'])+','+str(result['longitude'])
-    locqry = result.get('city','Meyrin')
+    locqry = result.get('city', conn.bbs.PlugOptions.get('wxdefault','Meyrin'))
     done = False
     loop = asyncio.new_event_loop()
     geoLoc = Nominatim(user_agent="RetroBBS")
@@ -98,8 +97,8 @@ def plugFunction(conn:Connection):
             locqry = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),30))
             tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
             if tloc == None:
-                #Default to Meyrin
-                locqry = 'Meyrin'
+                #Default to config setting, or Meyrin otherwise
+                locqry = conn.bbs.PlugOptions.get('wxdefault','Meyrin')
  
     loop.close()
     conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0))

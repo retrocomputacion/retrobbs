@@ -134,6 +134,9 @@ _run = True
 _tout = 60.0*5
 
 
+#Configuration file
+config_file = 'config.ini'
+
 #Plugins dictionary
 PlugDict = {}
 
@@ -156,12 +159,12 @@ def ConfigRead():
                 try:
                     ekey = bytes(cfg[key]['entry'+str(e+1)+'key'],'ascii')		#Entry Key binding
                 except:
-                    raise Exception('config.ini - Menu entry missing associated key')
+                    raise Exception('Configuration file - Menu entry missing associated key')
             else:
                 ekey = bytes(chr(nchar),'ascii')
                 nchar += 1
                 if nchar == '\r':
-                    raise Exception('config.ini - Too many LABEL entries')
+                    raise Exception('Configuration file - Too many LABEL entries')
             level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
             if efunc in func_dic:
                 #[function_call, parameters, title, ???, wait]
@@ -169,7 +172,7 @@ def ConfigRead():
             elif efunc in PlugDict:
                 sentry['entrydefs'][ekey] = [PlugDict[efunc][0],None,tentry,level,False]
             else:
-                raise Exception('config.ini - Unknown function at: '+'entry'+str(e+1)+'func')
+                raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
             #Parse parameters
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
@@ -240,9 +243,9 @@ def ConfigRead():
                 'LABEL': None}
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-    config.read('config.ini')
+    config.read(config_file)
 
-    bbs_instance.cfgmts = getmtime('config.ini') # Set latest config.ini modify datestamp
+    bbs_instance.cfgmts = getmtime(config_file) # Set latest configuration file modify datestamp
 
     #MAIN variables
 
@@ -459,7 +462,7 @@ def SendMenu(conn:Connection):
 
             if len(title) > 0 or count > (sw-1) or i >= b'\r':
                 if i < b'\r' and count % sw == 0:    #NULL entry
-                        conn.Sendall(chr(P.GREEN)+chr(P.VLINE))
+                        conn.Sendall(chr(P.LT_GREEN)+chr(P.VLINE))
                 KeyLabel(conn,chr(i[0]),title, toggle)
                 if i < b'\r' and count % sw != 0:
                     conn.Sendall(' ')
@@ -1311,9 +1314,9 @@ def ConnTask():
     while _run:
         time.sleep(1) # check once per second
 
-        # Reload config.ini if it has been modified and there's nobody online
+        # Reload configuration file if it has been modified and there's nobody online
         if len(conlist) == 0:
-            if getmtime('config.ini') != bbs_instance.cfgmts:
+            if getmtime(config_file) != bbs_instance.cfgmts:
                 _LOG('Config file modified',v=2)
                 _semaphore = True
                 ConfigRead()
@@ -1341,7 +1344,7 @@ def ConnTask():
 
 parser = argparse.ArgumentParser(description='Python BBS server for Turbo56K enabled terminals')
 parser.add_argument('-v', dest='verb', type=int, choices=range(1,5),nargs='?', const=1, default=1, help='Verbosity level (1-4): 1 = Errors only | 4 = All logs')
-
+parser.add_argument('-c', dest='config', type=str, nargs='?', const='config.ini', default='config.ini', help='Path to the configuration file to be used')
 
 if AA.wavs != True:
     _LOG('Audio fileformats not available!', v=2)
@@ -1352,6 +1355,9 @@ if AA.meta != True:
 args = parser.parse_args()
 
 set_verbosity(args.verb)
+
+#Set configuration file
+config_file = args.config
 
 _semaphore = False  #
 
@@ -1368,7 +1374,7 @@ else:
     #Add OS version
     bbs_instance.OSText = bbs_instance.OSText + platform.release()
 
-print('\n\nRetroBBS v%.2f (c)2021-2022\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
+print('\n\nRetroBBS v%.2f (c)2021-2023\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
 
 # Parse plugins
 p_mods = [importlib.import_module(name) for finder, name, ispkg in iter_namespace(plugins)]
