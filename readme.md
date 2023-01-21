@@ -95,6 +95,7 @@ Even though this is the third rewrite of this script, it is still in an early de
 
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified.
+ - New LABEL internal function for displaying non-interactive text in menus.
 
 __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
@@ -104,7 +105,8 @@ __Changes/Bug fixes__:
  - Fixed display of .c and .pet files
  - Fixed playtime for audio files played thru the PCMPLAY function
  - Improved *dbmaintenance.py* UI, now it is possible to cancel options 'Update user data' and 'Add user'
- - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts
+ - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts.
+ - Removed extra empty line if the first section of a menu doesnt have a title.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -267,7 +269,7 @@ Common menu entry keys:
 | `entryZtitle` | (Where 1 <= Z <= {entries}) Entry title
 | `entryZkey` | Keypress associated with this entry (UPPERCASE only)
 | `entryZdesc` | Entry description text, optional, only when the section is configured for 1 column
-| `entryZfunc` | Internal function or plug-in associated with this entry.<br>Depending on the function,specific entry keys may be needed (See next chapter)
+| `entryZfunc` | Internal function or plug-in associated with this entry.<br>Depending on the function,specific entry keys may be needed (See next chapter)<br>Defaults to `LABEL` if ommited.
 | `entryZlevel` | (Optional) Minimum useclass required to access this entry, default 0 (public)
 
 Function/plug-in specific entry keys:
@@ -389,6 +391,10 @@ Display the message list for the specified board.
 | `entryZid` | Board ID (>0)
 
 See the example `config.ini` for recommended usage.
+
+### Function LABEL:
+Display non-interactive text in a menu.
+Combine it with an entry description text in 1 column mode for a menu description that doesn't have an associated key.
 
 [^1]: Replace Z in the `config.ini` parameters with the entry ID number.
 
