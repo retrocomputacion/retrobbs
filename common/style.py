@@ -48,5 +48,9 @@ def KeyPrompt(text,style=default_style):
 def KeyLabel(conn:Connection, key, label, toggle, style=default_style):
 	c1 = style.OevenColor if toggle else style.OoddColor
 	c2 = style.TevenColor if toggle else style.ToddColor
-	conn.Sendall(chr(P.PALETTE[c1])+chr(P.RVS_ON)+chr(181)+key+chr(182)+chr(P.RVS_OFF)+chr(P.PALETTE[c2])+P.toPETSCII(label))
+	if key >= '\r':
+		conn.Sendall(chr(P.PALETTE[c1])+chr(P.RVS_ON)+chr(181)+key+chr(182)+chr(P.RVS_OFF))
+	conn.Sendall(chr(P.PALETTE[c2])+P.toPETSCII(label))
+	if key < '\r':
+		conn.Sendall('  ')
 	return not toggle

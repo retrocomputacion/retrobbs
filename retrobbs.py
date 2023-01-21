@@ -144,14 +144,24 @@ def ConfigRead():
 
     #Iterate Section Entries
     def EIter(cfg, key, sentry):
+        nchar = 0   # LABEL (no associated key) entries use chars 0x00 to 0x0c
         for e in range(0,sentry['entries']):
             tentry = cfg[key]['entry'+str(e+1)+'title']	#Entry Title
             if sentry['columns'] < 2:
                 dentry = cfg.get(key,'entry'+str(e+1)+'desc', fallback = '')
                 if dentry != '':
                     tentry = (tentry,dentry)
-            ekey = bytes(cfg[key]['entry'+str(e+1)+'key'],'ascii')		#Entry Key binding
-            efunc = cfg[key]['entry'+str(e+1)+'func']		#Entry Internal function
+            efunc = cfg.get(key,'entry'+str(e+1)+'func', fallback ='LABEL')		#Entry Internal function
+            if efunc != 'LABEL':
+                try:
+                    ekey = bytes(cfg[key]['entry'+str(e+1)+'key'],'ascii')		#Entry Key binding
+                except:
+                    raise Exception('config.ini - Menu entry missing associated key')
+            else:
+                ekey = bytes(chr(nchar),'ascii')
+                nchar += 1
+                if nchar == '\r':
+                    raise Exception('config.ini - Too many LABEL entries')
             level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
             if efunc in func_dic:
                 #[function_call, parameters, title, ???, wait]
@@ -182,7 +192,7 @@ def ConfigRead():
                 parms = [0]
             elif efunc == 'BOARD':
                 parms = [cfg.getint(key,'entry'+str(e+1)+'id', fallback = 1)]
-            elif efunc == 'BACK' or efunc == 'EXIT' or efunc == 'USEREDIT' or efunc =='USERLIST' or efunc == 'MESSAGE':
+            elif efunc == 'BACK' or efunc == 'EXIT' or efunc == 'USEREDIT' or efunc =='USERLIST' or efunc == 'MESSAGE' or efunc == 'LABEL':
                 parms = []
             elif efunc in PlugDict:			#Plugin function
                 parms = []
@@ -211,22 +221,23 @@ def ConfigRead():
         return(mentry)
     
     #Internal function dictionary
-    func_dic = {'IMAGEGALLERY': FileList,	#+
-                'AUDIOLIBRARY': AA.AudioList,	#+
-                'FILES': FileList,			#+
+    func_dic = {'IMAGEGALLERY': FileList,
+                'AUDIOLIBRARY': AA.AudioList,
+                'FILES': FileList,
                 'SENDRAW': FT.SendRAWFile,
-                'SWITCHMENU': SwitchMenu,	#+
-                'SLIDESHOW': SlideShow,		#+
+                'SWITCHMENU': SwitchMenu,
+                'SLIDESHOW': SlideShow,
                 'SIDPLAY': AA.SIDStream,
-                'PCMPLAY': AA.PlayAudio,		#+
+                'PCMPLAY': AA.PlayAudio,
                 'TEXT': SendText,
                 'SHOWPIC': FT.SendBitmap,
-                'EXIT': LogOff,				#+
+                'EXIT': LogOff,
                 'BACK': MenuBack,
                 'USEREDIT': EditUser,
-                'USERLIST': UserList,       #+
+                'USERLIST': UserList,
                 'BOARD': MM.inbox,
-                'INBOX': MM.inbox}			#+tmp
+                'INBOX': MM.inbox,
+                'LABEL': None}
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     config.read('config.ini')
@@ -418,9 +429,10 @@ def SendMenu(conn:Connection):
     _LOG("Sending menu: "+tmenu['title'],id=conn.id,v=4)
     RenderMenuTitle(conn,tmenu['title'])
     conn.Sendall('\r')
-    for s in tmenu['entries']:
+    for scount, s in enumerate(tmenu['entries']):
         #Sections
-        conn.Sendall(' '+chr(P.WHITE)+P.toPETSCII(s['title'])+'\r')
+        if len(s['title'])>0 or scount > 0:
+            conn.Sendall(' '+chr(P.WHITE)+P.toPETSCII(s['title'])+'\r')
         conn.Sendall(chr(P.LT_GREEN)+chr(176)+38*chr(P.HLINE)+chr(174))
 
         #Items
@@ -445,13 +457,19 @@ def SendMenu(conn:Connection):
 
             title = t if len(t)<tw else t[0:tw-4]+'...'
 
-            KeyLabel(conn,chr(i[0]),title, toggle)
-            if count % sw == 0:
-                toggle = not toggle
-                line = ' '*(tw-1-len(title))+(' 'if sw == 2 else chr(P.GREEN)+chr(P.VLINE))
-                conn.Sendall(line)
-            else:
-                conn.Sendall(' '*(19-(len(title)+3))+chr(P.GREEN)+chr(P.VLINE))
+            if len(title) > 0 or count > (sw-1) or i >= b'\r':
+                if i < b'\r' and count % sw == 0:    #NULL entry
+                        conn.Sendall(chr(P.GREEN)+chr(P.VLINE))
+                KeyLabel(conn,chr(i[0]),title, toggle)
+                if i < b'\r' and count % sw != 0:
+                    conn.Sendall(' ')
+
+                if count % sw == 0:
+                    toggle = not toggle
+                    line = ' '*(tw-1-len(title))+(' 'if sw == 2 else chr(P.GREEN)+chr(P.VLINE))
+                    conn.Sendall(line)
+                else:
+                    conn.Sendall(' '*(19-(len(title)+3))+chr(P.GREEN)+chr(P.VLINE))
             if desc != '':
                 tdesc = ''
                 for l in desc:
