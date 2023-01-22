@@ -275,7 +275,7 @@ def ConfigRead():
             prompt = config['MENU'+str(m+1)].get('prompt', fallback='sELECTION:')
             tkey = 'MENU'+str(m+1)+'SECTION'
 
-        _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'entries':[{}]*scount}
+        _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
         _bbs_menues[m] = MIter(config,tkey,_bbs_menues[m])
         _bbs_menues[m]['entries'][0]['entrydefs'][b'\r']=[SendMenu,(),'',False,False]
 
@@ -451,32 +451,35 @@ def SendMenu(conn:Connection):
             if i == b'\r':
                 continue
 
+            xw = (2 if i<b'\r' else 0)    # Extra width if LABEL item
+
             if isinstance(s['entrydefs'][i][2],tuple):
                 t = s['entrydefs'][i][2][0]
-                desc = formatX(s['entrydefs'][i][2][1],columns=36)
+                dw = 38 if len(t) == 0 and i<b'\r' else 36
+                desc = formatX(s['entrydefs'][i][2][1],columns=dw)
             else:
                 t = s['entrydefs'][i][2]
                 desc =''
 
-            title = t if len(t)<tw else t[0:tw-4]+'...'
+            title = t if len(t)<(tw+xw) else t[0:(tw+xw)-4]+'...'
 
             if len(title) > 0 or count > (sw-1) or i >= b'\r':
                 if i < b'\r' and count % sw == 0:    #NULL entry
                         conn.Sendall(chr(P.LT_GREEN)+chr(P.VLINE))
                 KeyLabel(conn,chr(i[0]),title, toggle)
-                if i < b'\r' and count % sw != 0:
-                    conn.Sendall(' ')
+                #if i < b'\r' and count % sw != 0:
+                #    conn.Sendall(' ')
 
                 if count % sw == 0:
                     toggle = not toggle
-                    line = ' '*(tw-1-len(title))+(' 'if sw == 2 else chr(P.GREEN)+chr(P.VLINE))
+                    line = ' '*((tw+xw)-1-len(title))+(' 'if sw == 2 else chr(P.GREEN)+chr(P.VLINE))
                     conn.Sendall(line)
                 else:
-                    conn.Sendall(' '*(19-(len(title)+3))+chr(P.GREEN)+chr(P.VLINE))
+                    conn.Sendall(' '*(19-(len(title)+(3-int(xw*1.5))))+chr(P.GREEN)+chr(P.VLINE))
             if desc != '':
                 tdesc = ''
                 for l in desc:
-                    tdesc += chr(P.LT_GREEN)+chr(P.VLINE)+chr(P.WHITE)+'  '+l+((36-len(l))*' ')+chr(P.GREEN)+chr(P.VLINE)
+                    tdesc += chr(P.LT_GREEN)+chr(P.VLINE)+chr(P.WHITE)+(' '*(38-dw))+l+((dw-len(l))*' ')+chr(P.GREEN)+chr(P.VLINE)
                 conn.Sendall(tdesc)
             count += 1
         if (count % sw == 1) and (sw == 2):
@@ -1269,6 +1272,7 @@ def BBSLoop(conn:Connection):
                             prompt = conn.MenuDefs[data][2] if len(conn.MenuDefs[data][2])<20 else conn.MenuDefs[data][2][:17]+'...'
                             conn.Sendall(P.toPETSCII(prompt))	#Prompt
                             time.sleep(1)
+                            print(bbs_instance.MenuList[conn.menu]['type'])
                             wait = conn.MenuDefs[data][4]
                             Function = conn.MenuDefs[data][0]
                             res = Function(*conn.MenuDefs[data][1])

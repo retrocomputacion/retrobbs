@@ -51,6 +51,6 @@ def KeyLabel(conn:Connection, key, label, toggle, style=default_style):
 	if key >= '\r':
 		conn.Sendall(chr(P.PALETTE[c1])+chr(P.RVS_ON)+chr(181)+key+chr(182)+chr(P.RVS_OFF))
 	conn.Sendall(chr(P.PALETTE[c2])+P.toPETSCII(label))
-	if key < '\r':
-		conn.Sendall('  ')
+	#if key < '\r':
+	#	conn.Sendall('  ')
 	return not toggle
