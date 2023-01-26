@@ -323,8 +323,8 @@ def _GetSIDLength(filename):
         tf = open(filename[:-3]+'ssl')
         tstr = tf.read()
         tf.close()
-    elif os.path.isfile(os.path.dirname(filename)+'SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') == True:
-        tf = open(os.path.dirname(filename)+'SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl')
+    elif os.path.isfile(os.path.dirname(filename)+'/SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') == True:
+        tf = open(os.path.dirname(filename)+'/SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl')
         tstr = tf.read()
         tf.close()
     if tstr != None:
