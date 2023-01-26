@@ -7,6 +7,7 @@ from os import walk
 import random
 import subprocess
 import signal
+import math
 
 from common.bbsdebug import _LOG,bcolors
 import common.helpers as H
@@ -494,7 +495,7 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
                     #oh.write(mus_driver[2:0xc6e+2]) #Player
                     #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
                     #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
-            data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',ptime, order)
+            data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime*1.2), order)
         else:
             data = []
         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
