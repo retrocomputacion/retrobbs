@@ -20,6 +20,7 @@ class BBS:
 		self.Paths = {'bbsfiles': 'bbsfiles/', 'plugins': 'plugins/', }
 		self.PlugOptions = {}	#Plugins options from the config file
 		self.BoardOptions = {}	#Message boards options from the config file
+		self.Paths = {}			#Preset paths
 		self.dateformat = 0		#Date format
 		self.database = DBase()
 		self.version = 0		#BBS version

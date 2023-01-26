@@ -29,6 +29,7 @@ VERSION 0.25
    2. [SID SongLength](#52-sid-songlength)
    3. [User accounts / Database management](#53-user-accounts--database-management)
    4. [Messaging system](#54-messaging-system)
+   5. [Temporal directory](#55-temporal-directory)
 6. [TO-DO List](#6-to-do-list)
    1. [Known bugs](#61-known-bugsissues)
 7. [Acknowledgements](#7-acknowledgements)
@@ -97,6 +98,7 @@ __New features__:
  - Idle BBS will reload the configuration file if it has been modified.
  - New LABEL internal function for displaying non-interactive text in menus.
  - New command line parameter `-c`, select configuration file
+ - SID streaming now supports Compute's Sidplayer .mus files
 
 __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
@@ -108,6 +110,7 @@ __Changes/Bug fixes__:
  - Improved *dbmaintenance.py* UI, now it is possible to cancel options 'Update user data' and 'Add user'
  - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts.
  - Removed extra empty line if the first section of a menu doesnt have a title.
+ - Custom paths are now read from the configuration file, currently only 'temp' and 'bbsfiles' presets are used internally.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -235,7 +238,7 @@ Settings for the available messaging boards
 | `boardXpost` | Minimum userclass that can post messages on this board (No less than 1)
 
 ### **\[PATHS\]**
-Directory paths to different BBS files, some are referenced in menu entry definitions. All paths must end with '/'.
+Directory paths to different BBS files, some are used internally, other are referenced in menu entry definitions. All paths must end with '/'.
 
 | key | description
 |:---:|:---
@@ -243,6 +246,7 @@ Directory paths to different BBS files, some are referenced in menu entry defini
 | `audio` | Path to files for the audio library
 | `images` | Path to pictures for the Image gallery
 | `downloads` | Path to files for the program library
+| `temp` | Path to temporary files created by the BBS or it's plugins
 
 Custom paths can be added here as needed
 
@@ -758,10 +762,10 @@ Optional arguments:
 
 ---
 # 5.1 The intro/login sequence
-Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` subdirectory.
+Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
 
-After a successful login or directly after choosing guest access, the supported files in the subdirectory `bbsfiles/intro` will be shown/played in alphabetical order.
+After a successful login or directly after choosing guest access, the supported files in the subdirectory `[bbsfiles]/intro` will be shown/played in alphabetical order.
 
 ---
 # 5.2 SID SongLength
@@ -814,6 +818,51 @@ Once done with the editing, the user should press `F8` and will be prompted if t
 An user with admin/sysop userclass (10) can delete threads or individual messages (deleting the first message in a thread will delete the whole thread).
 
 ---
+# 5.5 Temporal directory
+The path preset `temp` is used by the BBS or it's plugins to store temporal files.
+
+Currently only the SID streaming function makes use of this path.
+
+If you're running the BBS from a Raspberry PI or other SBC that uses an SD card as main storage we recommend to create a RAM disk and point the `term` path to it. This will reduce the wear on your SD card.
+
+### Creating a RAM disk
+First create a mount point:
+```
+sudo mkdir /mnt/ramdisk
+```
+(You can replace _ramdisk_ by any valid name of your choice)
+
+Next you have to mount your new RAMdisk:
+
+```
+sudo mount -t tmpfs -o rw,size=1M tmpfs /mnt/ramdisk
+```
+Here the "1M" means the RAMdisk will have a size of 1 Megabyte, this is more than enough for current use by the BBS, but can change in the future.
+
+To make this change permanent you'll need to add the previous command to your fstab file.
+
+First make a backup of your fstab file:
+```
+sudo cp -v /etc/fstab /etc/fstab.backup
+```
+Next open /etc/fstab in your favourite text editor (as administrator), and add the following line at the end of the file:
+
+```
+sudo mount -t tmpfs -o rw,size=1M tmpfs /mnt/ramdisk
+```
+And save it.
+
+On your next reboot /mnt/ramdisk should be mounted and ready to use.
+
+Lastly change the `temp` path in your configuration file:
+```ini
+...
+[PATHS]
+temp = /mnt/ramdisk/
+...
+```
+
+---
 # 6 TO-DO List
 
  * Further code cleanup, move more functions out of the main script and into their corresponding modules.
@@ -850,6 +899,7 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Vaporatorius
   * Gabriel Garcia
   * Roberto Mandracchia
+  * ChrisKewl - twitter.com/chriskewltv
 
 ## External software, support files
 

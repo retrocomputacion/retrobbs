@@ -5,7 +5,6 @@ import re
 import os
 from os import walk
 import random
-import warnings
 import subprocess
 import signal
 
@@ -70,7 +69,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 
     wext = ('.wav','.WAV','.mp3','.MP3')
 
-    filefilter = ('.sid', '.SID')
+    filefilter = ('.sid', '.SID', '.mus', '.MUS')
     if wavs == True:
         filefilter = filefilter + wext
 
@@ -337,20 +336,25 @@ def _GetSIDLength(filename):
     return length
 
 def _DisplaySIDInfo(conn:Connection, info):
-    minutes = int(info['songlength']/60)
-    seconds = info['songlength']- (minutes*60)
-    conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
-    for y in range(0,10):
-        conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
-    conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(10,226)+chr(P.GREY3))
-    # text = format40('\r Titulo: '+info['title']+'\r Artista: '+info['artist']+'\r Copyright: '+info['copyright']+'\r Duracion: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r\r pRESIONE return PARA REPRODUCIR\r cUALQUIER TECLA PARA DETENER\r')
-    # for line in text:
-    # 	conn.Sendall(chr(P.RVS_ON)+line+'\r')
-    conn.Sendall(chr(P.CRSR_DOWN)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
-    conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
-    conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')
-    conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r')
-    conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
+    if isinstance(info,dict):
+        minutes = int(info['songlength']/60)
+        seconds = info['songlength']- (minutes*60)
+        conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
+        for y in range(0,10):
+            conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
+        conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(10,226)+chr(P.GREY3))
+        # text = format40('\r Titulo: '+info['title']+'\r Artista: '+info['artist']+'\r Copyright: '+info['copyright']+'\r Duracion: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r\r pRESIONE return PARA REPRODUCIR\r cUALQUIER TECLA PARA DETENER\r')
+        # for line in text:
+        # 	conn.Sendall(chr(P.RVS_ON)+line+'\r')
+        conn.Sendall(chr(P.CRSR_DOWN)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
+        conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
+        conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')
+        conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r')
+        conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
+    else:
+        conn.Sendall(chr(P.CLEAR)+chr(P.ENABLE_CBMSHIFT)+chr(P.TOUPPER))
+        conn.Sendallbin(info)
+        conn.Sendall(chr(P.YELLOW)+'\rPRESS RETURN TO PLAY\rANY KEY TO STOP')
 
 #  SID player ID - commented out until better functionality is built into RetroTerm
 # def _SIDid(binary):
@@ -419,24 +423,37 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
     player = ""
     order = 0
 
+    tmp,ext = os.path.splitext(filename)
+
     if ptime == None:
         ptime = _GetSIDLength(filename)
 
     with open(filename, "rb") as fh:
         content = fh.read()
         if dialog == True:
-            info = {}
-            info['type'] = (content[:4].decode("iso8859-1"))
-            info['version'] = (content[5])
-            info['subsongs'] = (content[15])
-            info['startsong'] = (content[17])
-            info['title'] = (content[22:54].decode('iso8859-1')).strip(chr(0))
-            info['artist'] = (content[54:86].decode('iso8859-1')).strip(chr(0))
-            info['copyright'] = (content[86:118].decode('iso8859-1')).strip(chr(0))
-            info['songlength'] = ptime
-            _DisplaySIDInfo(conn, info)
-            conn.ReceiveKey()
-            conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+            if (ext == '.sid') or (ext == '.SID'):
+                info = {}
+                info['type'] = (content[:4].decode("iso8859-1"))
+                info['version'] = (content[5])
+                info['subsongs'] = (content[15])
+                info['startsong'] = (content[17])
+                info['title'] = (content[22:54].decode('iso8859-1')).strip(chr(0))
+                info['title'] = info['title'] if len(info['title'])>0 else '???'
+                info['artist'] = (content[54:86].decode('iso8859-1')).strip(chr(0))
+                info['artist'] = info['artist'] if len(info['artist'])>0 else '???'
+                info['copyright'] = (content[86:118].decode('iso8859-1')).strip(chr(0))
+                info['copyright'] = info['copyright'] if len(info['copyright'])>0 else '???'
+                info['songlength'] = ptime
+                _DisplaySIDInfo(conn, info)
+                conn.ReceiveKey()
+                conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+            elif (ext == '.mus') or (ext == '.MUS'):
+                offset = (content[2]+content[3]*256)+(content[4]+content[5]*256)+(content[6]+content[7]*256)+8
+                info = content[offset:]
+                _DisplaySIDInfo(conn, info)
+                conn.ReceiveKey()
+                conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+
         #  SID player register order - commented out until better functionality is built into RetroTerm
         # player = _SIDid(content)
         # if (conn.T56KVer > 0.5):
@@ -455,8 +472,29 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
 
     if player != "":
         data = sd.SIDParser(filename,ptime, order)
+        if len(data) == 0:  # siddump version doesnt support .mus files
+            # Build a .sid file
+            with open(filename, "rb") as fh:
+                with open(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',"wb") as oh:
+                    content = fh.read()
+                    oh.write(b'PSID')   #Header
+                    oh.write(b'\x00\x01') #Version
+                    oh.write(b'\x00\x76') #Data offset
+                    oh.write(b'\x09\x00') #Load Address
+                    oh.write(b'\xec\x8f') #Init Address ($EC60)
+                    oh.write(b'\xec\x80') #Play Address
+                    oh.write(b'\x00\x01') #Default tune
+                    oh.write(b'\x00\x01') #Max tune
+                    oh.write(b'\x00\x00\x00\x01') #Flags
+                    oh.write(b'\x00'*32*3) #Metadata
+                    oh.write(content[2:])   #Music data
+                    oh.write(b'\x00'*(0xe000-((len(content)-2)+0x900))) #padding
+                    oh.write(sd.mus_driver[2:])
+                    #oh.write(mus_driver[2:0xc6e+2]) #Player
+                    #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
+                    #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
+            data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',ptime, order)
         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
-
         count = 0
         #tt0 = time.time()
         for frame in data:

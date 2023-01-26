@@ -188,9 +188,9 @@ def ConfigRead():
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound')
                 parms = [tentry,'','Displaying audio list',p]
             elif efunc == 'PCMPLAY':		#Play PCM audio
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback='bbsfiles/bbsintroaudio-eng11K8b.wav'),None]
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
             elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
-                parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback='bbsfiles/pictures')]
+                parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures')]
             elif efunc == 'INBOX':
                 parms = [0]
             elif efunc == 'BOARD':
@@ -258,6 +258,23 @@ def ConfigRead():
 
     bbs_instance.dateformat = config['MAIN'].getint('dateformat', fallback=1)
 
+    #Get any paths
+    try:
+        bbs_instance.Paths = dict(config.items('PATHS'))
+    except:
+        bbs_instance.Paths = {'temp':'tmp/','bbsfiles':'bbsfiles/'}
+    #Get any message boards options
+    try:
+        bbs_instance.BoardOptions = dict(config.items('BOARDS'))
+    except:
+        bbs_instance.BoardOptions = {}
+    #Get any plugin config options
+    try:
+        bbs_instance.PlugOptions = dict(config.items('PLUGINS'))
+    except:
+        bbs_instance.PlugOptions = {}
+
+
     #Parse Menues
     mcount = config['MAIN'].getint('menues')								#Number of menues
 
@@ -280,19 +297,6 @@ def ConfigRead():
         _bbs_menues[m]['entries'][0]['entrydefs'][b'\r']=[SendMenu,(),'',False,False]
 
     bbs_instance.MenuList = _bbs_menues
-
-    #Get any message boards options
-    try:
-        bbs_instance.BoardOptions = dict(config.items('BOARDS'))
-    except:
-        bbs_instance.BoardOptions = {}
-
-    #Get any plugin config options
-    try:
-        bbs_instance.PlugOptions = dict(config.items('PLUGINS'))
-    except:
-        bbs_instance.PlugOptions = {}
-
 
 #Handles CTRL-C
 def signal_handler(sig, frame):
@@ -870,7 +874,7 @@ def SignIn(conn:Connection):
                         lines = 13
                     else:
                         lines = 25
-                    SendText(conn,'bbsfiles/terms/rules.txt','',lines)
+                    SendText(conn,conn.bbs.Paths['bbsfiles']+'terms/rules.txt','',lines)
                     conn.Sendall('\rrEGISTERING USER '+name+'\riNSERT YOUR PASSWORD:')
                     pw = conn.ReceiveStr(bytes(keys,'ascii'), 16, True)
                     if not conn.connected:
@@ -1225,7 +1229,7 @@ def BBSLoop(conn:Connection):
                 GetTerminalFeatures(conn)
                 if conn.TermFt[1]!=b'\x80' and conn.TermFt[2]!=b'\x80' and conn.TermFt[51]!=b'\x80':
                     _LOG('Sending intro pic',id=conn.id,v=4)
-                    bg = FT.SendBitmap(conn,'bbsfiles/splash.art',12,False)
+                    bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+'splash.art',12,False)
                     _LOG('Spliting Screen',id=conn.id,v=4)
                     conn.Sendall(TT.split_Screen(12,False,ord(bg),0))
                 time.sleep(1)
@@ -1240,12 +1244,12 @@ def BBSLoop(conn:Connection):
                         SignIn(conn)
                         if conn.username != '_guest_':
                             conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0))
-                            SlideShow(conn,'','bbsfiles/intro/')
+                            SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
                             conn.Sendall(TT.enable_CRSR())
                             Done = True
                     elif t == b'G':
                         conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
-                        SlideShow(conn,'','bbsfiles/intro/')
+                        SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
                         conn.Sendall(TT.enable_CRSR())
                         Done = True
                     else:
@@ -1272,7 +1276,7 @@ def BBSLoop(conn:Connection):
                             prompt = conn.MenuDefs[data][2] if len(conn.MenuDefs[data][2])<20 else conn.MenuDefs[data][2][:17]+'...'
                             conn.Sendall(P.toPETSCII(prompt))	#Prompt
                             time.sleep(1)
-                            print(bbs_instance.MenuList[conn.menu]['type'])
+                            #print(bbs_instance.MenuList[conn.menu]['type'])
                             wait = conn.MenuDefs[data][4]
                             Function = conn.MenuDefs[data][0]
                             res = Function(*conn.MenuDefs[data][1])
