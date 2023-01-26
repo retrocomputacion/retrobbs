@@ -471,8 +471,9 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
         player = 'x'    # <<<< Delete this line when player ID is properly implemented
 
     if player != "":
-        data = sd.SIDParser(filename,ptime, order)
-        if len(data) == 0:  # siddump version doesnt support .mus files
+        if (ext == '.sid') or (ext == '.SID'):
+            data = sd.SIDParser(filename,ptime, order)
+        elif (ext == '.mus') or (ext == '.MUS'):
             # Build a .sid file
             with open(filename, "rb") as fh:
                 with open(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',"wb") as oh:
@@ -494,6 +495,8 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
                     #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
                     #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
             data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',ptime, order)
+        else:
+            data = []
         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
         count = 0
         #tt0 = time.time()

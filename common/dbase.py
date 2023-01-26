@@ -21,10 +21,10 @@ User_Fields = {'User name':['uname',0,[6,15]], 'Password':['pass',1,[6,15]], 'Fi
                 'Birthdate':['bday',2,[10,10]], 'Country':['country',0,[2,15]]}
 
 class DBase:
-    def __init__(self):
+    def __init__(self,path):
     #Open DataBase
         #Only the main script should call this
-        self.db = TinyDB('bbsfiles/db.json',sort_keys=True, indent=4)
+        self.db = TinyDB(path+'db.json',sort_keys=True, indent=4)
         table = self.db.table('USERS')
         table.update({'online':0})  #Logoff any stray user from last time the BBS was run
 

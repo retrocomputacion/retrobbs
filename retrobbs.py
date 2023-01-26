@@ -1329,6 +1329,7 @@ def ConnTask():
                 _LOG('Config file modified',v=2)
                 _semaphore = True
                 ConfigRead()
+                bbs_instance.start()    #Restart
                 _semaphore = False
 
         for t in range(1,6):
@@ -1396,6 +1397,8 @@ for a in p_mods:
 
 # Read config file
 ConfigRead()
+
+bbs_instance.start()
 
 # Register CTRL-C handler
 signal.signal(signal.SIGINT, signal_handler)

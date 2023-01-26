@@ -22,12 +22,23 @@ class BBS:
 		self.BoardOptions = {}	#Message boards options from the config file
 		self.Paths = {}			#Preset paths
 		self.dateformat = 0		#Date format
-		self.database = DBase()
+		self.database = None	#Database
 		self.version = 0		#BBS version
-		self.runtime = time.time()	#Timestamp this BBS session started
+		self.runtime = 0		#Timestamp this BBS session started
 		self.visits = 0			#Number of visits in this session
 		self.cfgmts = 0			#Config file modification timestamp
 
+	def start(self):
+		if self.database != None:
+			self.stop()
+		self.database = DBase(self.Paths['bbsfiles'])
+		self.runtime = time.time()
+
+	def stop(self):
+		if self.database != None:
+			self.database.uptime(time.time() - self.runtime)	#Update total uptime
+			self.database.closeDB()
+
 	def __del__(self):
-		self.database.uptime(time.time() - self.runtime)	#Update total uptime
-		self.database.closeDB()
+		self.stop()
+
