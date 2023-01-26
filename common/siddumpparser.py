@@ -260,7 +260,6 @@ def SIDParser(filename,ptime,order = 0):
     except:
         return(None)
     output = sidsub.stdout.read()
-    print(output)
     outlines = output.split(b'\n')[7:-1] #Split in lines, skip first 7
 
     oldmode = 0 #Last filter mode
