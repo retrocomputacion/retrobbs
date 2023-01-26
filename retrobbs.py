@@ -318,6 +318,7 @@ def signal_handler(sig, frame):
         sock.close()
     except:
         pass
+    del bbs_instance
     sys.exit(0)
 
 
