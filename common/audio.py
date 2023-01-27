@@ -84,7 +84,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 
     #for t in range(0,len(audios)):
     #	length.append(0.0)
-    length = [0.0]*len(audios)	#Audio lenght list
+    length = [0.0]*len(audios)	#Audio length list
 
     #Calc pages
     pages = int((len(audios)-1) / 20) + 1
@@ -446,6 +446,9 @@ def SIDStream(conn:Connection, filename,ptime, dialog=True):
                 info['copyright'] = info['copyright'] if len(info['copyright'])>0 else '???'
                 info['songlength'] = ptime
                 _DisplaySIDInfo(conn, info)
+                if info['version'] > 1:
+                    if content[119]&12 == 8:
+                        ptime = math.ceil(ptime*1.2)    #siddump always assumes 50Hz
                 conn.ReceiveKey()
                 conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
             elif (ext == '.mus') or (ext == '.MUS'):
