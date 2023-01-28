@@ -176,25 +176,28 @@ def ConfigRead():
             #Parse parameters
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
-                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images')
+                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
                 parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.ART','.OCP','.KOA','.KLA','.gif','jpg','png','.GIF','.JPG','PNG'),FT.SendBitmap]
             elif efunc == 'SWITCHMENU':		#Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			#Show file list
                 exts = tuple((cfg.get(key,'entry'+str(e+1)+'ext', fallback='.prg,.PRG')).split(','))
-                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs')
+                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
                 parms = [tentry,'','Displaying file list',p,exts,FT.SendProgram]
             elif efunc == 'AUDIOLIBRARY':	#Show audio file list
-                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound')
+                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound/')
                 parms = [tentry,'','Displaying audio list',p]
             elif efunc == 'PCMPLAY':		#Play PCM audio
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
+            elif efunc == 'SIDPLAY':        #Play SID/MUS
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
             elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
                 parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures')]
             elif efunc == 'INBOX':
                 parms = [0]
             elif efunc == 'BOARD':
                 parms = [cfg.getint(key,'entry'+str(e+1)+'id', fallback = 1)]
+            # functions without parameters
             elif efunc == 'BACK' or efunc == 'EXIT' or efunc == 'USEREDIT' or efunc =='USERLIST' or efunc == 'MESSAGE' or efunc == 'LABEL':
                 parms = []
             elif efunc in PlugDict:			#Plugin function

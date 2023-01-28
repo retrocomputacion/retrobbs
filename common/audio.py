@@ -31,6 +31,9 @@ except:
 #SIDStreaming
 import common.siddumpparser as sd
 
+##########################################################
+# Display list of audio files, with playtime
+##########################################################
 def AudioList(conn:Connection,title,speech,logtext,path):
 
     if conn.menu != -1:
@@ -121,9 +124,9 @@ def AudioList(conn:Connection,title,speech,logtext,path):
             conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
             afunc = SIDStream
             tsecs = _GetSIDLength(path+audios[x])
-            tmins = int(tsecs / 60)
-            length[x] = int(tsecs)
-            tsecs = tsecs - (tmins * 60)
+            tmins = int(tsecs[0] / 60)
+            length[x] = tsecs
+            tsecs = tsecs[0] - (tmins * 60)
         conn.Sendall(chr(P.WHITE)+('00'+str(tmins))[-2:]+':'+('00'+str(tsecs))[-2:]+'\r')
         row += 1
         #Add keybinding to MenuDic
@@ -142,7 +145,9 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     conn.Sendall(chr(255) + chr(160))
     return MenuDic
 
+#########################################
 # Display audio dialog
+#########################################
 def _AudioDialog(conn:Connection, data):
     conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
     for y in range(0,15):
@@ -163,7 +168,9 @@ def _AudioDialog(conn:Connection, data):
         return False
     return True
 
+###########################################
 # Get audio length for PCM file in seconds
+###########################################
 def _GetPCMLength(filename):
     if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
         #Load metadata
@@ -175,7 +182,9 @@ def _GetPCMLength(filename):
             tsecs = int(f.duration)
     return tsecs
 
+######################################################################
 #Send Audio file
+######################################################################
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     bnoise = b'\x10\x01'
     CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
@@ -290,9 +299,11 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     time.sleep(1)
     #conn.Sendall(chr(P.DELETE))
     conn.socket.settimeout(conn.bbs.TOut)
-    
+
+#########################################    
 # PcmStream Class
 # Receive an audio stream through FFMPEG
+#########################################
 class PcmStream:
     def __init__(self, fn, sr):
         # self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
@@ -317,6 +328,9 @@ class PcmStream:
         self.pcm_stream.terminate()
         #os.killpg(self.pcm_stream.pid, signal.SIGKILL)
 
+##################################
+# Get SID playtimes from ssl file
+##################################
 def _GetSIDLength(filename):
     tstr = None
     if os.path.isfile(filename[:-3]+'ssl') == True:
@@ -328,34 +342,72 @@ def _GetSIDLength(filename):
         tstr = tf.read()
         tf.close()
     if tstr != None:
-        tmins = int(hex(ord(tstr[0]))[2:])
-        tsecs = int(hex(ord(tstr[1]))[2:])
-        length = (tmins*60)+tsecs # Playtime for the 1st subtune
+        length = []
+        for i in range(0,len(tstr),2):
+            tmins = int(hex(ord(tstr[i]))[2:])
+            tsecs = int(hex(ord(tstr[i+1]))[2:])
+            length.append((tmins*60)+tsecs) # Playtime for the 1st subtune
     else:
-        length = 60*3
+        length = [60*3]
     
     return length
 
+############################################
+# Display SID info dialog
+############################################
 def _DisplaySIDInfo(conn:Connection, info):
+    
+    def calctime():
+        m = int(info['songlength'][subtune-1]/60)
+        return m,info['songlength'][subtune-1]- (m*60)
+
     if isinstance(info,dict):
-        minutes = int(info['songlength']/60)
-        seconds = info['songlength']- (minutes*60)
+        subtune = info['startsong']
+        # minutes = int(info['songlength'][subtune]/60)
+        # seconds = info['songlength'][subtune]- (minutes*60)
+        minutes, seconds = calctime()
         conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
-        for y in range(0,10):
+        for y in range(0,12):
             conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
-        conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(10,226)+chr(P.GREY3))
+        conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(12,226)+chr(P.GREY3))
         # text = format40('\r Titulo: '+info['title']+'\r Artista: '+info['artist']+'\r Copyright: '+info['copyright']+'\r Duracion: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r\r pRESIONE return PARA REPRODUCIR\r cUALQUIER TECLA PARA DETENER\r')
         # for line in text:
         # 	conn.Sendall(chr(P.RVS_ON)+line+'\r')
         conn.Sendall(chr(P.CRSR_DOWN)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
         conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
         conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')
-        conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r')
-        conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
+        conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ str(minutes).zfill(2)+':'+str(seconds).zfill(2)+'\r')
+        if info['subsongs'] > 1:    #Subtune
+            conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+' sUBTUNE: '+chr(P.GREY2)+'<'+chr(P.WHITE)+chr(P.RVS_OFF)+str(subtune).zfill(2)+chr(P.RVS_ON)+chr(P.GREY2)+'>'+chr(P.GREY3)+'\r')
+        conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS _ TO EXIT\r"+chr(P.RVS_ON)+" return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
+        conn.Sendall(TT.disable_CRSR())
+        while True and conn.connected:
+            k = conn.ReceiveKey(b'<>_\r')
+            if k == b'_':
+                subtune = -1
+                break
+            elif k == b'\r':
+                break
+            elif k == b'<' and subtune > 1:
+                subtune -= 1
+                minutes, seconds = calctime()
+                conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,6)+chr(P.WHITE)+str(subtune).zfill(2))
+                conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,4)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
+            elif k == b'>' and subtune < info['subsongs']:
+                subtune += 1
+                minutes, seconds = calctime()
+                conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,6)+chr(P.WHITE)+str(subtune).zfill(2))
+                conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,4)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
     else:
+        subtune = 1
         conn.Sendall(chr(P.CLEAR)+chr(P.ENABLE_CBMSHIFT)+chr(P.TOUPPER))
         conn.Sendallbin(info)
-        conn.Sendall(chr(P.YELLOW)+'\rPRESS RETURN TO PLAY\rANY KEY TO STOP')
+        conn.Sendall(chr(P.YELLOW)+'\rPRESS RETURN TO PLAY\r_ TO EXIT\rANY KEY TO STOP')
+        conn.Sendall(TT.disable_CRSR())
+        if conn.ReceiveKey(b'_\r') == b'_':
+            subtune = -1
+    conn.Sendall(TT.enable_CRSR())
+    return subtune
 
 #  SID player ID - commented out until better functionality is built into RetroTerm
 # def _SIDid(binary):
@@ -400,133 +452,150 @@ def _DisplaySIDInfo(conn:Connection, info):
 #                     return st
 #     return 'default'
 
-def SIDStream(conn:Connection, filename,ptime, dialog=True):
+#############################################################
+# Stream SID/MUS files
+#############################################################
+def SIDStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 
-    V1f = '\x00\x01'    #Voice 1 Frequency
-    V1p = '\x02\x03'    #Voice 1 Pulse Width
-    V1c = '\x04'        #Voice 1 Control
-    V1e = '\x05\x06'    #Voice 1 Envelope
+    # V1f = '\x00\x01'    #Voice 1 Frequency
+    # V1p = '\x02\x03'    #Voice 1 Pulse Width
+    # V1c = '\x04'        #Voice 1 Control
+    # V1e = '\x05\x06'    #Voice 1 Envelope
     
-    V2f = '\x07\x08'    #Voice 2 Frequency
-    V2p = '\x09\x0a'    #Voice 2 Pulse Width
-    V2c = '\x0b'        #Voice 2 Control
-    V2e = '\x0c\x0d'    #Voice 2 Envelope
+    # V2f = '\x07\x08'    #Voice 2 Frequency
+    # V2p = '\x09\x0a'    #Voice 2 Pulse Width
+    # V2c = '\x0b'        #Voice 2 Control
+    # V2e = '\x0c\x0d'    #Voice 2 Envelope
 
-    V3f = '\x0e\x0f'    #Voice 3 Frequency
-    V3p = '\x10\x11'    #Voice 3 Pulse Width
-    V3c = '\x12'        #Voice 3 Control
-    V3e = '\x13\x14'    #Voice 3 Envelope
+    # V3f = '\x0e\x0f'    #Voice 3 Frequency
+    # V3p = '\x10\x11'    #Voice 3 Pulse Width
+    # V3c = '\x12'        #Voice 3 Control
+    # V3e = '\x13\x14'    #Voice 3 Envelope
 
-    Fco = '\x15\x16'    #Filter Cutoff Frequency
-    Frs = '\x17'        #Filter Resonance
-    Vol = '\x18'        #Filter and Volume Control
+    # Fco = '\x15\x16'    #Filter Cutoff Frequency
+    # Frs = '\x17'        #Filter Resonance
+    # Vol = '\x18'        #Filter and Volume Control
 
     player = ""
+    subtune = 1
     order = 0
 
     tmp,ext = os.path.splitext(filename)
 
     if ptime == None:
         ptime = _GetSIDLength(filename)
-
-    with open(filename, "rb") as fh:
-        content = fh.read()
-        if dialog == True:
+    elif not isinstance(ptime,list):
+        ptime = [ptime]
+    try:
+        with open(filename, "rb") as fh:
+            content = fh.read()
             if (ext == '.sid') or (ext == '.SID'):
                 info = {}
                 info['type'] = (content[:4].decode("iso8859-1"))
                 info['version'] = (content[5])
                 info['subsongs'] = (content[15])
                 info['startsong'] = (content[17])
+                subtune = info['startsong'] if _subtune == None else _subtune
                 info['title'] = (content[22:54].decode('iso8859-1')).strip(chr(0))
                 info['title'] = info['title'] if len(info['title'])>0 else '???'
                 info['artist'] = (content[54:86].decode('iso8859-1')).strip(chr(0))
                 info['artist'] = info['artist'] if len(info['artist'])>0 else '???'
                 info['copyright'] = (content[86:118].decode('iso8859-1')).strip(chr(0))
                 info['copyright'] = info['copyright'] if len(info['copyright'])>0 else '???'
+                if len(ptime)<info['subsongs']: #If no ssl file found or ptime list has insuficient entries
+                    for i in range(info['subsongs']-len(ptime)):
+                        ptime.append(ptime[0])
                 info['songlength'] = ptime
-                _DisplaySIDInfo(conn, info)
                 if info['version'] > 1:
-                    if content[119]&12 == 8:
-                        ptime = math.ceil(ptime*1.2)    #siddump always assumes 50Hz
-                conn.ReceiveKey()
-                conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+                    info['speed'] = 1.2 if content[119]&12 == 8 else 1
+                else:
+                    info['speed'] = 1
             elif (ext == '.mus') or (ext == '.MUS'):
                 offset = (content[2]+content[3]*256)+(content[4]+content[5]*256)+(content[6]+content[7]*256)+8
                 info = content[offset:]
-                _DisplaySIDInfo(conn, info)
-                conn.ReceiveKey()
-                conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
-        #  SID player register order - commented out until better functionality is built into RetroTerm
-        # player = _SIDid(content)
-        # if (conn.T56KVer > 0.5):
-        #     # If Turbo56K > 0.5 send SID register write order
-        #     if (player == "MoN/Bjerregaard"):
-        #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
-        #         conn.Sendall(Frs+Fco + V3e+V3c+V3f+V3p + V2e+V2c+V2f+V2p + V1e+V1c+V1f+V1p + Vol)
-        #         conn.Sendall(chr(TT.CMDOFF))
-        #         order = 1
-        #     else:
-        #         #Sending the default write sequence shouldnt be needed, but is here just in case, and as reference
-        #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
-        #         conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
-        #         conn.Sendall(chr(TT.CMDOFF))
-        player = 'x'    # <<<< Delete this line when player ID is properly implemented
+            #  SID player register order - commented out until better functionality is built into RetroTerm
+            # player = _SIDid(content)
+            # if (conn.T56KVer > 0.5):
+            #     # If Turbo56K > 0.5 send SID register write order
+            #     if (player == "MoN/Bjerregaard"):
+            #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
+            #         conn.Sendall(Frs+Fco + V3e+V3c+V3f+V3p + V2e+V2c+V2f+V2p + V1e+V1c+V1f+V1p + Vol)
+            #         conn.Sendall(chr(TT.CMDOFF))
+            #         order = 1
+            #     else:
+            #         #Sending the default write sequence shouldnt be needed, but is here just in case, and as reference
+            #         conn.Sendall(chr(TT.CMDON)+chr(TT.SIDORD))
+            #         conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
+            #         conn.Sendall(chr(TT.CMDOFF))
+            player = 'x'    # <<<< Delete this line when player ID is properly implemented
 
-    if player != "":
-        if (ext == '.sid') or (ext == '.SID'):
-            data = sd.SIDParser(filename,ptime, order)
-        elif (ext == '.mus') or (ext == '.MUS'):
-            # Build a .sid file
-            with open(filename, "rb") as fh:
-                with open(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',"wb") as oh:
-                    content = fh.read()
-                    oh.write(b'PSID')   #Header
-                    oh.write(b'\x00\x01') #Version
-                    oh.write(b'\x00\x76') #Data offset
-                    oh.write(b'\x09\x00') #Load Address
-                    oh.write(b'\xec\x8f') #Init Address ($EC60)
-                    oh.write(b'\xec\x80') #Play Address
-                    oh.write(b'\x00\x01') #Default tune
-                    oh.write(b'\x00\x01') #Max tune
-                    oh.write(b'\x00\x00\x00\x01') #Flags
-                    oh.write(b'\x00'*32*3) #Metadata
-                    oh.write(content[2:])   #Music data
-                    oh.write(b'\x00'*(0xe000-((len(content)-2)+0x900))) #padding
-                    oh.write(sd.mus_driver[2:])
-                    #oh.write(mus_driver[2:0xc6e+2]) #Player
-                    #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
-                    #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
-            data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime*1.2), order)
-        else:
-            data = []
-        conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
-        count = 0
-        #tt0 = time.time()
-        for frame in data:
-            conn.Sendallbin(frame[0]) #Register count
-            conn.Sendallbin(frame[1]) #Register bitmap
-            conn.Sendallbin(frame[2]) #Register data
-            conn.Sendallbin(b'\xff')	 #Sync byte
-            count += 1
-
-            if count%100 == 0:
-                ack = b''
-                ack = conn.Receive(1)
+        while subtune > 0:
+            if dialog == True:
+                subtune = _DisplaySIDInfo(conn, info)
+            conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+            if player != "" and subtune > 0:
+                _LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
+                if (ext == '.sid') or (ext == '.SID'):
+                    data = sd.SIDParser(filename,ptime[subtune-1]*info['speed'], order, subtune)
+                elif (ext == '.mus') or (ext == '.MUS'):
+                    # Build a .sid file
+                    with open(filename, "rb") as fh:
+                        with open(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',"wb") as oh:
+                            content = fh.read()
+                            oh.write(b'PSID')   #Header
+                            oh.write(b'\x00\x01') #Version
+                            oh.write(b'\x00\x76') #Data offset
+                            oh.write(b'\x09\x00') #Load Address
+                            oh.write(b'\xec\x8f') #Init Address ($EC60)
+                            oh.write(b'\xec\x80') #Play Address
+                            oh.write(b'\x00\x01') #Default tune
+                            oh.write(b'\x00\x01') #Max tune
+                            oh.write(b'\x00\x00\x00\x01') #Flags
+                            oh.write(b'\x00'*32*3) #Metadata
+                            oh.write(content[2:])   #Music data
+                            oh.write(b'\x00'*(0xe000-((len(content)-2)+0x900))) #padding
+                            oh.write(sd.mus_driver[2:])
+                            #oh.write(mus_driver[2:0xc6e+2]) #Player
+                            #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
+                            #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
+                    data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
+                else:
+                    data = []
+                conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
                 count = 0
-                if (b'\xff' in ack) or not conn.connected:
-                    #Abort stream
-                    conn.socket.setblocking(0)	# Change socket to non-blocking
-                    try:
-                        t0 = time.time()
-                        while time.time()-t0 < 1:   # Flush receive buffer for 1 second
-                            conn.socket.recv(10)
-                    except:
-                        pass
-                    conn.socket.setblocking(1)	# Change socket to blocking
-                    conn.socket.settimeout(conn.bbs.TOut)
-                    break
-            
-        conn.Sendall(chr(0))	#End stream
-        #conn.Receive(1)	#Receive last frame ack character
+                #tt0 = time.time()
+                for frame in data:
+                    conn.Sendallbin(frame[0]) #Register count
+                    conn.Sendallbin(frame[1]) #Register bitmap
+                    conn.Sendallbin(frame[2]) #Register data
+                    conn.Sendallbin(b'\xff')	 #Sync byte
+                    count += 1
+
+                    if count%100 == 0:
+                        ack = b''
+                        ack = conn.Receive(1)
+                        count = 0
+                        if (b'\xff' in ack) or not conn.connected:
+                            #Abort stream
+                            conn.socket.setblocking(0)	# Change socket to non-blocking
+                            try:
+                                t0 = time.time()
+                                while time.time()-t0 < 1:   # Flush receive buffer for 1 second
+                                    conn.socket.recv(10)
+                            except:
+                                pass
+                            conn.socket.setblocking(1)	# Change socket to blocking
+                            conn.socket.settimeout(conn.bbs.TOut)
+                            break
+                    
+                conn.Sendall(chr(0))	#End stream
+                #conn.Receive(1)	#Receive last frame ack character
+            if isinstance(info,bytes):
+                subtune = -1
+            elif info['subsongs'] == 1 or dialog == False:
+                subtune = -1
+            if not conn.connected:
+                subtune = -1
+    except:
+        pass

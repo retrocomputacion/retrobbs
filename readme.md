@@ -99,6 +99,8 @@ __New features__:
  - New LABEL internal function for displaying non-interactive text in menus.
  - New command line parameter `-c`, select configuration file
  - SID streaming now supports Compute's Sidplayer .mus files
+ - SID streaming now supports selection of the subtune to play 
+ - New SIDPLAY function for the configuration file.
 
 __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
@@ -111,6 +113,8 @@ __Changes/Bug fixes__:
  - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts.
  - Removed extra empty line if the first section of a menu doesnt have a title.
  - Custom paths are now read from the configuration file, currently only 'temp' and 'bbsfiles' presets are used internally.
+ - Fixed search for .ssl files in the SONGLENGHT subdirectory
+ - Fixed playlength of NTSC .sid files.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -310,6 +314,17 @@ Configuration file parameter keys:
 | key | description
 |:---:|:---
 | `entryZpath`[^1] | Path to the audio file to stream (must be one of the supported formats)
+
+### Function SIDPLAY:
+Streams the specified .SID or .MUS music file.
+
+Configuration file parameter keys:
+
+| key | description
+|:---:|:---
+| `entryZpath` | Path to the music file to stream (must be one of the supported formats)
+| `entryZplayt` | Playtime in seconds
+| `entryZsubt` | Subtune to play
 
 ### Function SWITCHMENU:
 Switches the BBS to a different menu.
@@ -867,7 +882,6 @@ temp = /mnt/ramdisk/
 
  * Further code cleanup, move more functions out of the main script and into their corresponding modules.
  * Work towards user style customization
- * Subtune selection for SID Streaming
  * Localization
  * User preferences
  * Custom logout sequence, similar to the login one
@@ -876,7 +890,7 @@ temp = /mnt/ramdisk/
 ---
 # 6.1 Known bugs/issues
 
-  * Config file parser doesn't check for errors, a poorly built configuration file will cause a crash on startup.
+  * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * SID files that use the hard restart technique will sound wrong or not play at all.
 

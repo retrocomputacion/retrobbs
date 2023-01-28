@@ -216,7 +216,7 @@ mus_driver = \
     # $EC93 JMP $EC60 
 
 
-def SIDParser(filename,ptime,order = 0):
+def SIDParser(filename,ptime,order = 0, subtune = 1):
 
     V1f = [1,1] # Voice 1 Frequency
     V1p = [6,1] # Voice 1 Pulse Width
@@ -256,7 +256,7 @@ def SIDParser(filename,ptime,order = 0):
 
 
     try:
-        sidsub = subprocess.Popen('siddump '+filename+' -t'+str(ptime), shell=True, stdout=subprocess.PIPE)
+        sidsub = subprocess.Popen('siddump '+filename+' -t'+str(ptime)+' -a'+str(subtune-1), shell=True, stdout=subprocess.PIPE)
     except:
         return(None)
     output = sidsub.stdout.read()
