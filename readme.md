@@ -23,6 +23,7 @@ VERSION 0.25
    1. [Internal Functions](#21-internal-functions)
 3. [Plug-in System](#3-plug-in-system)
    1. [Included Plug-Ins](#31-included-plug-ins)
+   2. [More Plug-ins](#32-more-plug-ins)
 4. [Common modules](#4-common-modules)
 5. [Installation/Usage](#5-installationusage)
    1. [The intro/login sequence](#51-the-intrologin-sequence)
@@ -510,6 +511,13 @@ Display a frame from the specified *YouTube* video. It will grab the latest fram
 | `entryZcrop` | comma-separated list of image coordinates for cropping the video frame
 
 - Configuration file \[PLUGINS\] options: NONE
+
+
+---
+# 3.2 More Plug-ins
+Other plug-ins not included in the distribution or by 3rd parties:
+
+ - [QRcode](https://github.com/retrocomputacion/qrcode): Generate and display a QR code
 
 ---
 # 4 Common modules
