@@ -172,7 +172,7 @@ def adduser():
 
 print("----RetroBBS Database maintenance tool----\n")
 
-data = DB.DBase()
+data = DB.DBase('bbsfiles/')
 print("Database open...")
 print("Checking database integrity...")
 table = data.db.table('USERS')
