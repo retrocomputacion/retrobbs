@@ -93,6 +93,7 @@ def toPETSCII(text,full=True):
     if full:
         text = text.replace('×','x').replace('÷','/')
         text = text.replace('—','-').replace('–','-') #Em/En dash
+        text = text.replace('\u2019',"'").replace('\u2018',"'") #Single quotes
         text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
         text = text.replace('|', chr(VLINE))
         text = text.replace('_', chr(164))
