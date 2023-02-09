@@ -1,4 +1,5 @@
 import unicodedata
+import re
 
 #PETSCII constants
 
@@ -86,14 +87,18 @@ MAPPING = { '{WHITE}':0x05,'{CRSRD}':0x11,'{RVSON}':0x12,'{HOME}':0x13,
             '{GREY3}':0x9b,'{PURPLE}':0x9c,'{CRSRL}':0x9d,'{YELLOW}':0x9e,
             '{CYAN}':0x9f}
 
+# Multiple replace
+# https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
+Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"'}
+Urep = dict((re.escape(k), v) for k, v in Urep.items()) 
+
 # Convert ASCII/unicode text to PETSCII
 # full = True for aditional glyph visual conversion
 #        False for simple upper-lower case swapping
-def toPETSCII(text,full=True):
+def toPETSCII(text:str,full=True):
     if full:
-        text = text.replace('×','x').replace('÷','/')
-        text = text.replace('—','-').replace('–','-') #Em/En dash
-        text = text.replace('\u2019',"'").replace('\u2018',"'") #Single quotes
+        pattern = re.compile("|".join(Urep.keys()))
+        text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
         text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
         text = text.replace('|', chr(VLINE))
         text = text.replace('_', chr(164))
