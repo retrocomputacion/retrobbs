@@ -32,8 +32,12 @@ def plugFunction(conn:Connection):
     except:
         S.RenderMenuTitle(conn,'Oneliner')
         conn.Sendall(chr(P.PURPLE))
-    conn.Sendall(TT.Fill_Line(3,192)+TT.Fill_Line(22,192)) # Window borders
- 
+    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+        conn.Sendall(TT.Fill_Line(3,192)+TT.Fill_Line(22,192)) # Window borders
+    else:
+        conn.Sendall(TT.set_CRSR(0,3)+chr(P.RVS_ON)+(chr(P.HLINE)*40))
+        conn.Sendall(TT.set_CRSR(0,22)+(chr(P.HLINE)*40)+chr(P.RVS_OFF))
+
     refr = True
     while conn.connected:
         conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR)+S.KeyPrompt('return')+chr(P.GREEN)+"TO ENTER MESSAGE "+S.KeyPrompt('_')+chr(P.GREEN)+"TO GO BACK")

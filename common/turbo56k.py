@@ -7,45 +7,46 @@
 CMDON = 0xFF    #Enters command mode
 CMDOFF = 0xFE   #Exits command mode
 
-LADDR = 0x80    #Transfer Address - Parameters: addr-lo, addr-hi
-PRADDR = 0x81   #Preset Transfer Address - Parameter: Preset number
-BLKTR = 0x82    #Transfer block - Parameters: lenght-lo, lenght-hi
-STREAM = 0x83   #Audio Stream, byte 0 stops the stream
-SIDSTREAM = 0x84 #SID Stream
-SIDORD = 0x85   #Set the register write order for the SID Stream 
+LADDR       = 0x80  #Transfer Address - Parameters: addr-lo, addr-hi
+PRADDR      = 0x81  #Preset Transfer Address - Parameter: Preset number
+BLKTR       = 0x82  #Transfer block - Parameters: lenght-lo, lenght-hi
+STREAM      = 0x83  #Audio Stream, byte 0 stops the stream
+SIDSTREAM   = 0x84  #SID Stream
+SIDORD      = 0x85  #Set the register write order for the SID Stream
+FILETR      = 0x86  #File Transfer
 
-TEXT = 0x90     #Set Text mode - Parameters: page, border, background
-HIRES = 0x91    #Set Hi-Res bitmap mode - Parameters: page, border
-MULTI = 0x92    #Set Multicolor bitmap mode - Parameters: page, border, background
+TEXT        = 0x90  #Set Text mode - Parameters: page, border, background
+HIRES       = 0x91  #Set Hi-Res bitmap mode - Parameters: page, border
+MULTI       = 0x92  #Set Multicolor bitmap mode - Parameters: page, border, background
 
-SCREEN = 0xA0   #Set the screen as output device, exits command mode
-SPEECH = 0xA1   #Set the speech synthetizer as output device, exits command mode.
+SCREEN      = 0xA0  #Set the screen as output device, exits command mode
+SPEECH      = 0xA1  #Set the speech synthetizer as output device, exits command mode.
 
-VERSION = 0xA2  #Queries de client for ID and version
+VERSION     = 0xA2  #Queries de client for ID and version
+QUERYCMD    = 0xA3  #Queries the client if a given command exists
 
-QUERYCMD = 0xA3 #Queries the client if a given command exists
-
-SET_CRSR = 0xB0 #Sets cursor position, exits command mode: Parameters: column, row
-
-LINE_FILL = 0xB1
-
-CURSOR_EN = 0xB2 #Enables or disables cursor blink - Paramater: cursor enable
-
-SPLIT_SCR = 0xB3 #Splits screen - Parameters: split line/graphic mode, background colors
-
-SET_WIN = 0xB5 #Sets Text window limits - Parameters: window top and window bottom lines
+SET_CRSR    = 0xB0  #Sets cursor position, exits command mode: Parameters: column, row
+LINE_FILL   = 0xB1
+CURSOR_EN   = 0xB2  #Enables or disables cursor blink - Paramater: cursor enable
+SPLIT_SCR   = 0xB3  #Splits screen - Parameters: split line/graphic mode, background colors
+SET_WIN     = 0xB5  #Sets Text window limits - Parameters: window top and window bottom lines
+SCROLL      = 0xB6  #Scroll text window - Parameter: number of rows to scroll, signed
 
 
-TURBO56K_LCMD = 0xB5 #Highest CMD number implemented
+TURBO56K_LCMD = 0xB6 #Highest CMD number implemented
 
 
 # Command descriptors
-# command numbers - $80
+T56K_CMD = {128+0:'Custom transfer address', 128+1:'Preset transfer address', 128+2:'Block transfer', 128+3:'PCM audio stream', 128+4:'SID stream', 128+5:'SID register write order', 128+6:'File transfer',
+            128+16:'Set text mode', 128+17:'Set Hi-Res bitmap mode', 128+18:'Set multicolor bitmap mode',
+            128+32:'Set screen as output', 128+33:'Set voice synth as output', 128+34:'Terminal ID', 128+35:'Command query',
+            128+48:'Set cursor', 128+49:'Line fill', 128+50:'Cursor enable', 128+51:'Split screen', 128+52:'Reserved', 128+53:'Set window', 128+54:'Scroll window'}
 
-T56K_CMD = {0:'Custom transfer address', 1:'Preset transfer address', 2:'Block transfer', 3:'PCM audio stream', 4:'SID stream', 5:'SID register write order',
-            16:'Set text mode', 17:'Set Hi-Res bitmap mode', 18:'Set multicolor bitmap mode',
-            32:'Set screen as output', 33:'Set voice synth as output', 34:'Terminal ID', 35:'Command query',
-            48:'Set cursor', 49:'Line fill', 50:'Cursor enable', 51:'Split screen', 53:'Set window'}
+# Old Turbo56K <v0.6 feature matrix
+T56Kold =  [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
+            b'\x03',b'\x02',b'\x03',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
+            b'\x00',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
+            b'\x02',b'\x02',b'\x01',b'\x02',b'\x80',b'\x02',b'\x80']
 
 ###################################################
 
@@ -149,3 +150,10 @@ def set_Window(top, bottom,bin = False):
         return(bytes([CMDON,SET_WIN,top,bottom,CMDOFF]))
     else:
         return(chr(CMDON)+chr(SET_WIN)+chr(top)+chr(bottom)+chr(CMDOFF))
+
+def scroll(rows,bin = False):
+    rows = ord(max(min(127,rows),-128).to_bytes(1,'little',signed=True))
+    if bin:
+        return(bytes([CMDON,SCROLL,rows,CMDOFF]))
+    else:
+        return(chr(CMDON)+chr(SCROLL)+chr(rows)+chr(CMDOFF))

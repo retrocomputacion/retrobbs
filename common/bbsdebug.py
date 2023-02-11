@@ -13,7 +13,7 @@ class bcolors:
     ENDC = '\033[0m'
 
 #Global verbosity level
-Verbosity = 3;
+Verbosity = 3
 
 # 1 = ERRORS ONLY
 # 2 = WARNINGS

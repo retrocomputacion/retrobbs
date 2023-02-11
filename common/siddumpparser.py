@@ -3,7 +3,10 @@
 #########################################################
 
 import subprocess
+from shutil import which
 #import os.path
+
+from common.bbsdebug import _LOG
 
 # compute sidplayer driver, taken from sidplay2/w
 
@@ -218,6 +221,14 @@ mus_driver = \
 
 def SIDParser(filename,ptime,order = 0, subtune = 1):
 
+    if which('siddumphr') != None:
+        _siddump = 'siddumphr'
+    elif which('siddump') != None:
+        _siddump = 'siddump'
+    else:
+        _LOG('ERROR: siddump not found on PATH', v=1)
+        return
+
     V1f = [1,1] # Voice 1 Frequency
     V1p = [6,1] # Voice 1 Pulse Width
     V1c = [4,0] # Voice 1 Control
@@ -256,7 +267,7 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
 
 
     try:
-        sidsub = subprocess.Popen('siddump '+filename+' -t'+str(ptime)+' -a'+str(subtune-1), shell=True, stdout=subprocess.PIPE)
+        sidsub = subprocess.Popen(_siddump+' '+filename+' -t'+str(ptime)+' -a'+str(subtune-1), shell=True, stdout=subprocess.PIPE)
     except:
         return(None)
     output = sidsub.stdout.read()
@@ -368,14 +379,23 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
                     oldv3pw = tt
             #<<<<<<<<<<<<<<< Voices 1-3 control
             if rsection == 4 or rsection == 10 or rsection == 16:
-                if frame[rsection] != b'..':
+                ctrl = frame[rsection]
+                if len(ctrl) > 6:   #ANSI escape codes present
+                    # Hardrestart?
+                    rbitmap |= 2**(29+((rsection-4)//6))
+                    ctrl = ctrl[7:]
+                if ctrl[:2] != b'..':
                     rbitmap |= 2**rbit
-                    sidregs += bytes.fromhex(frame[rsection].decode("utf-8"))
+                    sidregs += bytes.fromhex(ctrl[:2].decode("utf-8"))
                     rcount += 1
             #<<<<<<<<<<<<<<< Voices 1-3 ADSR
             if rsection == 5:
-                if frame[5] != b'....':
-                    tt = bytes.fromhex(frame[5].decode("utf-8"))
+                adsr = frame[5]
+                if len(adsr) > 8:   #ANSI escape codes present
+                    rbitmap |= 2**26
+                    adsr = adsr[7:]
+                if adsr[:4] != b'....':
+                    tt = bytes.fromhex(adsr[:4].decode("utf-8"))
                     #if oldv1adsr[0] != tt[0]:
                     rbitmap |= 2**rbit
                     sidregs += bytes([tt[0]]) #Attack/Decay
@@ -386,8 +406,12 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
                     rcount += 1
                     oldv1adsr = tt
             if rsection == 11:
-                if frame[11] != b'....':
-                    tt = bytes.fromhex(frame[11].decode("utf-8"))
+                adsr = frame[11]
+                if len(adsr) > 8:   #ANSI escape codes present
+                    rbitmap |= 2**27
+                    adsr = adsr[7:]
+                if adsr[:4] != b'....':
+                    tt = bytes.fromhex(adsr[:4].decode("utf-8"))
                     #if oldv2adsr[0] != tt[0]:
                     rbitmap |= 2**rbit
                     sidregs += bytes([tt[0]]) #Attack/Decay
@@ -398,8 +422,12 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
                     rcount += 1
                     oldv2adsr = tt
             if rsection == 17:
-                if frame[17] != b'....':
-                    tt = bytes.fromhex(frame[17].decode("utf-8"))
+                adsr = frame[17]
+                if len(adsr) > 8:   #ANSI escape codes present
+                    rbitmap |= 2**28
+                    adsr = adsr[7:]
+                if adsr[:4] != b'....':
+                    tt = bytes.fromhex(adsr[:4].decode("utf-8"))
                     #if oldv3adsr[0] != tt[0]:
                     rbitmap |= 2**rbit
                     sidregs += bytes([tt[0]]) #Attack/Decay

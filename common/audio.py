@@ -113,7 +113,8 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     row = 3
     for x in range(start, end + 1, 1):
         afunc = PlayAudio
-        KeyLabel(conn, H.valid_keys[x-start],(audios[x][:len(P.toPETSCII(audios[x]))-4])[:30]+' ', x % 2)
+        bname = os.path.splitext(os.path.basename(audios[x]))[0]
+        KeyLabel(conn, H.valid_keys[x-start],(bname)[:30]+' ', x % 2)
         if (wavs == True) and (audios[x].endswith(wext)):
             conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
             tsecs = _GetPCMLength(path+audios[x])
@@ -149,15 +150,11 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 # Display audio dialog
 #########################################
 def _AudioDialog(conn:Connection, data):
-    conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
-    for y in range(0,15):
-        conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
-    conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(15,226)+chr(P.GREY3))
-    conn.Sendall(data['title'].center(40,chr(P.HLINE))+'\r')
+    S.RenderDialog(conn, 15, data['title'])
     if data['album'] != '':
-        conn.Sendall(chr(P.RVS_ON)+' aLBUM:\r'+chr(P.RVS_ON)+' '+data['album']+'\r\r')
+        conn.Sendall(chr(P.RVS_ON)+' aLBUM:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['album'])+'\r\r')
     if data['artist'] != '':
-        conn.Sendall(chr(P.RVS_ON)+' aRTIST:\r'+chr(P.RVS_ON)+' '+data['artist']+'\r\r')
+        conn.Sendall(chr(P.RVS_ON)+' aRTIST:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['artist'])+'\r\r')
     conn.Sendall(chr(P.RVS_ON)+' lENGTH: '+data['length']+'\r\r')
     conn.Sendall(chr(P.RVS_ON)+' fROM '+data['sr']+' TO '+str(conn.samplerate)+'hZ')
     conn.Sendall(TT.set_CRSR(0,12)+' pRESS <return> TO PLAY\r')
@@ -209,18 +206,18 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
         a_sec = int(round(length,0)-(a_min*60))
         a_meta['length'] = ('00'+str(a_min))[-2:]+':'+('00'+str(a_sec))[-2:]
         a_meta['sr'] = str(a_data.info.sample_rate)+'hZ'
-        a_meta['title'] = P.toPETSCII(filename[filename.rfind('/')+1:filename.rfind('/')+39])
+        a_meta['title'] = os.path.splitext(os.path.basename(filename))[0][:38]  #filename[filename.rfind('/')+1:filename.rfind('/')+39]
         a_meta['album'] = ''
         a_meta['artist'] = ''
         if a_data.tags != None:
             if a_data.tags.getall('TIT2') != []:
-                a_meta['title'] = P.toPETSCII(a_data.tags.getall('TIT2')[0][0][:38])
+                a_meta['title'] = a_data.tags.getall('TIT2')[0][0][:38]
             if a_data.tags.getall('TALB') != []:
-                a_meta['album'] = P.toPETSCII(a_data.tags.getall('TALB')[0][0][:38])
+                a_meta['album'] = a_data.tags.getall('TALB')[0][0][:38]
             for ar in range(1,5):
                 ars = 'TPE'+str(ar)
                 if a_data.tags.getall(ars) != []:
-                    a_meta['artist'] = P.toPETSCII(a_data.tags.getall(ars)[0][0][:38])
+                    a_meta['artist'] = a_data.tags.getall(ars)[0][0][:38]
                     break
         if not _AudioDialog(conn,a_meta):
             return()
@@ -363,16 +360,8 @@ def _DisplaySIDInfo(conn:Connection, info):
 
     if isinstance(info,dict):
         subtune = info['startsong']
-        # minutes = int(info['songlength'][subtune]/60)
-        # seconds = info['songlength'][subtune]- (minutes*60)
         minutes, seconds = calctime()
-        conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON)+chr(TT.CMDON))
-        for y in range(0,12):
-            conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
-        conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(12,226)+chr(P.GREY3))
-        # text = format40('\r Titulo: '+info['title']+'\r Artista: '+info['artist']+'\r Copyright: '+info['copyright']+'\r Duracion: '+ ('00'+str(minutes))[-2:]+':'+('00'+str(seconds))[-2:]+'\r\r pRESIONE return PARA REPRODUCIR\r cUALQUIER TECLA PARA DETENER\r')
-        # for line in text:
-        # 	conn.Sendall(chr(P.RVS_ON)+line+'\r')
+        S.RenderDialog(conn,12)
         conn.Sendall(chr(P.CRSR_DOWN)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
         conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
         conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')

@@ -17,3 +17,4 @@ streamlink
 tinydb
 wikipedia
 Wikipedia_API
+crc

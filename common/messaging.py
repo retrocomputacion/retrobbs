@@ -7,7 +7,7 @@ import common.petscii as P
 from common.bbsdebug import _LOG
 from common.style import RenderMenuTitle
 from common.dbase import DBase
-from common.helpers import formatX
+from common.helpers import formatX, crop
 from tinydb import Query
 from tinydb.table import Document
 from tinydb.operations import increment
@@ -80,7 +80,11 @@ def readMessage(conn:Connection, msg_id:int):
                 conn.Sendall(TT.set_CRSR(20,1)+chr(P.GREY3)+chr(P.RVS_ON)+'TO:'+chr(P.LT_GREEN)+ (('*'+P.toPETSCII(rcp)) if type(rcp) == str else ' '+P.toPETSCII(rcp['uname']))+chr(P.RVS_OFF))
             else:   # public message, display post date
                 conn.Sendall(TT.set_CRSR(20,1)+chr(P.GREY3)+chr(P.RVS_ON)+'ON:'+chr(P.LT_GREEN)+ datetime.utcfromtimestamp(dmsg['msg_sent']).strftime(datestr) +chr(P.RVS_OFF))
-            conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(2,64)+TT.Fill_Line(22,64))
+            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(2,64)+TT.Fill_Line(22,64))
+            else:
+                conn.Sendall(TT.set_CRSR(0,2)+chr(P.YELLOW)+(chr(P.HLINE)*40))
+                conn.Sendall(TT.set_CRSR(0,22)+(chr(P.HLINE)*40))
             conn.Sendall(TT.set_CRSR(0,23)+chr(P.GREY3))
             for i,o in enumerate(ol):
                 conn.Sendall(o)
@@ -131,7 +135,12 @@ def readMessage(conn:Connection, msg_id:int):
                         msg_id = r_id
                     break
                 elif k == b'D': #Delete:
-                    conn.Sendall(chr(P.RED)+TT.set_Window(11,13)+TT.Fill_Line(10,64)+TT.Fill_Line(14,64))
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        conn.Sendall(chr(P.RED)+TT.Fill_Line(10,64)+TT.Fill_Line(14,64))
+                    else:
+                        conn.Sendall(chr(P.RED)+TT.set_CRSR(0,10)+(chr(P.HLINE)*40))
+                        conn.Sendall(TT.set_CRSR(0,14)+(chr(P.HLINE)*40))
+                    conn.Sendall(TT.set_Window(11,13))
                     conn.Sendall(chr(P.CLEAR)+chr(P.CRSR_DOWN)+chr(P.WHITE)+'          dELETE MESSAGE?(y/n)')
                     if conn.ReceiveKey(b'YN') == b'Y':
                         if dmsg['msg_parent'] == 0: #delete whole thread
@@ -200,7 +209,10 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
         # Text mode
         conn.Sendall(TT.to_Text(0,0,0))
         RenderMenuTitle(conn,'Message Editor')
-        conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(22,64))
+        if conn.QueryFeature(TT.LINE_FILL):
+            conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(22,64))
+        else:
+            conn.Sendall(chr(P.YELLOW)+TT.set_CRSR(0,22)+(chr(P.HLINE)*40))
         conn.Sendall(TT.set_CRSR(1,22)+chr(P.RVS_ON)+'f1 FOR hELP'+chr(P.RVS_OFF))
 
         dispMsg()
@@ -231,7 +243,11 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                 if edit :   # Editing text
                     if i_char == b'\r':
                         tline = ' ' if len (message[line]) == 0 else message[line]
-                        conn.Sendall(TT.set_Window(3,21)+TT.Fill_Line(line+3,32)+TT.set_CRSR(0,line)+tline) # Clear line in display window, print newly edited line
+                        if conn.QueryFeature(TT.LINE_FILL):
+                            conn.Sendall(TT.Fill_Line(line+3,32))
+                        else:
+                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
+                        conn.Sendall(TT.set_Window(3,21)+TT.set_CRSR(0,line)+tline) # Clear line in display window, print newly edited line
                         if line < 17:
                             line += 1
                             column = 0
@@ -268,7 +284,11 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         message[line] = message[line][0:column] + ' ' + message[line][column:]
                         conn.Sendallbin(i_char)
                     elif ord(i_char) == P.F8:                                               # Finish editing
-                        conn.Sendall(TT.set_Window(3,21)+TT.Fill_Line(line+3,32)+TT.set_CRSR(0,line)+message[line]) # Clear line in display window, print newly edited line
+                        if conn.QueryFeature(TT.LINE_FILL):
+                            conn.Sendall(TT.Fill_Line(line+3,32))
+                        else:
+                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
+                        conn.Sendall(TT.set_Window(3,21)+TT.set_CRSR(0,line)+message[line]) # Clear line in display window, print newly edited line
                         option = dialog1()
                         if option == b'S':      # Send message
                             running = False
@@ -280,7 +300,11 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                             edit = False
                     elif ord(i_char) == P.F7:   # Select line to edit
                         tline = ' ' if len (message[line]) == 0 else message[line]
-                        conn.Sendall(TT.set_Window(3,21)+TT.Fill_Line(line+3,32)+TT.set_CRSR(0,line)+tline) # Clear line in display window, print newly edited line
+                        if conn.QueryFeature(TT.LINE_FILL):
+                            conn.Sendall(TT.Fill_Line(line+3,32))
+                        else:
+                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
+                        conn.Sendall(TT.set_Window(3,21)+TT.set_CRSR(0,line)+message[line]) # Clear line in display window, print newly edited line
                         conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR)+'sELECT line (crsr up/dwn)'+TT.set_Window(3,21)+TT.set_CRSR(0,line))
                         edit = False
                     elif ord(i_char) == P.F1:   # Display help screen
@@ -304,7 +328,11 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                             message[line] += chr(ord(i_char))
                         conn.Sendallbin(i_char)
                         if column == 40:
-                            conn.Sendall(TT.set_Window(3,21)+TT.Fill_Line(line+3,32)+TT.set_CRSR(0,line)+message[line]) # Clear line in display window, print newly edited line
+                            if conn.QueryFeature(TT.LINE_FILL):
+                                conn.Sendall(TT.Fill_Line(line+3,32))
+                            else:
+                                conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
+                            conn.Sendall(TT.set_Window(3,21)+TT.set_CRSR(0,line)+message[line]) # Clear line in display window, print newly edited line
                             if line < 17:
                                 line += 1
                                 column = 0
@@ -428,13 +456,13 @@ def inbox(conn:Connection, board):
                 tt = ' '+chr(P.GREY1)+chr(188)+(chr(P.LT_BLUE) if i['msg_from']==conn.userid else chr(P.GREEN))+' '
             else:
                 tt = ' '+chr(P.GREEN)+chr(188)+(chr(P.CYAN) if i['msg_to']==conn.userid else chr(P.LT_GREEN))+' '
-            to = i['msg_topic'] if len(i['msg_topic'])<25 else i['msg_topic'][0:21]+'...'
+            to = crop(i['msg_topic'],24) #i['msg_topic'] if len(i['msg_topic'])<25 else i['msg_topic'][0:21]+'...'
             tl = table.get(doc_id=i['msg_prev'])
             if type(tl['msg_from'])==int:
                 user = utable.get(doc_id = tl['msg_from'])['uname']
             else:
                 user = tl['msg_from']
-            tu = user if len(user)<12 else user[0:8]+'...'
+            tu = crop(user,11)  #user if len(user)<12 else user[0:8]+'...'
             tt = tt+P.toPETSCII(to)+chr(P.YELLOW)+(chr(P.CRSR_RIGHT)*(24-len(to)))+chr(P.VLINE)+chr(P.WHITE)+P.toPETSCII(tu)
             ts = tl['msg_sent']    # Get timestamp of last message in thread
             threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
@@ -449,7 +477,10 @@ def inbox(conn:Connection, board):
                 tt = chr(P.RVS_ON)+'N'+chr(P.RVS_OFF)+'EW '+('THREAD' if board != 0 else 'MESSAGE')+('\r' if conn.userclass < 10 else ('-'+chr(P.RVS_ON)+'D'+chr(P.RVS_OFF)+'ELETE'))
             else:
                 tt = '\r'
-            conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(22,64))
+            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                conn.Sendall(chr(P.YELLOW)+TT.Fill_Line(22,64))
+            else:
+                conn.Sendall(TT.set_CRSR(0,22)+chr(P.YELLOW)+(chr(P.HLINE)*40))
             conn.Sendall(TT.set_CRSR(0,23)+chr(P.GREY3)+'nAVIGATE WITH '+chr(P.RVS_ON)+'CRSR'+chr(P.RVS_OFF)+' - '+tt)
             conn.Sendall(TT.set_CRSR(0,24)+'rEAD '+chr(P.RVS_ON)+'F'+chr(P.RVS_OFF)+'IRST/'+chr(P.RVS_ON)+'L'+chr(P.RVS_OFF)+'AST OR '+chr(P.RVS_ON)+'U'+chr(P.RVS_OFF)+'NREAD MESSAGE')
             conn.Sendall(TT.set_Window(3,21))
@@ -512,7 +543,12 @@ def inbox(conn:Connection, board):
                         refresh = True
                         break
                 elif k == b'D':                 # Delete thread
-                    conn.Sendall(chr(P.RED)+TT.set_Window(11,13)+TT.Fill_Line(10,64)+TT.Fill_Line(14,64))
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        conn.Sendall(chr(P.RED)+TT.Fill_Line(10,64)+TT.Fill_Line(14,64))
+                    else:
+                        conn.Sendall(chr(P.RED)+TT.set_CRSR(0,7)+(chr(P.HLINE)*40))
+                        conn.Sendall(TT.set_CRSR(0,11)+(chr(P.HLINE)*40))
+                    conn.Sendall(TT.set_Window(11,13))
                     conn.Sendall(chr(P.CLEAR)+chr(P.CRSR_DOWN)+chr(P.WHITE)+'           dELETE THREAD?(y/n)')
                     if conn.ReceiveKey(b'YN') == b'Y':
                         deleteThread(conn,threads[pos+(19*page)][1])
@@ -522,7 +558,12 @@ def inbox(conn:Connection, board):
                 conn.Sendall(TT.enable_CRSR())
                 if board == 0:
                     # get destination username
-                    conn.Sendall(TT.set_Window(11,13)+TT.Fill_Line(10,64)+TT.Fill_Line(14,64))
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        conn.Sendall(TT.Fill_Line(10,64)+TT.Fill_Line(14,64))
+                    else:
+                        conn.Sendall(TT.set_CRSR(0,7)+(chr(P.HLINE)*40))
+                        conn.Sendall(TT.set_CRSR(0,11)+(chr(P.HLINE)*40))
+                    conn.Sendall(TT.set_Window(11,13))
                     while conn.connected:
                         conn.Sendall(chr(P.CLEAR)+'sEND pm TO: ')
                         dest = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, False))

@@ -2,16 +2,16 @@
 
 ## Host Side
 
-1. Using *SIDDump* get a dump of SID registers used for each frame.<br>And *HVSC* song length files are used to know the playtime. If no song length file is found the default is 3 minutes.
-2. The dump is interpreted and a list of values to transmit is generated for each frame. Along with a corresponding bitmap defining which registers are used each frame.
+1. Using *SIDDump* or *SIDDumpR* get a dump of SID registers used for each frame.<br>*HVSC* song length files are used to know the playtime. If no song length file is found the default is 3 minutes.
+2. The dump is interpreted and a list of values to transmit is generated for each frame. Along with a corresponding bitmap defining which registers are used each frame.<br>If *SIDDumpR* is used, additional information about hardrestart for each voice is transmitted. This is backwards compatible and only interpreted by terminals supporting it.
 
 3. Each frame register list is built as a data packet taking this form:
 
 |Position | Length (bytes)| Description
 |:---:|:---:|---
-| 1 | 1 | Length of this data packet, not counting this byte (max 30)
-| 2 | 4 | Bitmap of SID registers sent.<br>1bit = 1 register (Big endian)
-| 6 onwards | 1 to 24 | Values of each register, in incremental order by default 
+| 1 | 1 | Length of this data packet, not counting this byte (max 29)
+| 2 | 4 | Bitmap of SID registers sent.<br>1 bit = 1 register (Big endian)<br>bits 26-28 indicate ADSR hardrestart for each voice<br>bits 29-31 indicate Gate Hardrestart for each voice
+| 6 onwards | 1 to 25 | Values of each register, in incremental order by default 
 
 4. Send the packets acording to this flowchart:
 

@@ -77,7 +77,7 @@ def plugFunction(conn:Connection,url):
             for t in text:
                 conn.Sendall(' '*(3*x)+t+'\r')
                 x=1
-            MenuDic[H.valid_keys[i-1].encode('ascii','ignore')] = (feedentry,(conn,e,P.toPETSCII(nfeed.feed.get('title','No title'))),H.valid_keys[i-1],0,False)
+            MenuDic[H.valid_keys[i-1].encode('ascii','ignore')] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
             i+=1
         conn.Sendall(chr(P.RVS_ON)+chr(H.menu_colors[i%2][0])+chr(181)+'_'+chr(182)+chr(P.RVS_OFF)+chr(H.menu_colors[i%2][1])+'bACK\r')
         conn.Sendall(chr(P.WHITE)+'\ryOUR CHOICE: ')

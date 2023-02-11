@@ -3,6 +3,7 @@
 from common.connection import Connection
 from common import petscii as P
 from common import turbo56k as TT
+from common import helpers as H
 
 class bbsstyle:
 	def __init__(self):
@@ -38,10 +39,16 @@ def RenderMenuTitle(conn:Connection,title):
 	# Lower/uppercase charset
 	conn.Sendall(chr(P.TOLOWER))
 	# Send menu title
-	conn.Sendall(chr(P.LT_GREEN)+chr(TT.CMDON)+chr(TT.LINE_FILL)+chr(0)+chr(64)+chr(TT.LINE_FILL)+chr(2)+chr(64)+chr(TT.CMDOFF))
-	conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_U)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_U))
+	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+		conn.Sendall(chr(P.LT_GREEN)+chr(TT.CMDON)+chr(TT.LINE_FILL)+chr(0)+chr(64)+chr(TT.LINE_FILL)+chr(2)+chr(64)+chr(TT.CMDOFF))
+		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_U)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_U))
+	else:
+		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_U)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_U))
 	conn.Sendall(" "+chr(P.RVS_OFF)+chr(P.WHITE)+" "+(P.toPETSCII(conn.bbs.name[:19])+" - "+P.toPETSCII(title)+(" "*33)[:37]+"  ")[:36]+" "+chr(P.RVS_ON)+chr(P.CYAN)+" ")
-	conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
+	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
+	else:
+		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
 	#conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
 
 # Returns '[text]' prompt string in the selected style
@@ -58,3 +65,17 @@ def KeyLabel(conn:Connection, key, label, toggle, style=default_style):
 	#if key < '\r':
 	#	conn.Sendall('  ')
 	return not toggle
+
+# Render 'file' dialog background
+def RenderDialog(conn:Connection,height,title=None):
+	conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON))
+	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+		conn.Sendall(chr(TT.CMDON))
+		for y in range(0,height):
+			conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
+		conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(height,226)+chr(P.GREY3))
+	else:
+		conn.Sendall((' '*(40*height))+chr(P.GREY1)+(chr(162)*40)+chr(P.HOME)+chr(P.GREY3))
+	if title != None:
+		conn.Sendall(H.crop(P.toPETSCII(title),38).center(40,chr(P.HLINE))+'\r')
+

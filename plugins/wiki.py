@@ -2,7 +2,7 @@ import common.petscii as P
 import common.turbo56k as TT
 from common.style import bbsstyle
 import common.filetools as FT
-from common.helpers import formatX, More
+from common.helpers import formatX, More, crop, text_displayer
 from common.connection import Connection
 
 import wikipedia
@@ -29,11 +29,14 @@ def plugFunction(conn:Connection):
 	def WikiTitle(conn:Connection):
 		conn.Sendall(TT.set_Window(0,24))	#Set Text Window
 		conn.Sendall(chr(P.CLEAR)+chr(P.BLACK)+"wIKIPEDIA, THE fREE eNCICLOPEDIA\r")
-		conn.Sendall(chr(P.GREY1)+TT.Fill_Line(1,64))#(chr(P.HLINE)*40))
+		if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+			conn.Sendall(chr(P.GREY1)+TT.Fill_Line(1,64))#(chr(P.HLINE)*40))
+		else:
+			conn.Sendall(chr(P.GREY1)+(chr(P.HLINE)*40))
 		conn.Sendall(TT.set_Window(2,24))	#Set Text Window
 
 	wcolors = bbsstyle()
-	wcolors.TxtColor = 12
+	wcolors.TxtColor = 11
 	wcolors.PbColor = 0
 	wcolors.PtColor = 6
 
@@ -70,8 +73,9 @@ def plugFunction(conn:Connection):
 		for r in results:
 			res = P.toPETSCII(r)	#''.join(c.lower() if c.isupper() else c.upper() for c in r)
 			#res = unicodedata.normalize('NFKD',r).encode('ascii','ignore')
-			if len(res) > 36:
-				res = res[0:33] + '...'
+			res = crop(res,36)
+			# if len(res) > 36:
+			# 	res = res[0:33] + '...'
 			conn.Sendall(chr(P.BLACK)+'[' + chr(P.BLUE) + string.ascii_uppercase[i] + chr(P.BLACK) + ']' + chr(P.GREY1))
 			conn.Sendall(res + '\r')
 			options += string.ascii_uppercase[i]
@@ -132,7 +136,12 @@ def plugFunction(conn:Connection):
 
 			tt += WikiSection(conn, page.sections,0)
 
-			More(conn,tt,23,wcolors)
+			if conn.QueryFeature(TT.SCROLL) < 0x80:
+				conn.Sendall(TT.set_Window(24,25)+chr(P.RVS_ON)+chr(P.BLUE)+TT.Fill_Line(24,160)+' <CRSR> TO SCROLL   <_> TO EXIT'+chr(P.RVS_OFF))
+				conn.Sendall(TT.set_Window(2,23))
+				text_displayer(conn,tt,22,wcolors)
+			else:
+				More(conn,tt,22,wcolors)
 
 	conn.Sendall(TT.set_Window(0,24))	#Set Text Window
 

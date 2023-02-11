@@ -98,7 +98,7 @@ from common import turbo56k as TT
 from common.classes import BBS
 from common.connection import Connection
 from common.bbsdebug import _LOG, bcolors, set_verbosity
-from common.helpers import MenuBack, valid_keys, formatX, More, SetPage
+from common.helpers import MenuBack, valid_keys, formatX, More, SetPage, crop
 from common.style import KeyPrompt, bbsstyle, default_style, RenderMenuTitle, KeyLabel
 from common import audio as AA
 from common import messaging as MM
@@ -177,13 +177,13 @@ def ConfigRead():
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
-                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.ART','.OCP','.KOA','.KLA','.gif','jpg','png','.GIF','.JPG','PNG'),FT.SendBitmap]
+                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.ART','.OCP','.KOA','.KLA','.gif','jpg','png','.GIF','.JPG','PNG'),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'SWITCHMENU':		#Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			#Show file list
                 exts = tuple((cfg.get(key,'entry'+str(e+1)+'ext', fallback='.prg,.PRG')).split(','))
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
-                parms = [tentry,'','Displaying file list',p,exts,FT.SendProgram]
+                parms = [tentry,'','Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'AUDIOLIBRARY':	#Show audio file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound/')
                 parms = [tentry,'','Displaying audio list',p]
@@ -235,7 +235,7 @@ def ConfigRead():
                 'SLIDESHOW': SlideShow,
                 'SIDPLAY': AA.SIDStream,
                 'PCMPLAY': AA.PlayAudio,
-                'TEXT': SendText,
+                'TEXT': FT.SendText,
                 'SHOWPIC': FT.SendBitmap,
                 'EXIT': LogOff,
                 'BACK': MenuBack,
@@ -325,7 +325,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler):
+def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=False):
 
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
@@ -334,11 +334,14 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler):
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
 
+    transfer &= conn.QueryFeature(TT.FILETR) < 0x80
+
     # Start with barebones MenuDic
     MenuDic = { 
                 b'_': (MenuBack,(conn,),"Previous Menu",0,False),
-                b'\r': (FileList,(conn,title,speech,logtext,path,ffilter,fhandler),title,0,False)
+                b'\r': (FileList,(conn,title,speech,logtext,path,ffilter,fhandler,transfer),title,0,False)
               }	
+
 
     _LOG(logtext,id=conn.id, v=4)
     # Send speech message
@@ -389,7 +392,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler):
             page = conn.MenuParameters['current']+1
         MenuDic[b'>'] = (SetPage,(conn,page),'Next Page',0,False)
 
-    if fhandler == FT.SendProgram:
+    if fhandler == FT.SendFile:
         keywait = False
     else:
         keywait = True
@@ -405,10 +408,10 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler):
             color2 = P.YELLOW
         KeyLabel(conn, valid_keys[x-start], (programs[x][:len(programs[x])-4]+' '*16)[:16]+('\r'if x%2 else ' '), (x % 4)<2)
         #Add keybinding to MenuDic
-        if fhandler == FT.SendProgram:
-            parameters = (conn,path+programs[x],)
+        if fhandler == FT.SendFile:
+            parameters = (conn,path+programs[x],True,transfer,)
         else:
-            parameters = (conn,path+programs[x],25,True,True,)
+            parameters = (conn,path+programs[x],True,transfer,)
         MenuDic[valid_keys[x-start].encode('ascii','ignore')] = (fhandler,parameters,valid_keys[x-start],0,keywait)
     else:
         if x % 2 == 0 and x != start:
@@ -469,7 +472,7 @@ def SendMenu(conn:Connection):
                 t = s['entrydefs'][i][2]
                 desc =''
 
-            title = t if len(t)<(tw+xw) else t[0:(tw+xw)-4]+'...'
+            title = crop(t,tw+xw-1)   #t if len(t)<(tw+xw) else t[0:(tw+xw)-4]+'...'
 
             if len(title) > 0 or count > (sw-1) or i >= b'\r':
                 if i < b'\r' and count % sw == 0:    #NULL entry
@@ -500,170 +503,6 @@ def SendMenu(conn:Connection):
     #WaitRETURN(conn)
 
 
-def SendText(conn:Connection, filename, title='', lines=25):
-    colors = (P.BLACK,P.WHITE,P.RED,P.PURPLE,P.CYAN,P.GREEN,P.BLUE,P.YELLOW,P.BROWN,P.PINK,P.ORANGE,P.GREY1,P.GREY2,P.LT_BLUE,P.LT_GREEN,P.GREY3)
-    if title != '':
-        RenderMenuTitle(conn, title)
-        l = 22
-        conn.Sendall(TT.set_Window(3,24))
-    else:
-        l = lines
-        conn.Sendall(chr(P.CLEAR))
-
-    if filename.endswith(('.txt','.TXT')):
-        #Convert plain text to PETSCII and display with More
-        tf = open(filename,"r")
-        ot = tf.read()
-        tf.close()
-        text = formatX(ot)
-
-        More(conn,text,l)
-
-    elif filename.endswith(('.seq','.SEQ')):
-        prompt='RETURN'
-        tf = open(filename,"rb")
-        text = tf.read()
-        cc=0
-        ll=0
-        page = 0
-        rvs = ''
-        color = ''
-        for c in text:
-            char = c.to_bytes(1,'big')
-            conn.Sendallbin(char)
-            #Keep track of cursor position
-            if char[0] in itertools.chain(range(32,128),range(160,256)): #Printable chars
-                cc += 1
-            elif char[0] == P.CRSR_RIGHT:
-                cc += 1
-            elif char[0] == P.CRSR_LEFT or char == P.DELETE:
-                cc -= 1
-            elif char[0] == P.CRSR_UP:
-                ll -= 1
-            elif char[0] == P.CRSR_DOWN:
-                ll += 1
-            elif char == b'\x0d':
-                ll += 1
-                cc = 0
-                rvs = ''
-            elif char[0] == P.HOME or char[0] == P.CLEAR:
-                ll = 0
-                page = 0
-                cc = 0
-            elif char[0] in colors:
-                color = chr(char[0])
-            elif char[0] == P.RVS_ON:
-                rvs = chr(P.RVS_ON)
-            elif char[0] == P.RVS_OFF:
-                rvs = ''
-            elif char[0] == P.TOLOWER:
-                prompt = 'RETURN'
-            elif char[0] == P.TOUPPER:
-                prompt = 'return'
-            if cc == 40:
-                cc = 0
-                ll += 1
-            elif cc < 0:
-                if ll!=l*page:
-                    cc = 39
-                    ll -= 1
-                else:
-                    cc = 0
-            if ll < l*page:
-                ll = l*page
-            elif ll >= (l*page)+(l-1):
-                if cc !=0:
-                    conn.Sendall('\r')
-                conn.Sendall(KeyPrompt(prompt+' OR _'))
-                k = conn.ReceiveKey(b'\r_')
-                if conn.connected == False:
-                    conn.Sendall(TT.set_Window(0,24))
-                    return -1
-                if k == b'_':
-                    conn.Sendall(TT.set_Window(0,24))
-                    return -1
-                conn.Sendall(chr(P.DELETE)*13+rvs+color+TT.set_CRSR(cc,(22-l)+ll-(l*page)))
-                page += 1
-        if cc !=0:
-            conn.Sendall('\r')
-        conn.Sendall(KeyPrompt(prompt))
-        conn.ReceiveKey()
-
-    if lines == 25:
-        conn.Sendall(TT.set_Window(0,24))
-    return -1
-#######
-
-def SendCPetscii(conn:Connection,filename,pause=0):
-    print("<<<<<<<<<<<<<<")
-    try:
-        fi = open(filename,'r')
-    except:
-        return()
-    text = fi.read()
-    fi.close
-    #### Falta fijarse si es upper o lower
-    if text.find('upper') != -1:
-        cs = P.TOUPPER
-    else:
-        cs = P.TOLOWER
-    frames = text.split('unsigned char frame')
-    print(frames)
-    for f in frames:
-        if f == '':
-            continue
-        binary = b''
-        fr = re.sub('(?:[0-9]{4})*\[\]={// border,bg,chars,colors\n','',f)
-        fl = fr.split('\n')
-        scc = fl[0].split(',')
-        bo = int(scc[0]).to_bytes(1,'big') #border
-        bg = int(scc[1]).to_bytes(1,'big') #background
-        binary += b'\xff\xb2\x00\x90\x00'+bo+bg+b'\x81\x00\x82\xe8\x03'
-        i = 0
-        for line in fl[1:26]:
-            for c in line.split(','):	#Screen codes
-                if c.isnumeric():
-                    binary += int(c).to_bytes(1,'big')
-                    i += 1
-        print(i)
-        binary+= b'\x81\x20\x82\xe8\x03'
-        i = 0
-        for line in fl[26:52]:
-            for c in line.split(','):	#Color RAM
-                if c.isnumeric():
-                    binary += int(c).to_bytes(1,'big')
-                    i+=1
-        print(i)
-        binary+= b'\xfe'
-        conn.Sendallbin(binary)
-        conn.Sendall(chr(cs))
-        if pause > 0:
-            time.sleep(pause)
-        else:
-            conn.ReceiveKey()
-    conn.Sendall(TT.enable_CRSR())
-    return -1
-
-def SendPETPetscii(conn:Connection,filename):
-    try:
-        f = open(filename,'rb')
-    except:
-        return -1
-    pet = f.read()
-    bo = pet[2].to_bytes(1,'big')
-    bg = pet[3].to_bytes(1,'big')
-    binary = b'\xff\xb2\x00\x90\x00'+bo+bg+b'\x81\x00\x82\xe8\x03'
-    binary += pet[5:1005]
-    binary += b'\x81\x20\x82\xe8\x03'
-    binary += pet[1005:]
-    binary += b'\xfe'
-    conn.Sendallbin(binary)
-    if pet[4] == 1:
-        conn.Sendall(chr(P.TOUPPER))
-    else:
-        conn.Sendall(chr(P.TOLOWER))
-    #time.sleep(5)
-    return 0
 
 # Display sequentially all matching files inside a directory
 def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
@@ -675,16 +514,16 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         files.extend(entries[2])
         break
 
-    pics_e = ('.art','.ocp','.koa','.kla','.ART','.OCP','.KOA','.KLA','.gif','jpg','png','.GIF','.JPG','PNG')
-    text_e = ('.txt','.TXT','.seq','.SEQ')
-    bin_e = ('.bin','.BIN','.raw','.raw')
-    pet_e = ('.c','.C','.pet','.PET')
-    aud_e = ('.mp3','.wav','.MP3','.WAV')
-    sid_e = ('.sid','.SID')
+    pics_e = ('.ART','.OCP','.KOA','.KLA','.GIF','.JPG','PNG')
+    text_e = ('.TXT','.SEQ')
+    bin_e = ('.BIN','.raw')
+    pet_e = ('.C','.PET')
+    aud_e = ('.MP3','.WAV')
+    sid_e = ('.SID','.MUS')
 
     #Keeps only the files with matching extension 
     for f in files:
-        if f.endswith(pics_e + text_e + bin_e + pet_e + aud_e + sid_e):
+        if f.upper().endswith(pics_e + text_e + bin_e + pet_e + aud_e + sid_e):
             slides.append(f)
 
     slides.sort()	#Sort list
@@ -694,7 +533,7 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         w = 0
         conn.Sendall(TT.enable_CRSR()+chr(P.CLEAR))
         _LOG('SlideShow - Showing: '+p,id=conn.id,v=4)
-        tmp,ext = splitext(p)
+        ext = splitext(p)[1].upper()
         print(ext)
         if ext in pics_e:
             FT.SendBitmap(conn, path+p)
@@ -704,16 +543,18 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
             slide.close()
             conn.Sendallbin(binary)
         elif ext in text_e:
-            w = SendText(conn,path+p,title)
+            w = FT.SendText(conn,path+p,title)
         elif ext in pet_e[0:2]:
-            w = SendCPetscii(conn,path+p,(0 if waitkey else delay))
+            w = FT.SendCPetscii(conn,path+p,(0 if waitkey else delay))
         elif ext in pet_e[2:4]:
-            w = SendPETPetscii(conn,path+p)
-        elif ext in aud_e:
+            w = FT.SendPETPetscii(conn,path+p)
+        elif (ext in aud_e) and (conn.QueryFeature(TT.STREAM) < 0x80):
             AA.PlayAudio(conn,path+p,None)
             w = 1
-        elif ext in sid_e:
+        elif (ext in sid_e) and (conn.QueryFeature(TT.SIDSTREAM) < 0x80):
             AA.SIDStream(conn,path+p,None,False)
+            w = 1
+        else:   # Dont wait for RETURN if file is not supported
             w = 1
         # Wait for the user to press RETURN
         if waitkey == True and w == 0:
@@ -874,11 +715,11 @@ def SignIn(conn:Connection):
                         dout = "dd/mm/yyyy"
                     if not conn.connected:
                         return
-                    if conn.TermFt[51] != 80:
+                    if conn.QueryFeature(179) < 0x80:
                         lines = 13
                     else:
                         lines = 25
-                    SendText(conn,conn.bbs.Paths['bbsfiles']+'terms/rules.txt','',lines)
+                    FT.SendText(conn,conn.bbs.Paths['bbsfiles']+'terms/rules.txt','',lines)
                     conn.Sendall('\rrEGISTERING USER '+name+'\riNSERT YOUR PASSWORD:')
                     pw = conn.ReceiveStr(bytes(keys,'ascii'), 16, True)
                     if not conn.connected:
@@ -966,7 +807,11 @@ def EditUser(conn:Connection):
         conn.Sendall('\r')
         KeyLabel(conn,'_','Exit',True)
         conn.Sendall('\r\r')
-        conn.Sendall(TT.Fill_Line(12,64)+'pRESS OPTION')
+        if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+            conn.Sendall(TT.Fill_Line(12,64))
+        else:
+            conn.Sendall(chr(P.CRSR_UP)+(chr(P.HLINE)*40))
+        conn.Sendall('pRESS OPTION')
         k = conn.ReceiveKey(b'ABCDEF_')
         if k == b'_':
             done = True
@@ -974,24 +819,37 @@ def EditUser(conn:Connection):
             n = False
             conn.Sendall('\r'+chr(P.CRSR_UP))
             while not n:
-                conn.Sendall(TT.Fill_Line(13,32)+chr(P.YELLOW)+'nEW USERNAME:')
+                if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                    conn.Sendall(TT.Fill_Line(13,32))
+                else:
+                    conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP))
+                conn.Sendall(chr(P.YELLOW)+'nEW USERNAME:')
                 name = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, False))
                 if not conn.connected:
                     return
                 if len(name) < 6:
                     conn.Sendall(chr(P.ORANGE)+'\ruSERNAME MUST BE 6 TO 16 CHARACTERS\rLONG, TRY AGAIN\r')
                     time.sleep(2)
-                    conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                    else:
+                        conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                 elif name == '_guest_':
                     conn.Sendall(chr(P.ORANGE)+'\riNVALID NAME\rTRY AGAIN\r')
                     time.sleep(2)
-                    conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                    else:
+                        conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                 elif name != conn.username:
                     tentry = bbs_instance.database.chkUser(name)
                     if tentry != None:
                         conn.Sendall(chr(P.ORANGE)+'\ruSERNAME ALREADY TAKEN\rTRY AGAIN:\r')
                         time.sleep(2)
-                        conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                        if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                            conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                        else:
+                            conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                     else:
                         bbs_instance.database.updateUser(uentry.doc_id,name,None,None,None,None,None,None)
                         conn.username = name
@@ -1000,28 +858,43 @@ def EditUser(conn:Connection):
                     n = True
         elif k == b'B': #First name
             conn.Sendall('\r'+chr(P.CRSR_UP))
-            conn.Sendall(TT.Fill_Line(13,32)+'fIRST NAME:')
+            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                conn.Sendall(TT.Fill_Line(13,32))
+            else:
+                conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP))
+            conn.Sendall('fIRST NAME:')
             fname = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
             bbs_instance.database.updateUser(uentry.doc_id,None,None,fname,None,None,None,None)
         elif k == b'C': #Last name
             conn.Sendall('\r'+chr(P.CRSR_UP))
-            conn.Sendall(TT.Fill_Line(13,32)+'lAST NAME:')
+            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                conn.Sendall(TT.Fill_Line(13,32))
+            else:
+                conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP))
+            conn.Sendall('lAST NAME:')
             lname = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
             bbs_instance.database.updateUser(uentry.doc_id,None,None,None,lname,None,None,None)
         elif k == b'D': #Birthdate
             conn.Sendall('\r'+chr(P.CRSR_UP))
-            conn.Sendall(TT.Fill_Line(13,32))
+            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                conn.Sendall(TT.Fill_Line(13,32))
+            else:
+                conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP))
             bday = conn.ReceiveDate('\rbIRTHDATE: ',datetime.date(1900,1,1),datetime.date.today(),datetime.date(1970,1,1))
             if not conn.connected:
                 return
             bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,bday.strftime("%d/%m/%Y"),None,None)
         elif k == b'E': #Country
             conn.Sendall('\r'+chr(P.CRSR_UP))
-            conn.Sendall(TT.Fill_Line(13,32)+'cOUNTRY:')
+            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                conn.Sendall(TT.Fill_Line(13,32))
+            else:
+                conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP)) 
+            conn.Sendall('cOUNTRY:')
             country = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
@@ -1030,7 +903,11 @@ def EditUser(conn:Connection):
             n = 0
             conn.Sendall('\r'+chr(P.CRSR_UP))
             while n < 3:
-                conn.Sendall(TT.Fill_Line(13,32)+'oLD PASSWORD:')
+                if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                    conn.Sendall(TT.Fill_Line(13,32))
+                else:
+                    conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP))
+                conn.Sendall('oLD PASSWORD:')
                 pw = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))
                 if not conn.connected:
                     return
@@ -1038,14 +915,21 @@ def EditUser(conn:Connection):
                     m = False
                     conn.Sendall('\r'+chr(P.CRSR_UP))
                     while not m:
-                        conn.Sendall(TT.Fill_Line(13,32)+'nEW PASSWORD:')
+                        if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                            conn.Sendall(TT.Fill_Line(13,32))
+                        else:
+                            conn.Sendall(TT.set_CRSR(0,13)+(' '*40)+chr(P.CRSR_UP))                        
+                        conn.Sendall('nEW PASSWORD:')
                         pw = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))
                         if not conn.connected:
                             return
                         if len(pw) < 6:
                             conn.Sendall(chr(P.ORANGE)+'\rpASSWORD MUST BE 6 TO 16 CHARACTERS\rLONG, TRY AGAIN\r')
                             time.sleep(2)
-                            conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                                conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                            else:
+                                conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                         else:
                             bbs_instance.database.updateUser(uentry.doc_id,None,pw,None,None,None,None,None)
                             m = True
@@ -1053,7 +937,10 @@ def EditUser(conn:Connection):
                 else:
                     conn.Sendall('\riNCORRECT PASSWORD\rTRY AGAIN\r')
                     time.sleep(2)
-                    conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        conn.Sendall(TT.Fill_Line(14,32)+TT.Fill_Line(15,32)+(chr(P.CRSR_UP))*3)
+                    else:
+                        conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                     n += 1
 
 # Display user list
@@ -1083,7 +970,10 @@ def UserList(conn:Connection):
     digits = len(str(max(users[:])[0]))
 
     conn.Sendall(chr(P.WHITE)+" id         uSERNAME\r\r"+chr(P.LT_GREEN))
-    conn.Sendall(TT.Fill_Line(4,64))
+    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+        conn.Sendall(TT.Fill_Line(4,64))
+    else:
+        conn.Sendall(chr(P.CRSR_UP)+(chr(P.HLINE)*40))
 
     pages = int((len(users)-1) / 18) + 1
     count = len(users)
@@ -1132,41 +1022,30 @@ def GetTerminalFeatures(conn:Connection, display = True):
     conn.Sendall(chr(P.CLEAR)+chr(P.LT_BLUE)+"tERMINAL ID: "+chr(P.WHITE)+conn.TermString.decode("utf-8")+"\r")
     conn.Sendall(chr(P.LT_BLUE)+"tURBO56k VERSION: "+chr(P.WHITE)+str(conn.T56KVer)+"\r")
     time.sleep(0.5)
-    conn.Sendall(chr(P.LT_BLUE)+"cHECKING TERMINAL FEATURES:\r")
 
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
     if conn.T56KVer > 0.5:
-        result = [b'\x80']*(TT.TURBO56K_LCMD-127)
-        # for cmd in range(128,TT.TURBO56K_LCMD+1):
-        for cmd in TT.T56K_CMD:
-            time.sleep(0.5)
-            conn.Sendall(chr(TT.CMDON))
-            conn.Sendall(chr(TT.QUERYCMD)+chr(cmd+128))
-            result[cmd] = (conn.Receive(1))
-            conn.Sendall(chr(TT.CMDOFF))
-            if (cmd+128) % 16 == 0:
-                conn.Sendall(chr(P.WHITE)+"\r$"+hex(cmd+128)[2:3]+"X: ")
-            if result[cmd] != b'\x80':
-                conn.Sendall(chr(P.LT_GREEN)+chr(P.CHECKMARK))
-            else:
-                conn.Sendall(chr(P.RED)+"X")
-    else:
-        result = [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-                  b'\x03',b'\x02',b'\x03',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-                  b'\x00',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-                  b'\x02',b'\x02',b'\x01',b'\x02',b'\x80',b'\x02']
-        for cmd in TT.T56K_CMD:
-            if (cmd+128) % 16 == 0:
-                conn.Sendall(chr(P.WHITE)+"\r$"+hex(cmd+128)[2:3]+"X: ")
-            if result[cmd] != b'\x80':
-                conn.Sendall(chr(P.LT_GREEN)+chr(P.CHECKMARK))
-            else:
-                conn.Sendall(chr(P.RED)+"X")
-    conn.TermFt = result
+        conn.Sendall(chr(P.LT_BLUE)+"cHECKING SOME TERMINAL FEATURES:\r")
+        result = [None]*(TT.TURBO56K_LCMD-127)
+        for cmd in [129,130,179]:
+            conn.Sendall(chr(P.GREY3)+P.toPETSCII(TT.T56K_CMD[cmd])+': '+((chr(P.LT_GREEN)+chr(P.CHECKMARK)) if conn.QueryFeature(cmd)< 0x80 else (chr(P.RED)+'X'))+'\r')
+        # # for cmd in range(128,TT.TURBO56K_LCMD+1):
+        # for cmd in TT.T56K_CMD:
+        #     time.sleep(0.5)
+        #     conn.Sendall(chr(TT.CMDON))
+        #     conn.Sendall(chr(TT.QUERYCMD)+chr(cmd))
+        #     result[cmd-128] = (conn.Receive(1))
+        #     conn.Sendall(chr(TT.CMDOFF))
+        #     if cmd % 16 == 0:
+        #         conn.Sendall(chr(P.WHITE)+"\r$"+hex(cmd)[2:3]+"X: ")
+        #     if result[cmd-128] != b'\x80':
+        #         conn.Sendall(chr(P.LT_GREEN)+chr(P.CHECKMARK))
+        #     else:
+        #         conn.Sendall(chr(P.RED)+"X")
     conn.Sendall('\r')
-    if conn.TermFt[3] != b'\x80':
+    if conn.QueryFeature(131) < 0x80:
         conn.Sendall(chr(P.GREY3)+"pcm AUDIO SAMPLERATE "+chr(P.YELLOW)+str(conn.samplerate)+"hZ\r")
     time.sleep(2)
 
@@ -1231,9 +1110,9 @@ def BBSLoop(conn:Connection):
                 conn.TermString = datos
                 conn.T56KVer = t56kver
                 GetTerminalFeatures(conn)
-                if conn.TermFt[1]!=b'\x80' and conn.TermFt[2]!=b'\x80' and conn.TermFt[51]!=b'\x80':
+                if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
                     _LOG('Sending intro pic',id=conn.id,v=4)
-                    bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+'splash.art',12,False)
+                    bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+'splash.art',lines=12,display=False)
                     _LOG('Spliting Screen',id=conn.id,v=4)
                     conn.Sendall(TT.split_Screen(12,False,ord(bg),0))
                 time.sleep(1)
@@ -1277,7 +1156,7 @@ def BBSLoop(conn:Connection):
                 if data != b'' and conn.connected == True:
                     if data in conn.MenuDefs:
                         if conn.userclass >= conn.MenuDefs[data][3]:
-                            prompt = conn.MenuDefs[data][2] if len(conn.MenuDefs[data][2])<20 else conn.MenuDefs[data][2][:17]+'...'
+                            prompt = crop(conn.MenuDefs[data][2], 20)   #conn.MenuDefs[data][2] if len(conn.MenuDefs[data][2])<20 else conn.MenuDefs[data][2][:17]+'...'
                             conn.Sendall(P.toPETSCII(prompt))	#Prompt
                             time.sleep(1)
                             #print(bbs_instance.MenuList[conn.menu]['type'])

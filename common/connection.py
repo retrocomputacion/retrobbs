@@ -10,7 +10,9 @@ import socket
 from common.bbsdebug import _LOG, bcolors
 import datetime
 import common.petscii as P
+import common.turbo56k as TT
 from common.classes import BBS
+import time
 
 class Connection:
 
@@ -41,9 +43,11 @@ class Connection:
 		self.userid	= 0
 		self.userclass = 0			# 0 = Guest
 
-		self.TermString = '' #Terminal identification string
-		self.T56KVer = 0	#Terminal Turbo56K version
-		self.TermFt = []	#Terminal features
+		self.TermString = '' 		#Terminal identification string
+		self.T56KVer = 0			#Terminal Turbo56K version
+		self.TermFt = {i:None for i in range(128,256)}	#Terminal features
+		self.TermFt[0x7F] = b'\x00'
+		self.TermFt[0x7E] = b'\x00'
 
 		_LOG('Incoming connection from', addr,id=id,v=3)
 	
@@ -60,6 +64,22 @@ class Connection:
 			self.socket.close()
 		except:
 			pass
+
+	# Query if the client terminal supports a feature
+	def QueryFeature(self, cmd:int):
+		#return 0x80		# Uncomment this when testing commands
+		if (cmd < 128) or (cmd > 253):
+			return 0x80
+		if self.T56KVer > 0.5:
+			if self.TermFt[cmd] == None:
+				time.sleep(0.5)
+				self.Sendall(chr(TT.CMDON))
+				self.Sendall(chr(TT.QUERYCMD)+chr(cmd))
+				self.TermFt[cmd] = self.Receive(1)[0]	# Store as int
+				self.Sendall(chr(TT.CMDOFF))
+		elif self.TermFt[cmd] == None:
+			self.TermFt[cmd] = TT.T56Kold[cmd-128]
+		return self.TermFt[cmd]
 
 	#Convert string to binary string and sends it via socket
 	def Sendall(self, cadena):
