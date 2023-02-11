@@ -101,7 +101,7 @@ __New features__:
  - New command line parameter `-c`, select configuration file.
  - SID streaming now supports Compute's Sidplayer .mus files.
  - SID streaming now supports selection of the subtune to play .
- - SID streaming supports tunes using hardrestart, if special siddump is available. 
+ - SID streaming supports tunes using hardrestart, if _SIDDumpHR_ is available. 
  - New SIDPLAY function for the configuration file.
  - Added *[Turbo56k](docs/turbo56k.md)* v0.7 support.
  - New text viewer with support for bidirectional scroll
@@ -155,7 +155,7 @@ Current built-in functions:
 
 - PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
-- SID music streaming: SID files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* executable in the system path.
+- SID music streaming: SID files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* or *SIDDumpHR* executables in the system path.
 
 Currently included plug-ins:
 
@@ -204,7 +204,8 @@ Python modules:
 External software:
 
   * *FFmpeg* >= 4.0 (for PCM audio streaming)
-  * *[SIDDump](https://github.com/cadaver/siddump)* (for SID streaming): After compiling, if you're using *Linux*, remove the .exe extension from the executable and copy it to usr/bin.
+  * *[SIDDumpHR](https://github.com/retrocomputacion/SIDDumpHR)* (for SID streaming): After compiling, copy the executable to /usr/bin
+  * Alternatively *[SIDDump](https://github.com/cadaver/siddump)* (doesn't support hardrestart): After compiling, if you're using *Linux*, remove the .exe extension from the executable and copy it to /usr/bin.
 
 
 ---
@@ -985,7 +986,7 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Vaporatorius
   * Gabriel Garcia
   * Roberto Mandracchia
-  * ChrisKewl - twitter.com/chriskewltv
+  * ChrisKewl - [twitter.com/chriskewltv](http://twitter.com/chriskewltv)
 
 ## External software, support files
 
