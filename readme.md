@@ -5,7 +5,7 @@
 
 # RetroBBS
 
-VERSION 0.25
+VERSION 0.25 dev
 
 (c)2020-2023 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
@@ -98,10 +98,13 @@ Even though this is the third rewrite of this script, it is still in an early de
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified.
  - New LABEL internal function for displaying non-interactive text in menus.
- - New command line parameter `-c`, select configuration file
- - SID streaming now supports Compute's Sidplayer .mus files
- - SID streaming now supports selection of the subtune to play 
+ - New command line parameter `-c`, select configuration file.
+ - SID streaming now supports Compute's Sidplayer .mus files.
+ - SID streaming now supports selection of the subtune to play .
+ - SID streaming supports tunes using hardrestart, if special siddump is available. 
  - New SIDPLAY function for the configuration file.
+ - Added *[Turbo56k](docs/turbo56k.md)* v0.7 support.
+ - New text viewer with support for bidirectional scroll
 
 __Changes/Bug fixes__:
  - Fixed terminal feature check, now is more reliable, albeit slower.
@@ -116,6 +119,7 @@ __Changes/Bug fixes__:
  - Custom paths are now read from the configuration file, currently only 'temp' and 'bbsfiles' presets are used internally.
  - Fixed search for .ssl files in the SONGLENGHT subdirectory
  - Fixed playlength of NTSC .sid files.
+ - Slideshow doesn't wait for RETURN when there's an unsupported file present in the sequence.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -186,6 +190,7 @@ Python modules:
   * tinydb
   * geopy (For the weather plugin)
   * python_weather (For the weather plugin)
+  * crc
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
@@ -618,29 +623,72 @@ Set **\<pw\>** to `True` to echo `*` for each character received, ie, for passwo
 **ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
 ## common.filetools - Functions related to file transfer:
-### SendBitmap(conn, filename, lines=25, display=True, dialog=False, multi=True, preproc=True):
+### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, , multi=True, preproc=True):
 Convert image to C64 mode and send it to the client.
+__Important: The parameter order has changed since v0.25__
 
 - **\<conn\>**: Connection object
 - **\<filename\>**: Path to image file/bytes object/PIL image object
+- **\<save\>**: Set to `True` to save the image to disk. Default `False`
 - **\<lines\>**: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
 - **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
 - **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
 - **\<multi\>**: Set to `True` for multicolor mode. Overridden by user selection if **\<dialog\>** = `True`
 - **\<preproc\>**: Auto preprocess image brightness/contrast, default `True`
 
-### SendProgram(conn:Connection,filename):
+### SendProgram(conn:Connection, filename):
 Sends program file into the client memory at the correct address in turbo mode
 
 - **\<conn\>**: Connection object
 - **\<filename\>**: Path of the program file to be sent
 
-### SendRAWFile(conn:Connection,filename, wait=True):
+### SendFile(conn:Connection, filenamte, dialog = False, save = False):
+Calls the right transfer function for each supported file type. If selected, will display a dialog beforehand.
+
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path of the file to be sent
+- **\<dialog\>**: Set to `True` to send a dialgo asking the action to take. Default `False`
+- **\<save\>**: Set to `True` to transfer the file to disk. If `dialog` is `True`, then the _save_ option will be added.
+
+### SendRAWFile(conn:Connection, filename, wait = True):
 Sends a file directly without processing
 
 - **\<conn\>**: Connection object
 - **\<filename\>**: Path of the file to be sent
 - **\<wait\>**: Boolean, wait for `RETURN` after sending the file
+
+### TransferFile(conn:Connection, file, savename, seq = False):
+Starts a file transfer to disk, pending the client acceptance.
+
+- **\<conn\>**: Connection object
+- **\<file\>**: Either the path string to the file to transfer. Or a _bytes_ object with the actual data to be transferred.
+- **\<savename\>**: The name used to save the file on the disk. Mandatory if `file` is a _bytes_ object.
+- **\<seq\>**: Set to `True` to save the file as a _SEQ_ file. Otherwise if will be saved as a _PRG_ file.
+
+### SendText(conn:Connection, filename, title = '', lines = 25):
+Display a text (.txt) or sequential (.seq) file.
+
+Text files are displayed through `common.helpers.More`.
+
+Sequential files are scanned for _PETSCII_ control codes and interpreted accordingly.
+
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to the file to display
+- **\<title\>**: If not empty, will be used to display a title bar. Otherwise no title bar will be rendered.
+- **\<lines\>**: Number if lines available before scrolling.
+
+### SendCPetscii(conn:Connection, filename, pause = 0):
+Display a _.c_ formatted C64 text screen, as exported by _PETSCII_ or _PETMATE_. Multiple frames per file are supported
+
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to the file to display
+- **\<pause\>**: Seconds to pause between frames. Default: 0, wait for user to press RETURN.
+
+### SendPETPetscii(conn:Connection, filename):
+Display a _.PET_ formatted C64 text screen, as exported be _PETMATE_. Returns immediatly
+
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to the file to display
 
 ## common.helpers
 Misc functions that do not fit anywhere else at this point. Functions might get deprecated and/or moved to other modules in the future.
@@ -656,6 +704,16 @@ Formats the **\<text\>** into **\<columns\>** columns with word wrapping, **\<co
 Paginates **\<text\>**, sends it to **\<conn\>**, the user must press `RETURN` to get next page(s). Supports most *PETSCII* control codes, including color and cursor movement.
 - **\<lines\>**: how many lines per page to transfer. Useful when using the windowing commands of *Turbo56K*.
 - **\<colors\>**: a `bbsstyle` object defining the color set to use.
+
+### text_displayer(conn, text, lines, colors=default_style):
+Displays `text` in a text window `lines` in height. Scrolling up and down with the cursor keys.
+- **\<conn\>**: Connection object
+- **\<text\>**: Preformated text list, as returned by `formatX`
+- **\<lines\>**: How tall is the text window in use. Text window limits must be set before calling `text_displayer`. Actual displayed text lines is `lines`-1
+- **\<colors\>**: Color style to use for rendering the text.
+
+### crop(text, length)
+Cuts **\<text\>** to max **\<length\>** characters, adding an ellipsis to the end if needed.
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
 Many control codes and graphic characters are defined as constants in this module, it is recommended to inspect it to learn more.
@@ -664,7 +722,7 @@ Many control codes and graphic characters are defined as constants in this modul
 
 **NONPRINTABLE**: A list of all the non-printable *PETSCII* characters
 
-### toPETSCII(text,full = True):
+### toPETSCII(text, full = True):
 Converts **\<text\>** from *UTF-8* to *PETSCII*, if **\<full\>** is `True`, some characters are replaced with a visually similar *PETSCII* equivalent.
 
 ### toASCII(text):
@@ -683,6 +741,12 @@ Returns the key prompt string for **\<text\>**. The prompt takes the form `[<tex
 
 ### KeyLabel(conn,key,label,toggle,style=default_style):
 Renders menu option **\<label\>** for assigned **\<key\>** in the selected **\<style\>**, boolean **\<toggle\>** switches between odd/even styles.<br>The result is sent to **\<conn\>**
+
+### RenderDialog(conn,height,title):
+Renders the background for file view/play/transfer dialogs.
+**\<conn\>** Connection object
+**\<height\>** Desired height rows for the dialog in screen
+**\<title>\>** Optional title string
 
 ## common.turbo56k:
 Defines the *[Turbo56k](turbo56k.md)* protocol constants and helper functions
