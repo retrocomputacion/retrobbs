@@ -285,8 +285,9 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
         if c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
             streaming = False
 
+        #print(time.time()-t1)
         #time.sleep(0.60)    #Dont send all the stream at once. Untested for 7680Hz
-        time.sleep((CHUNK/conn.samplerate)*0.9)
+        time.sleep(((CHUNK/conn.samplerate)-(time.time()-t1))*0.95)
         #while streaming and (time.time()-t1 < (CHUNK/conn.samplerate)): #This method should work for all samplerates
         #    pass                                        #and with different host performances
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'

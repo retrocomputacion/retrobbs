@@ -334,6 +334,17 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			...
 		elif ext == '.PET':
 			...
+		elif save:	#Default -> download to disk
+			if dialog:
+				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program', prompt='save to disk', save = False)
+			else:
+				res = 1
+			if res == 1:
+				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0])):
+					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+				else:
+					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.ReceiveKey()
 	...
 
 ##################################################################################
