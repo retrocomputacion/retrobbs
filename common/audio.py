@@ -286,8 +286,9 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             streaming = False
 
         #time.sleep(0.60)    #Dont send all the stream at once. Untested for 7680Hz
-        while streaming and (time.time()-t1 < (CHUNK/conn.samplerate)): #This method should work for all samplerates
-            pass                                        #and with different host performances
+        time.sleep((CHUNK/conn.samplerate)*0.9)
+        #while streaming and (time.time()-t1 < (CHUNK/conn.samplerate)): #This method should work for all samplerates
+        #    pass                                        #and with different host performances
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
     pcm_stream.stop()

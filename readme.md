@@ -120,6 +120,7 @@ __Changes/Bug fixes__:
  - Fixed search for .ssl files in the SONGLENGHT subdirectory
  - Fixed playlength of NTSC .sid files.
  - Slideshow doesn't wait for RETURN when there's an unsupported file present in the sequence.
+ - Fixed high CPU usage when streaming local audio files 
 
 ---
 # 1.2 The *Turbo56K* protocol
