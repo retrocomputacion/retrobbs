@@ -117,7 +117,7 @@ __Changes/Bug fixes__:
  - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts.
  - Removed extra empty line if the first section of a menu doesnt have a title.
  - Custom paths are now read from the configuration file, currently only 'temp' and 'bbsfiles' presets are used internally.
- - Fixed search for .ssl files in the SONGLENGHT subdirectory
+ - Fixed search for .ssl files in the SONGLENGTH subdirectory
  - Fixed playlength of NTSC .sid files.
  - Slideshow doesn't wait for RETURN when there's an unsupported file present in the sequence.
  - Fixed high CPU usage when streaming local audio files 
