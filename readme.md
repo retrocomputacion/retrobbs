@@ -377,6 +377,7 @@ Configuration file parameter keys:
 | key | description
 |:---:|:---
 | `entryZpath` | Path to the program files, default is '/programs'
+| `entryZsave` | Set to `True` to allow saving the files to disk.
 
 ### Function IMAGEGALLERY:
 Display the list of images in a directory, the user-selected file will be transferred and displayed.
@@ -386,6 +387,7 @@ Configuration file parameter keys:
 | key | description
 |:---:|:---
 | `entryZpath` | Path to the image directory, default is '/images'
+| `entryZsave` | Set to `True` to allow saving the files to disk.
 
 ### Function AUDIOLIBRARY:
 Display the list of audio files in a directory, the user-selected file will be streamed.
