@@ -111,9 +111,25 @@ def More(conn:Connection, text, lines, colors=default_style):
 # Bidirectional scroll text display
 # needs Turbo56K >= 0.7
 def text_displayer(conn:Connection, text, lines, colors=default_style):
+	#initialize line color list
+	lcols = [P.PALETTE[colors.TxtColor]]*len(text)
+	tcolor = lcols[0]
+
+	#Display a whole text page
+	def _page(start,l):
+		nonlocal tcolor
+
+		conn.Sendall(chr(P.CLEAR))
+		tcolor = P.PALETTE[colors.TxtColor] if start == 0 else lcols[start-1]
+		for i in range(start, start+min(lcount,len(text[start:]))):
+			t = text[i]
+			conn.Sendall(t)
+			tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
+			if len(tt) < 40 and t[-1]!='\r':
+				conn.Sendall('\r')
+		return(i)
+
 	if conn.QueryFeature(TT.SCROLL)< 0x80:
-		#initialize line color list
-		lcols = [P.PALETTE[colors.TxtColor]]*len(text)
 		#eliminate problematic control codes
 		for i,t in enumerate(text):
 			text[i] = t.translate({P.HOME:None,P.CLEAR:None,P.CRSR_LEFT:None,P.CRSR_UP:None})
@@ -121,25 +137,16 @@ def text_displayer(conn:Connection, text, lines, colors=default_style):
 			lcount = lines[1]-lines[0]
 		else:
 			lcount = lines -1
-		#first fill text window
+
+		# Fill line color list
+		for i,t in enumerate(text):
+			tcolor = lastColor(t,tcolor)
+			lcols[i] = tcolor
+
+		# Render 1st page
 		tcolor = P.PALETTE[colors.TxtColor]
 		conn.Sendall(chr(tcolor))
-		for i in range(min(lcount,len(text))):
-			t = text[i]
-			conn.Sendall(t)
-			tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
-			if len(tt) < 40 and t[-1]!='\r':
-				conn.Sendall('\r')
-			# Find last text color
-			tcolor = lastColor(t,tcolor)
-			# pos = -1
-			# for c in P.PALETTE:
-			# 	x = t.rfind(chr(c))
-			# 	if x > pos:
-			# 		pos = x
-			# 		tcolor = c
-			# if i+1 < len(text):
-			lcols[i] = tcolor
+		i = _page(0,lines)
 
 		tline = 0
 		bline = i+1
@@ -147,7 +154,7 @@ def text_displayer(conn:Connection, text, lines, colors=default_style):
 			#scroll loop
 			ldir = True	#Last scroll down?
 			while conn.connected:
-				k = conn.ReceiveKey(b'_'+bytes([P.CRSR_DOWN,P.CRSR_UP]))
+				k = conn.ReceiveKey(b'_'+bytes([P.CRSR_DOWN,P.CRSR_UP,P.F1,P.F7]))
 				if k == b'_':
 					break
 				elif (k[0] == P.CRSR_UP) and (tline > 0):	#Scroll up
@@ -168,8 +175,21 @@ def text_displayer(conn:Connection, text, lines, colors=default_style):
 					conn.Sendall(TT.scroll(1))
 					if ldir:
 						conn.Sendall(TT.set_CRSR(0,lcount-1)+chr(tcolor)+text[bline])
-					lcols[bline] = lastColor(text[bline],tcolor)
+					#lcols[bline] = lastColor(text[bline],tcolor)
 					bline += 1
+					ldir = True
+				elif (k[0] == P.F1) and (tline > 0):	#Page up
+					tline -= lcount
+					if tline < 0:
+						tline = 0
+					bline = _page(tline,lcount)+1
+					ldir = True
+				elif (k[0] == P.F7) and (bline < len(text)-1):	#Page down
+					bline += lcount
+					if bline > len(text):
+						bline = len(text)
+					tline = bline-lcount
+					_page(tline,lcount)
 					ldir = True
 				...
 		else:
