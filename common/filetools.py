@@ -306,7 +306,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			if res == 1:
 				SendProgram(conn,filename)
 			elif res == 2:
-				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0].upper())):
+				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0].lower())):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
@@ -321,7 +321,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 				title = 'Viewing text file' if ext == '.TXT' else ''
 				SendText(conn,filename,title)
 			elif res == 2:
-				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0].upper),True):
+				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0].lower()),True):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
