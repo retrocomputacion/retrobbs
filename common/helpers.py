@@ -122,11 +122,12 @@ def text_displayer(conn:Connection, text, lines, colors=default_style):
 		conn.Sendall(chr(P.CLEAR))
 		tcolor = P.PALETTE[colors.TxtColor] if start == 0 else lcols[start-1]
 		for i in range(start, start+min(lcount,len(text[start:]))):
-			t = text[i]
+			t = chr(tcolor) + text[i]
 			conn.Sendall(t)
 			tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
 			if len(tt) < 40 and t[-1]!='\r':
 				conn.Sendall('\r')
+			tcolor = lcols[i]
 		return(i)
 
 	if conn.QueryFeature(TT.SCROLL)< 0x80:

@@ -12,6 +12,7 @@ from io import BytesIO
 from PIL import Image
 from bs4 import BeautifulSoup
 import requests
+import time
 
 
 #############################
@@ -131,7 +132,7 @@ def plugFunction(conn:Connection):
 				tt[0] = chr(P.CLEAR)+chr(P.BLACK)+tt[0]
 				tt.append(chr(P.GREY1)+chr(P.HLINE)*40)
 
-				tt += formatX(WikiParseParas(page.summary))	#<+
+				tt += formatX(WikiParseParas(page.summary),convert=False)	#<+
 
 				tt.append('\r')
 
@@ -143,8 +144,10 @@ def plugFunction(conn:Connection):
 					text_displayer(conn,tt,22,wcolors)
 				else:
 					More(conn,tt,22,wcolors)
-			except:
-				conn.Sendall(chr(P.RED)+'eRROR!')
+			except Exception as e:
+				conn.Sendall(chr(P.RED)+'\reRROR!')
+				time.sleep(1)
+				print(e)
 				pass
 
 	conn.Sendall(TT.set_Window(0,24))	#Set Text Window
@@ -160,7 +163,7 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0):
 		ts[0] = chr(P.BLACK)+ts[0]
 		tt += ts
 		tt.append(chr(P.HLINE)*40+chr(P.GREY1))
-		tt += formatX(WikiParseParas(s.text))	#<+
+		tt += formatX(WikiParseParas(s.text),convert=False)	#<+
 		tt.append('\r')
 		tt += WikiSection(conn, s.sections, level + 1, lines)
 	return(tt) #lines
@@ -168,23 +171,44 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0):
 # Get plain text,
 # replace <p> and <br>with new lines
 # based on: https://stackoverflow.com/questions/10491223/how-can-i-turn-br-and-p-into-line-breaks
-def WikiParseParas(text):
+def WikiParseParas(text, level = 0):
 	def replace_with_newlines(element):
 		text = ''
 		for elem in element.recursiveChildGenerator():
 			if isinstance(elem, str):
-				text += elem
+				text += P.toPETSCII(elem)
 			elif elem.name == 'br':
-				text += '\n'
+				text += '\r'
+			elif elem.name == 'li':
+				text += '*'+P.toPETSCII(elem.get_text())+'\r'
 		return text
 
-	soup = BeautifulSoup(text, "html.parser")
+	if isinstance(text,str):
+		soup = BeautifulSoup(text, "html.parser")
+	else:
+		soup = text
 	plain_text = ''
-	for line in soup.findAll('p'):
-		line = replace_with_newlines(line)
-		plain_text+=line+'\n\n'
+	for elem in soup.children:	#soup.findAll('p'):
+		if elem.name == 'p':
+			elem = replace_with_newlines(elem)
+			plain_text+='\r'+elem+'\r'
+		elif elem.name == 'ul':
+			for item in elem.find_all('li',recursive=False):
+				key = next(item.stripped_strings)
+				plain_text += (' '*level)+chr(P.BLACK)+'* '+chr(P.GREY1)+P.toPETSCII(key)+'\r'
+				nitem = item.find(['p','ul','ol'])
+				if nitem:
+					plain_text += WikiParseParas(item,level=level+1)+'\r'
+		elif elem.name == 'ol':
+			for i,item in enumerate(elem.find_all('li',recursive=False)):
+				key = next(item.stripped_strings)
+				plain_text += (' '*level)+chr(P.BLACK)+str(i)+'. '+chr(P.GREY1)+P.toPETSCII(key)+'\r'
+				nitem = item.find(['p','ul','ol'])
+				if nitem:
+					plain_text += WikiParseParas(item,level=level+1)+'\r'				
+
 	if plain_text == '':
-		plain_text == soup.get_text()
+		plain_text == P.toPETSCII(soup.get_text())
 	return(plain_text)
 
 def WikiParseTitles(text):
