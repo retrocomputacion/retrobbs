@@ -101,6 +101,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			out = 0
 		if (out & 0x80) == 0x80:	# Save image
 			savename = os.path.splitext(os.path.basename(filename))[0].upper()
+			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
 			if TransferFile(conn, filename, savename):
 				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
@@ -136,6 +137,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			out = 0
 		if (out & 0x80) == 0x80:	# Save image
 			savename = os.path.splitext(os.path.basename(filename))[0].upper()
+			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			savename = chr(0x81)+'PIC A '+(savename.ljust(8,' ') if len(savename)<8 else savename[:8])
 			if TransferFile(conn, filename, savename):
 				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
@@ -170,6 +172,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		if (out & 0x80) == 0x80:	# Save image
 			savename = os.path.splitext(os.path.basename(filename))[0].upper()
 			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
+			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			if TransferFile(conn, filename, savename):
 				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 			else:
@@ -264,6 +267,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		conn.Sendallbin(binaryout)
 		return bgcolor
 	else:	# Save to file
+		savename = os.path.splitext(os.path.basename(filename))[0].upper()
+		savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 		if multi:
 			binaryout = b'\x00\x20' # Advanced Art Studio Load address
 			binaryout += Convert[1][0:tbytes] #Bitmap
@@ -272,14 +277,12 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			binaryout += bgcolor
 			binaryout += b'\x00'*14
 			binaryout += Convert[3][0:tchars] #ColorRAM
-			savename = os.path.splitext(os.path.basename(filename))[0].upper()
 			savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
 		else:
 			binaryout = b'\x00\x20' # Art Studio Load address
 			binaryout += Convert[1][0:tbytes] #Bitmap
 			binaryout += Convert[2][0:tchars] #Screen
 			binaryout += borde
-			savename = os.path.splitext(os.path.basename(filename))[0].upper()
 			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
 		if TransferFile(conn, binaryout, savename):
 			conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
@@ -306,7 +309,9 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			if res == 1:
 				SendProgram(conn,filename)
 			elif res == 2:
-				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0].lower())):
+				savename = os.path.splitext(os.path.basename(filename))[0].upper()
+				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+				if TransferFile(conn,filename, savename[:16]):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
@@ -321,7 +326,9 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 				title = 'Viewing text file' if ext == '.TXT' else ''
 				SendText(conn,filename,title)
 			elif res == 2:
-				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0].lower()),True):
+				savename = os.path.splitext(os.path.basename(filename))[0].upper()
+				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+				if TransferFile(conn,filename, savename[:16],True):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
@@ -340,7 +347,9 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			else:
 				res = 1
 			if res == 1:
-				if TransferFile(conn,filename, P.toPETSCII(os.path.splitext(os.path.basename(filename))[0])):
+				savename = os.path.splitext(os.path.basename(filename))[0].upper()
+				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+				if TransferFile(conn,filename,savename[:16]):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
