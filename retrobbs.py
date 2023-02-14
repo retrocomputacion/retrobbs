@@ -534,7 +534,6 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         conn.Sendall(TT.enable_CRSR()+chr(P.CLEAR))
         _LOG('SlideShow - Showing: '+p,id=conn.id,v=4)
         ext = splitext(p)[1].upper()
-        print(ext)
         if ext in pics_e:
             FT.SendBitmap(conn, path+p)
         elif ext in bin_e:
