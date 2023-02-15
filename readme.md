@@ -152,7 +152,7 @@ Current built-in functions:
 
 - Text file transfer: Process different text formats (*ASCII* or *PETSCII*) and send it to the computer in pages.
 
-- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64 HiRes or Multicolor, also supports Koala Painter, Advanced Art Studio and Art Studio native file formats. Images larger than 320x200 pixels are resized and cropped for best fit. This functionality can be used from plug-ins. 
+- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64 HiRes or Multicolor, also supports Koala Painter, Advanced Art Studio, Doodle! and Art Studio native file formats. Images larger than 320x200 pixels are resized and cropped for best fit. This functionality can be used from plug-ins. 
 
 - PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
@@ -357,7 +357,7 @@ Configuration file parameter keys: NONE
 Display/streams all the supported files in the specified directory in sequential (alphabetical) order, the user must press `RETURN` to skip to the next file.
 
 Supported filetypes are:
-- *ArtStudio*, *Advanced Art Studio*, *Koala Paint*, *GIF*, *PNG* and *JPEG* images
+- *Doodle!*, *ArtStudio*, *Advanced Art Studio*, *Koala Paint*, *GIF*, *PNG* and *JPEG* images
 - *MP3* and *WAV* audio files
 - BIN and RAW byte streams
 - *ASCII* and *PETSCII* text files
