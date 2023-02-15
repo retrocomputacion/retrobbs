@@ -71,14 +71,15 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 ###########################################################
 def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  multi = True, preproc = True):
 
-	ftype = {'.ocp':1,'.OCP':1,	#Advanced Art Studio
-			'.koa':2,'.KOA':2,'.kla':2,'.KLA':2,	#Koala Paint
-			'.art':3,'.ART':3,	#Art Studio
-			'.gif':4,'.GIF':4,
-			'.png':5,'.PNG':5,
-			'.jpg':6,'.JPG':6}
+	ftype = {'.OCP':1,	#Advanced Art Studio
+			'.KOA':2,'.KLA':2,	#Koala Paint
+			'.ART':3,	#Art Studio
+			'.DD':4,'.DDL':4,	#Doodle
+			'.GIF':5,
+			'.PNG':6,
+			'.JPG':7}
 
-	ftitle = {4:' GIF  Image ', 5:' PNG  Image ', 6:' JPEG Image '}
+	ftitle = {6:' GIF  Image ', 7:' PNG  Image ', 8:' JPEG Image '}
 
 	# Find image format
 	Convert = [None]*5
@@ -90,9 +91,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 
 	if type(filename)==str:
 		extension = os.path.splitext(filename)[1]
-		switch = ftype[extension]
+		switch = ftype[extension.upper()]
 	else:
-		switch = 4
+		switch = 5
 
 	if switch == 1:		#extension == '.ocp' or extension == '.OCP':
 		if dialog and save:
@@ -171,8 +172,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			out = 0
 		if (out & 0x80) == 0x80:	# Save image
 			savename = os.path.splitext(os.path.basename(filename))[0].upper()
-			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
 			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
 			if TransferFile(conn, filename, savename):
 				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 			else:
@@ -193,8 +194,38 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			# Close file
 			archivo.close()
 			multi = False #Hi-res bitmaps
+	elif switch == 4:
+		if dialog and save:
+			out = ImageDialog(conn,'Doodle',0,0,True)
+		else:
+			out = 0
+		if (out & 0x80) == 0x80:	# Save image
+			savename = os.path.splitext(os.path.basename(filename))[0].upper()
+			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+			savename = 'DD'+(savename if len(savename)<14 else savename[:14])
+			if TransferFile(conn, filename, savename):
+				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+			else:
+				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+			return
+		else:		# Open the Art Studio image file
+			archivo=open(filename,"rb")
+			# Skip the first couple of bytes
+			archivo.read(2)
 
-	elif 4 <= switch <= 6:	#extension in ('.gif','.png','.jpg','.GIF','.PNG','.JPG'):
+			# Screen data
+			Convert[2] = archivo.read(1000)
+			#Skip
+			archivo.read(24)
+			# Bitmap data
+			Convert[1] = archivo.read(8000)
+
+			borde = b'\x0c'
+
+			# Close file
+			archivo.close()
+			multi = False #Hi-res bitmaps
+	elif 5 <= switch <= 7:	#extension in ('.gif','.png','.jpg','.GIF','.PNG','.JPG'):
 		# or bytes/image object sent as filename parameter
 		conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 		try:
@@ -296,7 +327,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 # conn: Connection
 # filename: path to the file to transfer
 # dialog: Show dialog before transfer
-# save: Allow file downloading to disc
+# save: Allow file downloading to disk
 ###########################################
 def SendFile(conn:Connection,filename, dialog = False, save = False):
 	if os.path.exists(filename):

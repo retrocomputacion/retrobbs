@@ -177,7 +177,7 @@ def ConfigRead():
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
-                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.ART','.OCP','.KOA','.KLA','.gif','jpg','png','.GIF','.JPG','PNG'),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
+                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.dd','.ddl','.ART','.OCP','.KOA','.KLA','.DD','.DDL','.gif','jpg','png','.GIF','.JPG','PNG'),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'SWITCHMENU':		#Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			#Show file list
