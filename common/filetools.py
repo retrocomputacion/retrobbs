@@ -374,11 +374,15 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			...
 		elif save:	#Default -> download to disk
 			if dialog:
-				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program', prompt='save to disk', save = False)
+				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Download file to disk', prompt='save to disk', save = False)
 			else:
 				res = 1
 			if res == 1:
-				savename = os.path.basename(filename).upper()
+				if len(os.path.basename(filename)) > 16:
+					fn = os.path.splitext(os.path.basename(filename))
+					savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
+				else:
+					savename = os.path.basename(filename).upper()
 				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 				if TransferFile(conn,filename,savename[:16]):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))

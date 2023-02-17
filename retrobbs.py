@@ -81,7 +81,7 @@ import re
 import platform
 import subprocess
 from os import walk
-from os.path import splitext, getmtime
+from os.path import splitext, getmtime, basename
 import datetime
 import signal
 import string
@@ -181,7 +181,11 @@ def ConfigRead():
             elif efunc == 'SWITCHMENU':		#Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			#Show file list
-                exts = tuple((cfg.get(key,'entry'+str(e+1)+'ext', fallback='.prg,.PRG')).split(','))
+                te = cfg.get(key,'entry'+str(e+1)+'ext', fallback='')
+                if te != '':
+                    exts = tuple(te.split(','))
+                else:
+                    exts = ()
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
                 parms = [tentry,'','Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'AUDIOLIBRARY':	#Show audio file list
@@ -365,10 +369,13 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         break
 
     #Filter out all files not matching 'filter'
-    for f in files:
-        if f.endswith(ffilter):
-            programs.append(f)
-
+    print(len(ffilter),ffilter)
+    if len(ffilter) > 0:
+        for f in files:
+            if f.endswith(ffilter):
+                programs.append(f)
+    else:
+        programs = files
 
     programs.sort()	#Sort list
 
@@ -406,7 +413,15 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         if x % 4 == 2 or x % 4 == 3:
             color1 = P.CYAN
             color2 = P.YELLOW
-        KeyLabel(conn, valid_keys[x-start], (programs[x][:len(programs[x])-4]+' '*16)[:16]+('\r'if x%2 else ' '), (x % 4)<2)
+        if len(ffilter) == 0:
+            if len(programs[x]) > 16:
+                fn = splitext(programs[x])
+                label = fn[0][:16-len(fn[1])]+fn[1]
+            else:
+                label = programs[x]
+        else:
+            label = splitext(programs[x])[0]
+        KeyLabel(conn, valid_keys[x-start], (label+' '*16)[:16]+('\r'if x%2 else ' '), (x % 4)<2)
         #Add keybinding to MenuDic
         if fhandler == FT.SendFile:
             parameters = (conn,path+programs[x],True,transfer,)

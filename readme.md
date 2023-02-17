@@ -121,6 +121,8 @@ __Changes/Bug fixes__:
  - Fixed playlength of NTSC .sid files.
  - Slideshow doesn't wait for RETURN when there's an unsupported file present in the sequence.
  - Fixed high CPU usage when streaming local audio files 
+ - Improved Wikipedia article parsing
+ - FILES function will show file extensions if no file extension parameter is given
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -370,7 +372,7 @@ Configuration file parameter keys:
 | `entryZpath` | Path to the slideshow files
 
 ### Function FILES:
-Display the list of program files in a directory, the user-selected file will be transferred to memory.
+Display the list of program files in a directory, the user-selected file will be transferred to memory/viewed/saved to disk, depending on the file type and the user choice.
 
 Configuration file parameter keys:
 
@@ -378,6 +380,7 @@ Configuration file parameter keys:
 |:---:|:---
 | `entryZpath` | Path to the program files, default is '/programs'
 | `entryZsave` | Set to `True` to allow saving the files to disk.
+| `entryZext` | Optional comma separated list of file extensions to display. If ommited the file extensions will be shown on the file browser.
 
 ### Function IMAGEGALLERY:
 Display the list of images in a directory, the user-selected file will be transferred and displayed.
