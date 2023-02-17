@@ -357,7 +357,14 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 				title = 'Viewing text file' if ext == '.TXT' else ''
 				SendText(conn,filename,title)
 			elif res == 2:
-				savename = os.path.splitext(os.path.basename(filename))[0].upper()
+				if ext == '.TXT':
+					if len(os.path.basename(filename)) > 16:
+						fn = os.path.splitext(os.path.basename(filename))
+						savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
+					else:
+						savename = os.path.basename(filename).upper()
+				else:
+					savename = os.path.splitext(os.path.basename(filename))[0].upper()
 				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 				if TransferFile(conn,filename, savename[:16],True):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
