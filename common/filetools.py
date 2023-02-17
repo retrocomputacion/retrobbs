@@ -378,7 +378,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			else:
 				res = 1
 			if res == 1:
-				savename = os.path.splitext(os.path.basename(filename))[0].upper()
+				savename = os.path.basename(filename).upper()
 				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 				if TransferFile(conn,filename,savename[:16]):
 					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
