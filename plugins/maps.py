@@ -4,6 +4,7 @@ import math
 import requests
 import json
 import string
+import time
 from io import BytesIO
 from PIL import Image
 from common.connection import Connection
@@ -13,6 +14,7 @@ import common.turbo56k as TT
 from common.helpers import _byte
 import common.petscii as P
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
 
 #############################
 #Plugin setup
@@ -45,6 +47,16 @@ def lat2res(lat_deg, zoom):
 
 def plugFunction(conn:Connection):
 
+    # Avoid Geocode timeout/Unavailable errors
+    # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
+    def do_geocode(location, attempt=1, max_attempts=5):
+        try:
+            return geoLoc.geocode(location,language=conn.bbs.lang)
+        except:
+            if attempt <= max_attempts:
+                return do_geocode(location, attempt=attempt+1)
+            return None
+
     def getImageCluster(xmin, ymin, width, height, zoom):
         smurl = r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
         #xmin, ymin =deg2num(lat_deg, lon_deg, zoom)
@@ -75,11 +87,14 @@ def plugFunction(conn:Connection):
     conn.Sendall(chr(P.CLEAR)+chr(P.YELLOW)+'lOCATION:')
     locqry = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),30))
     if locqry == '_':
-        conn.Sendall(TT.enable_CRSR())
+        conn.Sendall(TT.enable_CRSR()+TT.split_Screen(0,False,0,0))
         return
-    tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
+    conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+    tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
     if tloc == None:
-        #Default to config setting, or Meyrin otherwise
+        conn.Sendall(chr(P.CLEAR)+"error!")
+        time.sleep(0.5)
+        #Default to Greenwich observatory
         response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
         result = response.content.decode()
         result  = json.loads(result)
@@ -226,19 +241,25 @@ def plugFunction(conn:Connection):
             conn.Sendall(TT.split_Screen(24,False,0,0))
             conn.Sendall(TT.enable_CRSR()+chr(P.CLEAR)+chr(P.YELLOW)+'lOCATION:')
             locqry = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),30))
-            tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
+            if locqry == '_':
+                conn.Sendall(TT.enable_CRSR()+TT.split_Screen(0,False,0,0))
+                break
+            conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+            tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
             if tloc == None:
-                #Default to config setting, or Meyrin otherwise
+                conn.Sendall(chr(P.CLEAR)+"error!")
+                time.sleep(0.5)
+                #Default to user location or Greenwich observatory otherwise
                 response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
                 result = response.content.decode()
                 result  = json.loads(result)
                 loc = tuple(map(float,result.get('loc',"51.47679219,-0.00073887").split(',')))
             else:
                 loc = (tloc.latitude,tloc.longitude)
-                zoom = 16
-                ctilex,ctiley = deg2num(loc[0],loc[1],zoom)
-                tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
-                dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
-                display = True
-                retrieve = True
-                cpos = [1,1]
+            zoom = 16
+            ctilex,ctiley = deg2num(loc[0],loc[1],zoom)
+            tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+            dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
+            display = True
+            retrieve = True
+            cpos = [1,1]
