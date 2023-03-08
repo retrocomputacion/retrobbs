@@ -19,12 +19,16 @@ from common import turbo56k as TT
 from common.style import bbsstyle, default_style
 
 
-#Valid keys for menu entries
+# Valid keys for menu entries
 valid_keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\*;/'
 
 
-#Menu alternating colors
+# Menu alternating colors
 menu_colors = [[P.LT_BLUE,P.GREY3],[P.CYAN,P.YELLOW]]
+
+# convert int to Byte
+_byte = lambda i: i.to_bytes(1,'little')
+
 
 # Paginate current menu
 def SetPage(conn:Connection,page):

@@ -369,7 +369,6 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         break
 
     #Filter out all files not matching 'filter'
-    print(len(ffilter),ffilter)
     if len(ffilter) > 0:
         for f in files:
             if f.endswith(ffilter):
@@ -1173,7 +1172,6 @@ def BBSLoop(conn:Connection):
                             prompt = crop(conn.MenuDefs[data][2], 20)   #conn.MenuDefs[data][2] if len(conn.MenuDefs[data][2])<20 else conn.MenuDefs[data][2][:17]+'...'
                             conn.Sendall(P.toPETSCII(prompt))	#Prompt
                             time.sleep(1)
-                            #print(bbs_instance.MenuList[conn.menu]['type'])
                             wait = conn.MenuDefs[data][4]
                             Function = conn.MenuDefs[data][0]
                             res = Function(*conn.MenuDefs[data][1])

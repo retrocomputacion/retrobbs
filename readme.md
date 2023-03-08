@@ -100,14 +100,15 @@ __New features__:
  - New LABEL internal function for displaying non-interactive text in menus.
  - New command line parameter `-c`, select configuration file.
  - SID streaming now supports Compute's Sidplayer .mus files.
- - SID streaming now supports selection of the subtune to play .
+ - SID streaming now supports selection of the subtune to play.
  - SID streaming supports tunes using hardrestart, if _SIDDumpHR_ is available. 
  - New SIDPLAY function for the configuration file.
  - Added *[Turbo56k](docs/turbo56k.md)* v0.7 support.
- - New text viewer with support for bidirectional scroll
+ - New text viewer with support for bidirectional scroll.
+ - New Maps plugin.
 
 __Changes/Bug fixes__:
- - Fixed terminal feature check, now is more reliable, albeit slower.
+ - Simplified initial terminal feature check, now is more reliable.
  - Fixed bug where an unsupported weather type would crash the *python_weather* module, in turn crashing the weather plugin and droping the connection. 
  - Added 'wait cursor' to the audio module and webaudio plugin
  - Fixed bugs when adding and editing users in both *dbmaintenance.py* and the main script
@@ -472,11 +473,11 @@ Basic and very experimental IRC client.
 
 - Configuration file \[PLUGINS\] options: NONE
 
-### RSS feed reader (newsfeed.py):
-Retrieves the latest ten entries from the specified RSS feed, upon user selection of the entry, it scrapes the target website for text and relevant picture. The plug-in is primarily targeted at Wordpress sites, if it can't find the content it expects in the linked URL then the article text from the RSS feed itself will be displayed.
+### Maps (maps.py):
+Explore the world through maps based on *Openstreetmaps*. Maps are rendered using the _Stamen Design's_ **Toner** tiles.
 
-- Configuration file function: NEWSFEED
-- Configuration file parameters: `entryZurl` = URL to the RSS feed
+- Configuration file function: MAPS
+- Configuration file parameters: NONE
 - Configuration file \[PLUGINS\] options: NONE
 
 ### Oneliner (oneliner.py):
@@ -484,6 +485,13 @@ User-generated messages of up to 39 characters. The last 10 messages are stored 
 
 - Configuration file function: ONELINER
 - Configuration file parameters: NONE
+- Configuration file \[PLUGINS\] options: NONE
+
+### RSS feed reader (newsfeed.py):
+Retrieves the latest ten entries from the specified RSS feed, upon user selection of the entry, it scrapes the target website for text and relevant picture. The plug-in is primarily targeted at Wordpress sites, if it can't find the content it expects in the linked URL then the article text from the RSS feed itself will be displayed.
+
+- Configuration file function: NEWSFEED
+- Configuration file parameters: `entryZurl` = URL to the RSS feed
 - Configuration file \[PLUGINS\] options: NONE
 
 ### Weather (weather.py) (new 0.2x):
@@ -1000,5 +1008,6 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * FFmpeg by the FFmpeg team
   * Betterpixels font by AmericanHamster
   * karen2blackint font by PaulSpades
+  * Map tiles by [Stamen Design](http://stamen.com), under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0). Data by [OpenStreetMap](http://openstreetmap.org), under [ODbL](http://www.openstreetmap.org/copyright).
 
 ---

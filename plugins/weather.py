@@ -78,7 +78,7 @@ def plugFunction(conn:Connection):
     locqry = result.get('city', conn.bbs.PlugOptions.get('wxdefault','Meyrin'))
     done = False
     loop = asyncio.new_event_loop()
-    geoLoc = Nominatim(user_agent="RetroBBS")
+    geoLoc = Nominatim(user_agent="RetroBBS-Weather")
     while conn.connected and not done:
         conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
