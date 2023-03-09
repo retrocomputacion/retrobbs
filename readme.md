@@ -615,9 +615,14 @@ Implements the Connection class, this is the class used to communicate with clie
 - **\<id\>**: ID for this connection **-READ ONLY-**
 - **\<outbytes\>**: Total number of bytes sent to this client **-READ ONLY-**
 - **\<inbytes\>**: Total number of bytes received from this client **-READ ONLY-**
+- **\<samplerate\>**: Supported PCM samplerate **-READ ONLY-**
+- **\<TermString\>**: Client's terminal ID string **-READ ONLY-**
+- **\<T56KVer\>**: Client's terminal reported _Turbo56K_ version **-READ ONLY-**
 
 ### Connection class methods:
-        
+
+**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.
+
 **Sendall(cadena)**: Converts string **\<cadena\>** to a binary string and sends it to the client.
 
 **Sendallbin(cadena)**: Sends binary string **\<cadena\>** to the client.
