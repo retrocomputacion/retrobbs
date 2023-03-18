@@ -11,7 +11,7 @@
 |:---:|:---:|---
 | 1 | 1 | Length of this data packet, not counting this byte (max 29)
 | 2 | 4 | Bitmap of SID registers sent.<br>1 bit = 1 register (Big endian)<br>bits 26-28 indicate ADSR hardrestart for each voice<br>bits 29-31 indicate Gate Hardrestart for each voice
-| 6 onwards | 1 to 25 | Values of each register, in incremental order by default 
+| 6 onwards | 0 to 25 | Values of each register, in incremental order by default 
 
 4. Send the packets acording to this flowchart:
 

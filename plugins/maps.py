@@ -87,7 +87,7 @@ def plugFunction(conn:Connection):
     conn.Sendall(chr(P.CLEAR)+chr(P.YELLOW)+'lOCATION:')
     locqry = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),30))
     if locqry == '_':
-        conn.Sendall(TT.enable_CRSR()+TT.split_Screen(0,False,0,0))
+        conn.Sendall(TT.split_Screen(0,False,0,0)+TT.enable_CRSR())
         return
     conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
     tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
@@ -242,7 +242,7 @@ def plugFunction(conn:Connection):
             conn.Sendall(TT.enable_CRSR()+chr(P.CLEAR)+chr(P.YELLOW)+'lOCATION:')
             locqry = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),30))
             if locqry == '_':
-                conn.Sendall(TT.enable_CRSR()+TT.split_Screen(0,False,0,0))
+                conn.Sendall(TT.split_Screen(0,False,0,0)+TT.enable_CRSR())
                 break
             conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)

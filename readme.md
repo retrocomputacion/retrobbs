@@ -106,6 +106,7 @@ __New features__:
  - Added *[Turbo56k](docs/turbo56k.md)* v0.7 support.
  - New text viewer with support for bidirectional scroll.
  - New Maps plugin.
+ - Added support for .YM, .VTX and .VGM music files. YM2149/AY-3-8910 data streams are converted to SID data streams.
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -159,7 +160,9 @@ Current built-in functions:
 
 - PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
-- SID music streaming: SID files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* or *SIDDumpHR* executables in the system path.
+- SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* or *SIDDumpHR* executables in the system path.
+
+- YM2149/AY-3-8910 music conversion and streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of SID register writes. Cyclic envelope simulation is limited. Samples and some other special effects are not supported. 
 
 Currently included plug-ins:
 
@@ -195,6 +198,7 @@ Python modules:
   * geopy (For the weather plugin)
   * python_weather (For the weather plugin)
   * crc
+  * lhafile (For .YM and .VTX file support)
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
@@ -326,7 +330,19 @@ Configuration file parameter keys:
 |:---:|:---
 | `entryZpath`[^1] | Path to the audio file to stream (must be one of the supported formats)
 
-### Function SIDPLAY:
+### Function CHIPPLAY:
+Streams the specified chiptune music file.
+
+Configuration file parameter keys:
+
+| key | description
+|:---:|:---
+| `entryZpath` | Path to the music file to stream (must be one of the supported formats)
+| `entryZplayt` | Playtime in seconds
+| `entryZsubt` | Subtune to play
+
+
+### Function SIDPLAY: __DEPRECATED!__ use CHIPPLAY instead
 Streams the specified .SID or .MUS music file.
 
 Configuration file parameter keys:
@@ -559,7 +575,15 @@ Converts and streams a PCM audio file to **\<conn\>**.
 - **\<length\>**: Length of the audio to stream in seconds
 - **\<dialog\>**: Boolean, display audio metadata and instructions before starting streaming
 
-### SIDStream(conn, filename,ptime, dialog=True):
+### CHIPStream(conn, filename,ptime, dialog=True):
+Stream register writes data to the guest's sound chip
+- **\<conn\>**: Destination
+- **\<filename\>**: Path to the SID file
+- **\<ptime\>**: Playtime in seconds
+- **\<dialog\>**: Display SID file metadata and instructions before starting streaming
+
+
+### SIDStream(conn, filename,ptime, dialog=True): __DEPRECATED!__ Use CHIPStream instead
 Stream a SID file to **\<conn\>**
 - **\<filename\>**: Path to the SID file
 - **\<ptime\>**: Playtime in seconds

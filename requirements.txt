@@ -18,3 +18,4 @@ tinydb
 wikipedia
 Wikipedia_API
 crc
+lhafile

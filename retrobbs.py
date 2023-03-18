@@ -238,6 +238,7 @@ def ConfigRead():
                 'SWITCHMENU': SwitchMenu,
                 'SLIDESHOW': SlideShow,
                 'SIDPLAY': AA.SIDStream,
+                'CHIPPLAY': AA.CHIPStream,
                 'PCMPLAY': AA.PlayAudio,
                 'TEXT': FT.SendText,
                 'SHOWPIC': FT.SendBitmap,
@@ -533,11 +534,11 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
     bin_e = ('.BIN','.raw')
     pet_e = ('.C','.PET')
     aud_e = ('.MP3','.WAV')
-    sid_e = ('.SID','.MUS')
+    chip_e = ('.SID','.MUS','.YM','.VTX','.VGZ')
 
     #Keeps only the files with matching extension 
     for f in files:
-        if f.upper().endswith(pics_e + text_e + bin_e + pet_e + aud_e + sid_e):
+        if f.upper().endswith(pics_e + text_e + bin_e + pet_e + aud_e + chip_e):
             slides.append(f)
 
     slides.sort()	#Sort list
@@ -564,8 +565,8 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         elif (ext in aud_e) and (conn.QueryFeature(TT.STREAM) < 0x80):
             AA.PlayAudio(conn,path+p,None)
             w = 1
-        elif (ext in sid_e) and (conn.QueryFeature(TT.SIDSTREAM) < 0x80):
-            AA.SIDStream(conn,path+p,None,False)
+        elif (ext in chip_e) and (conn.QueryFeature(TT.SIDSTREAM) < 0x80):
+            AA.CHIPStream(conn,path+p,None,False)
             w = 1
         else:   # Dont wait for RETURN if file is not supported
             w = 1
