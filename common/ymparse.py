@@ -279,7 +279,7 @@ def YMDump(data):
 				# 0xa0 - AY-3-8910 write
 				elif cmd == 0xa0:
 					dd = data[ix+1:ix+3]
-					regs[data[ix+1]] = data[ix+2]
+					regs[data[ix+1]&15] = data[ix+2]
 					ix += 3					
 				#-------------------------------------------
 				# 0xa1 -> 0xbf - 2 byte chip writes
@@ -297,6 +297,10 @@ def YMDump(data):
 					ix += 5
 				# 0x30 dd - dual chip command
 				elif cmd == 0x30:
+					dd = data[ix+1]
+					ix += 2
+				# 0x31 dd - AY-3-8910 stereo mask
+				elif cmd == 0x31:
 					dd = data[ix+1]
 					ix += 2
 
