@@ -107,6 +107,7 @@ __New features__:
  - New text viewer with support for bidirectional scroll.
  - New Maps plugin.
  - Added support for .YM, .VTX and .VGM music files. YM2149/AY-3-8910 data streams are converted to SID data streams.
+ - Added Python base internal SIDdump implementation used as fallback if neither _SIDdump_ or _SIDdumpHR_ are present.
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -209,9 +210,12 @@ Python modules:
     pip uninstall -y pafy
 
 
-External software:
+### External software:
 
   * *FFmpeg* >= 4.0 (for PCM audio streaming)
+
+- Optional but recommended:
+
   * *[SIDDumpHR](https://github.com/retrocomputacion/SIDDumpHR)* (for SID streaming): After compiling, copy the executable to /usr/bin
   * Alternatively *[SIDDump](https://github.com/cadaver/siddump)* (doesn't support hardrestart): After compiling, if you're using *Linux*, remove the .exe extension from the executable and copy it to /usr/bin.
 
