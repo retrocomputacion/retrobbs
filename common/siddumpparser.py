@@ -7,6 +7,7 @@ from shutil import which
 from enum import IntEnum, auto
 import os
 import sys
+import common.cpu65 as c65
 
 from common.bbsdebug import _LOG
 import common.ymparse as YM
@@ -251,6 +252,7 @@ class SIDbits(IntEnum):
 	FRES	= 23
 	VOL		= 24
 
+#SIDParser using external SIDdumpHR or SIDdump
 def SIDParser(filename,ptime,order = 0, subtune = 1):
 
 	if which('siddumphr') != None:
@@ -258,8 +260,8 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
 	elif which('siddump') != None:
 		_siddump = 'siddump'
 	else:
-		_LOG('ERROR: siddump not found on PATH', v=1)
-		return
+		_LOG('WARNING: siddump not found on PATH, using python version', v=2)
+		return SIDParser2(filename, ptime, order, subtune)
 
 	V1f = [1,1] # Voice 1 Frequency
 	V1p = [6,1] # Voice 1 Pulse Width
@@ -509,6 +511,125 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
 		rcount += 4 #Add the 4 bytes from the register bitmap
 		dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(4,'big'),sidregs])
 	return(dump)
+
+#Fallback internal SIDParser using Python 6502 simulator
+def SIDParser2(filename,ptime,order = 0, subtune = 1):
+	MAX_INSTR = 0x100000
+
+	def readword(f):
+		w = f.read(2)
+		return (w[0]<<8)|w[1]
+	try:
+		with open(filename,'rb') as f_in:
+			if (header:= f_in.read(4)) == b'PSID' or header == b'RSID':
+				f_in.seek(6,0)
+				dataoffset = readword(f_in)
+				loadaddress = readword(f_in)
+				initaddress = readword(f_in)
+				playaddress = readword(f_in)
+				f_in.seek(dataoffset,0)
+				if loadaddress == 0:
+					loadaddress = f_in.read(1)[0]|f_in.read(1)[0]<<8
+				#Load C64 data
+				loadpos = f_in.tell()
+				f_in.seek(0,2)
+				loadend = f_in.tell()
+				f_in.seek(loadpos,0)
+				loadsize = loadend-loadpos
+				memconf = 0x37
+				if loadsize + loadaddress > 0x10000:
+					_LOG("SIDParser Error: SID data continues past end of C64 memory.")
+				
+				c65.mem[loadaddress:loadaddress+loadsize] = list(f_in.read(loadsize))
+			else: #MUS file
+				f_in.seek(2, 0) # Skip load address
+				voice1size = f_in.read(1)[0]|(f_in.read(1)[0] << 8)
+				voice2size = f_in.read(1)[0]|(f_in.read(1)[0] << 8)
+				voice3size = f_in.read(1)[0]|(f_in.read(1)[0] << 8)
+				f_in.seek(voice1size+6, 0)
+				v1hlt = readword(f_in)
+				f_in.seek(voice1size+6+voice2size, 0)
+				v2hlt = readword(f_in)
+				f_in.seek(voice1size+6+voice2size+voice3size, 0)
+				v3hlt = readword(f_in)
+				if ((v1hlt != 0x014f)or(v2hlt != 0x014f)or(v3hlt != 0x014f)):
+					_LOG("SIDParser Error: Unknown file type.")
+				f_in.seek(0,2)
+				loadsize = f_in.tell()-2
+				f_in.seek(2, 0)
+				loadaddress = 0x0900
+				c65.mem[loadaddress:loadaddress+loadsize] = f_in.read(loadsize)
+				playaddress = 0xec80
+				initaddress = 0xec60
+				memconf = 0x35
+				c65.mem[0xe000,0xe000+len[mus_driver]-2] = mus_driver
+		c65.mem[0x01] = memconf
+		c65.initcpu(initaddress,subtune-1,0,0)
+		instr = 0
+		while c65.runcpu():
+			c65.mem[0xd012] += 1
+			if (not c65.mem[0xd012] or ((c65.mem[0xd011] & 0x80) and c65.mem[0xd012] >= 0x38)):
+				c65.mem[0xd011] ^= 0x80
+				c65.mem[0xd012] = 0x00
+			instr += 1
+			if instr > MAX_INSTR:
+				_LOG("SIDParser Warning: CPU executed a high number of instructions in init, breaking",v=2)
+				break
+		if (playaddress == 0):
+			_LOG("SIDParser Warning: SID has play address 0, reading from interrupt vector instead",v=2)
+			if ((c65.mem[0x01] & 0x07) == 0x5):
+				playaddress = c65.mem[0xfffe] | (c65.mem[0xffff] << 8)
+			else:
+				playaddress = c65.mem[0x314] | (c65.mem[0x315] << 8)
+		
+		#Clear temporal registers
+		oldregs = [0]*25
+		#writecnt = [0]*25
+		frames = 0
+		out = []
+		while frames < ptime*50:
+			#Run the play routine
+			instr = 0
+			rcount = 4
+			rbitmap = 0
+			sidregs = b''
+			c65.initcpu(playaddress,0,0,0)
+			c65.watch(0xd400,0xd418,1)
+			writecnt = [0]*25
+			while c65.runcpu():
+				instr += 1
+				if instr > MAX_INSTR:
+					_LOG("SIDParser Warning: CPU executed a high number of instructions in playroutine, breaking",v=2)
+					break
+				if c65.watchp >= 0:
+					writecnt[c65.watchp-0xd400] += 1
+				if (c65.mem[0x01]&0x07 != 0x05) and (c65.pc == 0xea31 or c65.pc == 0xea81):
+					break
+			for r,c in enumerate(writecnt):
+				#if register was written to and has different value than last frame
+				#or if control or ADSR has been written to more than once
+				if ((c > 0) and (c65.mem[0xd400+r]!=oldregs[r])) or ((c > 1) and (r in [4,11,18,5,6,12,13,19,20])):	
+					rbitmap |= 2**r
+					rcount += 1
+					sidregs += c65.mem[0xd400+r].to_bytes(1,'little')
+				#Hard restart bits
+				if (c > 1):
+					if r in [4,11,18]:	# Gate hardrestart
+						rbitmap |= 2**(29+int((r-4)/7))
+					elif r in [5,6,12,13,19,20]:	# ADSR hardrestart
+						rbitmap |= 2**(26+round((r-5)/7))
+			#print(f'{rcount:#0{4}x} {rbitmap:#0{6}x} {list(sidregs)}')
+			oldregs = c65.mem[0xd400:0xd419]
+			out.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(4,'big'),sidregs])
+			frames += 1
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+		_LOG(f'SIDParser error:{exc_type} on {fname} line {exc_tb.tb_lineno}')
+	return out
+
+
+	
 
 # Convert AY register dump to SID stream
 def AYtoSID(filename):
