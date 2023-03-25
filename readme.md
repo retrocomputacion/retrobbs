@@ -107,7 +107,8 @@ __New features__:
  - New text viewer with support for bidirectional scroll.
  - New Maps plugin.
  - Added support for .YM, .VTX and .VGM music files. YM2149/AY-3-8910 data streams are converted to SID data streams.
- - Added Python base internal SIDdump implementation used as fallback if neither _SIDdump_ or _SIDdumpHR_ are present.
+ - Added Python based internal SIDdump implementation used as fallback if neither _SIDdump_ or _SIDdumpHR_ are present.
+ - Added GRABFRAME internal function.
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -126,6 +127,8 @@ __Changes/Bug fixes__:
  - Fixed high CPU usage when streaming local audio files 
  - Improved Wikipedia article parsing
  - FILES function will show file extensions if no file extension parameter is given
+ - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
+ - YouTube plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -165,6 +168,8 @@ Current built-in functions:
 
 - YM2149/AY-3-8910 music conversion and streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of SID register writes. Cyclic envelope simulation is limited. Samples and some other special effects are not supported. 
 
+- Video frame grabbing: Any file format supported by OpenCV2, files can be local or from an external URL.
+
 Currently included plug-ins:
 
 - Astronomy Picture Of the Day (apod.py): Retrieves and displays the text and picture from NASA's Astronomy Picture Of the Day.
@@ -174,6 +179,8 @@ Currently included plug-ins:
 - WebAudio streamer (webaudio.py): On-the-fly conversion and streaming of online audio sources (*Shoutcast*, *YouTube* or other sources)
 - Wikipedia (wiki.py): Search and display *Wikipedia* articles, displaying relevant article image if found.
 - YouTube snapshot (youtube.py): Display a frame from the specified *YouTube* video. It grabs the latest frame if the video is a live stream, otherwise it grabs a random frame.
+- Weather (weather.py): Query the weather forecast for any part of the world.
+- Maps (maps.py): Display and navigate the map of the world. 
 
 
 ---
@@ -421,6 +428,15 @@ Configuration file parameter keys:
 | key | description
 |:---:|:---
 | `entryZpath` | Path to the audio files, default is '/sound'
+
+### Function GRABFRAME:
+Grab and display a video frame. File can be in any video format supported by OpenCV
+
+Configuration file parameter keys:
+
+| key | description
+|:---:|:---
+| `entryZpath` | Path to the video file, can be a local path or an URL
 
 ### Function USEREDIT:
 Display the user profile editor.
@@ -871,6 +887,17 @@ Splits the client's screen into a bitmap top and a text bottom parts.
 ### set_Window(top, bottom,bin = False):
 Set the **\<top\>** and **\<bottom\>** limits for the client text output, this includes scrolling and screen clearing.
 - **\<bin\>** selects the return string type
+
+## common.video:
+Video related routines.
+
+### Grabframe(conn:Connection, path, crop, length = None, pos = None):
+Grab's a frame from the specified video file/stream.
+- **\<conn\>** connection to send the image to
+- **\<path\>** video file/stream path or URL
+- **\<crop\>** a tuple with the 4 corners coordinates for cropping the video frame, or None
+- **\<length\>** video playtime in milliseconds. Pass None to let Grabframe to figure the playtime, or 0 to indicate a live stream
+- **\<pos>\>** Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
 
 ---
 # 5 Installation/Usage

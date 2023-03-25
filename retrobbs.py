@@ -102,6 +102,7 @@ from common.helpers import MenuBack, valid_keys, formatX, More, SetPage, crop
 from common.style import KeyPrompt, bbsstyle, default_style, RenderMenuTitle, KeyLabel
 from common import audio as AA
 from common import messaging as MM
+from common import video as VV
 
 #File transfer functions
 import common.filetools as FT
@@ -193,6 +194,8 @@ def ConfigRead():
                 parms = [tentry,'','Displaying audio list',p]
             elif efunc == 'PCMPLAY':		#Play PCM audio
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
+            elif efunc == 'GRABFRAME':		#Grab video frame
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),None]
             elif efunc == 'SIDPLAY':        #Play SID/MUS
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
             elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
@@ -248,6 +251,7 @@ def ConfigRead():
                 'USERLIST': UserList,
                 'BOARD': MM.inbox,
                 'INBOX': MM.inbox,
+                'GRABFRAME': VV.Grabframe,
                 'LABEL': None}
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
