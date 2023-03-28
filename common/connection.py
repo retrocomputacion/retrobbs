@@ -85,9 +85,10 @@ class Connection:
 	def Sendall(self, cadena):
 
 		if self.connected == True:
-			m = map(ord,cadena)
-			l = list(m)
-			_bytes = bytearray(l)
+			# m = map(ord,cadena)
+			# l = list(m)
+			# _bytes = bytearray(l)
+			_bytes = bytes(cadena,'latin1')
 			try:
 				self.socket.sendall(_bytes)
 				self.outbytes += len(_bytes)

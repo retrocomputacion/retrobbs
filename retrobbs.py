@@ -264,9 +264,11 @@ def ConfigRead():
     bbs_instance.name = config['MAIN']['bbsname']
     bbs_instance.ip = config['MAIN']['ip']
     bbs_instance.port = config['MAIN'].getint('port')
+    bbs_instance.lines = config['MAIN'].getint('lines', fallback= 5)
     bbs_instance.lang = config['MAIN']['language']
     bbs_instance.WMess = config['MAIN'].get('welcome', fallback='Welcome!')
     bbs_instance.GBMess = config['MAIN'].get('goodbye', fallback='Goodbye!')
+    bbs_instance.BSYMess = config['MAIN'].get('busy', fallback='BUSY')
 
     bbs_instance.dateformat = config['MAIN'].getint('dateformat', fallback=1)
 
@@ -320,7 +322,7 @@ def signal_handler(sig, frame):
     _LOG('Ctrl+C! Bye!', v=3)
     _run = False
 
-    for t in range(1,6):
+    for t in range(1,bbs_instance.lines+1):
         if t in conlist:				#Find closed connections
             conlist[t][0].join()
     conthread.join()
@@ -1065,7 +1067,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
     conn.Sendall('\r')
     if conn.QueryFeature(131) < 0x80:
         conn.Sendall(chr(P.GREY3)+"pcm AUDIO SAMPLERATE "+chr(P.YELLOW)+str(conn.samplerate)+"hZ\r")
-    time.sleep(2)
+    time.sleep(0.5)
 
 #######################################################
 ##					  BBS Loop						 ##
@@ -1117,8 +1119,6 @@ def BBSLoop(conn:Connection):
             _LOG('TURBO56K version: '+ bcolors.OKGREEN + str(ord(dato1)) + '.' + str(ord(dato2)) + bcolors.ENDC,id=conn.id,v=4) 
 
             t56kver = ord(dato1)+((ord(dato2))/10)
-
-            conn.Sendall('\r'+chr(P.CHECKMARK)+'\r')
 
             #Increment visit counters
             bbs_instance.visits += 1            #Session counter
@@ -1231,7 +1231,7 @@ def ConnTask():
                 bbs_instance.start()    #Restart
                 _semaphore = False
 
-        for t in range(1,6):
+        for t in range(1,bbs_instance.lines+1):
             if t in conlist:				#Find closed connections
                 if not conlist[t][0].is_alive():
                     conlist[t][1].Close()
@@ -1310,8 +1310,8 @@ server_address = (bbs_instance.ip, bbs_instance.port)
 _LOG('Initializing server on %s port %s' % server_address,v=3)
 sock.bind(server_address)
 
-# Listen for up to 5 incoming connections
-sock.listen(5)
+# Listen for incoming connections. Max 2 connections in queue
+sock.listen(2)
 
 #List of current active connections
 conlist = {}
@@ -1328,11 +1328,14 @@ while True:
         pass
 
     newid = 1
-    for r in range(1,6):			#Find free id
+    for r in range(1,bbs_instance.lines+1):			#Find free id
         if r not in conlist:
             newid = r
+            newconn = Connection(c,c_addr,bbs_instance,newid)
+            conlist[newid] = [threading.Thread(target = BBSLoop, args=(newconn,)),newconn]
+            conlist[newid][0].start()
             break
-    newconn = Connection(c,c_addr,bbs_instance,newid)
+    else:   # No free slot, refuse connection
+        c.sendall(bytes(P.toPETSCII(bbs_instance.BSYMess),'latin1'))
+        c.close()
     
-    conlist[newid] = [threading.Thread(target = BBSLoop, args=(newconn,)),newconn]
-    conlist[newid][0].start()

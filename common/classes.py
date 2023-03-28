@@ -11,10 +11,12 @@ class BBS:
 		self.name = name
 		self.ip = ip
 		self.port = port
+		self.lines = 5			#Number of simultaneous incoming connections
 		self.lang = 'en'
 		self.MenuList = None
 		self.WMess = ''			#Welcome Message
 		self.GBMess = ''		#Logoff Message
+		self.BSYMess = ''		#Busy Message
 		self.OSText = ''		#Host OS (Specific distro for Linux)
 		self.TOut = 60*5		#Default Connection Timeout
 		self.Paths = {'bbsfiles': 'bbsfiles/', 'plugins': 'plugins/', }

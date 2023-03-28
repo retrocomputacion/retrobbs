@@ -109,6 +109,7 @@ __New features__:
  - Added support for .YM, .VTX and .VGM music files. YM2149/AY-3-8910 data streams are converted to SID data streams.
  - Added Python based internal SIDdump implementation used as fallback if neither _SIDdump_ or _SIDdumpHR_ are present.
  - Added GRABFRAME internal function.
+ - Added `lines` and `busy` parameters to the configuration file 
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -129,6 +130,7 @@ __Changes/Bug fixes__:
  - FILES function will show file extensions if no file extension parameter is given
  - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
  - YouTube plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
+ - When all the slots are in use will now correctly close any further incoming connections.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -145,8 +147,7 @@ Over time, the protocol has been extended to include 4-bit PCM audio streaming, 
 *RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini` by default) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
 In addition, the plug-in system allows adding extra functionality with full support from the configuration file.
 
-The BBS is multi-threaded and supports up to **five** simultaneous incoming 
-connections.
+The BBS is multi-threaded and the number of simultaneous incoming connections can be customized in teh configuration file.
 
 Current built-in functions:
 
@@ -253,9 +254,11 @@ Global BBS settings
 | `menues` | Total number of menu pages, not counting the main menu page
 | `ip` | IP V4 address on which the BBS will be accessible, default is `127.0.0.1`
 | `port` | port number on which the BBS will be accessible
+| `lines` | Number of connection slots
 | `language` | language for transmitted texts, only partially implemented as of 0.25
 | `welcome` | Welcome message on connection
 | `goodbye` | Log off message
+| `busy` | Messge shown when all the connection slots are in use
 | `dateformat` | Format in which dates will be printed out, client-side:<br>0 = dd/mm/yyyy<br>1 = mm/dd/yyyy<br>2 = yyyy/mm/dd
 
 ### **\[BOARDS\]**
@@ -999,7 +1002,7 @@ Next you have to mount your new RAMdisk:
 ```
 sudo mount -t tmpfs -o rw,size=1M tmpfs /mnt/ramdisk
 ```
-Here the "1M" means the RAMdisk will have a size of 1 Megabyte, this is more than enough for current use by the BBS, but can change in the future.
+Here the "1M" means the RAMdisk will have a size of 1 Megabyte, this is more than enough for current use by the BBS, but this can change in the future.
 
 To make this change permanent you'll need to add the previous command to your fstab file.
 
