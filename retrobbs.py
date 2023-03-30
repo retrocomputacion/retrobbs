@@ -455,12 +455,11 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
 # Render Menu from MenuList structure           #
 #################################################
 def SendMenu(conn:Connection):
-    global bbs_instance
 
     if conn.menu < 0:
         return()
     conn.Sendall(TT.to_Text(0,0,0)+TT.to_Screen())	#Set Screen Text mode output
-    tmenu = bbs_instance.MenuList[conn.menu]	#Change to simply tmenu = conn.MenuDefs
+    tmenu = conn.bbs.MenuList[conn.menu]	#Change to simply tmenu = conn.MenuDefs
     _LOG("Sending menu: "+tmenu['title'],id=conn.id,v=4)
     RenderMenuTitle(conn,tmenu['title'])
     conn.Sendall('\r')
@@ -618,11 +617,10 @@ def WaitKey(conn:Connection):
 
 # Logoff
 def LogOff(conn:Connection, confirmation=True):
-    global bbs_instance
 
     lan = {'en':['aRE YOU SURE (y/n)? ','YN','dISCONNECTED'],'es':['eSTA SEGURO (s/n)? ','SN','dESCONECTADO']}
 
-    l_str = lan.get(bbs_instance.lang,lan['en'])
+    l_str = lan.get(conn.bbs.lang,lan['en'])
 
     if confirmation == True:
         conn.Sendall(chr(P.DELETE)*23 + chr(P.LT_GREEN) + l_str[0] + chr(P.WHITE))
@@ -635,7 +633,7 @@ def LogOff(conn:Connection, confirmation=True):
             _LOG('Disconnecting...\r',id=conn.id,v=3)
             conn.Sendallbin(data)
             time.sleep(1)
-            conn.Sendall(chr(P.WHITE) + '\r\r'+P.toPETSCII(bbs_instance.GBMess)+'\r')
+            conn.Sendall(chr(P.WHITE) + '\r\r'+P.toPETSCII(conn.bbs.GBMess)+'\r')
             time.sleep(1)
             conn.Sendall(chr(P.LT_BLUE) + '\r'+l_str[2]+'\r'+chr(P.WHITE))
             time.sleep(1)
@@ -649,7 +647,7 @@ def LogOff(conn:Connection, confirmation=True):
 
 
 # Switch menu
-def SwitchMenu(conn, id):
+def SwitchMenu(conn:Connection, id):
     if id-1 != conn.menu:
         if len(conn.MenuDefs) != 0:
             conn.MenuStack.append([conn.MenuDefs,conn.menu])
@@ -662,9 +660,8 @@ def SwitchMenu(conn, id):
 
 # Generate keybindings
 def GetKeybindings(conn:Connection,id):
-    global bbs_instance
 
-    menu = bbs_instance.MenuList[id]
+    menu = conn.bbs.MenuList[id]
     kb = {}
     for cat in menu['entries']:
         #kb.update(cat['entrydefs'])
@@ -675,9 +672,12 @@ def GetKeybindings(conn:Connection,id):
             kb[e][1] = (conn,)+kb[e][1]
     return kb
 
+# Show BBS/User statistics
+def Stats(conn:Connection):
+    ...
+
 # SignIn/SignUp
 def SignIn(conn:Connection):
-    global bbs_instance
 
     # dateord = [[0,1,2],[1,0,2],[2,1,0]]
     # dateleft = [[0,3,3],[3,0,3],[3,5,0]]
@@ -696,7 +696,7 @@ def SignIn(conn:Connection):
                 return
         #name = P.toASCII(name)
         if len(name) > 0 and P.toASCII(name) != '_guest_':
-            uentry = bbs_instance.database.chkUser(P.toASCII(name))
+            uentry = conn.bbs.database.chkUser(P.toASCII(name))
             if uentry != None:
                 retries = 3
                 if uentry['online'] == 1:
@@ -704,7 +704,7 @@ def SignIn(conn:Connection):
                     conn.Sendall('\ruSER ALREADY LOGGED IN\r')
                 while (not Done) and (retries > 0):
                     conn.Sendall('\rpASSWORD:')
-                    if bbs_instance.database.chkPW(uentry, P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))):
+                    if conn.bbs.database.chkPW(uentry, P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))):
                         conn.Sendall(chr(P.LT_GREEN)+'\rlOGIN SUCCESSFUL'+chr(7)+chr(P.CHECKMARK))
                         conn.username = P.toASCII(name)
                         conn.userid = uentry.doc_id
@@ -763,7 +763,7 @@ def SignIn(conn:Connection):
                         return
                     bday = conn.ReceiveDate('\rbIRTHDATE: ',datetime.date(1900,1,1),datetime.date.today(),datetime.date(1970,1,1))
                     conn.username = P.toASCII(name)
-                    conn.userid = bbs_instance.database.newUser(P.toASCII(name), P.toASCII(pw), P.toASCII(fname), P.toASCII(lname), bday.strftime("%d/%m/%Y"), P.toASCII(country))
+                    conn.userid = conn.bbs.database.newUser(P.toASCII(name), P.toASCII(pw), P.toASCII(fname), P.toASCII(lname), bday.strftime("%d/%m/%Y"), P.toASCII(country))
                     _LOG('NEW USER: '+name,v=3)
                     conn.userclass = 1
                     conn.Sendall('\rrEGISTRATION COMPLETE, WELCOME!')
@@ -810,7 +810,7 @@ def EditUser(conn:Connection):
     conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
     done = False
     while (not done) and conn.connected:
-        uentry = bbs_instance.database.chkUser(conn.username)
+        uentry = conn.bbs.database.chkUser(conn.username)
         RenderMenuTitle(conn,"Edit User Data")
         conn.Sendall(chr(P.CRSR_DOWN)*2)
         KeyLabel(conn,'a','Username: '+uentry['uname'],True)
@@ -862,7 +862,7 @@ def EditUser(conn:Connection):
                     else:
                         conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                 elif name != conn.username:
-                    tentry = bbs_instance.database.chkUser(name)
+                    tentry = conn.bbs.database.chkUser(name)
                     if tentry != None:
                         conn.Sendall(chr(P.ORANGE)+'\ruSERNAME ALREADY TAKEN\rTRY AGAIN:\r')
                         time.sleep(2)
@@ -871,7 +871,7 @@ def EditUser(conn:Connection):
                         else:
                             conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                     else:
-                        bbs_instance.database.updateUser(uentry.doc_id,name,None,None,None,None,None,None)
+                        conn.bbs.database.updateUser(uentry.doc_id,name,None,None,None,None,None,None)
                         conn.username = name
                         n = True
                 else:   #Same old username
@@ -886,7 +886,7 @@ def EditUser(conn:Connection):
             fname = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,fname,None,None,None,None)
+            conn.bbs.database.updateUser(uentry.doc_id,None,None,fname,None,None,None,None)
         elif k == b'C': #Last name
             conn.Sendall('\r'+chr(P.CRSR_UP))
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
@@ -897,7 +897,7 @@ def EditUser(conn:Connection):
             lname = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,lname,None,None,None)
+            conn.bbs.database.updateUser(uentry.doc_id,None,None,None,lname,None,None,None)
         elif k == b'D': #Birthdate
             conn.Sendall('\r'+chr(P.CRSR_UP))
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
@@ -907,7 +907,7 @@ def EditUser(conn:Connection):
             bday = conn.ReceiveDate('\rbIRTHDATE: ',datetime.date(1900,1,1),datetime.date.today(),datetime.date(1970,1,1))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,bday.strftime("%d/%m/%Y"),None,None)
+            conn.bbs.database.updateUser(uentry.doc_id,None,None,None,None,bday.strftime("%d/%m/%Y"),None,None)
         elif k == b'E': #Country
             conn.Sendall('\r'+chr(P.CRSR_UP))
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
@@ -918,7 +918,7 @@ def EditUser(conn:Connection):
             country = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16))
             if not conn.connected:
                 return
-            bbs_instance.database.updateUser(uentry.doc_id,None,None,None,None,None,country,None)
+            conn.bbs.database.updateUser(uentry.doc_id,None,None,None,None,None,country,None)
         elif k == b'F': #Password
             n = 0
             conn.Sendall('\r'+chr(P.CRSR_UP))
@@ -931,7 +931,7 @@ def EditUser(conn:Connection):
                 pw = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))
                 if not conn.connected:
                     return
-                if bbs_instance.database.chkPW(uentry,pw,False):
+                if conn.bbs.database.chkPW(uentry,pw,False):
                     m = False
                     conn.Sendall('\r'+chr(P.CRSR_UP))
                     while not m:
@@ -951,7 +951,7 @@ def EditUser(conn:Connection):
                             else:
                                 conn.Sendall(TT.set_CRSR(0,14)+(' '*80)+(chr(P.CRSR_UP)*3))
                         else:
-                            bbs_instance.database.updateUser(uentry.doc_id,None,pw,None,None,None,None,None)
+                            conn.bbs.database.updateUser(uentry.doc_id,None,pw,None,None,None,None,None)
                             m = True
                             n = 3
                 else:
@@ -986,7 +986,7 @@ def UserList(conn:Connection):
     conn.Sendall(TT.to_Text(0,0,0))
     RenderMenuTitle(conn,"User list")
 
-    users = bbs_instance.database.getUsers()
+    users = conn.bbs.database.getUsers()
     digits = len(str(max(users[:])[0]))
 
     conn.Sendall(chr(P.WHITE)+" id         uSERNAME\r\r"+chr(P.LT_GREEN))
@@ -1074,7 +1074,6 @@ def GetTerminalFeatures(conn:Connection, display = True):
 #######################################################
 
 def BBSLoop(conn:Connection):
-    global bbs_instance
 
     try:
         # Sync
@@ -1091,11 +1090,11 @@ def BBSLoop(conn:Connection):
         # Clear screen + Lower/uppercase charset
         conn.Sendall(chr(P.CLEAR) + chr(P.TOLOWER))
         # Cyan ink
-        conn.Sendall(chr(P.CYAN) + '\r'+P.toPETSCII(bbs_instance.WMess)+'\r')
-        conn.Sendall(P.toPETSCII('RetroBBS v%.2f\r'%bbs_instance.version))
-        conn.Sendall(P.toPETSCII('running under:\r'+bbs_instance.OSText+'\r'))
+        conn.Sendall(chr(P.CYAN) + '\r'+P.toPETSCII(conn.bbs.WMess)+'\r')
+        conn.Sendall(P.toPETSCII('RetroBBS v%.2f\r'%conn.bbs.version))
+        conn.Sendall(P.toPETSCII('running under:\r'+conn.bbs.OSText+'\r'))
         # Light blue ink
-        if bbs_instance.lang == 'es':
+        if conn.bbs.lang == 'es':
             conn.Sendall(chr(P.LT_BLUE) + '\rpRESIONE return...\r')
         else:
             conn.Sendall(chr(P.LT_BLUE) + '\rpRESS return...\r')
@@ -1121,8 +1120,8 @@ def BBSLoop(conn:Connection):
             t56kver = ord(dato1)+((ord(dato2))/10)
 
             #Increment visit counters
-            bbs_instance.visits += 1            #Session counter
-            bbs_instance.database.newVisit()    #Total counter
+            conn.bbs.visits += 1            #Session counter
+            conn.bbs.database.newVisit()    #Total counter
 
             if t56kver > 0.4:
                 conn.TermString = datos
