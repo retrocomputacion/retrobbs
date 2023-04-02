@@ -48,6 +48,7 @@ def plugFunction(conn:Connection,url, crop):
 		except:
 			source = ""
 		if source != "":
+			crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
 			try:
 				pa = slsession.streams(url)
 				for k in list(pa.keys()):

@@ -15,8 +15,8 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 
 	conn.Sendall(chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
 	loop = True
-	if crop != None:
-		crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
+	#if crop != None:
+	#	crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 	try:
 		capture = cv2.VideoCapture()
 		capture.open(path)
