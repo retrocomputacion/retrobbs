@@ -16,7 +16,7 @@ import itertools
 from common.connection import Connection
 from common import petscii as P
 from common import turbo56k as TT
-from common.style import bbsstyle, default_style
+from common.style import bbsstyle, default_style, KeyPrompt
 
 
 # Valid keys for menu entries
@@ -82,34 +82,106 @@ def lastColor(text,defcolor=1):
 #Text pagination
 def More(conn:Connection, text, lines, colors=default_style):
 
-	l = 0
 	conn.Sendall(chr(P.PALETTE[colors.TxtColor]))
-	tcolor = colors.TxtColor
-	for t in text:
-		conn.Sendall(t)
-		tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
-		if len(tt) < 40 and t[-1]!='\r':
+	if isinstance(text, list):
+		l = 0
+		tcolor = colors.TxtColor
+		for t in text:
+			conn.Sendall(t)
+			tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
+			if len(tt) < 40 and t[-1]!='\r':
+				conn.Sendall('\r')
+			# Find last text color
+			tcolor = P.PALETTE.index(lastColor(t,P.PALETTE[tcolor]))
+			# pos = -1
+			# for c in P.PALETTE:
+			# 	x = t.rfind(chr(c))
+			# 	if x > pos:
+			# 		pos = x
+			# 		tcolor = P.PALETTE.index(c)
+			l+=1
+			if l==(lines-1):
+				conn.Sendall(chr(P.PALETTE[colors.PbColor])+'['+chr(P.PALETTE[colors.PtColor])+'return OR _'+chr(P.PALETTE[colors.PbColor])+']')
+				k = conn.ReceiveKey(b'\r_')
+				if conn.connected == False:
+					return(-1)
+				if k == b'_':
+					return(-1)
+				conn.Sendall(chr(P.DELETE)*13+chr(P.PALETTE[tcolor]))
+				l = 0
+		conn.Sendall(chr(P.PALETTE[colors.PbColor])+'['+chr(P.PALETTE[colors.PtColor])+'return'+chr(P.PALETTE[colors.PbColor])+']')
+		conn.ReceiveKey()
+	else:
+		prompt='RETURN'
+		cc=0
+		ll=0
+		page = 0
+		rvs = ''
+		color = ''
+		pp = False
+		#colors = (P.BLACK,P.WHITE,P.RED,P.PURPLE,P.CYAN,P.GREEN,P.BLUE,P.YELLOW,P.BROWN,P.PINK,P.ORANGE,P.GREY1,P.GREY2,P.LT_BLUE,P.LT_GREEN,P.GREY3)
+		for char in text:
+			pp = False
+			conn.Sendall(char)
+			#Keep track of cursor position
+			if ord(char) in itertools.chain(range(32,128),range(160,256)): #Printable chars
+				cc += 1
+			elif char == chr(P.CRSR_RIGHT):
+				cc += 1
+			elif ord(char) in [P.CRSR_LEFT, P.DELETE]:
+				cc -= 1
+			elif char == chr(P.CRSR_UP):
+				ll -= 1
+			elif char == chr(P.CRSR_DOWN):
+				ll += 1
+			elif char == '\x0d':
+				ll += 1
+				cc = 0
+				rvs = ''
+			elif ord(char) == [P.HOME, P.CLEAR]:
+				ll = 0
+				page = 0
+				cc = 0
+			elif ord(char) in P.PALETTE:
+				color = char
+			elif char == chr(P.RVS_ON):
+				rvs = chr(P.RVS_ON)
+			elif char == chr(P.RVS_OFF):
+				rvs = ''
+			elif char == chr(P.TOLOWER):
+				prompt = 'RETURN'
+			elif char == chr(P.TOUPPER):
+				prompt = 'return'
+			if cc == 40:
+				cc = 0
+				ll += 1
+			elif cc < 0:
+				if ll!=lines*page:
+					cc = 39
+					ll -= 1
+				else:
+					cc = 0
+			if ll < lines*page:
+				ll = lines*page
+			elif ll >= (lines*page)+(lines-1):
+				if cc !=0:
+					conn.Sendall('\r')
+				conn.Sendall(KeyPrompt(prompt+' OR _'))
+				k = conn.ReceiveKey(b'\r_')
+				if conn.connected == False:
+					conn.Sendall(TT.set_Window(0,24))
+					return -1
+				if k == b'_':
+					conn.Sendall(TT.set_Window(0,24))
+					return -1
+				conn.Sendall(chr(P.DELETE)*13+rvs+color+TT.set_CRSR(cc,(22-lines)+ll-(lines*page)))
+				page += 1
+				pp = True
+		if cc !=0:
 			conn.Sendall('\r')
-		# Find last text color
-		tcolor = P.PALETTE.index(lastColor(t,P.PALETTE[tcolor]))
-		# pos = -1
-		# for c in P.PALETTE:
-		# 	x = t.rfind(chr(c))
-		# 	if x > pos:
-		# 		pos = x
-		# 		tcolor = P.PALETTE.index(c)
-		l+=1
-		if l==(lines-1):
-			conn.Sendall(chr(P.PALETTE[colors.PbColor])+'['+chr(P.PALETTE[colors.PtColor])+'return OR _'+chr(P.PALETTE[colors.PbColor])+']')
-			k = conn.ReceiveKey(b'\r_')
-			if conn.connected == False:
-				return(-1)
-			if k == b'_':
-				return(-1)
-			conn.Sendall(chr(P.DELETE)*13+chr(P.PALETTE[tcolor]))
-			l = 0
-	conn.Sendall(chr(P.PALETTE[colors.PbColor])+'['+chr(P.PALETTE[colors.PtColor])+'return'+chr(P.PALETTE[colors.PbColor])+']')
-	conn.ReceiveKey()
+		if not pp:
+			conn.Sendall(KeyPrompt(prompt))
+			conn.ReceiveKey()
 	return(0)
 
 # Bidirectional scroll text display

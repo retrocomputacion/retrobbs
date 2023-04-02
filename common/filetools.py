@@ -578,84 +578,16 @@ def SendText(conn:Connection, filename, title='', lines=25):
         l = lines
         conn.Sendall(chr(P.CLEAR))
 
+    with open(filename,"r") as tf:
+        ot = tf.read()
+
     if filename.endswith(('.txt','.TXT')):
         #Convert plain text to PETSCII and display with More
-        tf = open(filename,"r")
-        ot = tf.read()
-        tf.close()
         text = H.formatX(ot)
-
-        H.More(conn,text,l)
-
     elif filename.endswith(('.seq','.SEQ')):
-        prompt='RETURN'
-        tf = open(filename,"rb")
-        text = tf.read()
-        cc=0
-        ll=0
-        page = 0
-        rvs = ''
-        color = ''
-        for c in text:
-            char = c.to_bytes(1,'big')
-            conn.Sendallbin(char)
-            #Keep track of cursor position
-            if char[0] in itertools.chain(range(32,128),range(160,256)): #Printable chars
-                cc += 1
-            elif char[0] == P.CRSR_RIGHT:
-                cc += 1
-            elif char[0] == P.CRSR_LEFT or char == P.DELETE:
-                cc -= 1
-            elif char[0] == P.CRSR_UP:
-                ll -= 1
-            elif char[0] == P.CRSR_DOWN:
-                ll += 1
-            elif char == b'\x0d':
-                ll += 1
-                cc = 0
-                rvs = ''
-            elif char[0] == P.HOME or char[0] == P.CLEAR:
-                ll = 0
-                page = 0
-                cc = 0
-            elif char[0] in colors:
-                color = chr(char[0])
-            elif char[0] == P.RVS_ON:
-                rvs = chr(P.RVS_ON)
-            elif char[0] == P.RVS_OFF:
-                rvs = ''
-            elif char[0] == P.TOLOWER:
-                prompt = 'RETURN'
-            elif char[0] == P.TOUPPER:
-                prompt = 'return'
-            if cc == 40:
-                cc = 0
-                ll += 1
-            elif cc < 0:
-                if ll!=l*page:
-                    cc = 39
-                    ll -= 1
-                else:
-                    cc = 0
-            if ll < l*page:
-                ll = l*page
-            elif ll >= (l*page)+(l-1):
-                if cc !=0:
-                    conn.Sendall('\r')
-                conn.Sendall(S.KeyPrompt(prompt+' OR _'))
-                k = conn.ReceiveKey(b'\r_')
-                if conn.connected == False:
-                    conn.Sendall(TT.set_Window(0,24))
-                    return -1
-                if k == b'_':
-                    conn.Sendall(TT.set_Window(0,24))
-                    return -1
-                conn.Sendall(chr(P.DELETE)*13+rvs+color+TT.set_CRSR(cc,(22-l)+ll-(l*page)))
-                page += 1
-        if cc !=0:
-            conn.Sendall('\r')
-        conn.Sendall(S.KeyPrompt(prompt))
-        conn.ReceiveKey()
+        text = ot.decode('latin1'),l
+
+    H.More(conn,text,l)
 
     if lines == 25:
         conn.Sendall(TT.set_Window(0,24))
