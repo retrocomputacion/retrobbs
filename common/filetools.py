@@ -578,15 +578,17 @@ def SendText(conn:Connection, filename, title='', lines=25):
         l = lines
         conn.Sendall(chr(P.CLEAR))
 
-    with open(filename,"r") as tf:
-        ot = tf.read()
-
     if filename.endswith(('.txt','.TXT')):
         #Convert plain text to PETSCII and display with More
+        with open(filename,"r") as tf:
+            ot = tf.read()
         text = H.formatX(ot)
     elif filename.endswith(('.seq','.SEQ')):
-        text = ot.decode('latin1'),l
-
+        # prompt='RETURN'
+        with open(filename,"rb") as tf:
+            ot = tf.read()
+        tf.close()
+        text = ot.decode('latin1')
     H.More(conn,text,l)
 
     if lines == 25:
