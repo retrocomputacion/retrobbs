@@ -13,7 +13,7 @@ import common.filetools as FT
 import common.turbo56k as TT
 from common.helpers import _byte
 import common.petscii as P
-from geopy.geocoders import Nominatim
+from geopy.geocoders import Photon
 from geopy.exc import GeocoderTimedOut
 
 #############################
@@ -80,7 +80,7 @@ def plugFunction(conn:Connection):
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
 
-    geoLoc = Nominatim(user_agent="RetroBBS-Maps")
+    geoLoc = Photon(user_agent="RetroBBS-Maps")
 
     FT.SendBitmap(conn,'plugins/maps_intro.png', multi=False, preproc=False, display=False)
     conn.Sendall(TT.split_Screen(24,False,0,0))

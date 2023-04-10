@@ -91,6 +91,8 @@ import threading
 
 #Petscii
 import common.petscii as P
+#Encoders
+import common.extensions as EX
 
 #Turbo56K
 from common import turbo56k as TT
@@ -98,7 +100,7 @@ from common import turbo56k as TT
 from common.classes import BBS
 from common.connection import Connection
 from common.bbsdebug import _LOG, bcolors, set_verbosity
-from common.helpers import MenuBack, valid_keys, formatX, More, SetPage, crop
+from common.helpers import MenuBack, valid_keys, formatX, More, SetPage, crop, format_bytes
 from common.style import KeyPrompt, bbsstyle, default_style, RenderMenuTitle, KeyLabel
 from common import audio as AA
 from common import messaging as MM
@@ -107,19 +109,19 @@ from common import video as VV
 #File transfer functions
 import common.filetools as FT
 
-import importlib
-import pkgutil
+# import importlib
+# import pkgutil
 
 
 #Import plugins ******************************
-import plugins
+#import plugins
 
-def iter_namespace(ns_pkg):
-    # Specifying the second argument (prefix) to iter_modules makes the
-    # returned name an absolute name instead of a relative one. This allows
-    # import_module to work without having to do additional modification to
-    # the name.
-    return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
+# def iter_namespace(ns_pkg):
+#     # Specifying the second argument (prefix) to iter_modules makes the
+#     # returned name an absolute name instead of a relative one. This allows
+#     # import_module to work without having to do additional modification to
+#     # the name.
+#     return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
 
 
 ##################################
@@ -139,15 +141,15 @@ _tout = 60.0*5
 config_file = 'config.ini'
 
 #Plugins dictionary
-PlugDict = {}
+#PlugDict = {}
 
 #Reads Config file
 def ConfigRead():
     global bbs_instance
-    global PlugDict
 
     #Iterate Section Entries
     def EIter(cfg, key, sentry):
+        PlugDict = bbs_instance.plugins
         nchar = 0   # LABEL (no associated key) entries use chars 0x00 to 0x0c
         for e in range(0,sentry['entries']):
             tentry = cfg[key]['entry'+str(e+1)+'title']	#Entry Title
@@ -205,7 +207,7 @@ def ConfigRead():
             elif efunc == 'BOARD':
                 parms = [cfg.getint(key,'entry'+str(e+1)+'id', fallback = 1)]
             # functions without parameters
-            elif efunc == 'BACK' or efunc == 'EXIT' or efunc == 'USEREDIT' or efunc =='USERLIST' or efunc == 'MESSAGE' or efunc == 'LABEL':
+            elif efunc in ['BACK','EXIT','USEREDIT','USERLIST','MESSAGE','LABEL','STATS']:
                 parms = []
             elif efunc in PlugDict:			#Plugin function
                 parms = []
@@ -252,6 +254,7 @@ def ConfigRead():
                 'BOARD': MM.inbox,
                 'INBOX': MM.inbox,
                 'GRABFRAME': VV.Grabframe,
+                'STATS': Stats,
                 'LABEL': None}
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -674,7 +677,41 @@ def GetKeybindings(conn:Connection,id):
 
 # Show BBS/User statistics
 def Stats(conn:Connection):
-    ...
+    _LOG("Displaying stats",v=4,id=conn.id)
+    conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
+    RenderMenuTitle(conn,"BBS Stats")
+    conn.Sendall(TT.set_Window(3,24))
+    bstats = conn.bbs.database.bbsStats()
+    if bstats != None:
+        utime = bstats.get('uptime',0)
+        visits = bstats.get('visits',1)
+        latest = bstats.get('latest',conn.username)
+    else:
+        utime = 0
+        visits = 1
+        latest = [conn.username]
+    tt = utime + (time.time() - conn.bbs.runtime)
+    text = '\r'+chr(P.CYAN)+P.toPETSCII('BBS Session uptime: ')+chr(P.WHITE)+str(datetime.timedelta(seconds=round(time.time() - conn.bbs.runtime)))+'\r'
+    text += chr(P.CYAN)+P.toPETSCII('BBS Total uptime: ')+chr(P.WHITE)+str(datetime.timedelta(seconds=round(tt)))+'\r'
+    text += chr(P.CYAN)+P.toPETSCII('Total visits to the BBS: ')+chr(P.WHITE)+str(visits)+'\r'
+    text += chr(P.CYAN)+P.toPETSCII('Registered users: ')+chr(P.WHITE)+str(len(conn.bbs.database.getUsers()))+'\r'
+    text += '\r'+chr(P.CYAN)+P.toPETSCII('Last 10 visitors:\r\r')
+    for i,l in enumerate(latest):
+        text += chr(P.YELLOW)+chr(P.RVS_ON)+chr(181)+str(i)+chr(182)+chr(P.RVS_OFF)+chr(P.WHITE)+P.toPETSCII(l)+'\r'
+    text += chr(P.YELLOW)+chr(P.HLINE)*40
+    text += chr(P.LT_GREEN)+P.toPETSCII('Your Stats:\r\r')
+    text += chr(P.CYAN)+P.toPETSCII('This session time: ')+chr(P.WHITE)+str(datetime.timedelta(seconds= round(time.time() - conn.stime)))+'\r'
+    text += chr(P.CYAN)+P.toPETSCII('Session Upload/Download: ')+chr(P.WHITE)+P.toPETSCII(format_bytes(conn.inbytes))+chr(P.YELLOW)+'/'+chr(P.WHITE)+P.toPETSCII(format_bytes(conn.outbytes))+'\r'
+    if conn.userclass > 0:
+        udata = conn.bbs.database.chkUser(conn.username)
+        tt = udata.get('totaltime',0) + (time.time() - conn.stime)
+        tup  = format_bytes(udata.get('upbytes',0) + conn.inbytes)
+        tdwn = format_bytes(udata.get('downbytes',0) + conn.outbytes)
+        text += chr(P.CYAN)+P.toPETSCII('Total session time: ')+chr(P.WHITE)+str(datetime.timedelta(seconds=round(tt)))+'\r'
+        text += chr(P.CYAN)+P.toPETSCII('Total Upload/Download: ')+chr(P.WHITE)+P.toPETSCII(tup)+chr(P.YELLOW)+'/'+chr(P.WHITE)+P.toPETSCII(tdwn)+'\r'
+    
+    More(conn,text,22)
+    conn.Sendall(TT.set_Window(0,24))
 
 # SignIn/SignUp
 def SignIn(conn:Connection):
@@ -1088,16 +1125,28 @@ def BBSLoop(conn:Connection):
         # Select screen output
         conn.Sendall(TT.to_Screen())
         # Clear screen + Lower/uppercase charset
-        conn.Sendall(chr(P.CLEAR) + chr(P.TOLOWER))
-        # Cyan ink
-        conn.Sendall(chr(P.CYAN) + '\r'+P.toPETSCII(conn.bbs.WMess)+'\r')
-        conn.Sendall(P.toPETSCII('RetroBBS v%.2f\r'%conn.bbs.version))
-        conn.Sendall(P.toPETSCII('running under:\r'+conn.bbs.OSText+'\r'))
+        # conn.Sendall(chr(P.CLEAR) + chr(P.TOLOWER))
+        # # Cyan ink
+        # conn.Sendall(chr(P.CYAN) + '\r'+P.toPETSCII(conn.bbs.WMess)+'\r')
+        # conn.Sendall(P.toPETSCII('RetroBBS v%.2f\r'%conn.bbs.version))
+        # conn.Sendall(P.toPETSCII('running under:\r'+conn.bbs.OSText+'\r'))
         # Light blue ink
         if conn.bbs.lang == 'es':
-            conn.Sendall(chr(P.LT_BLUE) + '\rpRESIONE return...\r')
+            #conn.Sendall(chr(P.LT_BLUE) + '\rpRESIONE return...\r')
+            pt = "presione RETURN..."
         else:
-            conn.Sendall(chr(P.LT_BLUE) + '\rpRESS return...\r')
+            #conn.Sendall(chr(P.LT_BLUE) + '\rpRESS return...\r')
+            pt = "press RETURN..."
+
+        welcome = f'''<SETOUTPUT o=True>
+<CLR><LOWER><CYAN><BR>
+{conn.bbs.WMess}<BR>
+RetroBBS v{conn.bbs.version:.2f}<BR>
+running under:<BR>
+{conn.bbs.OSText}<BR>
+<LTBLUE>{pt}<BR>'''
+
+        conn.SendTML(welcome)
 
         # Connected, wait for the user to press RETURN
         WaitRETURN(conn)
@@ -1118,10 +1167,6 @@ def BBSLoop(conn:Connection):
             _LOG('TURBO56K version: '+ bcolors.OKGREEN + str(ord(dato1)) + '.' + str(ord(dato2)) + bcolors.ENDC,id=conn.id,v=4) 
 
             t56kver = ord(dato1)+((ord(dato2))/10)
-
-            #Increment visit counters
-            conn.bbs.visits += 1            #Session counter
-            conn.bbs.database.newVisit()    #Total counter
 
             if t56kver > 0.4:
                 conn.TermString = datos
@@ -1159,6 +1204,10 @@ def BBSLoop(conn:Connection):
                 _LOG('Old terminal detected - Terminating',id=conn.id)
                 conn.Sendall('pLEASE USE retroterm V0.13 OR POSTERIOR\r fOR THE LATEST VERSION VISIT\r www.pastbytes.com/retroterm\r'+chr(P.WHITE))
                 conn.connected = False
+
+            #Increment visit counters
+            conn.bbs.visits += 1            #Session counter
+            conn.bbs.database.newVisit(conn.username)    #Total counter
 
 
             # Display the main menu
@@ -1285,13 +1334,17 @@ else:
 print('\n\nRetroBBS v%.2f (c)2021-2023\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
 
 # Parse plugins
-p_mods = [importlib.import_module(name) for finder, name, ispkg in iter_namespace(plugins)]
-for a in p_mods:
-    if 'setup' in dir(a):
-        fname,parms = a.setup()
-        PlugDict[fname] = [a.plugFunction,parms] 
-        _LOG('Loaded plugin: '+fname,v=4)
+# p_mods = [importlib.import_module(name) for finder, name, ispkg in iter_namespace(plugins)]
+# for a in p_mods:
+#     if 'setup' in dir(a):
+#         fname,parms = a.setup()
+#         PlugDict[fname] = (a.plugFunction,parms) 
+#         _LOG('Loaded plugin: '+fname,v=4)
 
+# Init plugins
+bbs_instance.plugins = EX.RegisterPlugins()
+# Init encoders
+bbs_instance.encoders = EX.RegisterEncoders()
 
 # Read config file
 ConfigRead()

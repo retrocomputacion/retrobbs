@@ -29,6 +29,8 @@ class BBS:
 		self.runtime = 0		#Timestamp this BBS session started
 		self.visits = 0			#Number of visits in this session
 		self.cfgmts = 0			#Config file modification timestamp
+		self.plugins = {}		#Plugins
+		self.encoders = {}		#Encoders
 
 	def start(self):
 		if self.database != None:

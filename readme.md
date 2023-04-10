@@ -122,15 +122,17 @@ __Changes/Bug fixes__:
  - Username is now case-insensitive (username is still stored and displayed as case-sensitive). *dbmaintenance.py* will warn of existing clashing usernames, but will take no action. Is up to the admin to edit or delete the offending user accounts.
  - Removed extra empty line if the first section of a menu doesnt have a title.
  - Custom paths are now read from the configuration file, currently only 'temp' and 'bbsfiles' presets are used internally.
- - Fixed search for .ssl files in the SONGLENGTH subdirectory
+ - Fixed search for .ssl files in the `SONGLENGTH` subdirectory
  - Fixed playlength of NTSC .sid files.
- - Slideshow doesn't wait for RETURN when there's an unsupported file present in the sequence.
+ - Slideshow doesn't wait for `RETURN` when there's an unsupported file present in the sequence.
  - Fixed high CPU usage when streaming local audio files 
  - Improved Wikipedia article parsing
- - FILES function will show file extensions if no file extension parameter is given
+ - **FILES** function will show file extensions if no file extension parameter is given
  - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
- - YouTube plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
+ - *YouTube* plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
  - When all the slots are in use will now correctly close any further incoming connections.
+ - *Weather* and *Maps* plugins use Photom instead of Nominatim as geocoder.
+ - Fixed creash when the geocoder didnt respond in time in the *Weather* plugin
 
 ---
 # 1.2 The *Turbo56K* protocol

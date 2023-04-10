@@ -606,7 +606,6 @@ def SendCPetscii(conn:Connection,filename,pause=0):
         return()
     text = fi.read()
     fi.close
-    #### Falta fijarse si es upper o lower
     if text.find('upper') != -1:
         cs = P.TOUPPER
     else:

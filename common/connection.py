@@ -13,6 +13,7 @@ import common.petscii as P
 import common.turbo56k as TT
 from common.classes import BBS
 import time
+from common.parser import TMLParser
 
 class Connection:
 
@@ -22,6 +23,9 @@ class Connection:
 		self.addr = addr
 		self.id = id
 		self.bbs:BBS = bbs
+		self.mode = 'PET64'							#Connection mode -> type of client
+		self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+		self.parser = TMLParser(self)				#TLM parser
 
 		# MenuDef entry:
 		# [Function, (Parameters tuple), Title, UserClass , WaitKey]
@@ -42,6 +46,8 @@ class Connection:
 		self.username = '_guest_'
 		self.userid	= 0
 		self.userclass = 0			# 0 = Guest
+
+		self.stime = time.time()	# Session start timestamp
 
 		self.TermString = '' 		#Terminal identification string
 		self.T56KVer = 0			#Terminal Turbo56K version
@@ -65,6 +71,13 @@ class Connection:
 		except:
 			pass
 
+	#Set mode
+	def SetMode(self, mode):
+		self.mode = mode							#Connection mode -> type of client
+		self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+		del(self.encoder)							#Delete old parser
+		self.encoder = TMLParser(self)
+
 	# Query if the client terminal supports a feature
 	def QueryFeature(self, cmd:int):
 		#return 0x80		# Uncomment this when testing commands
@@ -81,7 +94,7 @@ class Connection:
 			self.TermFt[cmd] = TT.T56Kold[cmd-128]
 		return self.TermFt[cmd]
 
-	#Convert string to binary string and sends it via socket
+	#Converts string to binary string and sends it via socket
 	def Sendall(self, cadena):
 
 		if self.connected == True:
@@ -388,4 +401,9 @@ class Connection:
 			except ValueError:
 				self.Sendall("\riNVALID DATE!\r")
 		return odate
-                    
+    
+
+	# Send TML script
+	def SendTML(self, data):
+		self.parser.process(data)
+		...

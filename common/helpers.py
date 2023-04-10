@@ -276,3 +276,16 @@ def text_displayer(conn:Connection, text, lines, colors=default_style):
 # Crop text to the desired length, adding ellipsis if needed
 def crop(text, length):
 	return text[:length-3] + '...' if len(text) > length else text
+
+
+# Convert an int depicting a size in bytes to a rounded up to B/KB/MB/GB or TB (base 2) string
+# https://stackoverflow.com/questions/12523586/python-format-size-application-converting-b-to-kb-mb-gb-tb
+###########################################################################################################
+def format_bytes(b:int):
+	p = 2**10
+	n = 0
+	pl = {0 : '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
+	while b > p:
+		b /= p
+		n += 1
+	return str(round(b,1))+pl[n]+'B'

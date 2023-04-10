@@ -3,13 +3,14 @@
 # Mainly user stuff
 ###############################################################################
 
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 import hashlib
 import os
 import inspect
 import time
 import re
+from collections import deque
 
 #Dictionary of user editable fields, for some future use?
 # [field name, field type, [field length range]]
@@ -72,7 +73,12 @@ class DBase:
     def logoff(self, id, dbytes, ubytes):
         table = self.db.table('USERS')
         ud = table.get(doc_id=id)
-        table.update({'online':0, 'upbytes':ud.get('upbytes',0)+ubytes, 'downbytes':ud.get('downbytes',0)+dbytes}, doc_ids=[id])
+        tt = ud.get('totaltime',0)
+        table.update({'online':0, 
+                      'upbytes':ud.get('upbytes',0)+ubytes,
+                      'downbytes':ud.get('downbytes',0)+dbytes,
+                      'totaltime':tt+(time.time()-ud.get('lastlogin',0))},
+                     doc_ids=[id])
 
     #Creates a new user
     def newUser(self, uname, pw, fname, lname, bday, country,uclass=1):
@@ -81,8 +87,19 @@ class DBase:
             table = self.db.table('USERS')
             salt = os.urandom(32)   #New salt for this user
             upw = hashlib.pbkdf2_hmac('sha256', pw.encode('utf-8'), salt,100000)
-            return table.insert({'uname':uname,'salt':salt.hex(),'pass':upw.hex(),'fname':fname,'lname':lname,'bday':bday,'country':country,'uclass':uclass,
-                                'lastlogin':time.time(),'joindate':time.time(),'visits':1,'online':1})
+            return table.insert({'uname':uname,
+                                 'salt':salt.hex(),
+                                 'pass':upw.hex(),
+                                 'fname':fname,
+                                 'lname':lname,
+                                 'bday':bday,
+                                 'country':country,
+                                 'uclass':uclass,
+                                 'lastlogin':time.time(),
+                                 'joindate':time.time(),
+                                 'totaltime':0,
+                                 'visits':1,
+                                 'online':1})
 
     #Update user data (by id)
     #Pass untouched fields as None
@@ -109,20 +126,36 @@ class DBase:
     ################################
 
     #Increment visitor count
-    def newVisit(self):
+    def newVisit(self, uname='-Guest-'):
         table = self.db
         dbQ = Query()
         if table.get(dbQ.record == 'bbs_stats') == None:
-            table.insert({'record':'bbs_stats','visits':1})
+            table.insert({'record':'bbs_stats','visits':1,'latest':[uname]})
         else:
-            table.update(increment('visits'), dbQ.record == 'bbs_stats')
+            ut = table.get(dbQ.record == 'bbs_stats')
+            if (lu := ut.get('latest')) == None:
+                lu = []
+            lu = deque(lu,10)
+            lu.appendleft(uname)
+            table.update_multiple([(increment('visits'), where('record') == 'bbs_stats'),({'latest':list(lu)}, where('record') == 'bbs_stats')])
+    
+    #Return the BBS stats db record
+    def bbsStats(self):
+        table = self.db
+        dbQ = Query()
+        return table.get(dbQ.record == 'bbs_stats')
     
     #Update total uptime
+    #Pass stime = 0 to just return the actual stored uptime
     def uptime(self, stime):
         table = self.db
         dbQ = Query()
         ut = table.get(dbQ.record == 'bbs_stats')
         if ut == None:
             table.insert({'record':'bbs_stats','uptime':stime})
+            tt = stime
         else:
-            table.update({'uptime':ut.get('uptime',0)+stime}, dbQ.record == 'bbs_stats')
+            tt = ut.get('uptime',0)
+            if stime != 0:
+                table.update({'uptime':tt+stime}, dbQ.record == 'bbs_stats')
+        return tt

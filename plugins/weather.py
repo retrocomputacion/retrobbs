@@ -7,7 +7,7 @@ import time
 #from sympy import content
 import json
 #from datetime import date
-from geopy.geocoders import Nominatim
+from geopy.geocoders import Photon, Nominatim
 
 from PIL import Image
 from PIL import ImageFont
@@ -17,6 +17,7 @@ import numpy as NP
 
 from common.connection import Connection
 from common.c64cvt import GetIndexedImg, PaletteHither, c64imconvert
+from common.bbsdebug import _LOG
 import common.filetools as FT
 import common.turbo56k as TT
 import common.petscii as P
@@ -78,7 +79,7 @@ def plugFunction(conn:Connection):
     locqry = result.get('city', conn.bbs.PlugOptions.get('wxdefault','Meyrin'))
     done = False
     loop = asyncio.new_event_loop()
-    geoLoc = Nominatim(user_agent="RetroBBS-Weather")
+    geoLoc = Photon(user_agent="RetroBBS-Weather")
     while conn.connected and not done:
         conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
@@ -105,7 +106,7 @@ def plugFunction(conn:Connection):
     return
 
 
-async def getweather(conn:Connection,locquery,geoLoc:Nominatim):
+async def getweather(conn:Connection,locquery,geoLoc):
 
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
     units = conn.bbs.PlugOptions.get('wxunits',python_weather.METRIC)
@@ -128,118 +129,123 @@ async def getweather(conn:Connection,locquery,geoLoc:Nominatim):
         #j += 0.1
     # Get full location from returned coordinates
     #geoLoc = Nominatim(user_agent="RetroBBS")
-    floc = geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
-    address = floc.raw.get('address',{})
-    #City
-    city = address.get('village',address.get('town',address.get('city',address.get('municipality','Unknown'))))
-    #Region
-    region = address.get('state',address.get('region',address.get('county','')))
-    #Country
-    country = address.get('country',address.get('country_code',address.get('continent','')))
-    locdisplay = city+('-'+region if region != '' else '')+('-'+country if country != '' else '')
-    l,t,r,b = draw.textbbox((160,2),locdisplay,font=font_title,anchor='mt')
-    draw.rectangle([l-1,t-1,r+1,b+1],15)
-    draw.text((160,2),locdisplay.replace('|','-'),11,font=font_title,anchor='mt')
-    draw.line(((0,16),(319,16)),fill=11)
-    for i in range(0,320,2):
-        draw.point((i,17),fill=11)
-        draw.point((i+1,18),fill=11)
-        draw.point((i,54),fill=6)
-        draw.point((i+1,53),fill=6)
+    try:
+        floc = geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
+        address = floc.raw.get('address',floc.raw.get('properties',{})) #'address' in nominatim, 'properties in photon
+        #City
+        city = address.get('village',address.get('town',address.get('city',address.get('municipality','Unknown'))))
+        #Region
+        region = address.get('state',address.get('region',address.get('county','')))
+        #Country
+        country = address.get('country',address.get('country_code',address.get('continent','')))
+        locdisplay = city+('-'+region if region != '' else '')+('-'+country if country != '' else '')
+        l,t,r,b = draw.textbbox((160,2),locdisplay,font=font_title,anchor='mt')
+        draw.rectangle([l-1,t-1,r+1,b+1],15)
+        draw.text((160,2),locdisplay.replace('|','-'),11,font=font_title,anchor='mt')
+        draw.line(((0,16),(319,16)),fill=11)
+        for i in range(0,320,2):
+            draw.point((i,17),fill=11)
+            draw.point((i+1,18),fill=11)
+            draw.point((i,54),fill=6)
+            draw.point((i+1,53),fill=6)
 
-    #Current temperature
-    ctemp = weather.current.temperature
-    if units == 'F':
-        if ctemp < 32:
-            tco = 4
-        elif ctemp < 41:
-            tco = 14
-        elif ctemp < 59:
-            tco = 3
-        elif ctemp < 77:
-            tco = 7
-        elif ctemp < 86:
-            tco = 8
+        #Current temperature
+        ctemp = weather.current.temperature
+        if units == 'F':
+            if ctemp < 32:
+                tco = 4
+            elif ctemp < 41:
+                tco = 14
+            elif ctemp < 59:
+                tco = 3
+            elif ctemp < 77:
+                tco = 7
+            elif ctemp < 86:
+                tco = 8
+            else:
+                tco = 2
         else:
-            tco = 2
-    else:
-        if ctemp < 0:
-            tco = 4
-        elif ctemp < 5:
-            tco = 14
-        elif ctemp < 15:
-            tco = 3
-        elif ctemp < 25:
-            tco = 7
-        elif ctemp < 30:
-            tco = 8
-        else:
-            tco = 2
-    draw.text((40, 24),str(ctemp)+'°'+units,tco,font=font_temp)
-    #Current weather type
-    tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(weather.current.type.value,8)]))
-    img.paste(tmp,(8,24))
-    #Current wind conditions
-    tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
-    img.paste(tmp,(104,24))
-    draw.text((136,28),str(weather.current.wind_speed)+('km/h' if units == 'C' else 'mph'),1,font=font_title)
-    tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[weather.current.wind_direction]]))
-    img.paste(tmp,(184,32))
-    #Pressure
-    tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
-    img.paste(tmp,(224,24))
-    draw.text((256,28),str(weather.current.pressure)+('hPa' if units == 'C' else 'Hg'),1,font=font_title)
-    draw.line(((0,55),(319,55)),fill=6)
+            if ctemp < 0:
+                tco = 4
+            elif ctemp < 5:
+                tco = 14
+            elif ctemp < 15:
+                tco = 3
+            elif ctemp < 25:
+                tco = 7
+            elif ctemp < 30:
+                tco = 8
+            else:
+                tco = 2
+        draw.text((40, 24),str(ctemp)+'°'+units,tco,font=font_temp)
+        #Current weather type
+        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(weather.current.type.value,8)]))
+        img.paste(tmp,(8,24))
+        #Current wind conditions
+        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
+        img.paste(tmp,(104,24))
+        draw.text((136,28),str(weather.current.wind_speed)+('km/h' if units == 'C' else 'mph'),1,font=font_title)
+        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[weather.current.wind_direction]]))
+        img.paste(tmp,(184,32))
+        #Pressure
+        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
+        img.paste(tmp,(224,24))
+        draw.text((256,28),str(weather.current.pressure)+('hPa' if units == 'C' else 'Hg'),1,font=font_title)
+        draw.line(((0,55),(319,55)),fill=6)
 
-    # get the weather forecast for a few days
-    draw.text((54,58),'Morning',1,font=font_text,anchor='mt')
-    draw.text((126,58),'Noon',1,font=font_text,anchor='mt')
-    draw.text((198,58),'Evening',1,font=font_text,anchor='mt')
-    draw.text((268,58),'Night',1,font=font_text,anchor='mt')
-    ix = 0
+        # get the weather forecast for a few days
+        draw.text((54,58),'Morning',1,font=font_text,anchor='mt')
+        draw.text((126,58),'Noon',1,font=font_text,anchor='mt')
+        draw.text((198,58),'Evening',1,font=font_text,anchor='mt')
+        draw.text((268,58),'Night',1,font=font_text,anchor='mt')
+        ix = 0
 
-    for forecast in weather.forecasts:
-        draw.text((0,76+(ix*32)),forecast.date.strftime('%a'),1,font=font_text)
-        ih = 0
-        for hourly in forecast.hourly:
-            if ih == 3: # Morning
-                #print(hourly.type.value,hourly.description)
-                try:
-                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
-                except:
-                    icon = Image.fromarray(wgfx24[8])
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
-                img.paste(tmp,(32,72+(ix*32)))
-                draw.text((56,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
-            elif ih == 4: #Noon
-                #print(hourly.type.value,hourly.description)
-                try:
-                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
-                except:
-                    icon = Image.fromarray(wgfx24[8])
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
-                img.paste(tmp,(104,72+(ix*32)))
-                draw.text((128,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
-            elif ih == 6: #Evening
-                #print(hourly.type.value,hourly.description)
-                try:
-                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
-                except:
-                    icon = Image.fromarray(wgfx24[8])
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
-                img.paste(tmp,(176,72+(ix*32)))
-                draw.text((200,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
-            elif ih == 7: #Night
-                #print(hourly.type.value,hourly.description)
-                try:
-                    icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
-                except:
-                    icon = Image.fromarray(wgfx24[8])
-                tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
-                img.paste(tmp,(248,72+(ix*32)))
-                draw.text((272,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
-            ih += 1
-        ix += 1
+        for forecast in weather.forecasts:
+            draw.text((0,76+(ix*32)),forecast.date.strftime('%a'),1,font=font_text)
+            ih = 0
+            for hourly in forecast.hourly:
+                if ih == 3: # Morning
+                    #print(hourly.type.value,hourly.description)
+                    try:
+                        icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                    except:
+                        icon = Image.fromarray(wgfx24[8])
+                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    img.paste(tmp,(32,72+(ix*32)))
+                    draw.text((56,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
+                elif ih == 4: #Noon
+                    #print(hourly.type.value,hourly.description)
+                    try:
+                        icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                    except:
+                        icon = Image.fromarray(wgfx24[8])
+                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    img.paste(tmp,(104,72+(ix*32)))
+                    draw.text((128,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
+                elif ih == 6: #Evening
+                    #print(hourly.type.value,hourly.description)
+                    try:
+                        icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                    except:
+                        icon = Image.fromarray(wgfx24[8])
+                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    img.paste(tmp,(176,72+(ix*32)))
+                    draw.text((200,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
+                elif ih == 7: #Night
+                    #print(hourly.type.value,hourly.description)
+                    try:
+                        icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
+                    except:
+                        icon = Image.fromarray(wgfx24[8])
+                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    img.paste(tmp,(248,72+(ix*32)))
+                    draw.text((272,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
+                ih += 1
+            ix += 1
+    except:
+        _LOG('Error getting location data',id=conn.id, v=1)
+        conn.Sendall(P.toPETSCII('ERROR!'))
+        img = None
 
     # close the wrapper once done
     await client.close()
