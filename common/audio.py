@@ -473,8 +473,7 @@ def _DisplayCHIPInfo(conn:Connection, info):
 # Stream SID/MUS files >>> DEPRECATED <<<
 # Use CHIPStream instead
 #############################################################
-def SIDStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
-	CHIPStream(conn,filename,ptime,dialog, _subtune)
+SIDStream = lambda conn,filename,ptime,dialog=True,_subtune=None:CHIPStream(conn,filename,ptime,dialog,_subtune)
 
 #############################################################
 # Stream register writes to the guest's sound chip

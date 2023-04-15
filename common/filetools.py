@@ -704,4 +704,5 @@ def SendPETPetscii(conn:Connection,filename):
 
 ################################################################
 # TML tags
-t_mono = {	'SENDRAW':(lambda c,fn:SendRAWFile(c,fn,False),[('c','_C'),('fn','')])}
+t_mono = {	'SENDRAW':(lambda c,file:SendRAWFile(c,file,False),[('c','_C'),('file','')]),
+	        'SENDFILE':(lambda c,file,dialog,save:SendFile(c,file,dialog,save),[('c','_c'),('file',''),('dialog',False),('save',False)])}

@@ -552,10 +552,9 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         if ext in pics_e:
             FT.SendBitmap(conn, path+p)
         elif ext in bin_e:
-            slide = open(path+p,"rb")
-            binary = slide.read()
-            slide.close()
-            conn.Sendallbin(binary)
+            with open(path+p,'rb') as slide:
+                binary = slide.read()
+                conn.Sendallbin(binary)
         elif ext in text_e:
             w = FT.SendText(conn,path+p,title)
         elif ext in pet_e[0:2]:
@@ -567,6 +566,11 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
             w = 1
         elif (ext in chip_e) and (conn.QueryFeature(TT.SIDSTREAM) < 0x80):
             AA.CHIPStream(conn,path+p,None,False)
+            w = 1
+        elif ext == '.TML':     #TML script
+            with open(path+p,'r') as slide:
+                tml = slide.read()
+                conn.SendTML(tml)
             w = 1
         else:   # Dont wait for RETURN if file is not supported
             w = 1
@@ -739,17 +743,14 @@ def SignIn(conn:Connection):
                     conn.SendTML('<BR>Password:')
                     if conn.bbs.database.chkPW(uentry, P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))):
                         #conn.Sendall(chr(P.LT_GREEN)+'\rlOGIN SUCCESSFUL'+chr(7)+chr(P.CHECKMARK))
-                        conn.SendTML('<LTGREEN><BR>Login successful<BELL><CHECKMARK><PAUSE n=1')
+                        conn.SendTML('<LTGREEN><BR>Login successful<BELL><CHECKMARK><PAUSE n=1>')
                         conn.username = P.toASCII(name)
                         conn.userid = uentry.doc_id
                         conn.userclass = uentry['uclass']
-                        #time.sleep(1)
                         Done = True
                     else:
                         retries -= 1
-                        #conn.Sendall(chr(P.RED)+'\rpASSWORD INCORRECT'+chr(P.CYAN))
-                        conn.SendTML('<RED><BR>Password incorrect<CYAN><PAUSE n=1')
-                        #time.sleep(1)
+                        conn.SendTML('<RED><BR>Password incorrect<CYAN><PAUSE n=1>')
                 if retries == 0:
                     Done = True
                 if not conn.connected:
@@ -1028,13 +1029,14 @@ def UserList(conn:Connection):
                 b'\r': (UserList,(conn,),"",0,False)
               }	
  
-     # Select screen output
-    conn.Sendall(TT.to_Screen())
-    # Sync
-    conn.Sendall(chr(0)*2)
-    # # Text mode
-    conn.Sendall(TT.to_Text(0,0,0))
-    RenderMenuTitle(conn,"User list")
+    # Select screen output
+    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT><MTITLE t="User list">')
+    # conn.Sendall(TT.to_Screen())
+    # # Sync
+    # conn.Sendall(chr(0)*2)
+    # # # Text mode
+    # conn.Sendall(TT.to_Text(0,0,0))
+    # RenderMenuTitle(conn,"User list")
 
     users = conn.bbs.database.getUsers()
     digits = len(str(max(users[:])[0]))
@@ -1076,7 +1078,7 @@ def UserList(conn:Connection):
         if x % 4 == 2 or x % 4 == 3:
             color1 = P.CYAN
             color2 = P.YELLOW
-        KeyLabel(conn, str(users[x][0]).zfill(digits), '   '+users[x][1]+'\r', x % 2)
+        KeyLabel(conn, str(users[x][0]).zfill(digits), f'   {users[x][1]}<BR>', x % 2)
     else:
         lineasimpresas = end - start + 1
         if lineasimpresas < 18:
@@ -1099,7 +1101,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
     if conn.T56KVer > 0.5:
-        conn.SendTML('<LTBLUE>Checking some terminal features<BR>')
+        conn.SendTML('<LTBLUE>Checking some terminal features...<BR>')
         result = [None]*(TT.TURBO56K_LCMD-127)
         for cmd in [129,130,179]:
             conn.SendTML(f'<GREY3>{TT.T56K_CMD[cmd]}: {"<LTGREEN><CHECKMARK>" if conn.QueryFeature(cmd)< 0x80 else "<RED>x"}<BR>')
@@ -1166,7 +1168,8 @@ running under:<BR>
                     conn.Sendall(TT.split_Screen(12,False,ord(bg),0))
                 time.sleep(1)
                 Done = False
-                while not Done:
+                tml = '<NUL n=2><SPLIT><CLR>'
+                while True:
                     r = conn.SendTML('<CLR><INK c=1>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="LGS">')
                     if not conn.connected:
                         return()
@@ -1174,18 +1177,21 @@ running under:<BR>
                     if t == b'L':
                         SignIn(conn)
                         if conn.username != '_guest_':
-                            conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0))
+                            conn.SendTML(tml)
+                            #conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0))
                             SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
                             conn.Sendall(TT.enable_CRSR())
-                            Done = True
+                            break   #Done = True
                     elif t == b'G':
-                        conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
+                        conn.SendTML(tml)
+                        #conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
                         SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
                         conn.Sendall(TT.enable_CRSR())
-                        Done = True
+                        break   #Done = True
                     else:
-                        conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0))
-                        Done = True
+                        conn.SendTML(tml)
+                        #conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
+                        break   #Done = True
             else:
                 _LOG('Old terminal detected - Terminating',id=conn.id)
                 conn.SendTML('Please user RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
@@ -1209,8 +1215,9 @@ running under:<BR>
                     if data in conn.MenuDefs:
                         if conn.userclass >= conn.MenuDefs[data][3]:
                             prompt = crop(conn.MenuDefs[data][2], 20)   #conn.MenuDefs[data][2] if len(conn.MenuDefs[data][2])<20 else conn.MenuDefs[data][2][:17]+'...'
-                            conn.Sendall(P.toPETSCII(prompt))	#Prompt
-                            time.sleep(1)
+                            conn.SendTML(f'{prompt}<PAUSE n=1>')
+                            #conn.Sendall(P.toPETSCII(prompt))	#Prompt
+                            #time.sleep(1)
                             wait = conn.MenuDefs[data][4]
                             Function = conn.MenuDefs[data][0]
                             res = Function(*conn.MenuDefs[data][1])
@@ -1225,8 +1232,9 @@ running under:<BR>
                                 if isinstance(res,dict):
                                     conn.MenuDefs = res
                         else:
-                            conn.Sendall('yOU CANT ACCESS THIS AREA')
-                            time.sleep(2)
+                            #conn.Sendall('yOU CANT ACCESS THIS AREA')
+                            conn.SendTML("You can't access this area<PAUSE n=2>")
+                            #time.sleep(2)
                             SendMenu(conn)
                     else:
                         continue
@@ -1235,8 +1243,8 @@ running under:<BR>
                     break
 
         else:
-            conn.SendTML("""<CYAN><BR>This BBS requires a terminal<BR>compatible with TURBO56K 0.3 or newer.<BR>
-For the lastest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><LTBLUE>Disconnected...""")
+            conn.SendTML(   '<CYAN><BR>This BBS requires a terminal<BR>compatible with TURBO56K 0.3 or newer.<BR>'
+                            'For the lastest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><LTBLUE>Disconnected...')
             time.sleep(1)
             _LOG('Not a compatible terminal, disconnecting...',id=conn.id,v=2)
             # Clean up the connection
