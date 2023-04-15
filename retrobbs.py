@@ -1342,8 +1342,6 @@ bbs_instance.encoders = EX.RegisterEncoders()
 # Register TML tags
 EX.RegisterTPLtags()
 
-print(EX.t_mono)
-
 # Read config file
 ConfigRead()
 
