@@ -538,7 +538,7 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
 
     #Keeps only the files with matching extension 
     for f in files:
-        if f.upper().endswith(pics_e + text_e + bin_e + pet_e + aud_e + chip_e):
+        if f.upper().endswith(pics_e + text_e + bin_e + pet_e + aud_e + chip_e + ('.TML',)):
             slides.append(f)
 
     slides.sort()	#Sort list
@@ -1341,6 +1341,8 @@ bbs_instance.plugins = EX.RegisterPlugins()
 bbs_instance.encoders = EX.RegisterEncoders()
 # Register TML tags
 EX.RegisterTPLtags()
+
+print(EX.t_mono)
 
 # Read config file
 ConfigRead()

@@ -27,6 +27,7 @@ t_mono ={}
 
 # Register TPL tags for common modules
 def RegisterTPLtags():
+    global t_mono
     for module in os.listdir(os.path.dirname(__file__)):
         if module in ['__init__.py','parser.py','extensions.py','petscii.py'] or module[-3:] != '.py':
             continue
@@ -38,6 +39,7 @@ def RegisterTPLtags():
 
 # Import plugins
 def RegisterPlugins():
+    global t_mono
     Plugins = {}
     p_mods = [importlib.import_module(name) for finder, name, ispkg in pkgutil.iter_modules(plugins.__path__, plugins.__name__ + ".")]
     for a in p_mods:
@@ -45,7 +47,7 @@ def RegisterPlugins():
             fname,parms = a.setup()
             Plugins[fname] = (a.plugFunction,parms) 
             _LOG('Loaded plugin: '+fname,v=4)
-            t_mono['fname'] = (a.plugFunction,[('c','_C')]+parms)
+            t_mono[fname] = (a.plugFunction,[('c','_C')]+parms)
     return Plugins
 
 # Import encoders
