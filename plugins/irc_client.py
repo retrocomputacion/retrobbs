@@ -51,7 +51,8 @@ def plugFunction(conn:Connection,server,port,channel):
                     conn.Sendall('\r')
         else:
             conn.Sendall(text)
-        conn.Sendall(TT.set_Window(23,24)+TT.set_CRSR(curcolumn,curline)+chr(P.GREY3))
+        #conn.Sendall(TT.set_Window(23,24)+TT.set_CRSR(curcolumn,curline)+chr(P.GREY3))
+        conn.SendTML(f'<WINDOW top=23 bottom=24><AT x={curcolumn} y={curline}><GREY3>')
 
     def on_currenttopic(c, event):
         txt = H.formatX('['+event.arguments[0]+'] Topic is: '+event.arguments[1])
@@ -68,9 +69,11 @@ def plugFunction(conn:Connection,server,port,channel):
         nonlocal nickname
         printchat(chr(P.CYAN)+nickname+' IN USE\rtRYING '+nickname+'-\r')
         nickname += '-'
-        c.nick(P.toASCII(nickname))
-        conn.Sendall(chr(P.GREEN)+TT.Fill_Line(22,64)+TT.set_Window(22,22)+chr(P.RVS_ON)+chr(P.CRSR_RIGHT)+nickname)
-        conn.Sendall(chr(P.GREY3)+TT.set_Window(23,24)+chr(P.RVS_OFF))
+        c.nick(conn.encoder.decode(nickname))      #(P.toASCII(nickname))
+        conn.SendTML(f'<GREEN><LFILL row=22 code=64><WINDOW top=22 bottom=22><RVSON><CRSRR>{conn.encoder.decode(nickname)}'
+                     f'<GREY3><WINDOW top=23 bottom=24><RVSOFF>')
+        # conn.Sendall(chr(P.GREEN)+TT.Fill_Line(22,64)+TT.set_Window(22,22)+chr(P.RVS_ON)+chr(P.CRSR_RIGHT)+nickname)
+        # conn.Sendall(chr(P.GREY3)+TT.set_Window(23,24)+chr(P.RVS_OFF))
 
     def on_pubmsg(connection, event):
         user = event.source
@@ -207,19 +210,24 @@ Accepted commands:
     if conn.userclass > 0:
         nickname = P.toPETSCII(conn.username[0:9])
     else:
-        conn.Sendall(TT.set_Window(23,24)+chr(P.YELLOW)+'eNTER NICK: '+chr(P.GREY3))
+        conn.SendTML('<WINDOW top=23 bottom=24><YELLOW>Enter nick: <GREY3>')
+        #conn.Sendall(TT.set_Window(23,24)+chr(P.YELLOW)+'eNTER NICK: '+chr(P.GREY3))
         nickname = conn.ReceiveStr(bytes(keys,'ascii'), 9) #Get nick
     nickname = nickname.translate({ord(i): None for i in '#?!@/()&$"'})
     conn.Sendall(TT.set_Window(0,24))
     if nickname == '':
         time.sleep(0.5)
         return
-    conn.Sendall(TT.set_CRSR(1,22)+chr(P.RVS_ON)+chr(P.GREEN)+nickname+'\r')
-    conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR))
+    conn.SendTML(f'<AT x=1 y=22><RVSON><GREEN>{conn.encoder.decode(nickname)}<BR>'
+                 '<WINDOW top=23 bottom=24><CLR>')
+    # conn.Sendall(TT.set_CRSR(1,22)+chr(P.RVS_ON)+chr(P.GREEN)+nickname+'\r')
+    # conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR))
     if channel == '':
-        conn.Sendall(chr(P.YELLOW)+'eNTER CHANNEL: #'+chr(P.GREY3))
+        conn.SendTML('<YELLO>Enter channel: #<GREY3>')
+        #conn.Sendall(chr(P.YELLOW)+'eNTER CHANNEL: #'+chr(P.GREY3))
         channel = '#'+(conn.ReceiveStr(bytes(keys,'ascii'),20)).translate({ord(i): None for i in '#@/"'}) #Get channel
-    conn.Sendall(chr(P.CLEAR)+chr(P.COMM_B)+chr(P.CRSR_LEFT)+chr(P.GREY3))
+    #conn.Sendall(chr(P.CLEAR)+chr(P.COMM_B)+chr(P.CRSR_LEFT)+chr(P.GREY3))
+    conn.SendTML('<CLR><CBM-B><CRSRL><GREY3>')
 
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer

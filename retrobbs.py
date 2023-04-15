@@ -430,24 +430,16 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
                 label = programs[x]
         else:
             label = splitext(programs[x])[0]
-        KeyLabel(conn, valid_keys[x-start], (label+' '*16)[:16]+('\r'if x%2 else ' '), (x % 4)<2)
+        KeyLabel(conn, valid_keys[x-start], (label+' '*16)[:16]+(''if x%2 else '  '), (x % 4)<2)
         #Add keybinding to MenuDic
         if fhandler == FT.SendFile:
             parameters = (conn,path+programs[x],True,transfer,)
         else:
             parameters = (conn,path+programs[x],True,transfer,)
         MenuDic[valid_keys[x-start].encode('ascii','ignore')] = (fhandler,parameters,valid_keys[x-start],0,keywait)
-    else:
-        if x % 2 == 0 and x != start:
-            conn.Sendall('\r')
-        lineasimpresas = int(((end - start + 1) / 2.0) + 0.5)
-        if lineasimpresas < 20:
-            for x in range(20 - lineasimpresas):
-                conn.Sendall('\r')
 
-
-    conn.Sendall(' '+chr(P.GREY3)+chr(P.RVS_ON)+'_ '+chr(P.LT_GREEN)+'pREV. mENU '+chr(P.GREY3)+'< '+chr(P.LT_GREEN)+'pREV.pAGE '+chr(P.GREY3)+'> '+chr(P.LT_GREEN)+'nEXT pAGE  '+chr(P.RVS_OFF)+'\r')
-    conn.Sendall(chr(P.WHITE)+' ['+str(conn.MenuParameters['current']+1)+'/'+str(pages)+']'+chr(P.CYAN)+' sELECTION:'+chr(P.WHITE)+' ')
+    conn.SendTML(f'<AT x=1 y=23><GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
+                f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
     time.sleep(1)
     # Select screen output
@@ -720,14 +712,16 @@ def SignIn(conn:Connection):
     # dateleft = [[0,3,3],[3,0,3],[3,5,0]]
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
-    conn.Sendall(chr(P.CLEAR)+chr(P.CYAN)+'uSERNAME:')
+    #conn.Sendall(chr(P.CLEAR)+chr(P.CYAN)+'uSERNAME:')
+    conn.SendTML('<CLR><CYAN>Username:')
     Done = False
     while not Done:
         name = conn.ReceiveStr(bytes(keys,'ascii'), 16, False)
         if not conn.connected:
             return
         while len(name) > 0 and len(name) < 6:
-            conn.Sendall('\ruSERNAME MUST BE 6 TO 16 CHARACTERS\rLONG, TRY AGAIN:')
+            #conn.Sendall('\ruSERNAME MUST BE 6 TO 16 CHARACTERS\rLONG, TRY AGAIN:')
+            conn.SendTML('<BR>Username must be 6 to 16 characters<BR>long, try again:')
             name = conn.ReceiveStr(bytes(keys,'ascii'), 16, False)
             if not conn.connected:
                 return
@@ -738,26 +732,31 @@ def SignIn(conn:Connection):
                 retries = 3
                 if uentry['online'] == 1:
                     Done = True
-                    conn.Sendall('\ruSER ALREADY LOGGED IN\r')
+                    #conn.Sendall('\ruSER ALREADY LOGGED IN\r')
+                    conn.SendTML('<BR>User already logged in<BR>>')
                 while (not Done) and (retries > 0):
-                    conn.Sendall('\rpASSWORD:')
+                    #conn.Sendall('\rpASSWORD:')
+                    conn.SendTML('<BR>Password:')
                     if conn.bbs.database.chkPW(uentry, P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))):
-                        conn.Sendall(chr(P.LT_GREEN)+'\rlOGIN SUCCESSFUL'+chr(7)+chr(P.CHECKMARK))
+                        #conn.Sendall(chr(P.LT_GREEN)+'\rlOGIN SUCCESSFUL'+chr(7)+chr(P.CHECKMARK))
+                        conn.SendTML('<LTGREEN><BR>Login successful<BELL><CHECKMARK><PAUSE n=1')
                         conn.username = P.toASCII(name)
                         conn.userid = uentry.doc_id
                         conn.userclass = uentry['uclass']
-                        time.sleep(1)
+                        #time.sleep(1)
                         Done = True
                     else:
                         retries -= 1
-                        conn.Sendall(chr(P.RED)+'\rpASSWORD INCORRECT'+chr(P.CYAN))
-                        time.sleep(1)
+                        #conn.Sendall(chr(P.RED)+'\rpASSWORD INCORRECT'+chr(P.CYAN))
+                        conn.SendTML('<RED><BR>Password incorrect<CYAN><PAUSE n=1')
+                        #time.sleep(1)
                 if retries == 0:
                     Done = True
                 if not conn.connected:
                     return
             else:
-                conn.Sendall('\ruSER NOT FOUND, REGISTER (y/n)?')
+                #conn.Sendall('\ruSER NOT FOUND, REGISTER (y/n)?')
+                conn.Sendall('<BR>User not found, reguster (Y/N)?')
                 if conn.ReceiveKey(b'YN') == b'Y':
                     # dord = dateord[conn.bbs.dateformat]
                     # dleft = dateleft[conn.bbs.dateformat]
@@ -777,24 +776,29 @@ def SignIn(conn:Connection):
                     else:
                         lines = 25
                     FT.SendText(conn,conn.bbs.Paths['bbsfiles']+'terms/rules.txt','',lines)
-                    conn.Sendall('\rrEGISTERING USER '+name+'\riNSERT YOUR PASSWORD:')
+                    #conn.Sendall('\rrEGISTERING USER '+name+'\riNSERT YOUR PASSWORD:')
+                    conn.SendTML(f'<BR>Registering user {name}<BR>Insert your password:')
                     pw = conn.ReceiveStr(bytes(keys,'ascii'), 16, True)
                     if not conn.connected:
                         return
                     while len(pw) < 6:
-                        conn.Sendall('\rpASSWORD MUST BE 6 TO 16 CHARACTERS LONGiNSERT YOUR PASSWORD:')
+                        #conn.Sendall('\rpASSWORD MUST BE 6 TO 16 CHARACTERS LONGiNSERT YOUR PASSWORD:')
+                        conn.SendTML('<BR>Password must be 6 to 16 characters long<BR>Insert your password:')
                         pw = conn.ReceiveStr(bytes(keys,'ascii'), 16, True)
                         if not conn.connected:
                             return
-                    conn.Sendall('\rfIRST NAME:')
+                    #conn.Sendall('\rfIRST NAME:')
+                    conn.SendTML('<BR>First name:')
                     fname = conn.ReceiveStr(bytes(keys,'ascii'), 16)
                     if not conn.connected:
                         return
-                    conn.Sendall('\rlAST NAME:')
+                    #conn.Sendall('\rlAST NAME:')
+                    conn.SendTML('<BR>Last name:')
                     lname = conn.ReceiveStr(bytes(keys,'ascii'), 16)
                     if not conn.connected:
                         return
-                    conn.Sendall('\rcOUNTRY:')
+                    #conn.Sendall('\rcOUNTRY:')
+                    conn.SendTML('<BR>Country')
                     country = conn.ReceiveStr(bytes(keys,'ascii'), 16)
                     if not conn.connected:
                         return
@@ -803,18 +807,27 @@ def SignIn(conn:Connection):
                     conn.userid = conn.bbs.database.newUser(P.toASCII(name), P.toASCII(pw), P.toASCII(fname), P.toASCII(lname), bday.strftime("%d/%m/%Y"), P.toASCII(country))
                     _LOG('NEW USER: '+name,v=3)
                     conn.userclass = 1
-                    conn.Sendall('\rrEGISTRATION COMPLETE, WELCOME!')
-                    Done = True
-                    time.sleep(1)
-                    conn.Sendall(chr(P.YELLOW)+'\ryOUR USER DATA:\r'+chr(P.GREEN)+chr(P.HLINE)*14+'\r')
-                    conn.Sendall(chr(P.ORANGE)+'uSER NAME: '+chr(P.WHITE)+name+'\r')
-                    conn.Sendall(chr(P.ORANGE)+'pASSWORD: '+chr(P.WHITE)+('*'*len(pw))+'\r')
-                    conn.Sendall(chr(P.ORANGE)+'fIRST NAME: '+chr(P.WHITE)+fname+'\r')
-                    conn.Sendall(chr(P.ORANGE)+'lAST NAME: '+chr(P.WHITE)+lname+'\r')
-                    conn.Sendall(chr(P.ORANGE)+'bIRTHDATE '+chr(P.WHITE)+bday.strftime(datestr)+'\r')
-                    conn.Sendall(chr(P.ORANGE)+'cOUNTRY: '+chr(P.WHITE)+country+'\r')
-                    time.sleep(1)
-                    conn.Sendall('\r'+chr(P.YELLOW)+"dO YOU WANT TO EDIT YOUR DATA (y/n)?")
+                    #conn.Sendall('\rrEGISTRATION COMPLETE, WELCOME!')
+                    conn.SendTML(f'<BR>Registration complete, welcome!<PAUSE n=1>'
+                                f'<YELLOW><BR>Your user data:<BR><GREEN><HLINE n=14><BR>'
+                                f'<ORANGE>User name: <WHITE>{name}<BR>'
+                                f'<ORANGE>Password: <WHITE>{"*"*len(pw)}<BR>'
+                                f'<ORANGE>First name: <WHITE>{fname}<BR>'
+                                f'<ORANGE>Last name: <WHITE>{lname}<BR>'
+                                f'<ORANGE>Birthdate: <WHITE>{bday.strftime(datestr)}<BR>'
+                                f'<ORANGE>Country: <WHITE>{country}<BR><PAUSE n=1>'
+                                f'<BR><YELLOW>Do you want to edit your data (Y/N)?')
+                    #Done = True
+                    #time.sleep(1)
+                    # conn.Sendall(chr(P.YELLOW)+'\ryOUR USER DATA:\r'+chr(P.GREEN)+chr(P.HLINE)*14+'\r')
+                    # conn.Sendall(chr(P.ORANGE)+'uSER NAME: '+chr(P.WHITE)+name+'\r')
+                    # conn.Sendall(chr(P.ORANGE)+'pASSWORD: '+chr(P.WHITE)+('*'*len(pw))+'\r')
+                    # conn.Sendall(chr(P.ORANGE)+'fIRST NAME: '+chr(P.WHITE)+fname+'\r')
+                    # conn.Sendall(chr(P.ORANGE)+'lAST NAME: '+chr(P.WHITE)+lname+'\r')
+                    # conn.Sendall(chr(P.ORANGE)+'bIRTHDATE '+chr(P.WHITE)+bday.strftime(datestr)+'\r')
+                    # conn.Sendall(chr(P.ORANGE)+'cOUNTRY: '+chr(P.WHITE)+country+'\r')
+                    # time.sleep(1)
+                    # conn.Sendall('\r'+chr(P.YELLOW)+"dO YOU WANT TO EDIT YOUR DATA (y/n)?")
                     if conn.ReceiveKey(b'YN') == b'Y':
                         if not conn.connected:
                             return
@@ -1025,12 +1038,15 @@ def UserList(conn:Connection):
 
     users = conn.bbs.database.getUsers()
     digits = len(str(max(users[:])[0]))
-
-    conn.Sendall(chr(P.WHITE)+" id         uSERNAME\r\r"+chr(P.LT_GREEN))
+    tml = '<WHITE> ID         Username<BR><BR><LTGREEN>'
+    #conn.Sendall(chr(P.WHITE)+" id         uSERNAME\r\r"+chr(P.LT_GREEN))
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        conn.Sendall(TT.Fill_Line(4,64))
+        #conn.Sendall(TT.Fill_Line(4,64))
+        tml += '<LFILL row=4 code=64>'
     else:
-        conn.Sendall(chr(P.CRSR_UP)+(chr(P.HLINE)*40))
+        #conn.Sendall(chr(P.CRSR_UP)+(chr(P.HLINE)*40))
+        tml += '<CRSRU><HLINE n=40>'
+    conn.SendTML(tml)
 
     pages = int((len(users)-1) / 18) + 1
     count = len(users)
@@ -1066,8 +1082,8 @@ def UserList(conn:Connection):
         if lineasimpresas < 18:
             for x in range(18 - lineasimpresas):
                 conn.Sendall('\r')
-    conn.Sendall(' '+chr(P.GREY3)+chr(P.RVS_ON)+'_ '+chr(P.LT_GREEN)+'pREV. mENU '+chr(P.GREY3)+'< '+chr(P.LT_GREEN)+'pREV.pAGE '+chr(P.GREY3)+'> '+chr(P.LT_GREEN)+'nEXT pAGE  '+chr(P.RVS_OFF)+'\r')
-    conn.Sendall(chr(P.WHITE)+' ['+str(conn.MenuParameters['current']+1)+'/'+str(pages)+']'+chr(P.CYAN)+' sELECTION:'+chr(P.WHITE)+' ')
+    conn.SendTML(f' <GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
+                f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
     time.sleep(1)
     # Select screen output
@@ -1076,34 +1092,20 @@ def UserList(conn:Connection):
 
 def GetTerminalFeatures(conn:Connection, display = True):
 
-    conn.Sendall(chr(P.CLEAR)+chr(P.LT_BLUE)+"tERMINAL ID: "+chr(P.WHITE)+conn.TermString.decode("utf-8")+"\r")
-    conn.Sendall(chr(P.LT_BLUE)+"tURBO56k VERSION: "+chr(P.WHITE)+str(conn.T56KVer)+"\r")
-    time.sleep(0.5)
+    conn.SendTML(f'<CLR><LTBLUE>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR>'
+                f'<LTBLUE>Turbo56K version: <WHITE>{conn.T56KVer}<BR><PAUSE n=0.5>')
 
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
     if conn.T56KVer > 0.5:
-        conn.Sendall(chr(P.LT_BLUE)+"cHECKING SOME TERMINAL FEATURES:\r")
+        conn.SendTML('<LTBLUE>Checking some terminal features<BR>')
         result = [None]*(TT.TURBO56K_LCMD-127)
         for cmd in [129,130,179]:
-            conn.Sendall(chr(P.GREY3)+P.toPETSCII(TT.T56K_CMD[cmd])+': '+((chr(P.LT_GREEN)+chr(P.CHECKMARK)) if conn.QueryFeature(cmd)< 0x80 else (chr(P.RED)+'X'))+'\r')
-        # # for cmd in range(128,TT.TURBO56K_LCMD+1):
-        # for cmd in TT.T56K_CMD:
-        #     time.sleep(0.5)
-        #     conn.Sendall(chr(TT.CMDON))
-        #     conn.Sendall(chr(TT.QUERYCMD)+chr(cmd))
-        #     result[cmd-128] = (conn.Receive(1))
-        #     conn.Sendall(chr(TT.CMDOFF))
-        #     if cmd % 16 == 0:
-        #         conn.Sendall(chr(P.WHITE)+"\r$"+hex(cmd)[2:3]+"X: ")
-        #     if result[cmd-128] != b'\x80':
-        #         conn.Sendall(chr(P.LT_GREEN)+chr(P.CHECKMARK))
-        #     else:
-        #         conn.Sendall(chr(P.RED)+"X")
+            conn.SendTML(f'<GREY3>{TT.T56K_CMD[cmd]}: {"<LTGREEN><CHECKMARK>" if conn.QueryFeature(cmd)< 0x80 else "<RED>x"}<BR>')
     conn.Sendall('\r')
     if conn.QueryFeature(131) < 0x80:
-        conn.Sendall(chr(P.GREY3)+"pcm AUDIO SAMPLERATE "+chr(P.YELLOW)+str(conn.samplerate)+"hZ\r")
+        conn.SendTML(f'<GREY3>PCM audio samplerate <YELLOW>{conn.samplerate}Hz<BR>')
     time.sleep(0.5)
 
 #######################################################
@@ -1115,30 +1117,15 @@ def BBSLoop(conn:Connection):
     try:
         # Sync
         conn.Sendall(chr(0)*2)
-        # Reset
-        conn.Sendall(TT.reset_Turbo56K())
-        # # Text mode + Page number: 0 (default) + Border color: 0 (negro) + Background color: 0 (negro)
-        conn.Sendall(TT.to_Text(0,0,0))
         # Send speech message
         conn.Sendall(TT.to_Speech() + '.bienvenido,p\'r2esioneritarn,')
         time.sleep(1)
-        # Select screen output
-        conn.Sendall(TT.to_Screen())
-        # Clear screen + Lower/uppercase charset
-        # conn.Sendall(chr(P.CLEAR) + chr(P.TOLOWER))
-        # # Cyan ink
-        # conn.Sendall(chr(P.CYAN) + '\r'+P.toPETSCII(conn.bbs.WMess)+'\r')
-        # conn.Sendall(P.toPETSCII('RetroBBS v%.2f\r'%conn.bbs.version))
-        # conn.Sendall(P.toPETSCII('running under:\r'+conn.bbs.OSText+'\r'))
-        # Light blue ink
         if conn.bbs.lang == 'es':
-            #conn.Sendall(chr(P.LT_BLUE) + '\rpRESIONE return...\r')
             pt = "presione RETURN..."
         else:
-            #conn.Sendall(chr(P.LT_BLUE) + '\rpRESS return...\r')
             pt = "press RETURN..."
 
-        welcome = f'''<SETOUTPUT o=True>
+        welcome = f'''<RESET><SETOUTPUT o=True><TEXT>
 <CLR><LOWER><CYAN><BR>
 {conn.bbs.WMess}<BR>
 RetroBBS v{conn.bbs.version:.2f}<BR>
@@ -1152,7 +1139,7 @@ running under:<BR>
         WaitRETURN(conn)
 
         # Ask for ID and supported TURBO56K version
-        conn.Sendall(chr(255) + chr(162) + chr(254))
+        conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
         time.sleep(1)
         datos = ""
         conn.socket.settimeout(10.0)
@@ -1180,11 +1167,10 @@ running under:<BR>
                 time.sleep(1)
                 Done = False
                 while not Done:
-                    conn.Sendall(chr(P.CLEAR)+chr(P.WHITE)+"(l)OGIN or (g)UEST?")
-                    time.sleep(1)
-                    t = conn.ReceiveKey(b'LGS')
+                    r = conn.SendTML('<CLR><INK c=1>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="LGS">')
                     if not conn.connected:
                         return()
+                    t = r['_A']
                     if t == b'L':
                         SignIn(conn)
                         if conn.username != '_guest_':
@@ -1202,7 +1188,7 @@ running under:<BR>
                         Done = True
             else:
                 _LOG('Old terminal detected - Terminating',id=conn.id)
-                conn.Sendall('pLEASE USE retroterm V0.13 OR POSTERIOR\r fOR THE LATEST VERSION VISIT\r www.pastbytes.com/retroterm\r'+chr(P.WHITE))
+                conn.SendTML('Please user RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
                 conn.connected = False
 
             #Increment visit counters
@@ -1249,8 +1235,8 @@ running under:<BR>
                     break
 
         else:
-            conn.Sendall(chr(P.CYAN) + '\r\ntHIS bbs REQUIRES A TERMINAL\r\nCOMPATIBLE WITH turbo56k 0.3 OR NEWER.\r\n')
-            conn.Sendall('fOR THE LATEST VERSION VISIT\r www.pastbytes.com/retroterm\r' + chr(P.LT_BLUE) + 'dISCONNECTED...')
+            conn.SendTML("""<CYAN><BR>This BBS requires a terminal<BR>compatible with TURBO56K 0.3 or newer.<BR>
+For the lastest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><LTBLUE>Disconnected...""")
             time.sleep(1)
             _LOG('Not a compatible terminal, disconnecting...',id=conn.id,v=2)
             # Clean up the connection
@@ -1345,6 +1331,8 @@ print('\n\nRetroBBS v%.2f (c)2021-2023\nby Pablo Roldán(durandal) and\nJorge Ca
 bbs_instance.plugins = EX.RegisterPlugins()
 # Init encoders
 bbs_instance.encoders = EX.RegisterEncoders()
+# Register TML tags
+EX.RegisterTPLtags()
 
 # Read config file
 ConfigRead()

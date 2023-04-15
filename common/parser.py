@@ -7,15 +7,19 @@ from collections import deque
 import common.petscii as P
 import common.turbo56k as TT
 import common.extensions as EX
+from common.bbsdebug import _LOG
 #from common.connection import Connection
+#from common.style import RenderMenuTitle
 import time
 
 
 # Internal registers:
 #
 # Write only:
-# _C = String output to Connection object assigned to this Parser
-# _B = Binary output to Connection object assigned to this Parser
+# _C = As target for _R:
+# 		String output to Connection object assigned to this Parser
+# _B = As target for _R:
+# 		Binary output to Connection object assigned to this Parser
 #
 # Read/Write:
 # _A = Accumulator, no type casting
@@ -26,46 +30,54 @@ import time
 # _R =	Returned value from last function call
 #		Used as a special parameter name. Assignation order is reversed ie:
 #			('_R','_S') will assign the returned value of the function to .S
+# _C = As parameter value:
+#		Connection object
 
+
+# Tag definitions:
+# 'NAME': char
+# or
+# 'NAME': (function_call,[(parameters tuple),...])
+#
+# Parameter tuple:
+# ('name', default_value, <optional eval flag>)
 
 t_registers = ['_a','_c','_b','_r','_s','_i']
 
 # Tokens
 t_statements = {'mode':[('m','PET64')],'switch':[('r','_A')],'case':[('c',False)],'while':[('c',False)],'if':[('c',False)]}
 
-t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),'AT':(TT.set_CRSR,[('_R','_C'),('x',0),('y',0)]),
-	      		'INKEYS':(lambda k:input(),[('_R','_A'),('k','\n')]),
-	      		'LET':(lambda x:x,[('_R','_I'),('x','_I')]),'OUT':(lambda x:print(x),[('_R','_C'),('x','_I')]),
-	      		'INC':(lambda x:x+1,[('_R','_I'),('x','_I')]),'DEC':(lambda x:x-1,[('_R','_I'),('x','_I')])}
-t_gen_multi = {'SPC':' '}
-
-t_mono = 	{'PET64':{'CLR':chr(P.CLEAR),'HOME':chr(P.HOME),'RVSON':chr(P.RVS_ON),'RVSOFF':chr(P.RVS_OFF),'BR':'\r',
-			'CBMSHIFT-D':chr(P.DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(P.ENABLE_CBMSHIFT),'UPPER':chr(P.TOUPPER),'LOWER':chr(P.TOLOWER),
-			'BLACK':chr(P.BLACK),'WHITE':chr(P.WHITE),'RED':chr(P.RED),'CYAN':chr(P.CYAN),'PURPLE':chr(P.PURPLE),'GREEN':chr(P.GREEN),'BLUE':chr(P.BLUE),'YELLOW':chr(P.YELLOW),
-			'ORANGE':chr(P.ORANGE),'BROWN':chr(P.BROWN),'PINK':chr(P.PINK),'GREY1':chr(P.GREY1),'GREY2':chr(P.GREY2),'LTGREEN':chr(P.LT_GREEN),'LTBLUE':chr(P.LT_BLUE),'GREY3':chr(P.GREY3)}
-			}
-t_multi =	{'PET64':{'CRSRL':chr(P.CRSR_LEFT),'CRSRU':chr(P.CRSR_UP),'CRSRR':chr(P.CRSR_RIGHT),'CRSRD':chr(P.CRSR_DOWN),'DEL':chr(P.DELETE),'INS':chr(P.INSERT),
-			'POUND':chr(P.POUND),'PI':chr(P.PI),'HASH':chr(P.HASH),'HLINE':chr(P.HLINE),'VLINE':chr(P.VLINE),'SPC':' '}}
-	
+t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
+				'INKEYS':(lambda k:k,[('_R','_A'),('k','\n',False)]),
+				'LET':(lambda x:x,[('_R','_I'),('x','_I')]),'OUT':(lambda x:x,[('_R','_C'),('x','_I')]),
+				'INC':(lambda x:x+1,[('_R','_I'),('x','_I')]),'DEC':(lambda x:x-1,[('_R','_I'),('x','_I')]),
+				'BELL':chr(7),'CHR':(lambda c:chr(c),[('_R','_C'),('c',0)])}
+t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
 class TMLParser(HTMLParser):
 
+
+	conn = None
 	mode = 'PET64'
 
 	# Conversion function for plain text
-	t_conv = {'PET64':P.toPETSCII,'ASCII':lambda c: c}
+	t_conv = P.toPETSCII
 
 	modes = ['PET64']
 
 	def __init__(self, conn):
 		mode = conn.mode
 		self.conn = conn
+		self.t_conv = conn.encoder.encode
 		##### Build dictionaries
 		self.t_mono = t_gen_mono.copy()
-		#self.t_mono.update(t_mono[mode])
-		self.t_mono.update(EX.t_mono)			# Plugins functions
+		###
+		self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])						# Update OUT command
+		self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(bytes(k,'latin1')),[('_R','_A'),('k','\r',False)])	# Update INKEYS command
+		###
+		self.t_mono.update(EX.t_mono)			# Plugins and Extensions functions
 		self.t_mono.update(conn.encoder.tml_mono)	# Encoder definitions
-		self.t_mono.update(TT.t_mono)			# Turbo56K functions
+		#self.t_mono.update(TT.t_mono)			# Turbo56K functions
 		self.t_mono =  {k.lower(): v for k, v in self.t_mono.items()}
 		self.t_multi = t_gen_multi.copy()
 		#self.t_multi.update(t_multi[mode])
@@ -294,6 +306,7 @@ class TMLParser(HTMLParser):
 		super().feed(data)
 		super().close()
 		super().reset()
+		return {'_A':self._A,'_S':self._S,'_I':self._I,'_R':self._R}
 
 
 	def _insert(self,data):
@@ -331,13 +344,11 @@ class TMLParser(HTMLParser):
 			if type(default) == int:
 				data = int(data)
 		except:
-			data = default
+			if type(default)!= str:
+				data = default
 		return data
 
 	def handle_starttag(self, tag, attrs):
-		#print(tag, self.getpos())
-		# if self.skip != 0:
-		# 	return
 		parms = []
 		attr =  dict(attrs)
 		if tag in t_statements:
@@ -369,11 +380,12 @@ class TMLParser(HTMLParser):
 						self.stack.appendleft((tag,[],(spos,epos)))
 			# Handle IF
 			elif tag == 'if':
-				if self._evalParameter(attr.get('c',False),False):
+				if (condition := attr.get('c',False)) != False:
+					condition = condition.replace('\r','\\r').replace('\n','\\n')
+				if self._evalParameter(condition,False):
 					self.stack.appendleft((tag,[],(spos,epos)))
 				else:
 					self.skip += 1
-
 		elif self.skip == 0: 
 			if tag in self.t_mono:
 				if isinstance(self.t_mono[tag],str):
@@ -383,14 +395,14 @@ class TMLParser(HTMLParser):
 					func = self.t_mono[tag][0]
 					ret = None
 					for p in self.t_mono[tag][1]:
-						val = attr.get(p[0],p[1])
+						val = attr.get(p[0].lower(),p[1])
 						if p[0] == '_R' and val.lower() in t_registers:
 							ret = val
 						else:
-							val = self._evalParameter(val,p[1])
+							if (p[2] if len(p)>2 else True):
+								val = self._evalParameter(val,p[1])
 							parms.append(val)
 						...
-					#print(tag,parms,ret)
 					self._R = func(*parms)
 					if ret == '_A':
 						self.set_A(self._R)
@@ -399,28 +411,23 @@ class TMLParser(HTMLParser):
 					elif ret == '_S':
 						self.set_S(self._R)
 					elif ret == '_C':
-						#print('\nString:',self._R)
 						self.conn.Sendall(self._R)
 					elif ret == '_B':
-						#print('\nBinary:',self._R)
 						self.conn.Sendallbin(self._R)
 			elif tag in self.t_multi:
 				n = self._evalParameter(attr.get('n','1'),1)
 				for i in range(n):
-					self.conn.Sendall(self.t_mono[tag])
-					# print(self.t_multi[tag], flush=True, end='')
+					self.conn.Sendall(self.t_multi[tag])
 			else:
-				print('invalid tag')
+				_LOG('TML Parser: Invalid tag: '+tag.upper(), id=self.conn.id,v=2)
 
 	def handle_endtag(self, tag):
-		#print("End tag  :", tag, self.skip)
 		i = j = None
 		if tag in t_statements:
 			if self.skip > 0:
 				self.skip -= 1
 			elif tag == 'while':	# WHILE loop
 				pos = self._popLatest(tag)
-				#print('while pos',pos, self._I)
 				i,j = pos[2][0],pos[2][1]
 			elif tag in ['switch','case','if']:	# SWITCH/CASE/IF
 				pos = self._popLatest(tag)
@@ -432,8 +439,7 @@ class TMLParser(HTMLParser):
 			if len(self.stack) > 0:
 				if self.stack[0][0] == 'switch':	# Dont parse orphan data in-between switch and case tags
 					return
-			#print(self.t_conv[self.mode](data.translate({ord(i): None for i in '\t\r\n'})),end='',flush=True)
-			self.conn.Sendall(self.t_conv[self.mode](data.translate({ord(i): None for i in '\t\r\n'})))
+			self.conn.Sendall(self.t_conv(data.translate({ord(i): None for i in '\t\r\n'})))
 
 	def handle_comment(self, data):
 		# print("Comment  :", data)
@@ -442,7 +448,6 @@ class TMLParser(HTMLParser):
 	def handle_entityref(self, name):
 		if self.skip == 0:
 			c = chr(name2codepoint[name])
-			# print("Named ent:", c)
 
 	def handle_charref(self, name):
 		if self.skip == 0:
@@ -450,10 +455,8 @@ class TMLParser(HTMLParser):
 				c = chr(int(name[1:], 16))
 			else:
 				c = chr(int(name))
-			# print("Num ent  :", c)
 
 	def handle_decl(self, data):
-		# print("Decl     :", data)
 		...
 	
 	def handle_pi(self, data: str):
@@ -470,10 +473,13 @@ class TMLParser(HTMLParser):
 			self._I = 0
 
 	def set_S(self,data):
-		try:
-			self._S = str(data)
-		except:
-			self._S = ''
+		if type(data) == bytes:
+			self._S = data.decode('latin1')
+		else:
+			try:
+				self._S = str(data)
+			except:
+				self._S = ''
 	
 	def set_A(self,data):
 		self._A = data

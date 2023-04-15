@@ -93,24 +93,16 @@ def More(conn:Connection, text, lines, colors=default_style):
 				conn.Sendall('\r')
 			# Find last text color
 			tcolor = P.PALETTE.index(lastColor(t,P.PALETTE[tcolor]))
-			# pos = -1
-			# for c in P.PALETTE:
-			# 	x = t.rfind(chr(c))
-			# 	if x > pos:
-			# 		pos = x
-			# 		tcolor = P.PALETTE.index(c)
 			l+=1
 			if l==(lines-1):
-				conn.Sendall(chr(P.PALETTE[colors.PbColor])+'['+chr(P.PALETTE[colors.PtColor])+'return OR _'+chr(P.PALETTE[colors.PbColor])+']')
-				k = conn.ReceiveKey(b'\r_')
+				k= conn.SendTML(f'''<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN or <LARROW><INK c={colors.PbColor}>]
+<INKEYS k="&#13;_" _R=_S><IF c="_S=='&#13;'"><DEL n=13><INK c={tcolor}></IF>''')
 				if conn.connected == False:
 					return(-1)
-				if k == b'_':
+				if k['_S'] == '_':
 					return(-1)
-				conn.Sendall(chr(P.DELETE)*13+chr(P.PALETTE[tcolor]))
 				l = 0
-		conn.Sendall(chr(P.PALETTE[colors.PbColor])+'['+chr(P.PALETTE[colors.PtColor])+'return'+chr(P.PALETTE[colors.PbColor])+']')
-		conn.ReceiveKey()
+		conn.SendTML(f'<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN<INK c={colors.PbColor}>]<INKEYS>')
 	else:
 		prompt='RETURN'
 		cc=0
@@ -119,7 +111,6 @@ def More(conn:Connection, text, lines, colors=default_style):
 		rvs = ''
 		color = ''
 		pp = False
-		#colors = (P.BLACK,P.WHITE,P.RED,P.PURPLE,P.CYAN,P.GREEN,P.BLUE,P.YELLOW,P.BROWN,P.PINK,P.ORANGE,P.GREY1,P.GREY2,P.LT_BLUE,P.LT_GREEN,P.GREY3)
 		for char in text:
 			pp = False
 			conn.Sendall(char)

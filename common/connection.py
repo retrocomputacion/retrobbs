@@ -25,7 +25,8 @@ class Connection:
 		self.bbs:BBS = bbs
 		self.mode = 'PET64'							#Connection mode -> type of client
 		self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
-		self.parser = TMLParser(self)				#TLM parser
+		self.parser = TMLParser(self)				#TML parser
+		self.p_running = False
 
 		# MenuDef entry:
 		# [Function, (Parameters tuple), Title, UserClass , WaitKey]
@@ -73,10 +74,14 @@ class Connection:
 
 	#Set mode
 	def SetMode(self, mode):
-		self.mode = mode							#Connection mode -> type of client
-		self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
-		del(self.encoder)							#Delete old parser
-		self.encoder = TMLParser(self)
+		if not self.p_running:		# Only change the mode if the TML parser object is not running
+			self.mode = mode							#Connection mode -> type of client
+			self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+			del(self.parser)
+			self.parser = TMLParser(self)
+			return True
+		else:
+			return False
 
 	# Query if the client terminal supports a feature
 	def QueryFeature(self, cmd:int):
@@ -98,9 +103,6 @@ class Connection:
 	def Sendall(self, cadena):
 
 		if self.connected == True:
-			# m = map(ord,cadena)
-			# l = list(m)
-			# _bytes = bytearray(l)
 			_bytes = bytes(cadena,'latin1')
 			try:
 				self.socket.sendall(_bytes)
@@ -141,7 +143,6 @@ class Connection:
 
 	#Receive single binary char from socket
 	def ReceiveKey(self, lista=b'\r'):
-
 		t = True
 		while t == True:
 			cadena = b''
@@ -405,5 +406,12 @@ class Connection:
 
 	# Send TML script
 	def SendTML(self, data):
-		self.parser.process(data)
-		...
+		if self.p_running:				# If original parser is in use
+			parser = TMLParser(self)	# create new TML parser for each call, to allow for nested calls
+			ret = parser.process(data)
+			del(parser)					# Delete aditional parser after use
+		else:							# Use original parser if this is the first call, this is faster than just creating a new object every time
+			self.p_running = True
+			ret = self.parser.process(data)
+			self.p_running = False
+		return ret

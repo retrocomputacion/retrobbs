@@ -47,9 +47,10 @@ def plugFunction(conn:Connection,url):
 
     #conn.Sendall(chr(0))
     # # Text mode
-    conn.Sendall(TT.to_Text(0,0,0))
-    S.RenderMenuTitle(conn,"Newsfeed")
-    conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+    conn.SendTML('<TEXT><MTITLE t=Newsfeed><CBM-B><CRSRL>')
+    # conn.Sendall(TT.to_Text(0,0,0))
+    # S.RenderMenuTitle(conn,"Newsfeed")
+    # conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
     nfeed = feedparser.parse(url)
     try:

@@ -2,11 +2,13 @@
 # Extensions module
 # Import and initialize extension modules
 # Plugins and encoders
+# Fill in TML tag dictionary
 ###########################################################
 from common.bbsdebug import _LOG 
 import importlib
 import pkgutil
-from common.connection import Connection
+#from common.connection import Connection
+import os
 
 class Encoder:
     def __init__(self, name:str) -> None:
@@ -22,6 +24,17 @@ import encoders
 import plugins
 
 t_mono ={}
+
+# Register TPL tags for common modules
+def RegisterTPLtags():
+    for module in os.listdir(os.path.dirname(__file__)):
+        if module in ['__init__.py','parser.py','extensions.py','petscii.py'] or module[-3:] != '.py':
+            continue
+        m = importlib.import_module('common.'+module[:-3])
+        if 't_mono' in dir(m):
+            t_mono.update(m.t_mono)
+            _LOG(f'TML tags added for: {module[:-3].upper()}',v=4)
+        del(m)
 
 # Import plugins
 def RegisterPlugins():

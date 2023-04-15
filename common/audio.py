@@ -118,21 +118,23 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 		afunc = PlayAudio
 		bname = os.path.splitext(os.path.basename(audios[x]))[0]
 		KeyLabel(conn, H.valid_keys[x-start],(bname)[:30]+' ', x % 2)
+		tml = f'<AT x=34 y={row}><CBM-B><CRSRL>'
+		print(tml)
 		if (wavs == True) and (audios[x].lower().endswith(wext)):   #PCM file
-			conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
+			conn.SendTML(tml)
 			tsecs = _GetPCMLength(path+audios[x])
 			tmins = int(tsecs / 60)
 			length[x] = int(tsecs)
 			tsecs = tsecs - (tmins * 60)
 		else:   #SID/YM files
-			conn.Sendall(TT.set_CRSR(34,row)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
+			conn.SendTML(tml)
 			afunc = CHIPStream
 			tsecs = _GetCHIPLength(path+audios[x])
 			tmins = int(tsecs[0] / 60)
 			length[x] = tsecs
 			tsecs = tsecs[0] - (tmins * 60)
 
-		conn.Sendall(chr(P.WHITE)+('00'+str(tmins))[-2:]+':'+('00'+str(tsecs))[-2:]+'\r')
+		conn.SendTML(f'<WHITE>{tmins:0>2}:{tsecs:0>2}<BR>')
 		row += 1
 		#Add keybinding to MenuDic
 		MenuDic[H.valid_keys[x-start].encode('ascii','ignore')] = (afunc,(conn,path+audios[x],length[x],True),H.valid_keys[x-start],0,False)
@@ -142,8 +144,8 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 			for x in range(20 - lineasimpresas):
 				conn.Sendall('\r')
 
-	conn.Sendall(' '+chr(P.GREY3)+chr(P.RVS_ON)+'_ '+chr(P.LT_GREEN)+'pREV. mENU '+chr(P.GREY3)+'< '+chr(P.LT_GREEN)+'pREV.pAGE '+chr(P.GREY3)+'> '+chr(P.LT_GREEN)+'nEXT pAGE  '+chr(P.RVS_OFF)+'\r')
-	conn.Sendall(chr(P.WHITE)+' ['+str(conn.MenuParameters['current']+1)+'/'+str(pages)+']'+chr(P.CYAN)+' sELECTION:'+chr(P.WHITE)+' ')
+	conn.SendTML(f' <GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
+                f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
 	conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
 	time.sleep(1)
 	# Selects screen output
@@ -155,17 +157,27 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 #########################################
 def _AudioDialog(conn:Connection, data):
 	S.RenderDialog(conn, 15, data['title'])
+	tml = ''
 	if data['album'] != '':
-		conn.Sendall(chr(P.RVS_ON)+' aLBUM:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['album'])+'\r\r')
+		tml += f'<RVSON> Album:<BR><RVSON> {data["album"]}<BR><BR>'
+		#conn.Sendall(chr(P.RVS_ON)+' aLBUM:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['album'])+'\r\r')
 	if data['artist'] != '':
-		conn.Sendall(chr(P.RVS_ON)+' aRTIST:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['artist'])+'\r\r')
-	conn.Sendall(chr(P.RVS_ON)+' lENGTH: '+data['length']+'\r\r')
-	conn.Sendall(chr(P.RVS_ON)+' fROM '+data['sr']+' TO '+str(conn.samplerate)+'hZ')
-	conn.Sendall(TT.set_CRSR(0,12)+' pRESS <return> TO PLAY\r')
-	conn.Sendall(chr(P.RVS_ON)+' pRESS <X> AND WAIT TO STOP\r')
-	conn.Sendall(chr(P.RVS_ON)+' pRESS <_> TO CANCEL')
+		tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
+		#conn.Sendall(chr(P.RVS_ON)+' aRTIST:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['artist'])+'\r\r')
+	tml += f'''<RVSON> Length: {data['length']}<BR><BR>
+<RVSON> From {data['sr']} to {conn.samplerate}Hz
+<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
+<RVSON> Press &lt;x&gt; and wait to stop<BR>
+<RVSON> Press &lt;<LARROW>&gt; to cancel'''
+	#conn.Sendall(chr(P.RVS_ON)+' lENGTH: '+data['length']+'\r\r')
+	#conn.Sendall(chr(P.RVS_ON)+' fROM '+data['sr']+' TO '+str(conn.samplerate)+'hZ')
+	#conn.Sendall(TT.set_CRSR(0,12)+' pRESS <return> TO PLAY\r')
+	#conn.Sendall(chr(P.RVS_ON)+' pRESS <X> AND WAIT TO STOP\r')
+	#conn.Sendall(chr(P.RVS_ON)+' pRESS <_> TO CANCEL')
+	conn.SendTML(tml)
 	if conn.ReceiveKey(b'\r_') == b'_':
-		conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+		#conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+		conn.SendTML('<CBM-B><CRSRL>')
 		return False
 	return True
 
@@ -367,14 +379,21 @@ def _DisplayCHIPInfo(conn:Connection, info):
 		subtune = info['startsong']
 		minutes, seconds = calctime()
 		S.RenderDialog(conn,12,info['type'])
-		conn.Sendall(chr(P.RVS_ON)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
-		conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
-		conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')
-		conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ str(minutes).zfill(2)+':'+str(seconds).zfill(2)+'\r')
+		tml = f'''<RVSON> Title: {H.crop(info['title'],30)}<BR>
+<RVSON> Artist: {H.crop(info['artist'],29)}<BR>
+<RVSON> Copyright: {H.crop(info['copyright'],27)}<BR>
+<RVSON> Playtime: {minutes:0>2}:{seconds:0>2}<BR>'''
+		# conn.Sendall(chr(P.RVS_ON)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
+		# conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
+		# conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')
+		# conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ str(minutes).zfill(2)+':'+str(seconds).zfill(2)+'\r')
 		if info['subsongs'] > 1:    #Subtune
-			conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+' sUBTUNE: '+chr(P.GREY2)+'<'+chr(P.WHITE)+chr(P.RVS_OFF)+str(subtune).zfill(2)+chr(P.RVS_ON)+chr(P.GREY2)+'>'+chr(P.GREY3)+'\r')
-		conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS _ TO EXIT\r"+chr(P.RVS_ON)+" return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
-		conn.Sendall(TT.disable_CRSR())
+			tml += f'<RVSON><CRSRD> Subtune: <GREY2>&lt;<WHITE><RVSOFF>{subtune:0>2}<RVSON><GREY2>&gt;<GREY3><BR>'
+			#conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+' sUBTUNE: '+chr(P.GREY2)+'<'+chr(P.WHITE)+chr(P.RVS_OFF)+str(subtune).zfill(2)+chr(P.RVS_ON)+chr(P.GREY2)+'>'+chr(P.GREY3)+'\r')
+		tml += '<RVSON><CRSRD> Press <LARROW> to exit<BR><RVSON> RETURN to play<BR><RVSON> Any key to stop<RVSOFF><CURSOR enable=False>'
+		conn.SendTML(tml)
+		#conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS _ TO EXIT\r"+chr(P.RVS_ON)+" return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
+		#conn.Sendall(TT.disable_CRSR())
 		while True and conn.connected:
 			k = conn.ReceiveKey(b'<>_\r')
 			if k == b'_':
@@ -385,22 +404,26 @@ def _DisplayCHIPInfo(conn:Connection, info):
 			elif k == b'<' and subtune > 1:
 				subtune -= 1
 				minutes, seconds = calctime()
-				conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,7)+chr(P.WHITE)+str(subtune).zfill(2))
-				conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,5)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
+				conn.SendTML(f'<RVSOFF><AT x=11 y=7><WHITE>{subtune:0>2}<RVSON><AT x=11 y=5><GREY3>{minutes:0>2}:{seconds:0>2}')
+				# conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,7)+chr(P.WHITE)+str(subtune).zfill(2))
+				# conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,5)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
 			elif k == b'>' and subtune < info['subsongs']:
 				subtune += 1
 				minutes, seconds = calctime()
-				conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,7)+chr(P.WHITE)+str(subtune).zfill(2))
-				conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,5)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
+				conn.SendTML(f'<RVSOFF><AT x=11 y=7><WHITE>{subtune:0>2}<RVSON><AT x=11 y=5><GREY3>{minutes:0>2}:{seconds:0>2}')
+				# conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,7)+chr(P.WHITE)+str(subtune).zfill(2))
+				# conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,5)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
 	else:   #.MUS file
 		subtune = 1
-		conn.Sendall(chr(P.CLEAR)+chr(P.ENABLE_CBMSHIFT)+chr(P.TOUPPER))
+		#conn.Sendall(chr(P.CLEAR)+chr(P.ENABLE_CBMSHIFT)+chr(P.TOUPPER))
+		conn.SendTML('<CLR><CBMSHIFT-E><UPPER>')
 		conn.Sendallbin(info)
-		conn.Sendall(chr(P.YELLOW)+'\rPRESS RETURN TO PLAY\r_ TO EXIT\rANY KEY TO STOP')
-		conn.Sendall(TT.disable_CRSR())
+		conn.SendTML('<YELLOW><BR>press return to play<BR><LARROW> to exit<BR>any key to stop<CURSOR enable=False>')
+		#conn.Sendall(chr(P.YELLOW)+'\rPRESS RETURN TO PLAY\r_ TO EXIT\rANY KEY TO STOP')
+		#conn.Sendall(TT.disable_CRSR())
 		if conn.ReceiveKey(b'_\r') == b'_':
 			subtune = -1
-	conn.Sendall(TT.enable_CRSR())
+	conn.SendTML('<CURSOR enable=True>')
 	return subtune
 
 #  SID player ID - commented out until better functionality is built into RetroTerm

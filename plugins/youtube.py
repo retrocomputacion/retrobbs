@@ -62,7 +62,7 @@ def plugFunction(conn:Connection,url, crop):
 				tmsecs = None
 			except:
 				_LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
-				conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+				conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
 				return()
 
 	return(VV.Grabframe(conn,best,crop,tmsecs))

@@ -11,12 +11,12 @@ class bbsstyle:
 
 default_style = bbsstyle()
 
-	# Default colors (in c64 palette index)
+# Default colors (in c64 palette index)
 default_style.BgColor		= P.PALETTE.index(P.BLACK)		#Background color
 default_style.BoColor		= P.PALETTE.index(P.BLACK)		#Border color
 default_style.TxtColor		= P.PALETTE.index(P.GREY3)		#Main text color
 default_style.HlColor		= P.PALETTE.index(P.WHITE)		#Highlight text color
-	### Menu specific colors ###
+### Menu specific colors ###
 default_style.OoddColor		= P.PALETTE.index(P.LT_BLUE)	#Odd option key color
 default_style.ToddColor		= P.PALETTE.index(P.GREY3)		#Odd option text color
 default_style.OevenColor	= P.PALETTE.index(P.CYAN)		#Even option key color
@@ -25,31 +25,29 @@ default_style.MenuTColor1	= P.PALETTE.index(P.CYAN)		#Menu title border color 1
 default_style.MenuTColor2	= P.PALETTE.index(P.LT_GREEN)	#Menu title border color 2
 default_style.SBorderColor1	= P.PALETTE.index(P.LT_GREEN)	#Section border color 1
 default_style.SBorderColor2	= P.PALETTE.index(P.GREEN)		#Section border color 1
-
-	### [Prompt] ###
+### [Prompt] ###
 default_style.PbColor		= P.PALETTE.index(P.YELLOW)		#Key prompt brackets color
 default_style.PtColor		= P.PALETTE.index(P.LT_BLUE)	#Key prompt text color
-
 
 def RenderMenuTitle(conn:Connection,title):
 	if type(title) == tuple:
 		title = title[0]
 	# Clear screen
-	conn.Sendall(chr(P.CLEAR))
+	#conn.Sendall(chr(P.CLEAR))
 	# Lower/uppercase charset
-	conn.Sendall(chr(P.TOLOWER))
+	#conn.Sendall(chr(P.TOLOWER))
+	tml = '<CLR><LOWER>'
 	# Send menu title
 	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-		conn.Sendall(chr(P.LT_GREEN)+chr(TT.CMDON)+chr(TT.LINE_FILL)+chr(0)+chr(64)+chr(TT.LINE_FILL)+chr(2)+chr(64)+chr(TT.CMDOFF))
-		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_U)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_U))
+		tml += '''<LTGREEN><LFILL row=0 code=64><LFILL row=2 code=64><RVSON><CYAN><CBM-U><RVSOFF><LET _R=_I x=0><WHILE c='_I<19'><CRSRR><HLINE><INC></WHILE><LTGREEN><RVSON><CBM-U>'''
 	else:
-		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_U)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_U))
-	conn.Sendall(" "+chr(P.RVS_OFF)+chr(P.WHITE)+" "+(P.toPETSCII(conn.bbs.name[:19])+" - "+P.toPETSCII(title)+(" "*33)[:37]+"  ")[:36]+" "+chr(P.RVS_ON)+chr(P.CYAN)+" ")
+		tml += '''<RVSON><CYAN><CBM-U><RVSOFF><LET _R=_I x=0><WHILE c='_I<19'><LTGREEN><HLINE><CYAN><HLINE><INC></WHILE><LTGREEN><RVSON><CBM-U>'''
+	tml += f''' <RVSOFF><WHITE> {(conn.bbs.name[:19]+" - "+ title+(" "*33)[:37]+"  ")[:36]} <RVSON><CYAN> '''
 	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
+		tml += '''<RVSON><CYAN><CBM-O><RVSOFF><LET _R=_I x=0><WHILE c='_I<19'><CRSRR><HLINE><INC></WHILE><LTGREEN><RVSON><CBM-O><RVSOFF>'''
 	else:
-		conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
-	#conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
+		tml += '''<RVSON><CYAN><CBM-U><RVSOFF><LET _R=_I x=0><WHILE c='_I<19'><LTGREEN><HLINE><CYAN><HLINE><INC></WHILE><LTGREEN><RVSON><CBM-O><RVSOFF>'''
+	conn.SendTML(tml)
 
 # Returns '[text]' prompt string in the selected style
 def KeyPrompt(text,style=default_style):
@@ -59,9 +57,15 @@ def KeyPrompt(text,style=default_style):
 def KeyLabel(conn:Connection, key, label, toggle, style=default_style):
 	c1 = style.OevenColor if toggle else style.OoddColor
 	c2 = style.TevenColor if toggle else style.ToddColor
+	tml = ''
 	if key >= '\r':
-		conn.Sendall(chr(P.PALETTE[c1])+chr(P.RVS_ON)+chr(181)+key+chr(182)+chr(P.RVS_OFF))
-	conn.Sendall(chr(P.PALETTE[c2])+P.toPETSCII(label))
+		if key == '_':		# FIXME: Workaround for PETSCII left arrow character
+			key = '<LARROW>'
+		tml += f'<INK c={c1}><RVSON><CHR c=181>{key.lower()}<CHR c=182><RVSOFF>'
+		#conn.Sendall(chr(P.PALETTE[c1])+chr(P.RVS_ON)+chr(181)+key+chr(182)+chr(P.RVS_OFF))
+	tml += f'<INK c={c2}>{label}'
+	#conn.Sendall(chr(P.PALETTE[c2])+P.toPETSCII(label))
+	conn.SendTML(tml)
 	#if key < '\r':
 	#	conn.Sendall('  ')
 	return not toggle
@@ -77,5 +81,10 @@ def RenderDialog(conn:Connection,height,title=None):
 	else:
 		conn.Sendall((' '*(40*height))+chr(P.GREY1)+(chr(162)*40)+chr(P.HOME)+chr(P.GREY3))
 	if title != None:
-		conn.Sendall(H.crop(P.toPETSCII(title),38).center(40,chr(P.HLINE))+'\r')
+		conn.Sendall(H.crop(conn.encoder.encode(title),38).center(40,chr(P.HLINE))+'\r')
 
+################################################################
+# TML tags
+t_mono = {	'MTITLE':(lambda c,t:RenderMenuTitle(c,t),[('c','_C'),('t','')]),
+	  		'KPROMPT':(KeyPrompt,[('_R','_C'),('t','RETURN')]),
+			'DIALOG':(lambda c,h,t:RenderDialog(c,h,t),[('c','_C'),('h',4),('t','')])}

@@ -32,30 +32,40 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 	S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
 	conn.Sendall(TT.disable_CRSR())
 	keys= b'\r'
+	tml = ''
 	if width != 0:
-		conn.Sendall(chr(P.RVS_ON)+' oRIGINAL SIZE: '+str(width)+'x'+str(height)+'\r\r')
-		conn.Sendall(chr(P.RVS_ON)+' sELECT:\r\r'+chr(P.RVS_ON)+' * < m > FOR MULTICOLOR CONVERSION\r')
-		conn.Sendall(chr(P.RVS_ON)+'   < h > FOR HI-RES CONVERSION\r')
+		tml += f'''<RVSON> Original size: {width}x{height}<BR><BR>
+<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; form multicolor conversion<BR>
+<RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
+		# conn.Sendall(chr(P.RVS_ON)+' oRIGINAL SIZE: '+str(width)+'x'+str(height)+'\r\r')
+		# conn.Sendall(chr(P.RVS_ON)+' sELECT:\r\r'+chr(P.RVS_ON)+' * < m > FOR MULTICOLOR CONVERSION\r')
+		# conn.Sendall(chr(P.RVS_ON)+'   < h > FOR HI-RES CONVERSION\r')
 		keys += b'HM'
 	if save:
-		conn.Sendall('\r'+chr(P.RVS_ON)+' < s > TO SAVE IMAGE\r')
+		tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
+		#conn.Sendall('\r'+chr(P.RVS_ON)+' < s > TO SAVE IMAGE\r')
 		keys += b'S'
-	conn.Sendall(chr(P.RVS_ON)+' < RETURN > TO VIEW IMAGE\r')
+	tml += '<RVSON> &lt; RETURN &gt; to view image<BR>'
+	conn.SendTML(tml)
+	#conn.Sendall(chr(P.RVS_ON)+' < RETURN > TO VIEW IMAGE\r')
 	out = 1
 	while conn.connected:
 		k = conn.ReceiveKey(keys)
 		if k == b'H' and out == 1:
-			conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(1,6)+' '+chr(P.CRSR_DOWN)+chr(P.CRSR_LEFT)+'*')
+			conn.SendTML('<RVSON><AT x=1 y=6> <CRSRD><CRSRL>*')
+			#conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(1,6)+' '+chr(P.CRSR_DOWN)+chr(P.CRSR_LEFT)+'*')
 			out = 0
 		elif k == b'M' and out == 0:
-			conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(1,7)+' '+chr(P.CRSR_UP)+chr(P.CRSR_LEFT)+'*')
+			conn.SendTML('<RVSON><AT x=1 y=7> <CRSRU><CRSRL>*')
+			# conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(1,7)+' '+chr(P.CRSR_UP)+chr(P.CRSR_LEFT)+'*')
 			out = 1
 		elif k == b'S':
 			out |= 0x80
 			break
 		elif k == b'\r':
 			break
-	conn.Sendall(chr(P.RVS_OFF)+TT.enable_CRSR())
+	conn.SendTML('<RVSON><CURSOR enable=True>')
+	#conn.Sendall(chr(P.RVS_OFF)+TT.enable_CRSR())
 	return out
 
 ###########################################################
@@ -81,6 +91,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 
 	ftitle = {6:' GIF  Image ', 7:' PNG  Image ', 8:' JPEG Image '}
 
+	fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
+	fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
+
 	# Find image format
 	Convert = [None]*5
 	bgcolor = chr(0)
@@ -105,9 +118,12 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
 			if TransferFile(conn, filename, savename):
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fok)
+				# conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 			else:
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fabort)
+				# conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+			conn.Sendall(S.KeyPrompt('RETURN'))
 			return
 		else:
 			# Open Advanced Art Studio image file
@@ -141,9 +157,12 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			savename = chr(0x81)+'PIC A '+(savename.ljust(8,' ') if len(savename)<8 else savename[:8])
 			if TransferFile(conn, filename, savename):
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fok)
+				# conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 			else:
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fabort)
+				# conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+			conn.Sendall(S.KeyPrompt('RETURN'))
 			return
 		else:
 			# Open the Koala Paint image file
@@ -175,9 +194,12 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
 			if TransferFile(conn, filename, savename):
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fok)
+				# conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 			else:
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fabort)
+				# conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+			conn.Sendall(S.KeyPrompt('RETURN'))
 			return
 		else:		# Open the Art Studio image file
 			archivo=open(filename,"rb")
@@ -204,9 +226,12 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 			savename = 'DD'+(savename if len(savename)<14 else savename[:14])
 			if TransferFile(conn, filename, savename):
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fok)
+				#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 			else:
-				conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.SendTML(fabort)
+				#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+			conn.Sendall(S.KeyPrompt('RETURN'))
 			return
 		else:		# Open the Art Studio image file
 			archivo=open(filename,"rb")
@@ -330,6 +355,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 # save: Allow file downloading to disk
 ###########################################
 def SendFile(conn:Connection,filename, dialog = False, save = False):
+	fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
+	fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
 	if os.path.exists(filename):
 		ext = os.path.splitext(filename)[1].upper()
 		if ext == '.PRG':
@@ -343,9 +370,12 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 				savename = os.path.splitext(os.path.basename(filename))[0].upper()
 				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 				if TransferFile(conn,filename, savename[:16]):
-					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+					conn.SendTML(fok)
+					#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
-					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+					conn.SendTML(fabort)
+					#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.Sendall(S.KeyPrompt('RETURN'))
 				conn.ReceiveKey()
 			return
 		elif ext in ['.SEQ','.TXT']:
@@ -367,9 +397,12 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 					savename = os.path.splitext(os.path.basename(filename))[0].upper()
 				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 				if TransferFile(conn,filename, savename[:16],True):
-					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+					conn.SendTML(fok)
+					#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
-					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+					conn.SendTML(fabort)
+					#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.Sendall(S.KeyPrompt('RETURN'))
 				conn.ReceiveKey()
 			return
 		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART']:
@@ -392,9 +425,12 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 					savename = os.path.basename(filename).upper()
 				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 				if TransferFile(conn,filename,savename[:16]):
-					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
+					conn.SendTML(fok)
+					#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.GREEN)+'fILE TRANSFER SUCCESSFUL!\r'+S.KeyPrompt('RETURN'))
 				else:
-					conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+					conn.SendTML(fabort)
+					#conn.Sendall(chr(P.CLEAR)+chr(P.TOLOWER)+chr(P.ORANGE)+'fILE TRANSFER ABORTED!\r'+S.KeyPrompt('RETURN'))
+				conn.Sendall(S.KeyPrompt('RETURN'))
 				conn.ReceiveKey()
 	...
 
@@ -527,22 +563,21 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 ###################################################################################################
 def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfer to memory',save=False):
 	S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
-	conn.Sendall(TT.set_CRSR(0,2))
+	tml = '<AT x=0 y=2>'
 	keys = b'_\r'
 	if filetype != None:
-		conn.Sendall(chr(P.RVS_ON)+' fILE: '+H.crop(P.toPETSCII(filename),32)+'\r')
+		tml += f'<RVSON> File: {H.crop(filename,32)}<BR>'
 	if size > 0:
-		conn.Sendall(chr(P.RVS_ON)+' sIZE: '+str(size)+'\r\r')
+		tml += f'<RVSON> Size: {size}<BR><BR>'
 	else:
-		conn.Sendall('\r')
+		tml += '<BR>'
 	if save:
-		conn.Sendall(chr(P.RVS_ON)+' pRESS <s> TO SAVE TO DISK, OR\r'+chr(P.RVS_ON))
+		tml += '<RVSON> Press &lt;S&gt; to save to disk, or<BR><RVSON>'
 		keys += b'S'
 	else:
-		conn.Sendall(chr(P.RVS_ON)+' pRESS')
-	conn.Sendall(' <return> TO '+P.toPETSCII(prompt)[:26]+'\r')
-	conn.Sendall(chr(P.RVS_ON)+' <_> to cancel')
-
+		tml += '<RVSON> Press'
+	tml += f' &lt;RETURN&gt; to {prompt[:26]}<BR><RVSON> &lt;<LARROW>&gt; to cancel'
+	conn.SendTML(tml)
 	rc = conn.ReceiveKey(keys)
 	return keys.index(rc)
 
@@ -556,9 +591,9 @@ def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfe
 def SendRAWFile(conn:Connection,filename, wait=True):
     _LOG('Sending RAW file: ', filename, id=conn.id,v=3)
 
-    archivo=open(filename,"rb")
-    binario=archivo.read()
-    conn.Sendallbin(binario)
+    with open(filename,'rb') as rf:
+        binary=rf.read()
+        conn.Sendallbin(binary)
 
     # Wait for the user to press RETURN
     if wait == True:
@@ -569,14 +604,14 @@ def SendRAWFile(conn:Connection,filename, wait=True):
 # Sends a text or sequential file
 ##############################################################
 def SendText(conn:Connection, filename, title='', lines=25):
-    colors = (P.BLACK,P.WHITE,P.RED,P.PURPLE,P.CYAN,P.GREEN,P.BLUE,P.YELLOW,P.BROWN,P.PINK,P.ORANGE,P.GREY1,P.GREY2,P.LT_BLUE,P.LT_GREEN,P.GREY3)
     if title != '':
         S.RenderMenuTitle(conn, title)
         l = 22
         conn.Sendall(TT.set_Window(3,24))
     else:
         l = lines
-        conn.Sendall(chr(P.CLEAR))
+        conn.SendTML('<CLR>')
+        #conn.Sendall(chr(P.CLEAR))
 
     if filename.endswith(('.txt','.TXT')):
         #Convert plain text to PETSCII and display with More
@@ -599,7 +634,6 @@ def SendText(conn:Connection, filename, title='', lines=25):
 # Send C formatted C64 screens
 ########################################################### 
 def SendCPetscii(conn:Connection,filename,pause=0):
-    print("<<<<<<<<<<<<<<")
     try:
         fi = open(filename,'r')
     except:
@@ -611,7 +645,6 @@ def SendCPetscii(conn:Connection,filename,pause=0):
     else:
         cs = P.TOLOWER
     frames = text.split('unsigned char frame')
-    print(frames)
     for f in frames:
         if f == '':
             continue
@@ -628,7 +661,6 @@ def SendCPetscii(conn:Connection,filename,pause=0):
                 if c.isnumeric():
                     binary += int(c).to_bytes(1,'big')
                     i += 1
-        print(i)
         binary+= b'\x81\x20\x82\xe8\x03'
         i = 0
         for line in fl[26:52]:
@@ -636,7 +668,6 @@ def SendCPetscii(conn:Connection,filename,pause=0):
                 if c.isnumeric():
                     binary += int(c).to_bytes(1,'big')
                     i+=1
-        print(i)
         binary+= b'\xfe'
         conn.Sendallbin(binary)
         conn.Sendall(chr(cs))
@@ -670,3 +701,7 @@ def SendPETPetscii(conn:Connection,filename):
         conn.Sendall(chr(P.TOLOWER))
     #time.sleep(5)
     return 0
+
+################################################################
+# TML tags
+t_mono = {	'SENDRAW':(lambda c,fn:SendRAWFile(c,fn,False),[('c','_C'),('fn','')])}
