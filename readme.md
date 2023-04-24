@@ -110,6 +110,8 @@ __New features__:
  - Added Python based internal SIDdump implementation used as fallback if neither _SIDdump_ or _SIDdumpHR_ are present.
  - Added GRABFRAME internal function.
  - Added `lines` and `busy` parameters to the configuration file 
+ - Added `encoders` directory. Encoder modules provide encoding/decoding functions for different platforms. 
+ - Introducing TML markup/scripting language, moving towards an encoding agnostic BBS. Some functions now expect parameters in this format.
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -133,6 +135,7 @@ __Changes/Bug fixes__:
  - When all the slots are in use will now correctly close any further incoming connections.
  - *Weather* and *Maps* plugins use Photom instead of Nominatim as geocoder.
  - Fixed creash when the geocoder didnt respond in time in the *Weather* plugin
+ - Extensive rewrite and cleanup, TML scripting integration.
 
 ---
 # 1.2 The *Turbo56K* protocol

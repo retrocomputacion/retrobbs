@@ -10,11 +10,8 @@ import re
 from queue import Queue
 import threading
 
-import common.petscii as P
-import common.turbo56k as TT
 from common.bbsdebug import _LOG,bcolors
 import common.connection
-import common.filetools as FT
 from common.helpers import formatX
 from common.style import KeyPrompt
 import common.audio as AA
@@ -92,13 +89,10 @@ def setup():
 
 #Send Audio file
 def plugFunction(conn:common.connection.Connection,url):
-    time.sleep(1)
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
-
-    bnoise = b'\x10\x01'
-
-    conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+    bnoise = b'\x10\x01\x11'
+    conn.SendTML('<PAUSE n=1><CBM-B><CRSRL>')
 
     #Streaming mode
     binario = b'\xFF\x83'
@@ -154,23 +148,17 @@ def plugFunction(conn:common.connection.Connection,url):
             return
 
     #Display info
-    #FT.SendBitmap(conn,logo,9,False,False,False)
-    #conn.Sendall(TT.split_Screen(9,False,0,0))
-    conn.Sendall(TT.to_Text(0,6,6)+chr(P.CLEAR)+chr(P.YELLOW))
+    conn.SendTML('<TEXT border=6 background=6><CLR><YELLOW>')
     for l in sTitle:
-        conn.Sendall(l)
-        if len(l)<40:
-            conn.Sendall('\r')
-    conn.Sendall('\r\rpRESS '+KeyPrompt('return')+chr(P.YELLOW)+' TO START\r')
-    conn.Sendall('\rpRESS '+KeyPrompt('x')+chr(P.YELLOW)+' TO STOP/CANCEL\r')
+        conn.SendTML(l)
+    conn.SendTML(f'<BR><BR>Press {KeyPrompt("RETURN",TML=True)}<YELLOW> to start<BR>'
+                 f'<BR>Press {KeyPrompt("X",TML=True)}<YELLOW> to stop/cancel<BR>')
 
     if conn.ReceiveKey(b'\rX') == b'X':
         return
-    #conn.Sendall(TT.split_Screen(0,False,0,0)+chr(P.CLEAR))
 
-    conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+    conn.SendTML('<CBM-B><CRSRL>')
 
-    #pcm_stream = AA.PcmStream(sURL,conn.samplerate)
     pcm_stream = AStreams.new(sURL,conn.samplerate, conn.id)
 
     t0 = time.time()
@@ -179,7 +167,6 @@ def plugFunction(conn:common.connection.Connection,url):
 
     while streaming == True:
         t1 = time.time()
-        #audio = pcm_stream.read(CHUNK)
         try:
             audio = pcm_stream.get(True, 15)
         except:
@@ -190,15 +177,13 @@ def plugFunction(conn:common.connection.Connection,url):
         a_len = len(audio)
         for b in range(0,a_len,2):
             lnibble = int(audio[b])
-            #if lnibble == 0:
-            #    lnibble = 1
             if b+1 <= a_len:
                 hnibble = int(audio[b+1])
             else:
                 hnibble = 0
             binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
-            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
+            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,2)].to_bytes(1,'little'), binario))
             sys.stderr.flush()
             #Check for terminal cancelation
             conn.socket.setblocking(0)	# Change socket to non-blocking

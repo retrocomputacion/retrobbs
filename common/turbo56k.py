@@ -168,7 +168,7 @@ t_mono = {'SETOUTPUT':(lambda o: to_Screen() if o else to_Speech(),[('_R','_C'),
           'LFILL':(Fill_Line,[('_R','_C'),('row',0),('code',0)]),
           'CURSOR':(lambda enable: enable_CRSR() if enable else disable_CRSR(),[('_R','_C'),('enable',True)]),
           'WINDOW':(set_Window,[('_R','_C'),('top',0),('bottom',24)]),
-          'SPLIT':(split_Screen,[('_R','_C'),('line',0),('multi',False),('bgtop',0),('bgbottom',0)]),
+          'SPLIT':(split_Screen,[('_R','_C'),('row',0),('multi',False),('bgtop',0),('bgbottom',0)]),
           'SCROLL':(scroll,[('_R','_C'),('rows',0)]),
           'AT':(set_CRSR,[('_R','_C'),('x',0),('y',0)]),
           }

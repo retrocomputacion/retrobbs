@@ -1,5 +1,6 @@
 import unicodedata
 import re
+from common.classes import Encoder
 
 #PETSCII constants
 
@@ -70,6 +71,8 @@ BOTTOM_HASH = 0xA8
 COMM_B = 0xBF
 COMM_U = 0xB8
 COMM_O = 0xB9
+COMM_J = 0xB5
+COMM_L = 0xB6
 CHECKMARK = 0xBA
 
 PALETTE = (BLACK,WHITE,RED,CYAN,PURPLE,GREEN,BLUE,YELLOW,ORANGE,BROWN,PINK,GREY1,GREY2,LT_GREEN,LT_BLUE,GREY3)
@@ -85,7 +88,7 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
 			'INK':(lambda x:chr(PALETTE[x]),[('_R','_C'),('c',0)])}}
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
 			'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'HASH':chr(HASH),'CHECKMARK':chr(CHECKMARK),
-            'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B)}}
+            'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L)}}
 
 # Multiple replace
 # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
@@ -112,4 +115,12 @@ def toASCII(text):
 
 # Register with the encoder module
 def _Register():
-    return [{'name':'PET64','tml_mono':t_mono['PET64'],'tml_multi':t_multi['PET64'],'encode':toPETSCII,'decode':toASCII}]
+    e = Encoder('PET64')
+    e.tml_mono  = t_mono['PET64']
+    e.tml_multi = t_multi['PET64']
+    e.encode = toPETSCII
+    e.decode = toASCII
+    e.palette = PALETTE
+    e.non_printable = NONPRINTABLE
+    e.nl = '\r' # New line string
+    return [e]  #Each encoder module can return more than one encoder object. For example here it could return PET128 also.

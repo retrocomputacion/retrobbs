@@ -13,10 +13,8 @@ from common.bbsdebug import _LOG,bcolors
 import common.helpers as H
 import common.style as S
 from common.connection import Connection
-import common.petscii as P
 import common.turbo56k as TT
-import common.filetools as FT
-from common.style import bbsstyle, default_style, RenderMenuTitle, KeyLabel
+from common.style import RenderMenuTitle, KeyLabel
 
 
 import audioread
@@ -119,7 +117,6 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 		bname = os.path.splitext(os.path.basename(audios[x]))[0]
 		KeyLabel(conn, H.valid_keys[x-start],(bname)[:30]+' ', x % 2)
 		tml = f'<AT x=34 y={row}><CBM-B><CRSRL>'
-		print(tml)
 		if (wavs == True) and (audios[x].lower().endswith(wext)):   #PCM file
 			conn.SendTML(tml)
 			tsecs = _GetPCMLength(path+audios[x])
@@ -147,9 +144,8 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 	conn.SendTML(f' <GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
                 f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
 	conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
-	time.sleep(1)
 	# Selects screen output
-	conn.Sendall(chr(255) + chr(160))
+	conn.SendTML('<PAUSE n=1><SETOUPUT>')
 	return MenuDic
 
 #########################################
@@ -160,23 +156,15 @@ def _AudioDialog(conn:Connection, data):
 	tml = ''
 	if data['album'] != '':
 		tml += f'<RVSON> Album:<BR><RVSON> {data["album"]}<BR><BR>'
-		#conn.Sendall(chr(P.RVS_ON)+' aLBUM:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['album'])+'\r\r')
 	if data['artist'] != '':
 		tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
-		#conn.Sendall(chr(P.RVS_ON)+' aRTIST:\r'+chr(P.RVS_ON)+' '+P.toPETSCII(data['artist'])+'\r\r')
 	tml += f'''<RVSON> Length: {data['length']}<BR><BR>
 <RVSON> From {data['sr']} to {conn.samplerate}Hz
 <AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
 <RVSON> Press &lt;x&gt; and wait to stop<BR>
 <RVSON> Press &lt;<LARROW>&gt; to cancel'''
-	#conn.Sendall(chr(P.RVS_ON)+' lENGTH: '+data['length']+'\r\r')
-	#conn.Sendall(chr(P.RVS_ON)+' fROM '+data['sr']+' TO '+str(conn.samplerate)+'hZ')
-	#conn.Sendall(TT.set_CRSR(0,12)+' pRESS <return> TO PLAY\r')
-	#conn.Sendall(chr(P.RVS_ON)+' pRESS <X> AND WAIT TO STOP\r')
-	#conn.Sendall(chr(P.RVS_ON)+' pRESS <_> TO CANCEL')
 	conn.SendTML(tml)
 	if conn.ReceiveKey(b'\r_') == b'_':
-		#conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 		conn.SendTML('<CBM-B><CRSRL>')
 		return False
 	return True
@@ -239,7 +227,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 			return()
 		if not conn.connected:
 			return()
-		conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+		conn.SendTML('<CBM-B><CRSRL>')
 
 
 	#Streaming mode
@@ -311,7 +299,6 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 	_LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
 	conn.Sendallbin(binario)
 	time.sleep(1)
-	#conn.Sendall(chr(P.DELETE))
 	conn.socket.settimeout(conn.bbs.TOut)
 
 #########################################    
@@ -322,7 +309,7 @@ class PcmStream:
 	def __init__(self, fn, sr):
 		# self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
 		#                 stdout=subprocess.PIPE, preexec_fn=os.setsid)
-		self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1"],
+		self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
 						stdout=subprocess.PIPE, preexec_fn=os.setsid)
 
 	def read(self, size):
@@ -383,17 +370,10 @@ def _DisplayCHIPInfo(conn:Connection, info):
 <RVSON> Artist: {H.crop(info['artist'],29)}<BR>
 <RVSON> Copyright: {H.crop(info['copyright'],27)}<BR>
 <RVSON> Playtime: {minutes:0>2}:{seconds:0>2}<BR>'''
-		# conn.Sendall(chr(P.RVS_ON)+' tITLE: '+H.formatX(info['title'])[0][0:30]+'\r')
-		# conn.Sendall(chr(P.RVS_ON)+' aRTIST: '+H.formatX(info['artist'])[0][0:29]+'\r')
-		# conn.Sendall(chr(P.RVS_ON)+' cOPYRIGHT: '+H.formatX(info['copyright'])[0][0:27]+'\r')
-		# conn.Sendall(chr(P.RVS_ON)+' pLAYTIME: '+ str(minutes).zfill(2)+':'+str(seconds).zfill(2)+'\r')
 		if info['subsongs'] > 1:    #Subtune
 			tml += f'<RVSON><CRSRD> Subtune: <GREY2>&lt;<WHITE><RVSOFF>{subtune:0>2}<RVSON><GREY2>&gt;<GREY3><BR>'
-			#conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+' sUBTUNE: '+chr(P.GREY2)+'<'+chr(P.WHITE)+chr(P.RVS_OFF)+str(subtune).zfill(2)+chr(P.RVS_ON)+chr(P.GREY2)+'>'+chr(P.GREY3)+'\r')
 		tml += '<RVSON><CRSRD> Press <LARROW> to exit<BR><RVSON> RETURN to play<BR><RVSON> Any key to stop<RVSOFF><CURSOR enable=False>'
 		conn.SendTML(tml)
-		#conn.Sendall(chr(P.RVS_ON)+chr(P.CRSR_DOWN)+" pRESS _ TO EXIT\r"+chr(P.RVS_ON)+" return TO PLAY\r"+chr(P.RVS_ON)+" aNY KEY TO STOP"+chr(P.RVS_OFF))
-		#conn.Sendall(TT.disable_CRSR())
 		while True and conn.connected:
 			k = conn.ReceiveKey(b'<>_\r')
 			if k == b'_':
@@ -404,23 +384,16 @@ def _DisplayCHIPInfo(conn:Connection, info):
 			elif k == b'<' and subtune > 1:
 				subtune -= 1
 				minutes, seconds = calctime()
-				conn.SendTML(f'<RVSOFF><AT x=11 y=7><WHITE>{subtune:0>2}<RVSON><AT x=11 y=5><GREY3>{minutes:0>2}:{seconds:0>2}')
-				# conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,7)+chr(P.WHITE)+str(subtune).zfill(2))
-				# conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,5)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
+				conn.SendTML(f'<RVSOFF><AT x=11 y=6><WHITE>{subtune:0>2}<RVSON><AT x=11 y=4><GREY3>{minutes:0>2}:{seconds:0>2}')
 			elif k == b'>' and subtune < info['subsongs']:
 				subtune += 1
 				minutes, seconds = calctime()
-				conn.SendTML(f'<RVSOFF><AT x=11 y=7><WHITE>{subtune:0>2}<RVSON><AT x=11 y=5><GREY3>{minutes:0>2}:{seconds:0>2}')
-				# conn.Sendall(chr(P.RVS_OFF)+TT.set_CRSR(11,7)+chr(P.WHITE)+str(subtune).zfill(2))
-				# conn.Sendall(chr(P.RVS_ON)+TT.set_CRSR(11,5)+chr(P.GREY3)+str(minutes).zfill(2)+':'+str(seconds).zfill(2))
+				conn.SendTML(f'<RVSOFF><AT x=11 y=6><WHITE>{subtune:0>2}<RVSON><AT x=11 y=4><GREY3>{minutes:0>2}:{seconds:0>2}')
 	else:   #.MUS file
 		subtune = 1
-		#conn.Sendall(chr(P.CLEAR)+chr(P.ENABLE_CBMSHIFT)+chr(P.TOUPPER))
 		conn.SendTML('<CLR><CBMSHIFT-E><UPPER>')
 		conn.Sendallbin(info)
 		conn.SendTML('<YELLOW><BR>press return to play<BR><LARROW> to exit<BR>any key to stop<CURSOR enable=False>')
-		#conn.Sendall(chr(P.YELLOW)+'\rPRESS RETURN TO PLAY\r_ TO EXIT\rANY KEY TO STOP')
-		#conn.Sendall(TT.disable_CRSR())
 		if conn.ReceiveKey(b'_\r') == b'_':
 			subtune = -1
 	conn.SendTML('<CURSOR enable=True>')
@@ -561,7 +534,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 		while subtune > 0:
 			if dialog == True:
 				subtune = _DisplayCHIPInfo(conn, info)
-			conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+			conn.SendTML('<CBM-B><CRSRL>')
 			if player != "" and subtune > 0:
 				_LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
 				if ext.lower() == '.sid':

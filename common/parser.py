@@ -4,14 +4,12 @@ import re
 from html import unescape
 from html.entities import name2codepoint
 from collections import deque
-import common.petscii as P
-import common.turbo56k as TT
+import encoders.petscii as P
 import common.extensions as EX
 from common.bbsdebug import _LOG
 #from common.connection import Connection
-#from common.style import RenderMenuTitle
 import time
-
+from random import randrange
 
 # Internal registers:
 #
@@ -48,9 +46,12 @@ t_registers = ['_a','_c','_b','_r','_s','_i']
 t_statements = {'mode':[('m','PET64')],'switch':[('r','_A')],'case':[('c',False)],'while':[('c',False)],'if':[('c',False)]}
 
 t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
+	      		'RND':(lambda s,e:randrange(s,e),[('_R','_I'),('s',0),('e',10)]),
 				'INKEYS':(lambda k:k,[('_R','_A'),('k','\n',False)]),
+				'USER':(lambda u:u[('_R','_C')]),
 				'LET':(lambda x:x,[('_R','_I'),('x','_I')]),'OUT':(lambda x:x,[('_R','_C'),('x','_I')]),
 				'INC':(lambda x:x+1,[('_R','_I'),('x','_I')]),'DEC':(lambda x:x-1,[('_R','_I'),('x','_I')]),
+				'LEN':(lambda x:len(x),[('_R','_I'),('x','_S')]),
 				'BELL':chr(7),'CHR':(lambda c:chr(c),[('_R','_C'),('c',0)])}
 t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
@@ -72,8 +73,9 @@ class TMLParser(HTMLParser):
 		##### Build dictionaries
 		self.t_mono = t_gen_mono.copy()
 		###
-		self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])						# Update OUT command
+		self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])								# Update OUT command
 		self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(bytes(k,'latin1')),[('_R','_A'),('k','\r',False)])	# Update INKEYS command
+		self.t_mono['USER'] = (lambda: self.conn.username,[('_R','_S')])											# Update USER command
 		###
 		self.t_mono.update(EX.t_mono)			# Plugins and Extensions functions
 		self.t_mono.update(conn.encoder.tml_mono)	# Encoder definitions
@@ -92,6 +94,7 @@ class TMLParser(HTMLParser):
 		self._I = 0
 		self._R = None
 		###############
+		self.color = 0	# Last color index from color o ink tags 
 		HTMLParser.__init__(self)
 	
 	def close(self) -> None:
@@ -390,7 +393,11 @@ class TMLParser(HTMLParser):
 			if tag in self.t_mono:
 				if isinstance(self.t_mono[tag],str):
 					#print(self.t_mono[tag], flush=True, end='')
-					self.conn.Sendall(self.t_mono[tag])
+					c = self.t_mono[tag]
+					i = self.conn.encoder.color_index(ord(c))	#Check if last tag was a color control code
+					if i >= 0:
+						self.color = i
+					self.conn.Sendall(c)
 				else:
 					func = self.t_mono[tag][0]
 					ret = None
@@ -414,10 +421,13 @@ class TMLParser(HTMLParser):
 						self.conn.Sendall(self._R)
 					elif ret == '_B':
 						self.conn.Sendallbin(self._R)
+					if tag == 'ink':	#Handle ink color change
+						self.color = parms[0]
 			elif tag in self.t_multi:
 				n = self._evalParameter(attr.get('n','1'),1)
+				c= self.t_multi[tag]
 				for i in range(n):
-					self.conn.Sendall(self.t_multi[tag])
+					self.conn.Sendall(c)
 			else:
 				_LOG('TML Parser: Invalid tag: '+tag.upper(), id=self.conn.id,v=2)
 
@@ -483,50 +493,3 @@ class TMLParser(HTMLParser):
 	
 	def set_A(self,data):
 		self._A = data
-
-# parser = TMLParser('PET64')
-
-# x = 2
-
-# parser.process(f'<MODE m=PET64><CLR>Da&ta<POUND n={x}><PAUSE n=2> S <WHILE c="_I>-2" >newline<DEC></WHILE><VLINE></MODE>Outside')
-
-
-
-# parser.close()
-# print()
-
-# x = 20
-
-# parser.process(f"""
-# <MODE m=PET64>
-# 	<BLUE>SeCOND<HLINE n={x}>
-# 	<LET _R=_I x=0>
-# 	<PAUSE n=2+_I>newline
-# 	<LET _R=_I x=5>
-# 	<OUT x=_I>
-# 	<POUND n=_I>
-# 	<SWITCH r=_I>
-# 		<CASE c=5>
-# 			cInCo
-# 			<LET _R=_I x=0>
-# 			<WHILE c="_I<{x}">
-# 				HEY! MACARENA 
-# 				<INC _R=_I>
-# 			</WHILE>
-# 		</CASE>
-# 		hola
-# 		<CASE c=4>
-# 			cuatro
-# 		</CASE>
-# 	</SWITCH>
-# 	<INKEYS>
-# 	Result:
-# 	<OUT x=_A>
-# 	<IF c="_A=='G'">
-# 		VERDADERO
-# 	</IF>
-# 	<AT x=23 y=30/3>
-# </MODE>""")
-
-# parser.close()
-# print()

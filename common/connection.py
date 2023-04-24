@@ -9,7 +9,6 @@
 import socket
 from common.bbsdebug import _LOG, bcolors
 import datetime
-import common.petscii as P
 import common.turbo56k as TT
 from common.classes import BBS
 import time
@@ -311,7 +310,7 @@ class Connection:
 		return(int(''.join(tval)))
 
 	# Receive a date, format taken from bbs instance
-	# prompt: Text prompt
+	# prompt: TML prompt
 	# mindate: Earliest date possible
 	# maxdate: Latest date possible
 	# defdate: Default date
@@ -339,7 +338,7 @@ class Connection:
 			datestr = "%d/%m/%Y"
 			dout = "dd/mm/yyyy"
 		while True:
-			self.Sendall(prompt+dout+chr(P.CRSR_LEFT)*10)
+			self.SendTML(prompt+dout+'<CRSRL n=10>')
 			x = 0
 			while True:
 				if x == dord[0]: #0
@@ -348,34 +347,34 @@ class Connection:
 						return
 					if day == None:
 						if x > 0:
-							self.Sendall(chr(P.CRSR_LEFT)*dleft[0])
+							self.SendTML(f'<CRSRL n={dleft[0]}>')
 							x -= 1
 						continue
 					if x < 2:
 						x += 1
-						self.Sendall(chr(P.CRSR_RIGHT))
+						self.SendTML('<CRSRR>')
 					else:
 						if self.ReceiveKey(b'\x14\r') == b'\r':
 							break
 						else:
-							self.Sendall(chr(P.DELETE)*2)
+							self.SendTML('<DEL n=2>')
 				if x == dord[1]: #1
 					month = self.ReceiveInt(1,12,defdate.month,True)
 					if not self.connected:
 						return
 					if month == None:
 						if x > 0:
-							self.Sendall(chr(P.CRSR_LEFT)*dleft[1])
+							self.SendTML(f'<CRSRL n={dleft[1]}>')
 							x -= 1
 						continue
 					if x < 2:
 						x += 1
-						self.Sendall(chr(P.CRSR_RIGHT))
+						self.SendTML('<CRSRR>')
 					else:
 						if self.ReceiveKey(b'\x14\r') == b'\r':
 							break
 						else:
-							self.Sendall(chr(P.DELETE)*2)
+							self.SendTML('<DEL n=2>')
 				if x == dord[2]: #2
 					year = self.ReceiveInt(mindate.year,maxdate.year,defdate.year,True)
 					if not self.connected:
@@ -383,24 +382,24 @@ class Connection:
 					if year == None:
 						if x > 0:
 							x -= 1
-							self.Sendall(chr(P.CRSR_LEFT)*dleft[2])
+							self.SendTML(f'<CRSRL n={dleft[2]}>')
 						continue
 					if x < 2:
 						x += 1
-						self.Sendall(chr(P.CRSR_RIGHT))
+						self.SendTML('<CRSRR>')
 					else:
 						if self.ReceiveKey(b'\x14\r') == b'\r':
 							break
 						else:
-							self.Sendall(chr(P.DELETE)*4)
+							self.SendTML('<DEL n=4>')
 			try:
 				odate = datetime.date(year,month,day)
 				if mindate <= odate <= maxdate:
 					break;
 				else:
-					self.Sendall("\riNVALID DATE!\r")
+					self.SendTML("<BR>Invalid date!<BR>")
 			except ValueError:
-				self.Sendall("\riNVALID DATE!\r")
+				self.SendTML("<BR>Invalid date!<BR>")
 		return odate
     
 

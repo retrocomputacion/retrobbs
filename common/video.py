@@ -7,22 +7,18 @@ from PIL import Image
 import common.filetools as FT
 from random import randrange
 from common.bbsdebug import _LOG,bcolors
-import common.petscii as P
-import common.turbo56k as TT
 from common.connection import Connection
 
 def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 
-	conn.Sendall(chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
+	conn.SendTML('<YELLOW><CBM-B><CRSRL>')
 	loop = True
-	#if crop != None:
-	#	crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 	try:
 		capture = cv2.VideoCapture()
 		capture.open(path)
 	except:
 		_LOG(bcolors.WARNING+"Error video file not found"+bcolors.ENDC,id=conn.id,v=1)
-		conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+		conn.SendTML('...ERROR<CURSOR>')
 		return()
 	if length == None:
 		fps = capture.get(cv2.CAP_PROP_FPS)      # OpenCV v2.x used "CV_CAP_PROP_FPS"
@@ -53,7 +49,7 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 		except Exception as e:
 			print(e)
 			_LOG(bcolors.WARNING+"Error grabbing video frame"+bcolors.ENDC,id=conn.id,v=1)
-			conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+			conn.SendTML('...ERROR<CURSOR>') #Enable cursor
 			capture.release()
 			cv2.destroyAllWindows()
 			return()
@@ -68,12 +64,12 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 			if tecla == b'_' or tecla == b'':
 				loop = False
 		else:
-			conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+			conn.SendTML('...ERROR<CURSOR>') #Enable cursor
 			loop = False
 			#return()
 	capture.release()
 	cv2.destroyAllWindows()
-	conn.Sendall(chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+	conn.SendTML('<CURSOR>') #Enable cursor
 	return(1)
 
 

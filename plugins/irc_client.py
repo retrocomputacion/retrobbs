@@ -10,8 +10,6 @@ import common.style as S
 from common.connection import Connection
 import common.petscii as P
 import common.turbo56k as TT
-import common.filetools as FT
-from jaraco.stream import buffer
 
 
 #############################
@@ -27,6 +25,9 @@ def setup():
 #Plugin callable function
 def plugFunction(conn:Connection,server,port,channel):
 
+    _dec = conn.encoder.decode
+    _enc = conn.encoder.encode
+
     running = False
 
     kfilter = P.NONPRINTABLE.copy()
@@ -40,40 +41,34 @@ def plugFunction(conn:Connection,server,port,channel):
     curcolumn = 0
     curline = 0
 
-    # Send petscii text to the chat window
+    # Send TML or PETSCII list to the chat window
     def printchat(text):
-        conn.Sendall(chr(0)*2+TT.set_Window(3,21)+TT.set_CRSR(0,18))
+        conn.SendTML('<NUL n=2><WINDOW top=3 bottom=21><AT x=0 y=18>')
         if isinstance(text,list):
             for t in text:
-                conn.Sendall(t)
-                tt = t.translate({ord(c):None for c in P.NONPRINTABLE})#Catches color codes
-                if len(tt)<40 and t[-1]!='\r':
-                    conn.Sendall('\r')
+                conn.SendTML(t)
         else:
-            conn.Sendall(text)
-        #conn.Sendall(TT.set_Window(23,24)+TT.set_CRSR(curcolumn,curline)+chr(P.GREY3))
+            conn.SendTML(text)
         conn.SendTML(f'<WINDOW top=23 bottom=24><AT x={curcolumn} y={curline}><GREY3>')
 
     def on_currenttopic(c, event):
         txt = H.formatX('['+event.arguments[0]+'] Topic is: '+event.arguments[1])
-        txt[0] = chr(P.CYAN)+txt[0]
+        txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
 
     def on_topic(c, event):
         txt = H.formatX('['+channel+'] Topic changed to: '+event.arguments[0]+'\r')
-        txt[0] = chr(P.CYAN)+txt[0]
+        txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
 
 
     def on_nicknameinuse(c, e):
         nonlocal nickname
-        printchat(chr(P.CYAN)+nickname+' IN USE\rtRYING '+nickname+'-\r')
+        printchat(f'<CYAN>{nickname} in use<BR>Trying {nickname}-<BR>')
         nickname += '-'
-        c.nick(conn.encoder.decode(nickname))      #(P.toASCII(nickname))
-        conn.SendTML(f'<GREEN><LFILL row=22 code=64><WINDOW top=22 bottom=22><RVSON><CRSRR>{conn.encoder.decode(nickname)}'
+        c.nick(nickname)
+        conn.SendTML(f'<GREEN><LFILL row=22 code=64><WINDOW top=22 bottom=22><RVSON><CRSRR>{nickname}'
                      f'<GREY3><WINDOW top=23 bottom=24><RVSOFF>')
-        # conn.Sendall(chr(P.GREEN)+TT.Fill_Line(22,64)+TT.set_Window(22,22)+chr(P.RVS_ON)+chr(P.CRSR_RIGHT)+nickname)
-        # conn.Sendall(chr(P.GREY3)+TT.set_Window(23,24)+chr(P.RVS_OFF))
 
     def on_pubmsg(connection, event):
         user = event.source
@@ -82,7 +77,7 @@ def plugFunction(conn:Connection,server,port,channel):
         elif '@' in user:
             user = user[0:user.index('@')]
         txt = H.formatX(user+': '+event.arguments[0])
-        txt[0]= chr(P.LT_BLUE)+txt[0][0:len(user)+1]+chr(P.GREY2)+txt[0][len(user)+2:]
+        txt[0]= f'<LTBLUE>{txt[0][0:len(user)+1]}<GREY2>{txt[0][len(user)+2:]}'
         printchat(txt)
 
     def on_action(connection, event):
@@ -92,56 +87,60 @@ def plugFunction(conn:Connection,server,port,channel):
         elif '@' in user:
             user = user[0:user.index('@')]
         txt = H.formatX('* '+user+' '+event.arguments[0])
-        txt[0]= chr(P.ORANGE)+txt[0][0:len(user)+2]+chr(P.GREY3)+txt[0][len(user)+2:]
+        txt[0]= f'<ORANGE>{txt[0][0:len(user)+2]}<GREY3>{txt[0][len(user)+2:]}'
         printchat(txt)
 
     def on_privmsg(connection, event):
-        print(event)
+        _LOG(event,id=conn.id,v=4)
     
     def on_privnotice(connection, event):
-        txt = H.formatX(chr(P.ORANGE)+P.toPETSCII(event.arguments[0]),convert=False)
+        txt = H.formatX(event.arguments[0])
+        txt[0] = '<ORANGE>'+txt[0]
         printchat(txt)
 
     def on_pubnotice(connection, event):
-        txt = H.formatX(chr(P.YELLOW)+'>'+P.toPETSCII(event.target)+'<'+P.toPETSCII(event.arguments[0]),convert=False)
+        txt = H.formatX('>'+_enc(event.target)+'<'+_enc(event.arguments[0]))
+        txt[0] = '<YELLOW>'+txt[0]
         for x in range(len(txt)):
-            txt[x] = chr(P.RVS_ON)+txt[x]
+            txt[x] = '<RVSON>'+txt[x]
         printchat(txt)
 
     def on_connect(connection, event):
-        printchat(chr(P.CYAN)+'cONNECTED TO: '+P.toPETSCII(server)+'\r')
+        printchat(f'<CYAN>Connected to: {server}<BR>')
         txt = H.formatX(event.arguments[0])
-        txt[0] = chr(P.CYAN)+txt[0]
+        txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
         if irc.client.is_channel(channel):
             connection.join(channel)
         #main_loop(connection)
 
     def on_names(connection, event):
-        text = H.formatX(chr(P.CYAN)+'uSERS IN '+P.toPETSCII(channel)+': '+chr(P.GREEN)+P.toPETSCII(event.arguments[2]),convert=False)
+        text = H.formatX('Users in '+channel+': '+event.arguments[2])
+        text[0] = '<CYAN>'+text[0]
+        for i in range(len(text)):
+            if ((x:=text[i].find(':'))!=-1):
+                text[i] = text[i][:x+1]+'<GREEN>'+text[i][x+1:]
         printchat(text)
 
     def on_join(connection, event):
         nonlocal running
 
-        user = P.toPETSCII((event.source.nick if event.source.nick != nickname else '')+' ')
-        printchat(chr(P.CYAN)+user+'jOINED '+P.toPETSCII(event.target)+'\r')
+        user = (event.source.nick if event.source.nick != nickname else '')+' '
+        printchat(f'<CYAN>{user}Joined {event.target}<BR>')
         running = True
 
     def on_part(connection, event):
-        print(event)
-
-        user = P.toPETSCII((event.source.nick if event.source.nick != nickname else '')+' ')
+        user = (event.source.nick if event.source.nick != nickname else '')+' '
         if len(event.arguments) != 0:
-            msg = ' ('+P.toPETSCII(event.arguments[0])+')'
+            msg = f' ({event.arguments[0]})'
         else:
             msg = ''
-        printchat(chr(P.CYAN)+user+'lEFT '+P.toPETSCII(event.target)+msg+'\r')
+        printchat(f'<CYAN>{user}left {event.target}{msg}<BR>')
 
     def on_disconnect(connection, event):
         nonlocal running
 
-        printchat(chr(P.YELLOW)+'dISCONNECTED...\r')
+        printchat('<YELLOW>Disconnected...<BR>')
         conn.socket.setblocking(1)
         conn.socket.settimeout(60*5)
         time.sleep(2)
@@ -155,7 +154,7 @@ def plugFunction(conn:Connection,server,port,channel):
             hstring = """----------------------------------------
 Accepted commands:
     /help - This text
-    <Left Arrow> - Exit chat
+    _ - Exit chat
     /quit - Exit chat
     /nick nickname - Change nickname
     /join channel - Join channel 
@@ -164,7 +163,10 @@ Accepted commands:
     /me action - Send action to the 
                  channel
 ----------------------------------------"""
-            printchat(H.formatX(hstring))
+            txt = H.formatX(hstring)
+            for i in range(len(txt)):
+                txt[i] = txt[i].replace('_','<LARROW>') #FIXME: this a PETSCII workaround
+            printchat(txt)
         elif text.lower() == '/quit':
             running = False
             connection.part(['Using RetroBBS IRC plugin'])
@@ -173,32 +175,32 @@ Accepted commands:
         elif text.lower().startswith('/nick'):
             pars = text.split(' ')
             if len(pars)>1:
-                nickname = pars[1].translate({ord(i): None for i in '#?!@/()&$"'})
-                c.nick(P.toASCII(nickname))
-                conn.Sendall(chr(P.GREEN)+TT.Fill_Line(22,64)+TT.set_Window(22,22)+chr(P.RVS_ON)+chr(P.CRSR_RIGHT)+nickname)
-                conn.Sendall(chr(P.GREY3)+TT.set_Window(23,24)+chr(P.RVS_OFF)+TT.set_CRSR(curcolumn,curline))
+                nickname = _dec(pars[1].translate({ord(i): None for i in '#?!@/()&$"'}))
+                c.nick(nickname)
+                conn.SendTML(f'<GREEN><LFILL row=22 code=64><WINDOW top=22 bottom=22><RVSON><CRSRR>{nickname}'
+                             f'<GREY3><WINDOW top=23 bottom=24><RVSOFF><AT x={curcolumn} y={curline}')
             else:
-                printchat('uSAGE: nick <NICK>, CHANGE YOUR NICK\r')
+                printchat('Usage: NICK &lt;nick&gt;, change your nick<BR>')
         elif text.lower().startswith('/join'):
             pars = text.split(' ')
             if len(pars)>1:
                 oldchan = channel
-                channel = P.toASCII(pars[1].translate({ord(i): None for i in '@/"'}))
+                channel = _dec(pars[1].translate({ord(i): None for i in '@/"'}))
                 if channel[0] != '#':
                     channel = '#'+channel
                 connection.part(oldchan,':Using-RetroBBS-IRC-plugin')
                 #connection.send_raw('PART '+oldchan+' :Using-RetroBBS-IRC-plugin')
                 connection.join(channel)
             else:
-                printchat('uSAGE: join <CHANNEL> JOIN A NEW CHANNEL') #40 characters<<<<<
+                printchat('Usage: JOIN &lt;channel&gt; join a new channel') #40 characters<<<<<
         elif text.lower().startswith('/names'):
             connection.names(channel)
         elif text.lower().startswith('/me'):
             pars = text.split(' ')
             if len(pars)>1:
-                connection.action(channel,P.toASCII(' '.join(pars[1:])))
-                msg = H.formatX(nickname+' '+(' '.join(pars[1:])),convert=False)
-                msg[0] = chr(P.YELLOW)+msg[0]
+                connection.action(channel,_dec(' '.join(pars[1:])))
+                msg = H.formatX('* '+nickname+' '+_dec(' '.join(pars[1:])))
+                msg[0] = '<YELLOW>'+msg[0]
                 printchat(msg)
             else:
                 printchat(H.formatX('Usage: ME <action> send action (written in 3rd person) to the channel'))
@@ -206,36 +208,31 @@ Accepted commands:
 
     ####
     S.RenderMenuTitle(conn,'IRC')
-    conn.Sendall(chr(P.GREEN)+TT.Fill_Line(22,64))
+    conn.SendTML('<GREEN><LFILL row=22 code=64>')
     if conn.userclass > 0:
-        nickname = P.toPETSCII(conn.username[0:9])
+        nickname = conn.username[0:9]
     else:
         conn.SendTML('<WINDOW top=23 bottom=24><YELLOW>Enter nick: <GREY3>')
-        #conn.Sendall(TT.set_Window(23,24)+chr(P.YELLOW)+'eNTER NICK: '+chr(P.GREY3))
-        nickname = conn.ReceiveStr(bytes(keys,'ascii'), 9) #Get nick
+        nickname = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 9)) #Get nick
     nickname = nickname.translate({ord(i): None for i in '#?!@/()&$"'})
     conn.Sendall(TT.set_Window(0,24))
     if nickname == '':
         time.sleep(0.5)
         return
-    conn.SendTML(f'<AT x=1 y=22><RVSON><GREEN>{conn.encoder.decode(nickname)}<BR>'
+    conn.SendTML(f'<AT x=1 y=22><RVSON><GREEN>{nickname}<BR>'
                  '<WINDOW top=23 bottom=24><CLR>')
-    # conn.Sendall(TT.set_CRSR(1,22)+chr(P.RVS_ON)+chr(P.GREEN)+nickname+'\r')
-    # conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR))
     if channel == '':
         conn.SendTML('<YELLO>Enter channel: #<GREY3>')
-        #conn.Sendall(chr(P.YELLOW)+'eNTER CHANNEL: #'+chr(P.GREY3))
         channel = '#'+(conn.ReceiveStr(bytes(keys,'ascii'),20)).translate({ord(i): None for i in '#@/"'}) #Get channel
-    #conn.Sendall(chr(P.CLEAR)+chr(P.COMM_B)+chr(P.CRSR_LEFT)+chr(P.GREY3))
     conn.SendTML('<CLR><CBM-B><CRSRL><GREY3>')
 
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer
     irc.client.ServerConnection.buffer_class.errors = "replace"
     try:
-        c = reactor.server().connect(server, int(port), P.toASCII(nickname))
+        c = reactor.server().connect(server, int(port), nickname)
     except irc.client.ServerConnectionError:
-        printchat(chr(P.PINK)+'*** error cONNECTING TO SERVER ***\r')
+        printchat('<PINK>*** ERROR Connecting to server<BR>')
         conn.Sendall(TT.set_Window(0,24))
         _LOG(bcolors.FAIL+'Connection to IRC FAILED'+bcolors.ENDC,id=conn.id,v=1)
         time.sleep(2)
@@ -263,15 +260,15 @@ Accepted commands:
         reactor.process_once()
         time.sleep(0.1)
         if time.process_time()-t0 > 60.0:       #Abandon if connection takes more than a minute
-            printchat(chr(P.PINK)+'*** timeout cONNECTING TO SERVER ***\r')
+            printchat('<PINK>*** TIMEOUT Connecting to server<BR>')
             _LOG(bcolors.FAIL+'Connection to IRC FAILED - TIMEOUT'+bcolors.ENDC,id=conn.id,v=2)
             conn.Sendall(TT.set_Window(0,24))
             time.sleep(1)
             return
 
-    conn.Sendall(chr(P.CLEAR))
+    conn.SendTML('<CLR>')
 
-    printchat('*** uSE /HELP FOR HELP ***\r')
+    printchat('*** Use /help for help ***<BR>')
 
     conn.socket.setblocking(0)
     _LOG('Connected to IRC',id=conn.id,v=4)
@@ -290,17 +287,17 @@ Accepted commands:
                         continue
                     elif message.startswith('/'):
                         command_parser(c,message)
-                        conn.Sendall(chr(P.CLEAR))
+                        conn.SendTML('<CLR>')
                         message = ''
                         curcolumn = 0
                         curline = 0
                     else:
-                        c.privmsg(channel, P.toASCII(message))
-                        conn.Sendall(chr(P.CLEAR))
+                        c.privmsg(channel, _dec(message))
+                        conn.SendTML('<CLR>')
                         curline = 0
                         curcolumn = 0
-                        msg = H.formatX(nickname+': '+message,convert=False)
-                        msg[0] = chr(P.YELLOW)+msg[0][0:len(nickname)+1]+chr(P.GREY2)+msg[0][len(nickname)+2:]
+                        msg = H.formatX(nickname+': '+_dec(message))
+                        msg[0] = '<YELLOW>'+msg[0][0:len(nickname)+1]+'<GREY2>'+msg[0][len(nickname)+1:]
                         printchat(msg)
                         message =''
                 elif len(message)<79:

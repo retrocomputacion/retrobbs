@@ -1,0 +1,22 @@
+<CAT path='bbsfiles/intro/intro_pics'><LEN x='_A'><RND e=_I><SENDFILE file='_A[_I]'>
+<TEXT><CLR><USER>
+<IF c='_S!="_guest_"'>
+	<CLR>
+	<UNREAD>
+	<YELLOW>
+	Welcome back <WHITE><OUT x=_S>!<BR>
+	<IF c='_A[0]!=0'>
+		<LTGREEN>You have <YELLOW><OUT x=_A[0]><LTGREEN> unread message
+		<IF c='_A[0]>1'>s</IF>
+		<BR>
+	</IF>
+	<IF c='_A[1]!=0'>
+		<LTGREEN>You have <YELLOW><OUT x=_A[1]><LTGREEN> unread private message
+		<IF c='_A[1]>1'>s</IF>
+		<BR>
+	</IF>
+	<BR>
+	<KPROMPT t=RETURN>
+	<CURSOR>
+	<INKEYS>
+</IF>

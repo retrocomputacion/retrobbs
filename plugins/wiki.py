@@ -1,9 +1,9 @@
-import common.petscii as P
 import common.turbo56k as TT
 from common.style import bbsstyle
 import common.filetools as FT
 from common.helpers import formatX, More, crop, text_displayer
 from common.connection import Connection
+from common.bbsdebug import _LOG
 
 import wikipedia
 import wikipediaapi
@@ -12,7 +12,7 @@ from io import BytesIO
 from PIL import Image
 from bs4 import BeautifulSoup
 import requests
-import time
+import sys, os
 
 
 #############################
@@ -28,12 +28,11 @@ def setup():
 def plugFunction(conn:Connection):
 
 	def WikiTitle(conn:Connection):
-		conn.Sendall(TT.set_Window(0,24))	#Set Text Window
-		conn.Sendall(chr(P.CLEAR)+chr(P.BLACK)+"wIKIPEDIA, THE fREE eNCICLOPEDIA\r")
+		conn.SendTML('<WINDOW top=0 bottom=24><CLR><BLACK>Wikipedia, the free Enciclopedia<BR>')
 		if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-			conn.Sendall(chr(P.GREY1)+TT.Fill_Line(1,64))#(chr(P.HLINE)*40))
+			conn.SendTML('<GREY1><LFILL row=1 code=64>')
 		else:
-			conn.Sendall(chr(P.GREY1)+(chr(P.HLINE)*40))
+			conn.SendTML('<GREY1><HLINE n=40>')
 		conn.Sendall(TT.set_Window(2,24))	#Set Text Window
 
 	wcolors = bbsstyle()
@@ -44,13 +43,11 @@ def plugFunction(conn:Connection):
 	wikipedia.set_lang(conn.bbs.lang)
 	wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
 
-	#conn.Sendall('bUSCAR wIKIPEDIA')
-	#time.sleep(1)
 	conn.Sendall(TT.to_Text(0,15,15))
 	loop = True
 	while loop == True:
 		WikiTitle(conn)
-		conn.Sendall("\rsEARCH: \r(_ TO EXIT)"+chr(P.CRSR_UP)+chr(P.CRSR_LEFT)*3)
+		conn.SendTML('<BR>Search: <BR>(<LARROW> to exit)<CRSRU><CRSRL n=3>')
 
 		keys = string.ascii_letters + string.digits + ' +-_,.$%&'
 		termino = ''
@@ -62,37 +59,28 @@ def plugFunction(conn:Connection):
 			if termino == '_':
 				conn.Sendall(TT.set_Window(0,25))
 				return()
-		conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+		conn.SendTML('<CBM-B><CRSRL>')
 		results = wikipedia.search(termino, results = 15)
 
-		conn.Sendall(' \r\rrESULTS:\r\r')		#<-Note the white space at the start to erase the COMM_B wait character
+		conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the COMM_B wait character
 
 		i = 0
 
 		options = ''
 
 		for r in results:
-			res = P.toPETSCII(r)	#''.join(c.lower() if c.isupper() else c.upper() for c in r)
-			#res = unicodedata.normalize('NFKD',r).encode('ascii','ignore')
-			res = crop(res,36)
-			# if len(res) > 36:
-			# 	res = res[0:33] + '...'
-			conn.Sendall(chr(P.BLACK)+'[' + chr(P.BLUE) + string.ascii_uppercase[i] + chr(P.BLACK) + ']' + chr(P.GREY1))
-			conn.Sendall(res + '\r')
+			res = crop(r,36)
+			conn.SendTML(f'<BLACK>[<BLUE>{string.ascii_lowercase[i]}<BLACK>]<GREY1>{res}<BR>')
 			options += string.ascii_uppercase[i]
 			i += 1
-
-		conn.Sendall(chr(P.BLACK)+'[' + chr(P.BLUE) + '_' + chr(P.BLACK) + ']' + chr(P.GREY1) + 'pREVIOUS MENU\r')
+		conn.SendTML('<BLACK>[<BLUE><LARROW><BLACK>]<GREY1>Previous menu<BR><BR>Please select:')
 		options += '_\r'
-		conn.Sendall('\rpLEASE SELECT:')
-
 		sel = conn.ReceiveKey(bytes(options, 'ascii'))
-		
 		if sel == b'_':
 			loop = False
 		elif sel != b'\r':
 			conn.Sendallbin(sel)
-			conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+			conn.SendTML('<CBM-B><CRSRL>')
 			i = options.index(sel.decode())
 			page = wiki.page(results[i])#wikipedia.page(results[i])
 			try:
@@ -129,26 +117,26 @@ def plugFunction(conn:Connection):
 						pass
 					WikiTitle(conn)
 				tt = formatX(page.title)
-				tt[0] = chr(P.CLEAR)+chr(P.BLACK)+tt[0]
-				tt.append(chr(P.GREY1)+chr(P.HLINE)*40)
+				tt[0] = '<CLR><BLACK>'+tt[0]
+				tt.append('<GREY1><HLINE n=40>')
 
-				tt += formatX(WikiParseParas(page.summary),convert=False)	#<+
+				tt += WikiParseParas(page.summary)	#<+
 
-				tt.append('\r')
+				tt.append('<BR>')
 
 				tt += WikiSection(conn, page.sections,0)
 
 				if conn.QueryFeature(TT.SCROLL) < 0x80:
-					conn.Sendall(TT.set_Window(24,25)+chr(P.RVS_ON)+chr(P.BLUE)+TT.Fill_Line(24,160)+' <CRSR/F1/F7> TO SCROLL   <_> TO EXIT'+chr(P.RVS_OFF))
-					conn.Sendall(TT.set_Window(2,23))
+					conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [crsr/F1/F7] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
 					text_displayer(conn,tt,22,wcolors)
 				else:
 					More(conn,tt,22,wcolors)
 			except Exception as e:
-				conn.Sendall(chr(P.RED)+'\reRROR!')
-				time.sleep(1)
-				print(e)
-				pass
+				conn.SendTML('<RED><BR>ERROR!<PAUSE n=2>')
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				_LOG(e,id=conn.id,v=1)
+				_LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
 
 	conn.Sendall(TT.set_Window(0,24))	#Set Text Window
 
@@ -160,11 +148,11 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0):
 	for s in sections:
 		title = ('-'*level)+WikiParseTitles(s.title)
 		ts = formatX(title)
-		ts[0] = chr(P.BLACK)+ts[0]
+		ts[0] = '<BLACK>'+ts[0]
 		tt += ts
-		tt.append(chr(P.HLINE)*40+chr(P.GREY1))
-		tt += formatX(WikiParseParas(s.text),convert=False)	#<+
-		tt.append('\r')
+		tt.append('<HLINE n=40><GREY1>')
+		tt += WikiParseParas(s.text)	#<+
+		tt.append('<BR>')
 		tt += WikiSection(conn, s.sections, level + 1, lines)
 	return(tt) #lines
 
@@ -176,39 +164,43 @@ def WikiParseParas(text, level = 0):
 		text = ''
 		for elem in element.recursiveChildGenerator():
 			if isinstance(elem, str):
-				text += P.toPETSCII(elem)
+				text += elem
 			elif elem.name == 'br':
-				text += '\r'
+				text += '\n'
 			elif elem.name == 'li':
-				text += '*'+P.toPETSCII(elem.get_text())+'\r'
-		return text
+				text += '*'+elem.get_text()+'\n'
+		return formatX(text)
 
 	if isinstance(text,str):
 		soup = BeautifulSoup(text, "html.parser")
 	else:
 		soup = text
-	plain_text = ''
+	plain_text = []
 	for elem in soup.children:	#soup.findAll('p'):
 		if elem.name == 'p':
 			elem = replace_with_newlines(elem)
-			plain_text+='\r'+elem+'\r'
+			plain_text+= elem
 		elif elem.name == 'ul':
 			for item in elem.find_all('li',recursive=False):
-				key = next(item.stripped_strings)
-				plain_text += (' '*level)+chr(P.BLACK)+'* '+chr(P.GREY1)+P.toPETSCII(key)+'\r'
+				key = next(item.stripped_strings,'')
+				k = formatX(key,38-level)
+				k[0] =f'<SPC n={level}><BLACK>* <GREY1>'+k[0]
+				plain_text += k
 				nitem = item.find(['p','ul','ol'])
 				if nitem:
-					plain_text += WikiParseParas(item,level=level+1)+'\r'
+					plain_text += WikiParseParas(item,level=level+1)+['<BR>']
 		elif elem.name == 'ol':
 			for i,item in enumerate(elem.find_all('li',recursive=False)):
-				key = next(item.stripped_strings)
-				plain_text += (' '*level)+chr(P.BLACK)+str(i)+'. '+chr(P.GREY1)+P.toPETSCII(key)+'\r'
+				key = next(item.stripped_strings,'')
+				k = formatX(key,38-level-len(str(i)))
+				k[0] = f'<SPC n=level><BLACK>{i}. <GREY1>{k[0]}'
+				plain_text += k
 				nitem = item.find(['p','ul','ol'])
 				if nitem:
 					plain_text += WikiParseParas(item,level=level+1)+'\r'				
 
-	if plain_text == '':
-		plain_text == P.toPETSCII(soup.get_text())
+	if plain_text == []:
+		plain_text == formatX(soup.get_text())
 	return(plain_text)
 
 def WikiParseTitles(text):

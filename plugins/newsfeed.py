@@ -4,14 +4,12 @@ from bs4 import BeautifulSoup
 import feedparser
 from PIL import Image
 from io import BytesIO
-import time
 from urllib.parse import urlparse,urljoin
 
 from common.bbsdebug import _LOG,bcolors
 import common.helpers as H
 import common.style as S
 from common.connection import Connection
-import common.petscii as P
 import common.turbo56k as TT
 import common.filetools as FT
 
@@ -39,49 +37,44 @@ def plugFunction(conn:Connection,url):
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
 
+    menucolors = [[14,15],[3,7]]
+
     MenuDic = {
 			    b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
 				b'\r': (plugFunction,(conn,url),"",0,False)
 			  }
 
-
-    #conn.Sendall(chr(0))
     # # Text mode
     conn.SendTML('<TEXT><MTITLE t=Newsfeed><CBM-B><CRSRL>')
-    # conn.Sendall(TT.to_Text(0,0,0))
-    # S.RenderMenuTitle(conn,"Newsfeed")
-    # conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
 
     nfeed = feedparser.parse(url)
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
 
-        conn.Sendall("rECENT FROM:\r")
+        conn.SendTML("Recent from:<BR>")
         title = H.formatX(nfeed.feed.get('title','No title'))
         for t in title:
-            conn.Sendall(t)
-            if len(t)<40:
-                conn.Sendall('\r')
-        conn.Sendall('\r')
+            conn.SendTML(t)
+        conn.SendTML('<BR>')
         lines +=len(title)
 
         i = 1
         for e in nfeed.entries:
             text = textwrap.shorten(e.get('title','No title'),width=72,placeholder='...')
-            text = H.formatX(text,columns=36)
+            text = H.formatX(text,columns=37)
             lines+=len(text)
             if lines>22:
                 continue
-            conn.Sendall(chr(P.RVS_ON)+chr(H.menu_colors[i%2][0])+chr(181)+H.valid_keys[i-1]+chr(182)+chr(P.RVS_OFF)+chr(H.menu_colors[i%2][1]))
+            conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><CBM-J>{H.valid_keys[i-1].lower()}<CBM-L><RVSOFF><INK c={menucolors[i%2][1]}>')
             x = 0
             for t in text:
-                conn.Sendall(' '*(3*x)+t+'\r')
+                conn.SendTML(f'<SPC n={3*x}>{t}')
                 x=1
             MenuDic[H.valid_keys[i-1].encode('ascii','ignore')] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
             i+=1
-        conn.Sendall(chr(P.RVS_ON)+chr(H.menu_colors[i%2][0])+chr(181)+'_'+chr(182)+chr(P.RVS_OFF)+chr(H.menu_colors[i%2][1])+'bACK\r')
-        conn.Sendall(chr(P.WHITE)+'\ryOUR CHOICE: ')
+        conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><CBM-J><LARROW><CBM-L><RVSOFF><INK c={menucolors[i%2][1]}>Back<BR>'
+                     f'<WHITE><BR>Your choice: ')
         return MenuDic
 
     except:
@@ -99,7 +92,6 @@ def feedentry(conn:Connection,entry,feedname):
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
         conn.Sendall(TT.set_Window(3,24))
-        #conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
         e_text = ''
         content = entry.get('content',[]) #Atom
         for c in content:
@@ -115,11 +107,10 @@ def feedentry(conn:Connection,entry,feedname):
 
         body = H.formatX(e_text)
 
-        #body = H.formatX(a_body)
         title = H.formatX(e_title)
-        title[0] = chr(P.WHITE)+title[0]
-        title.append(chr(P.YELLOW)+chr(P.HLINE)*40+chr(P.PALETTE[S.default_style.TxtColor]))
-        title.append('\r')
+        title[0] = '<WHITE>'+title[0]
+        title.append(f'<YELLOW><HLINE n=40><INK c={S.default_style.TxtColor}>')
+        title.append('<BR>')
         text = title + body
         H.More(conn,text,22)
     conn.Sendall(TT.set_Window(0,24))
@@ -127,15 +118,13 @@ def feedentry(conn:Connection,entry,feedname):
 ### Try to scrap data from wordpress and some other CMS sites,
 ### returns False if entry title or body cannot be found 
 def webarticle(conn:Connection,url, feedname):
-    conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+    conn.SendTML('<CBM-B><CRSRL>')
     resp = requests.get(url, allow_redirects = False, headers = hdrs)
     r = 0   # Redirect loop disconnector
     while resp.status_code == 301 or resp.status_code == 302 and r < 10:
         url = resp.headers['Location']
         resp = requests.get(url, allow_redirects = False, headers = hdrs)
         r += 1
-    #for r in resp.history:
-    #    print(r.status_code,r.url)
     purl = urlparse(url)
     top_url = purl.scheme + '://' + purl.netloc
     if resp.status_code == 200:
@@ -191,7 +180,7 @@ def webarticle(conn:Connection,url, feedname):
         if len(a_headers) != 0:
             for h in a_headers:
                 h2 = H.formatX(h.get_text())
-                h2[0] = chr(P.PALETTE[S.default_style.HlColor])+h2[0]
+                h2[0] = f'<INK c={S.default_style.HlColor}>'+h2[0]
                 body += h2
                 for el in h.next_siblings:
                     if el.name and el.name.startswith('h'):
@@ -199,13 +188,13 @@ def webarticle(conn:Connection,url, feedname):
                     if el.name == 'p':
                         p = H.formatX(el.get_text())
                         if len(p)>0:
-                            p[0] = chr(P.PALETTE[S.default_style.TxtColor])+p[0]
+                            p[0] = f'<INK c={S.default_style.TxtColor}>'+p[0]
                             body += p
-                    body.append('\r')
+                    body.append('<BR>')
         else:
             a_paras = a_body.find_all(['p'])
             for p in a_paras:
-                body +=  H.formatX(p.get_text())+['\r']
+                body +=  H.formatX(p.get_text())+['<BR>']
             if body == []:
                 body = H.formatX(a_body.get_text())
         #####   Entry image   #####
@@ -213,7 +202,7 @@ def webarticle(conn:Connection,url, feedname):
         if d_img != None:
             a_img = d_img.find('img')
         else:
-            a_img = None #soup.find('img',{'itemprop':'image'})
+            a_img = None
         if a_img == None:
             a_img = soup.find('img',{'class':['wp-post-image','header','news_image']})
             if a_img == None:
@@ -222,23 +211,22 @@ def webarticle(conn:Connection,url, feedname):
             conn.Sendall(TT.disable_CRSR())
             FT.SendBitmap(conn,getImg(top_url,a_img),multi=True)
             conn.ReceiveKey()
-            conn.Sendall(chr(P.CLEAR)+TT.to_Text(0,0,0)+TT.enable_CRSR())
+            conn.SendTML('<CLR><TEXT><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
         conn.Sendall(TT.set_Window(3,24))
         #body = H.formatX(a_body)
         title = H.formatX(a_title)
-        title[0] = chr(P.WHITE)+title[0]
-        title.append(chr(P.YELLOW)+chr(P.HLINE)*40)
+        title[0] = '<WHITE>'+title[0]
+        title.append('<YELLOW><HLINE n=40>')
         if a_author != None:
-            title.append(chr(P.PALETTE[S.default_style.TxtColor])+'BY: '+chr(P.YELLOW)+P.toPETSCII(a_author))
-            title.append('\r')
-        body[0] = chr(P.GREY2)+body[0]
+            title.append(f'<INK c={S.default_style.TxtColor}>by: <YELLOW>{a_author}<BR>')
+            title.append('<BR>')
+        body[0] = '<GREY2>'+body[0]
         text = title + body
         H.More(conn,text,22)
         conn.Sendall(TT.set_Window(0,24))
     else:
-        conn.Sendall(chr(P.DELETE)+str(resp.status_code))
-        time.sleep(1)
+        conn.SendTML(f'<DEL>{resp.status_code}<PAUSE n=1>')
         _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - defaulting to rss description'+bcolors.ENDC, id=conn.id,v=2)
         return(False)
     return(True)
@@ -246,11 +234,7 @@ def webarticle(conn:Connection,url, feedname):
 
 def getImg(url,img_t):
     src = img_t['src']
-    #print(url)
-    #print(src)
     src = urljoin(url, src)
-    #if src.startswith('//'):
-    #    src = 'http:'+src
     scrap_im = requests.get(src, allow_redirects=True, headers=hdrs)
     try:
         img = Image.open(BytesIO(scrap_im.content))

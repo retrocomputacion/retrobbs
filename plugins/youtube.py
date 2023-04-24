@@ -6,7 +6,6 @@ import pafy
 import cv2
 import numpy as np
 from common.bbsdebug import _LOG,bcolors
-import common.petscii as P
 import common.turbo56k as TT
 from common.connection import Connection
 import common.video as VV
@@ -24,7 +23,7 @@ def setup():
 #Plugin callable function
 def plugFunction(conn:Connection,url, crop):
 
-	conn.Sendall(chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))#"yOUTUBE"
+	conn.SendTML('<YELLOW><CBM-B><CRSRL>')
 	loop = True
 	if crop != None:
 		crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])

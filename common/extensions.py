@@ -4,21 +4,12 @@
 # Plugins and encoders
 # Fill in TML tag dictionary
 ###########################################################
-from common.bbsdebug import _LOG 
+from common.bbsdebug import _LOG
+from common.classes import Encoder 
 import importlib
 import pkgutil
 #from common.connection import Connection
 import os
-
-class Encoder:
-    def __init__(self, name:str) -> None:
-        self.name = name
-        self.tml_mono = {}
-        self.tml_multi = {}
-        self.encode = None
-        self.decode = None
-        pass
-
 
 import encoders
 import plugins
@@ -58,10 +49,6 @@ def RegisterEncoders():
         if '_Register' in dir(a):
             encs = a._Register()
             for e in encs:
-                Encoders[e['name']] = Encoder(e['name'])
-                Encoders[e['name']].encode = e['encode']
-                Encoders[e['name']].decode = e['decode']
-                Encoders[e['name']].tml_mono = e['tml_mono']
-                Encoders[e['name']].tml_multi = e['tml_multi']
-                _LOG('Loaded encoder: '+e['name'],v=4)
+                Encoders[e.name] = e
+                _LOG('Loaded encoder: '+e.name,v=4)
     return Encoders

@@ -33,9 +33,6 @@ def RenderMenuTitle(conn:Connection,title):
 	if type(title) == tuple:
 		title = title[0]
 	# Clear screen
-	#conn.Sendall(chr(P.CLEAR))
-	# Lower/uppercase charset
-	#conn.Sendall(chr(P.TOLOWER))
 	tml = '<CLR><LOWER>'
 	# Send menu title
 	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
@@ -50,8 +47,13 @@ def RenderMenuTitle(conn:Connection,title):
 	conn.SendTML(tml)
 
 # Returns '[text]' prompt string in the selected style
-def KeyPrompt(text,style=default_style):
-	return(chr(P.PALETTE[style.PbColor])+'['+chr(P.PALETTE[style.PtColor])+P.toPETSCII(text,False)+chr(P.PALETTE[style.PbColor])+']')
+# TML: True to return TML sequence
+# TML output will become the default behaviour in the future
+def KeyPrompt(text,style=default_style, TML=False):
+	if TML:
+		return(f'<INK c={style.PbColor}>[<INK c={style.PtColor}>{text}<INK c={style.PbColor}>]')
+	else:
+		return(chr(P.PALETTE[style.PbColor])+'['+chr(P.PALETTE[style.PtColor])+P.toPETSCII(text,False)+chr(P.PALETTE[style.PbColor])+']')
 
 # Renders a menu option in the selected style  
 def KeyLabel(conn:Connection, key, label, toggle, style=default_style):
@@ -62,26 +64,25 @@ def KeyLabel(conn:Connection, key, label, toggle, style=default_style):
 		if key == '_':		# FIXME: Workaround for PETSCII left arrow character
 			key = '<LARROW>'
 		tml += f'<INK c={c1}><RVSON><CHR c=181>{key.lower()}<CHR c=182><RVSOFF>'
-		#conn.Sendall(chr(P.PALETTE[c1])+chr(P.RVS_ON)+chr(181)+key+chr(182)+chr(P.RVS_OFF))
 	tml += f'<INK c={c2}>{label}'
-	#conn.Sendall(chr(P.PALETTE[c2])+P.toPETSCII(label))
 	conn.SendTML(tml)
-	#if key < '\r':
-	#	conn.Sendall('  ')
 	return not toggle
 
 # Render 'file' dialog background
 def RenderDialog(conn:Connection,height,title=None):
-	conn.Sendall(chr(P.CLEAR)+chr(P.GREY3)+chr(P.RVS_ON))
+	conn.SendTML('<CLR><GREY3><RVSON>')
 	if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+		conn.SendTML('<LFILL row=0 code=192>')
 		conn.Sendall(chr(TT.CMDON))
-		for y in range(0,height):
+		for y in range(1,height):
 			conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
-		conn.Sendall(chr(TT.CMDOFF)+chr(P.GREY1)+TT.Fill_Line(height,226)+chr(P.GREY3))
+		conn.Sendall(chr(TT.CMDOFF))
+		conn.SendTML(f'<GREY1><LFILL row={height} code=226><GREY3>')
 	else:
-		conn.Sendall((' '*(40*height))+chr(P.GREY1)+(chr(162)*40)+chr(P.HOME)+chr(P.GREY3))
+		conn.SendTML(f'<HLINE n=40><SPC n={40*height-1}><GREY1>{chr(162)*40}<HOME><GREY3>')
 	if title != None:
-		conn.Sendall(H.crop(conn.encoder.encode(title),38).center(40,chr(P.HLINE))+'\r')
+		ctt = H.crop(title,38)
+		conn.SendTML(f'<AT x={1+(38-len(ctt))/2} y=0>{ctt}<BR>')
 
 ################################################################
 # TML tags

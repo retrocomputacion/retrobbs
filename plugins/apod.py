@@ -1,16 +1,11 @@
 #Retrieves an APOD and converts it to c64 gfx format
 
-import sys
 import requests
-import urllib.request
-import ctypes
 import random
-from datetime import datetime,timedelta
+from datetime import datetime
 from PIL import Image
 from io import BytesIO
 
-from common.c64cvt import c64imconvert
-import common.petscii as P
 import common.turbo56k as TT
 from common.style import default_style, RenderMenuTitle
 import common.filetools as FT
@@ -38,29 +33,26 @@ def plugFunction(conn:Connection):
 
 
 
-    apod_lang = {'en':['cONNECTING WITH nasa',"\r"+chr(P.LT_GREEN)+"pRESS "+chr(P.PALETTE[default_style.PbColor])	\
-                    +"["+chr(P.PALETTE[default_style.PtColor])+"return"+chr(P.PALETTE[default_style.PbColor])+"]"	\
-                    +chr(P.LT_GREEN)+" TO DISPLAY IMAGE\rpRESS "+chr(P.YELLOW)+"["+chr(P.PALETTE[default_style.PtColor])	\
-                    +"return"+chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)+" AGAIN FOR A NEW\rRANDOM IMAGE\roR "	\
-                    +chr(P.PALETTE[default_style.PbColor])+"["+chr(P.PALETTE[default_style.PtColor])+"_"	\
-                    +chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)+" TO GO BACK"],
-                'es':['cONNECTANDO CON LA nasa',"\r"+chr(P.LT_GREEN)+"pRESIONE "+chr(P.PALETTE[default_style.PbColor])	\
-                    +"["+chr(P.PALETTE[default_style.PtColor])+"return"+chr(P.PALETTE[default_style.PbColor])+"]"	\
-                    +chr(P.LT_GREEN)+" PARA MOSTRAR IMAGEN\rpRESIONE "+chr(P.YELLOW)+"["+chr(P.PALETTE[default_style.PtColor])	\
-                    +"return"+chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)	\
-                    +" DE NUEVO\rPARA OTRA IMAGE AL AZAR\ro "+chr(P.PALETTE[default_style.PbColor])+"["	\
-                    +chr(P.PALETTE[default_style.PtColor])+"_"+chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)	\
-                    +" PARA VOLVER"]}
+    apod_lang = {'en':['Connecting with NASA',f"<BR><GREEN>Press <INK c={default_style.PbColor}>"	\
+                    + f"[<INK c={default_style.PtColor}>RETURN<INK c={default_style.PbColor}>]"	\
+                    + f"<LTGREEN> to display image<BR>Press <INK c={default_style.PbColor}>[<INK c={default_style.PtColor}>"	\
+                    + f"RETURN<INK c={default_style.PbColor}>]<LTGREEN> again for a new<BR>random image<BR>Or "	\
+                    + f"<INK c={default_style.PbColor}>[<INK c={default_style.PtColor}><LARROW>"	\
+                    + f"<INK c={default_style.PbColor}>]<LTGREEN> to go back"],
+                'es':['Connectando con la NASA',f"<BR><GREEN>Presione <INK c={default_style.PbColor}>"	\
+                    + f"[<INK c={default_style.PtColor}>RETURN<INK c={default_style.PbColor}>]"	\
+                    + f"<LTGREEN> para mostrar imagen<BR>Presione <INK c={default_style.PbColor}>[<INK c={default_style.PtColor}>"	\
+                    + f"RETURN<INK c={default_style.PbColor}>]<LTGREEN> de nuevo<BR>para otra imagen al azar<BR>O "	\
+                    + f"<INK c={default_style.PbColor}>[<INK c={default_style.PtColor}><LARROW>"	\
+                    + f"<INK c={default_style.PbColor}>]<LTGREEN> para volver"]}
 
-    #conn.Sendall("apod")
-    #time.sleep(1)
     loop = True
     rdate = datetime.today()
     while loop == True:
         # # Text mode
         conn.Sendall(TT.to_Text(0,0,0))
         RenderMenuTitle(conn,'APOD')
-        conn.Sendall(apod_lang.get(conn.bbs.lang,'en')[0]+chr(P.YELLOW)+"..."+chr(P.COMM_B)+chr(P.CRSR_LEFT))
+        conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<CBM-B><CRSRL>')
         i = 0
         idata = None
         _LOG("Receiving APOD info",id=conn.id,v=4)
@@ -71,7 +63,7 @@ def plugFunction(conn:Connection):
                 _LOG(bcolors.OKBLUE+"APOD Retrying..."+bcolors.ENDC,id=conn.id,v=3)
             i += 1
             conn.Sendall(".")
-        conn.Sendall('\a'+chr(P.DELETE)*(23+i))
+        conn.SendTML(f'<BELL><DEL n={23+i}>')
         if idata != None:
             date = idata["date"]
             _LOG("Showing APOD info for "+date,id=conn.id,v=4)
@@ -83,35 +75,39 @@ def plugFunction(conn:Connection):
             else:
                 autor = ''
 
-            texto = formatX(title) #textwrap.wrap(''.join(c.lower() if c.isupper() else c.upper() for c in title),40)
+            texto = formatX(title)
             #Prints date
-            texto += formatX("\n"+chr(P.LT_BLUE)+P.toPETSCII(date)+chr(P.WHITE)+"\n\n",convert=False)
+            tdate = formatX('\n'+date+'\n\n')
+            tdate[0] = '<LTBLUE>'+tdate[0]
+            tdate[-1] = tdate[-1]+'<WHITE><BR><BR>'
+            texto += tdate
             if autor != '':
-                autor = chr(P.ORANGE)+"bY:"+P.toPETSCII(autor)+chr(P.PALETTE[default_style.TxtColor])+'\r'
-                at = formatX(autor,convert=False) #textwrap.wrap(''.join(c.lower() if c.isupper() else c.upper() for c in autor),40)
+                at = formatX(autor)
+                at[0] = '<ORANGE>'+at[0]
+                at[-1] = f'<INK c={default_style.TxtColor}>'
             else:
-                at = ['\r']
+                at = ['<BR>']
             texto += at+formatX(desc)
 
             if More(conn,texto,25) == 0:
-                conn.Sendall(chr(P.DELETE)*8)
+                conn.SendTML('<DEL n=8>')
             else:
-                conn.Sendall(chr(P.DELETE)*13)
-            conn.Sendall(apod_lang.get(conn.bbs.lang,'en')[1])
+                conn.SendTML('<DEL n=13>')
+            conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[1])
             tecla = conn.ReceiveKey(b'\r_')
             if conn.connected == False:
                 return()
             if tecla == b'_' or tecla == b'':
                 loop = False
             if loop == True:
-                conn.Sendall("\rcONVERTING IMAGE"+chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
+                conn.SendTML("<BR>Converting image<YELLOW><CBM-B><CRSRL>")
                 _LOG("Downloading and generating image",id=conn.id,v=4)
                 try:
                     img = apod_img(conn, imurl)
                     FT.SendBitmap(conn, img)
                 except:
                     _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id,v=2)
-                    conn.Sendall("\rerror, UNABLE TO RECEIVE IMAGE")
+                    conn.SendTML("<BR>ERROR, unable to receive image")
 
                 tecla = conn.ReceiveKey(b'\r_')
                 conn.Sendall(TT.enable_CRSR())
@@ -120,10 +116,8 @@ def plugFunction(conn:Connection):
                     return()
                 if tecla == b'_' or tecla == b'':
                     loop = False
-            #else:
-            #	rdate = datetime.datetime.fromordinal(random.randint(apod.start_date, apod.end_date))
         else:
-            conn.Sendall("\rerror, UNABLE TO CONNECT WITH nasa")
+            conn.SendTML("<BR>ERROR, unable to connect with NASA")
             _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id,v=2)
             loop = False
 ##########################################

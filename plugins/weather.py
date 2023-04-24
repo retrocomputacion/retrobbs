@@ -3,10 +3,7 @@ import python_weather
 import asyncio
 import requests
 import string
-import time
-#from sympy import content
 import json
-#from datetime import date
 from geopy.geocoders import Photon, Nominatim
 
 from PIL import Image
@@ -20,7 +17,6 @@ from common.c64cvt import GetIndexedImg, PaletteHither, c64imconvert
 from common.bbsdebug import _LOG
 import common.filetools as FT
 import common.turbo56k as TT
-import common.petscii as P
 
 wgfx24: list #Weather gfx 24px 
 wgfx8:  list  #Weather gfx 8px
@@ -55,12 +51,10 @@ def setup():
     gfx = NP.array(Image.open('plugins/weather_icons.png'))
     wgfx24 = [gfx[x:x+24,y:y+24] for x in range(0,48,24) for y in range(0,312,24)]
     wgfx8 = [gfx[x:x+8,y:y+8] for x in range(56,72,8) for y in range(0,40,8)]
-    # for i in wgfx8:
-    #     Image.fromarray(i).show()
+
     font_title = ImageFont.truetype("plugins/karen2blackint.ttf", 16)   #<
     font_temp = ImageFont.truetype("plugins/karen2blackint.ttf", 24)    #<
     font_text = ImageFont.truetype("plugins/BetterPixels.ttf",16)       #<
-
 
     fname = "WEATHER" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
@@ -81,28 +75,25 @@ def plugFunction(conn:Connection):
     loop = asyncio.new_event_loop()
     geoLoc = Photon(user_agent="RetroBBS-Weather")
     while conn.connected and not done:
-        conn.Sendall(chr(P.COMM_B)+chr(P.CRSR_LEFT))
+        conn.SendTML('<CBM-B><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
             FT.SendBitmap(conn,img,multi=False,preproc=False,lines=23,display=False)
             conn.Sendall(TT.split_Screen(23,False,0,6))
         else:
-            conn.Sendall(chr(P.CLEAR)+chr(P.WHITE)+'location not found!')
-            time.sleep(2)
-        conn.Sendall(TT.enable_CRSR())
-        conn.Sendall(chr(P.CLEAR)+chr(P.YELLOW)+'[n]EW LOCATION OR _ TO EXIT\r')
+            conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2>')
+        conn.SendTML('<CURSOR><CLR><YELLOW>[N]ew location or <LARROW> to exit<BR>')
         if conn.ReceiveKey(b'N_') == b'_':
             done = True
         else:
-            conn.Sendall('lOCATION:')
-            locqry = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),30))
+            conn.SendTML('Location:')
+            locqry = conn.encoder.decode(conn.ReceiveStr(bytes(keys,'ascii'),30))
             tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
             if tloc == None:
                 #Default to config setting, or Meyrin otherwise
                 locqry = conn.bbs.PlugOptions.get('wxdefault','Meyrin')
- 
     loop.close()
-    conn.Sendall(chr(0)*2+TT.split_Screen(0,False,0,0))
+    conn.SendTML('<NUL n=2><SPLIT>')
     return
 
 
@@ -205,7 +196,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
             ih = 0
             for hourly in forecast.hourly:
                 if ih == 3: # Morning
-                    #print(hourly.type.value,hourly.description)
                     try:
                         icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
                     except:
@@ -214,7 +204,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
                     img.paste(tmp,(32,72+(ix*32)))
                     draw.text((56,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 elif ih == 4: #Noon
-                    #print(hourly.type.value,hourly.description)
                     try:
                         icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
                     except:
@@ -223,7 +212,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
                     img.paste(tmp,(104,72+(ix*32)))
                     draw.text((128,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 elif ih == 6: #Evening
-                    #print(hourly.type.value,hourly.description)
                     try:
                         icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
                     except:
@@ -232,7 +220,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
                     img.paste(tmp,(176,72+(ix*32)))
                     draw.text((200,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 elif ih == 7: #Night
-                    #print(hourly.type.value,hourly.description)
                     try:
                         icon = Image.fromarray(wgfx24[wtypes.get(hourly.type.value,8)])
                     except:
@@ -244,7 +231,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
             ix += 1
     except:
         _LOG('Error getting location data',id=conn.id, v=1)
-        conn.Sendall(P.toPETSCII('ERROR!'))
+        conn.SendTML('ERROR!')
         img = None
 
     # close the wrapper once done

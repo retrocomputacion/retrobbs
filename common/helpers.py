@@ -12,11 +12,14 @@
 
 import textwrap
 import itertools
+import os
+import re
 
 from common.connection import Connection
 from common import petscii as P
 from common import turbo56k as TT
-from common.style import bbsstyle, default_style, KeyPrompt
+from common.style import default_style, KeyPrompt
+from html import unescape, escape
 
 
 # Valid keys for menu entries
@@ -32,40 +35,35 @@ _byte = lambda i: i.to_bytes(1,'little')
 
 # Paginate current menu
 def SetPage(conn:Connection,page):
-    #global MenuParameters
-
     if conn.MenuParameters != {}:
         conn.MenuParameters['current'] = page
 
 
 # Go back to previous/main menu
 def MenuBack(conn:Connection):
-
 	conn.MenuDefs,conn.menu = conn.MenuStack[-1]#0
 	conn.MenuStack.pop()
-
-	#Function = conn.MenuDefs[b'\r'][0]
-	#Function(*conn.MenuDefs[b'\r'][1])
-
 	conn.waitkey = False
-	#conn.showmenu = True
-
 	#reset menuparameters
 	conn.MenuParameters = {}
 
 #Format text to X columns with wordwrapping, PETSCII conversion optional
+# Returns a list of text lines
+# New in v0.x:	No encoding conversion is ever performed
 def formatX(text, columns = 40, convert = True):
-	wrapper = textwrap.TextWrapper(width=columns)
-	if convert == True:
-		text = P.toPETSCII(text)
 	output = []
+	text = unescape(text)
 	for i in text.replace('\r','\n').split('\n'):
 		if i != '':
-			output.append(wrapper.wrap(i))
+			output.extend(textwrap.wrap(i,width=columns))
 		else:
-			output.append('\r')
-	#text = [wrapper.wrap(i) for i in text.split('\n') if i !='']
-	output = list(itertools.chain.from_iterable(output))
+			output.extend([''])
+	for i in range(len(output)):
+		if len(output[i])<columns:
+			output[i] = escape(output[i])
+			output[i] += '<BR>'
+		else:
+			output[i] = escape(output[i])
 	return(output)
 
 # Find last color control code used in a string
@@ -82,17 +80,14 @@ def lastColor(text,defcolor=1):
 #Text pagination
 def More(conn:Connection, text, lines, colors=default_style):
 
-	conn.Sendall(chr(P.PALETTE[colors.TxtColor]))
+	conn.SendTML(f'<INK c={colors.TxtColor}>')
 	if isinstance(text, list):
 		l = 0
 		tcolor = colors.TxtColor
 		for t in text:
-			conn.Sendall(t)
-			tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
-			if len(tt) < 40 and t[-1]!='\r':
-				conn.Sendall('\r')
+			conn.SendTML(t)
 			# Find last text color
-			tcolor = P.PALETTE.index(lastColor(t,P.PALETTE[tcolor]))
+			tcolor = conn.parser.color
 			l+=1
 			if l==(lines-1):
 				k= conn.SendTML(f'''<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN or <LARROW><INK c={colors.PbColor}>]
@@ -134,9 +129,9 @@ def More(conn:Connection, text, lines, colors=default_style):
 				page = 0
 				cc = 0
 			elif ord(char) in P.PALETTE:
-				color = char
+				color = P.PALETTE.index(ord(char))	#char
 			elif char == chr(P.RVS_ON):
-				rvs = chr(P.RVS_ON)
+				rvs = '<RVSON>'
 			elif char == chr(P.RVS_OFF):
 				rvs = ''
 			elif char == chr(P.TOLOWER):
@@ -157,21 +152,18 @@ def More(conn:Connection, text, lines, colors=default_style):
 			elif ll >= (lines*page)+(lines-1):
 				if cc !=0:
 					conn.Sendall('\r')
-				conn.Sendall(KeyPrompt(prompt+' OR _'))
+				conn.SendTML(KeyPrompt(prompt+' OR <LARROW>',TML=True))
 				k = conn.ReceiveKey(b'\r_')
-				if conn.connected == False:
+				if (conn.connected == False) or (k == b'_'):
 					conn.Sendall(TT.set_Window(0,24))
 					return -1
-				if k == b'_':
-					conn.Sendall(TT.set_Window(0,24))
-					return -1
-				conn.Sendall(chr(P.DELETE)*13+rvs+color+TT.set_CRSR(cc,(22-lines)+ll-(lines*page)))
+				conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}><AT x={cc} y={(22-lines)+ll-(lines*page)}>')
 				page += 1
 				pp = True
 		if cc !=0:
 			conn.Sendall('\r')
 		if not pp:
-			conn.Sendall(KeyPrompt(prompt))
+			conn.SendTML(KeyPrompt(prompt,TML=True))
 			conn.ReceiveKey()
 	return(0)
 
@@ -179,41 +171,40 @@ def More(conn:Connection, text, lines, colors=default_style):
 # needs Turbo56K >= 0.7
 def text_displayer(conn:Connection, text, lines, colors=default_style):
 	#initialize line color list
-	lcols = [P.PALETTE[colors.TxtColor]]*len(text)
+	lcols = [colors.TxtColor]*len(text)
 	tcolor = lcols[0]
+
+	#Problematic TML tags
+	rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
+
 
 	#Display a whole text page
 	def _page(start,l):
-		nonlocal tcolor
+		nonlocal tcolor, lcols
 
-		conn.Sendall(chr(P.CLEAR))
-		tcolor = P.PALETTE[colors.TxtColor] if start == 0 else lcols[start-1]
+		conn.SendTML('<CLR>')
+		tcolor = colors.TxtColor if start == 0 else lcols[start-1]
 		for i in range(start, start+min(lcount,len(text[start:]))):
-			t = chr(tcolor) + text[i]
-			conn.Sendall(t)
-			tt = t.translate({ord(c):None for c in P.NONPRINTABLE})
-			if len(tt) < 40 and t[-1]!='\r':
-				conn.Sendall('\r')
-			tcolor = lcols[i]
+			t = f'<INK c={tcolor}>' + text[i]
+			conn.SendTML(t)
+			tcolor = lcols[i] = conn.parser.color
 		return(i)
 
+	
+	rep = dict((re.escape(k), v) for k, v in rep.items())
+	pattern = re.compile("|".join(rep.keys()))
 	if conn.QueryFeature(TT.SCROLL)< 0x80:
 		#eliminate problematic control codes
 		for i,t in enumerate(text):
-			text[i] = t.translate({P.HOME:None,P.CLEAR:None,P.CRSR_LEFT:None,P.CRSR_UP:None})
+			text[i] = pattern.sub(lambda m: rep[re.escape(m.group(0))], t)
 		if isinstance(lines,tuple):
 			lcount = lines[1]-lines[0]
 		else:
 			lcount = lines -1
 
-		# Fill line color list
-		for i,t in enumerate(text):
-			tcolor = lastColor(t,tcolor)
-			lcols[i] = tcolor
-
 		# Render 1st page
-		tcolor = P.PALETTE[colors.TxtColor]
-		conn.Sendall(chr(tcolor))
+		tcolor = colors.TxtColor
+		conn.SendTML(f'<INK c={tcolor}>')
 		i = _page(0,lines)
 
 		tline = 0
@@ -231,19 +222,19 @@ def text_displayer(conn:Connection, text, lines, colors=default_style):
 					if tline > 0:
 						tcolor = lcols[tline-1]
 					else:
-						tcolor = P.PALETTE[colors.TxtColor]
-					conn.Sendall(TT.scroll(-1)+chr(P.HOME)+chr(tcolor)+text[tline])
+						tcolor = colors.TxtColor
+					conn.SendTML(f'<SCROLL rows=-1><HOME><INK c={tcolor}>{text[tline]}')
 					ldir = False
 				elif (k[0] == P.CRSR_DOWN) and (bline < len(text)-1):	#Scroll down
 					tline += 1
 					if bline > 0:
 						tcolor = lcols[bline-1]
 					else:
-						tcolor = P.PALETTE[colors.TxtColor]
+						tcolor = colors.TxtColor
 					conn.Sendall(TT.scroll(1))
 					if ldir:
-						conn.Sendall(TT.set_CRSR(0,lcount-1)+chr(tcolor)+text[bline])
-					#lcols[bline] = lastColor(text[bline],tcolor)
+						conn.SendTML(f'<AT x=0 y={lcount-1}><INK c={tcolor}>{text[bline]}')
+						lcols[bline] = conn.parser.color
 					bline += 1
 					ldir = True
 				elif (k[0] == P.F1) and (tline > 0):	#Page up
@@ -280,3 +271,24 @@ def format_bytes(b:int):
 		b /= p
 		n += 1
 	return str(round(b,1))+pl[n]+'B'
+
+# Return a list of files (and subdirectories) in the specified top directory
+# path: top directory path
+# dirs: include subdirectories in list?
+# full: add the full path to the resulting list
+########################################################
+def catalog(path, dirs=False, full=True):
+	files = []
+	for entries in os.walk(path):
+		files.extend(entries[2])
+		if dirs:
+			files.extend(entries[1])
+		break
+	if full:
+		for i in range(len(files)):
+			files[i] = os.path.join(path,files[i])
+	return files
+
+################################################################
+# TML tags
+t_mono = {'CAT':(catalog,[('_R','_A'),('path','.'),('d',False),('f',True)])}

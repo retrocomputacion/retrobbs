@@ -46,3 +46,20 @@ class BBS:
 	def __del__(self):
 		self.stop()
 
+class Encoder:
+    def __init__(self, name:str) -> None:
+        self.name = name
+        self.tml_mono = {}		#	TML Tags for single characters/control codes
+        self.tml_multi = {}		#	TML Tags for characters that can be printed multiple times
+        self.encode = None		#	Function to encode from ASCII/Unicode
+        self.decode = None		#	Function to decode to ASCII/Unicode
+        self.palette = ()		#	List of palette control codes
+        self.non_printable = []	#	List of non printable characters
+        self.nl	= '\n'			#	New line string/character
+
+    def color_index(self, code):
+        try:
+            return self.palette.index(code)
+        except:
+            return -1
+

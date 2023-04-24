@@ -1,11 +1,8 @@
 import json
 import string
 
-from common.bbsdebug import _LOG,bcolors
-import common.helpers as H
 import common.style as S
 from common.connection import Connection
-import common.petscii as P
 import common.turbo56k as TT
 
 
@@ -23,6 +20,8 @@ def setup():
 #Plugin callable function
 def plugFunction(conn:Connection):
 
+    _dec = conn.encoder.decode
+
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
 
     try:
@@ -31,16 +30,15 @@ def plugFunction(conn:Connection):
         conn.Sendallbin(title)
     except:
         S.RenderMenuTitle(conn,'Oneliner')
-        conn.Sendall(chr(P.PURPLE))
+        conn.SendTML('<PURPLE>')
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
         conn.Sendall(TT.Fill_Line(3,192)+TT.Fill_Line(22,192)) # Window borders
     else:
-        conn.Sendall(TT.set_CRSR(0,3)+chr(P.RVS_ON)+(chr(P.HLINE)*40))
-        conn.Sendall(TT.set_CRSR(0,22)+(chr(P.HLINE)*40)+chr(P.RVS_OFF))
+        conn.SendTML('<AT x=0 y=3><RVSON><HLINE n=40><AT x=0 y=22><HLINE n=40><RVSOFF>')
 
     refr = True
     while conn.connected:
-        conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR)+S.KeyPrompt('return')+chr(P.GREEN)+"TO ENTER MESSAGE "+S.KeyPrompt('_')+chr(P.GREEN)+"TO GO BACK")
+        conn.SendTML(f'<WINDOW top=23 bottom=24><CLR>{S.KeyPrompt("RETURN",TML=True)}<GREEN>to enter message {S.KeyPrompt("<LARROW>",TML=True)}<GREEN>to go back')
         if refr == True:
             try:
                 olf = open('plugins/oneliners.json','r')
@@ -54,15 +52,15 @@ def plugFunction(conn:Connection):
         comm = conn.ReceiveKey(b'\r_')
         if comm == b'_':
             break
-        conn.Sendall(TT.set_Window(23,24)+chr(P.CLEAR))
+        conn.SendTML('<WINDOW top=23 bottom=24><CLR>')
         if conn.userclass > 0:
             nick = conn.username
         else:
-            conn.Sendall(chr(P.GREEN)+'nICK: '+chr(P.WHITE))
-            nick = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'),20))
+            conn.SendTML('<GREEN>Nick: <WHITE>')
+            nick = _dec(conn.ReceiveStr(bytes(keys,'ascii'),20))
         if nick != '':
-            conn.Sendall(chr(P.CLEAR)+chr(P.GREEN)+'mESSAGE:\r'+chr(P.WHITE))
-            line = P.toASCII(conn.ReceiveStr(bytes(keys,'ascii'), 39))
+            conn.SendTML('<CLR><GREEN>Message:<BR><WHITE>')
+            line = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 39))
             if line != '':
                 try:    # Refresh oneliners in case another user posted in the meanwhile
                     olf = open('plugins/oneliners.json','r')
@@ -81,11 +79,11 @@ def plugFunction(conn:Connection):
     conn.Sendall(TT.set_Window(0,24))
 ######################
 
-def sendOneliners(conn,lines):
-    conn.Sendall(TT.set_Window(4,21)+chr(P.CLEAR))
+def sendOneliners(conn:Connection,lines):
+    conn.SendTML('<WINDOW top=4 bottom=21><CLR>')
     for i,l in enumerate(lines):
-        conn.Sendall(chr(P.YELLOW)+P.toPETSCII(l[0])+' SAYS:\r'+chr(P.GREY3)+P.toPETSCII(l[1]))
+        conn.SendTML(f'<YELLOW>{l[0]} says:<BR><GREY3>{l[1]}')
         if len(l[1]) and i<8:
-            conn.Sendall('\r')
+            conn.SendTML('<BR>')
         if i == 8:  #Just in case the json file has more than 9 entries
             continue
