@@ -50,16 +50,24 @@ def plugFunction(conn:Connection,url, crop):
 			crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
 			try:
 				pa = slsession.streams(url)
-				for k in list(pa.keys()):
-					s = pa[k]
-					try:
-						best = s.url
-					except:
-						best = None
-					if best != None:
-						break
+				for k in ['1080p','720p','480p','240p','144p']:
+					s = pa.get(k,None)
+					#s = pa[k]
+					if s != None:
+						if type(s) == streamlink.stream.MuxedStream:
+							best = s.substreams[0].url #Index 0 seems to always be the video stream
+							break
+						else:
+							best = s.url
+							break
+					# try:
+					# 	best = s.url
+					# except:
+					# 	best = None
+					# if best != None:
+					# 	break
 				tmsecs = None
-			except:
+			except Exception as e:
 				_LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
 				conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
 				return()
