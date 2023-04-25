@@ -27,7 +27,7 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 		else:
 			length = int(frame_count/fps)*1000
 
-	while loop == True:
+	while True:
 		cimg = None
 		try:
 			if length != 0.0:
@@ -62,10 +62,10 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 			if conn.connected == False:
 				return()
 			if tecla == b'_' or tecla == b'':
-				loop = False
+				break
 		else:
 			conn.SendTML('...ERROR<CURSOR>') #Enable cursor
-			loop = False
+			break
 			#return()
 	capture.release()
 	cv2.destroyAllWindows()
@@ -73,3 +73,4 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 	return(1)
 
 
+t_mono = {'GRABFRAME':(lambda c,path:Grabframe(c,path,None),[('c','_C'),('path','')])}

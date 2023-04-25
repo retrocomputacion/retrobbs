@@ -24,7 +24,7 @@ def setup():
 def plugFunction(conn:Connection,url, crop):
 
 	conn.SendTML('<YELLOW><CBM-B><CRSRL>')
-	loop = True
+	best = ''
 	if crop != None:
 		crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 
