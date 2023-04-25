@@ -427,6 +427,7 @@ def SendProgram(conn:Connection,filename):
         archivo=open(filename,"rb")
         # Read load address
         binario=archivo.read(2)
+        staddr = binario[0]+(binario[1]*256)
         # Sync
         binaryout = b'\x00'
         # Enter command mode
@@ -434,6 +435,7 @@ def SendProgram(conn:Connection,filename):
 
         # Set the transfer pointer + load address (low:high)
         filesize = os.path.getsize(filename) - 2
+        endaddr = staddr + filesize
         binaryout += b'\x80'
         if isinstance(binario[0],str) == False:
             binaryout += binario[0].to_bytes(1,'big')
@@ -454,7 +456,12 @@ def SendProgram(conn:Connection,filename):
         archivo.close()
         # Send the data
         conn.Sendallbin(binaryout)
-
+        conn.SendTML(   f'<CLR><RVSOFF><ORANGE>Program file transferred to ${staddr:0{4}x}-${endaddr:0{4}x}<BR>'
+		                f'To execute this program, log off from<BR>'
+                        f'this BBS, and exit Retroterm with <BR>RUN/STOP.<BR>'
+			            f'Then use RUN or the correct SYS.<BR>'
+			            f'Press <YELLOW>RETURN<ORANGE> to continue')
+        conn.ReceiveKey()
 
 ####################################################################################
 # Transfer a file to be stored in media by the client
