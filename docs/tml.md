@@ -59,6 +59,6 @@ Plain text in between tags is automatically encoded to the target client, newlin
 ```html
 <RED>HELLO
     <GREEN>
- WORLD
+ WORLD!
 ```
 
