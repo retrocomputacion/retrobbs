@@ -457,11 +457,12 @@ def SendProgram(conn:Connection,filename):
         # Send the data
         conn.Sendallbin(binaryout)
         conn.SendTML(   f'<CLR><RVSOFF><ORANGE>Program file transferred to ${staddr:0{4}x}-${endaddr:0{4}x}<BR>'
-		                f'To execute this program, log off from<BR>'
+		                f'To execute this program, <YELLOW><RVSON>L<RVSOFF><ORANGE>og off from<BR>'
                         f'this BBS, and exit Retroterm with <BR>RUN/STOP.<BR>'
 			            f'Then use RUN or the correct SYS.<BR>'
-			            f'Press <YELLOW>RETURN<ORANGE> to continue')
-        conn.ReceiveKey()
+			            f'Or <YELLOW><RVSON>C<RVSOFF><ORANGE>ontinue your session')
+        if conn.ReceiveKey(b'CL') == b'L':
+            conn.connected = False
 
 ####################################################################################
 # Transfer a file to be stored in media by the client
