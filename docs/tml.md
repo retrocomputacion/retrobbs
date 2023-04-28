@@ -1,14 +1,14 @@
 <div align = center>
 
-# Turbo Markup Language (TML)
+# **Turbo Markup Language (TML)**
 ## A markup and scripting language for RetroBBS
-#### (preliminary)
+##### (preliminary)
 ---
 ---
 
 </div>
 
-## Introduction
+## **Introduction**
 
 Before the introduction of **TML** _RetroBBS_ relied in great part on hardcoding strings, control codes and special characters to match the target client platform (just the _Commodore 64_ at the time of this writing). This limited and complicated adding new target platforms.
 
@@ -21,7 +21,8 @@ In addition to help describe control codes and _Turbo56K_ commands, __TML__ also
 A subset of _RetroBBS_ internal functions are also available, aswell as every installed plugin.
 
 ---
-## The basics
+---
+## **The basics**
 
 **TML** syntax is based on _HTML_ and is in fact parsed using a child class to Python's HTMLParser
 
@@ -31,7 +32,7 @@ _Tags_ are the functions or statements in this language, a basic statement can o
 ```html
 <CLR><CHECKMARK>
 ```
-Almost all tags have optional parameters, this take the format `parameter=value`, if a parameter is not passed the default value will be used. Parameter names are almost always lowercase.
+Almost all tags have optional parameters, this take the format `parameter=value`, if a parameter is not passed the default value will be used. Parameter names are always **lowercase**, with a few exceptions.
 
 ##### Example: Output 20 white Pi characters, wait 2 seconds, output a newline and 5 yellow Pound characters
 ```html
@@ -44,7 +45,7 @@ Almost all tags have optional parameters, this take the format `parameter=value`
 
 Block tags include conditional execution and loop statements, and contrary to other tags, need a matching closing tag.
 
-##### Example: Clear screen, move the cursor and sound the client's BELL _only_ if the client understand C64 PETSCII. Then output the character code 200.
+##### Example: Clear screen, then move the cursor and sound the client's BELL _only_ if the client understand C64 PETSCII. Then output the character code 200.
 ```html
 <CLR>
 <MODE m=PET64>
@@ -61,4 +62,215 @@ Plain text in between tags is automatically encoded to the target client, newlin
     <GREEN>
  WORLD!
 ```
+Use HTML entities `&lt;` and `&gt;` to output `<` and `>` respectively, use the break tag `<BR>` to insert line breaks.
 
+---
+---
+## **The internal registers**
+To make possible the execution of loops, conditional and other data manipulation, a small set of _'registers'_ are available:
+
+### **_R Return register**:
+Read only register, this register will contain the result from the last function call.
+</br>When used as a parameter, indicates to which register the result will be redirected/assigned to.
+
+##### Example: assign _'hello'_ to **_S**, notice the reversed notation
+```html
+<LET _R=_S x='hello'>
+```
+
+#### **_C Connection register**:
+When written to, any character or string input will be sent to the client.
+Reading this register returns the current connection object.
+
+#### **_B Binary connection register**:
+Write only register, this register accepts binary values or strings to be sent to the client
+
+#### **_A Accumulator**:
+General purpose register, values stored into, or read from this register will not be typecasted.
+
+#### **_S String accumulator**:
+String register, any value stored into this register will be typecasted to a Python `str`.</br>If the typecasting fails `_S` will be `''`.
+
+#### **_I Integer accumulator**:
+Integer register, any value stored into this register will be typecasted to a Python `int`.</br>If the typecasting fails `_I` will be `0`.
+
+#### **Registers, parameter values and expressions**:
+The internal registers can be passed as parameters and can be used in any expression that's accepted by _Python's_ `eval()` function.
+
+##### Example: Output the string *'_I = 2'* to the client's screen.
+```html
+<LET _R=_I x=2>
+<LET _R=_S x='_I = '>
+<OUT x='_S+str(_I)'>
+```
+Note the use of quotes in the parameter values, sometimes it will be needed to nest single and double quotes:
+
+```html
+<RND e=10>
+<OUT x='"Random number:"+str(_I)'>
+```
+---
+---
+## **Command reference**:
+
+
+### **Common control codes**
+These control code commands are common to every target platform, the connection encoder makes the corresponding conversion to the actual control codes.
+
+</br>
+
+#### **&lt;BELL&gt;** BELL
+Send a BELL character, cause a aural or visual chime.
+
+---
+#### **&lt;CLR&gt;** Clear screen
+Clears the text screen.
+
+---
+#### **&lt;HOME&gt;** Cursor home
+Move the text cursor to the top left of the screen.
+
+---
+#### **&lt;CRSRL&gt;** Cursor left
+#### **&lt;CRSRR&gt;** Cursor right
+#### **&lt;CRSRU&gt;** Cursor up
+#### **&lt;CRSRD&gt;** Cursor down
+Move the text cursor in the corresponding direction.</br>
+Parameter:
+
+`n: number of repeats, default 1` 
+
+---
+#### **&lt;DEL&gt;** Delete
+Print a delete/backspace character.</br>
+Parameter:
+
+`n: number of repeats, default 1` 
+
+---
+#### **&lt;SPC&gt;** Space
+Print a space character.</br>
+Parameter:
+
+`n: number of repeats, default 1`
+
+---
+#### **&lt;NUL&gt;** Null
+Send a Null character, usually '0' (zero).</br>
+Parameter:
+
+`n: number of repeats, default 1` 
+
+---
+</br>
+
+### **Register operations**:
+Basic instructions to assign or modify the internal registers.
+
+</br>
+
+#### **&lt;LET&gt;**
+Assign a value to one of the internal registers.</br>
+Parameters:
+
+`_R: Destination register, default _I`</br>
+`x: value to assign, default _I`
+
+---
+#### **&lt;INC&gt;**
+Increment the **_I** register.
+
+---
+#### **&lt;DEC&gt;**
+Decrement the **_I** register.
+
+---
+#### **&lt;RND&gt;**
+Return a random integer within the selected limits in **_I**.</br>
+Parameters:
+
+`s: lower bound of the random number range, default 0`
+`e: upper bound of the random number range, default 10`
+
+---
+#### **&lt;OUT&gt;**
+Convert the input parameter to a string (if necessary) and send it to the client in the correct encoding.</br>
+Parameter:
+
+`x: value to output, default _I`
+
+---
+#### **&lt;LEN&gt;**
+Assign the length of the string in **_S** to **_I**
+
+---
+</br>
+
+### **System/Connection variables**:
+
+</br>
+
+#### **&lt;USER&gt;**
+Return the username of the current connection in **_S**
+
+---
+</br>
+
+### **Input**:
+
+</br>
+
+#### **&lt;INKEYS&gt;**
+Wait for the user to press a key from the list passed as parameter. Return as _byte_ in **_A**</br>
+Parameter:
+
+`k: a string containing the valid keypresses in the native client encoding, default '/r'`
+
+---
+
+</br>
+
+### **Block instructions**:
+These instructions need a corresponding closing tag.
+</br>
+
+#### **&lt;MODE&gt;**
+Only parse the code inside this block if the connection encoding matches the **m** parameter.</br>
+Parameter:
+
+`m: Encoding for this code block, default 'PET64'`
+
+---
+#### **&lt;IF&gt;**
+Execute the code inside the block if the condition is fullfilled.</br>
+Parameter:
+
+`c: Condition to be fullfilled, default False`
+
+---
+#### **&lt;WHILE&gt;**
+Repeat the code inside the block as long as the condition is fullfilled.<br>
+Parameter:
+
+`c: Condition to be fullfilled, default False`
+
+Example:
+
+##### Output 'LOOP!' five times
+```html
+<LET x=0>
+<WHILE c='_I<5'>
+    LOOP!
+    <INC>
+</WHILE>
+```
+---
+#### **&lt;SWITCH&gt;**...**&lt;CASE&gt;**
+Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.<br>
+_&lt;SWITCH&gt;_ parameter:
+
+`r: expression to test, default _A`
+
+_&lt;CASE&gt;_ parameter:
+
+`c: value to match, default False`
