@@ -163,7 +163,7 @@ def scroll(rows,bin = False):
 
 t_mono = {'SETOUTPUT':(lambda o: to_Screen() if o else to_Speech(),[('_R','_C'),('o',True)]),
           'TEXT':(to_Text,[('_R','_C'),('page',0),('border',0),('background',0)]),
-          'GRAPHIC':(lambda mode,page,border,background: to_Multi(page,border,background) if mode else to_Hires(page,border),[('_R','_C'),('page',0),('border',0),('background',0)]),
+          'GRAPHIC':(lambda mode,page,border,background: to_Multi(page,border,background) if mode else to_Hires(page,border),[('_R','_C'),('mode',False),('page',0),('border',0),('background',0)]),
           'RESET':(reset_Turbo56K,[('_R','_C')]),
           'LFILL':(Fill_Line,[('_R','_C'),('row',0),('code',0)]),
           'CURSOR':(lambda enable: enable_CRSR() if enable else disable_CRSR(),[('_R','_C'),('enable',True)]),
