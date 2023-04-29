@@ -95,7 +95,7 @@ class Connection:
 				self.TermFt[cmd] = self.Receive(1)[0]	# Store as int
 				self.Sendall(chr(TT.CMDOFF))
 		elif self.TermFt[cmd] == None:
-			self.TermFt[cmd] = TT.T56Kold[cmd-128]
+			self.TermFt[cmd] = TT.T56Kold[cmd-128][0]
 		return self.TermFt[cmd]
 
 	#Converts string to binary string and sends it via socket
