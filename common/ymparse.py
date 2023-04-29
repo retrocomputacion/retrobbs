@@ -200,7 +200,8 @@ def YMGetMeta(data):
 # Parse YM file, return list of frames with register values and Metadata
 def YMDump(data):
 
-	if (meta := YMGetMeta(data))!= None:
+	meta = YMGetMeta(data)
+	if meta != None:
 		if data[:4] == b'Vgm ':	#.VGM
 			ix = meta['offset']
 			if meta['rate'] == 0:

@@ -22,7 +22,8 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 		return()
 	if length == None:
 		fps = capture.get(cv2.CAP_PROP_FPS)      # OpenCV v2.x used "CV_CAP_PROP_FPS"
-		if (frame_count := int(capture.get(cv2.CAP_PROP_FRAME_COUNT)))<= 0:
+		frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT)) 
+		if frame_count<= 0:
 			length = 0 
 		else:
 			length = int(frame_count/fps)*1000

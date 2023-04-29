@@ -521,7 +521,8 @@ def SIDParser2(filename,ptime,order = 0, subtune = 1):
 		return (w[0]<<8)|w[1]
 	try:
 		with open(filename,'rb') as f_in:
-			if (header:= f_in.read(4)) == b'PSID' or header == b'RSID':
+			header = f_in.read(4)
+			if header == b'PSID' or header == b'RSID':
 				f_in.seek(6,0)
 				dataoffset = readword(f_in)
 				loadaddress = readword(f_in)
@@ -647,7 +648,8 @@ def AYtoSID(filename):
 	sidfreq = 985248	#PAL clock
 	dump = None
 	try:
-		if (data:= YM.YMOpen(filename))!= None:
+		data = YM.YMOpen(filename)
+		if data != None:
 			frames,meta = YM.YMDump(data)
 			ymfreq = meta['clock']
 			if frames != None:

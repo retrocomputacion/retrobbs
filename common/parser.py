@@ -334,8 +334,13 @@ class TMLParser(HTMLParser):
 	# Pop entries from the stack until 'tag' is found
 	def _popLatest(self, tag:str):
 		if self._findLatest(tag) != None:
-			while (en := self.stack.popleft())[0] != tag:
+			# while (en := self.stack.popleft())[0] != tag:
+			# 	pass
+			en = ['']
+			while en[0] != tag:
+				en = self.stack.popleft()
 				pass
+
 			return en
 		else:
 			return None
@@ -383,7 +388,8 @@ class TMLParser(HTMLParser):
 						self.stack.appendleft((tag,[],(spos,epos)))
 			# Handle IF
 			elif tag == 'if':
-				if (condition := attr.get('c',False)) != False:
+				condition = attr.get('c',False)
+				if condition != False:
 					condition = condition.replace('\r','\\r').replace('\n','\\n')
 				if self._evalParameter(condition,False):
 					self.stack.appendleft((tag,[],(spos,epos)))

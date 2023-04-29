@@ -112,6 +112,7 @@ __New features__:
  - Added `lines` and `busy` parameters to the configuration file 
  - Added `encoders` directory. Encoder modules provide encoding/decoding functions for different platforms. 
  - Introducing TML markup/scripting language, moving towards an encoding agnostic BBS. Some functions now expect parameters in this format.
+ - New STAT internal function for displaying some basic BBS and user statistics
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -133,9 +134,10 @@ __Changes/Bug fixes__:
  - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
  - *YouTube* plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
  - When all the slots are in use will now correctly close any further incoming connections.
- - *Weather* and *Maps* plugins use Photom instead of Nominatim as geocoder.
+ - *Weather* and *Maps* plugins use Photon instead of Nominatim as geocoder.
  - Fixed creash when the geocoder didnt respond in time in the *Weather* plugin
  - Extensive rewrite and cleanup, TML scripting integration.
+ - Option to logout after transferring a program to memory
 
 ---
 # 1.2 The *Turbo56K* protocol

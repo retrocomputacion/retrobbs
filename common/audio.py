@@ -145,7 +145,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
                 f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
 	conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
 	# Selects screen output
-	conn.SendTML('<PAUSE n=1><SETOUPUT>')
+	conn.SendTML('<PAUSE n=1><SETOUTPUT>')
 	return MenuDic
 
 #########################################
@@ -341,14 +341,16 @@ def _GetCHIPLength(filename):
 	elif os.path.isfile(os.path.dirname(filename)+'/SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') == True:
 		with open(os.path.dirname(filename)+'/SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') as tf:
 			tstr = tf.read()
+	data = ym.YMOpen(filename)
 	if tstr != None:
 		length = []
 		for i in range(0,len(tstr),2):
 			tmins = int(hex(ord(tstr[i]))[2:])
 			tsecs = int(hex(ord(tstr[i+1]))[2:])
 			length.append((tmins*60)+tsecs) # Playtime for the 1st subtune
-	elif (data:= ym.YMOpen(filename)) != None:
-		if (meta:= ym.YMGetMeta(data)) != None:
+	elif data != None:
+		meta= ym.YMGetMeta(data)
+		if meta != None:
 			length = meta['songlength']
 	
 	return length
@@ -527,7 +529,8 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 				#         conn.Sendall(chr(TT.CMDOFF))
 				player = 'x'    # <<<< Delete this line when player ID is properly implemented
 		else:	# YM music
-			if (data:= ym.YMOpen(filename)) != None:
+			data = ym.YMOpen(filename)
+			if data != None:
 				info= ym.YMGetMeta(data)
 			player = 'x'
 

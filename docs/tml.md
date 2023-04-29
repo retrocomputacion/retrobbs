@@ -138,28 +138,33 @@ Move the text cursor to the top left of the screen.
 Move the text cursor in the corresponding direction.</br>
 Parameter:
 
-`n: number of repeats, default 1` 
+`n`: number of repeats, default `1` 
 
 ---
 #### **&lt;DEL&gt;** Delete
 Print a delete/backspace character.</br>
 Parameter:
 
-`n: number of repeats, default 1` 
+`n`: number of repeats, default `1` 
 
 ---
 #### **&lt;SPC&gt;** Space
 Print a space character.</br>
 Parameter:
 
-`n: number of repeats, default 1`
+`n`: number of repeats, default `1`
 
 ---
 #### **&lt;NUL&gt;** Null
 Send a Null character, usually '0' (zero).</br>
 Parameter:
 
-`n: number of repeats, default 1` 
+`n`: number of repeats, default `1` 
+
+#### **&lt;INK&gt;**
+Change the text color to the value passed as parameter. Actual color is platform dependent.</br>
+
+`c`: Index in the palette of the desired color. Default `0`.
 
 ---
 </br>
@@ -173,8 +178,8 @@ Basic instructions to assign or modify the internal registers.
 Assign a value to one of the internal registers.</br>
 Parameters:
 
-`_R: Destination register, default _I`</br>
-`x: value to assign, default _I`
+`_R`: Destination register, default `_I`</br>
+`x`: value to assign, default `_I`
 
 ---
 #### **&lt;INC&gt;**
@@ -189,15 +194,15 @@ Decrement the **_I** register.
 Return a random integer within the selected limits in **_I**.</br>
 Parameters:
 
-`s: lower bound of the random number range, default 0`
-`e: upper bound of the random number range, default 10`
+`s`: lower bound of the random number range, default `0`
+`e`: upper bound of the random number range, default `10`
 
 ---
 #### **&lt;OUT&gt;**
 Convert the input parameter to a string (if necessary) and send it to the client in the correct encoding.</br>
 Parameter:
 
-`x: value to output, default _I`
+`x`: value to output, default `_I`
 
 ---
 #### **&lt;LEN&gt;**
@@ -224,7 +229,7 @@ Return the username of the current connection in **_S**
 Wait for the user to press a key from the list passed as parameter. Return as _byte_ in **_A**</br>
 Parameter:
 
-`k: a string containing the valid keypresses in the native client encoding, default '/r'`
+`k`: a string containing the valid keypresses in the native client encoding, default `'/r'`
 
 ---
 
@@ -234,25 +239,50 @@ Parameter:
 These instructions need a corresponding closing tag.
 </br>
 
-#### **&lt;MODE&gt;**
-Only parse the code inside this block if the connection encoding matches the **m** parameter.</br>
-Parameter:
-
-`m: Encoding for this code block, default 'PET64'`
-
----
 #### **&lt;IF&gt;**
 Execute the code inside the block if the condition is fullfilled.</br>
 Parameter:
 
-`c: Condition to be fullfilled, default False`
+`c`: Condition to be fullfilled, default `False`
 
+---
+#### **&lt;MODE&gt;**
+Only parse the code inside this block if the connection encoding matches the **m** parameter.</br>
+Parameter:
+
+`m`: Encoding for this code block, default `'PET64'`
+
+---
+#### **&lt;SWITCH&gt;**...**&lt;CASE&gt;**
+Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.<br>
+_&lt;SWITCH&gt;_ parameter:
+
+`r`: expression to test, default `_A`
+
+_&lt;CASE&gt;_ parameter:
+
+`c`: value to match, default `False`
+
+Example:
+
+##### Wait for the user to press either the '1' or '2' keys and then spell out which one was pressed
+```html
+<INKEYS k='12'>
+<SWITCH r=_A[0]>
+    <CASE c=49>
+        ONE
+    </CASE>
+    <CASE c=50>
+        TWO
+    </CASE>
+</SWITCH>
+```
 ---
 #### **&lt;WHILE&gt;**
 Repeat the code inside the block as long as the condition is fullfilled.<br>
 Parameter:
 
-`c: Condition to be fullfilled, default False`
+`c`: Condition to be fullfilled, default `False`
 
 Example:
 
@@ -265,12 +295,160 @@ Example:
 </WHILE>
 ```
 ---
-#### **&lt;SWITCH&gt;**...**&lt;CASE&gt;**
-Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.<br>
-_&lt;SWITCH&gt;_ parameter:
 
-`r: expression to test, default _A`
+</br>
 
-_&lt;CASE&gt;_ parameter:
+### **Other generic instructions**:
 
-`c: value to match, default False`
+</br>
+
+#### **&lt;PAUSE&gt;**
+Pause the execution.</br>
+Parameter:
+
+`n`: Seconds to pause (float), default `0`
+
+---
+
+</br>
+
+### **Turbo56K related commands**:
+</br>
+
+#### **&lt;AT&gt;**
+Move the client's text cursor to the requested position.</br>
+Parameters:
+
+`x`: Screen column. Default `0`
+`y`: Screen row. Default `0`
+
+---
+#### **&lt;CURSOR&gt;**
+Enable or disable the client's text cursor.</br>
+Parameter:
+
+`enable`: Set to `True` to enable the text cursor. Default `True` 
+
+---
+#### **&lt;GRAPHIC&gt;**
+Switch the client's screen to a graphic mode. And select the screen colors.</br>
+Parameters:
+
+`mode`: Graphic mode, True for multicolor, False for hires. Default `False`</br>
+`page`: Text page number, currently unused. Default `0`</br>
+`border`: Screen border color. Default `0`</br>
+`background`: Screen background color. Default `0`
+
+---
+#### **&lt;LFILL&gt;**
+Fill a screen row with the given character code.</br>
+Parameters:
+
+`row`: Screen row to fill. Default `0`<br>
+`code`: Character code to use. Default `0`. For C64 this is a screen code, not PETSCII`
+
+---
+#### **&lt;RESET&gt;**
+Reset the client's terminal screen to the default state.
+
+---
+#### **&lt;SCROLL&gt;**
+Scroll the client's text screen in the required amount and direction.</br>
+Parameter:
+
+`rows`: Ammount of rows to scroll. Positive number will scroll up, negative will scroll down. Default `0`
+
+---
+#### **&lt;SETOUTPUT&gt;**
+Select the client's output device.</br>
+Parameter:
+
+`o`: Boolean, True for screen, False for voice synthesizer. Default `True`
+
+---
+#### **&lt;SPLIT&gt;**
+Split the client's screen in a top graphic mode section, and a bottom text mode section.</br>
+Parameters:
+
+`row`: Screen row at witch the split occurs. Default `0`
+`multi`: Boolean, `True` for multicolor graphic mode. Default `False`
+`bgtop`: Background color for the top section. Default `0`
+`bgbottom`: Background color for the bottom section. Default `0`
+
+---
+#### **&lt;TEXT&gt;**
+Switch the client's screen to text mode. And select the screen colors.</br>
+Parameters:
+
+`page`: Text page number, currently unused. Default `0`</br>
+`border`: Screen border color. Default `0`</br>
+`background`: Screen background color. Default `0`
+
+---
+#### **&lt;WINDOW&gt;**
+Define text window on the client screen.</br>
+Parameters:
+
+`top`: Top most row of the window. Default `0`
+`bottom`: Bottom most row of the window. Default `24`
+
+---
+</br>
+
+### **RetroBBS core functions**:
+</br>
+
+#### **&lt;UNREAD&gt;**
+Returns in **_A** a two-element list with the number of unread public and private messages respectively.
+
+---
+#### **&lt;MTITLE&gt;**
+Render a menu title frame at the top of the client's text window.</br>
+Parameters:
+
+`t`: Title string. Default `''`
+
+---
+#### **&lt;KPROMPT&gt;**
+Render a key prompt in the `[KEY]` style.</br>
+Parameter:
+
+`t`: Prompt string. Default `'RETURN'`
+
+---
+#### **&lt;DIALOG&gt;**
+Render the file dialog background</br>
+Parameters:
+
+`h`: Height of the dialog box in screen rows. Default `4`
+`t`: Title string. Default `''`
+
+---
+#### **&lt;CAT&gt;**
+Return a Python list in **_A** with the files (and subdirectories) in the directory passed as argument.</br>
+Parameters:
+
+`path`: Path to the directory to list. Default `'.'`</br>
+`d`: Boolean, list subdirectories. Default `False`</br>
+`f`: Boolean, add the full path to each filename/subdirectory. Default `True`
+
+---
+#### **&lt;SENDRAW&gt;**
+Send a file to the client, no processing done.</br>
+Parameter:
+
+`file`: Path to the file to be sent. Default `''`
+
+---
+#### **&lt;SENDFILE&gt;**
+Send a file to the client. The corresponding action or processing needed for the file type will be taken automatically.</br>
+Parameters:
+
+`file`: Path to the file to be sent. Default `''`</br>
+`dialog`: Boolean, set to `True` to display the file dialog prompting user action. Default `False`</br>
+`save`: Set to `True` if you want the (option for the) file to be saved to disk, as long as the file type and the client's terminal supports it. Default `False`
+
+---
+#### **&lt;GRABFRAME&gt;**
+Grab a frame from a video file/stream and display it as a graphic screen on the client's terminal.
+

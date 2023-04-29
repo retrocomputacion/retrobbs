@@ -133,7 +133,8 @@ class DBase:
             table.insert({'record':'bbs_stats','visits':1,'latest':[uname]})
         else:
             ut = table.get(dbQ.record == 'bbs_stats')
-            if (lu := ut.get('latest')) == None:
+            lu = ut.get('latest')
+            if lu == None:
                 lu = []
             lu = deque(lu,10)
             lu.appendleft(uname)

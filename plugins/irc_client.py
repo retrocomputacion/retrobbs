@@ -118,7 +118,8 @@ def plugFunction(conn:Connection,server,port,channel):
         text = H.formatX('Users in '+channel+': '+event.arguments[2])
         text[0] = '<CYAN>'+text[0]
         for i in range(len(text)):
-            if ((x:=text[i].find(':'))!=-1):
+            x = text[i].find(':')
+            if x !=-1:
                 text[i] = text[i][:x+1]+'<GREEN>'+text[i][x+1:]
         printchat(text)
 
