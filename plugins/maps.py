@@ -10,7 +10,7 @@ from common.bbsdebug import _LOG
 import common.filetools as FT
 import common.turbo56k as TT
 import common.petscii as P
-from geopy.geocoders import Photon
+from geopy.geocoders import Photon, Nominatim
 
 #############################
 #Plugin setup
@@ -76,7 +76,13 @@ def plugFunction(conn:Connection):
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
 
-    geoLoc = Photon(user_agent="RetroBBS-Maps")
+    geoserver = conn.bbs.PlugOptions.get('geoserver','Nominatim')
+
+    if geoserver == 'Photon':
+        geoLoc = Photon(user_agent="RetroBBS-Maps")
+    else:
+        geoLoc = Nominatim(user_agent="RetroBBS-Maps")
+
 
     FT.SendBitmap(conn,'plugins/maps_intro.png', multi=False, preproc=False, display=False)
     conn.SendTML('<SPLIT row=24><YELLOW><CLR>Location:')

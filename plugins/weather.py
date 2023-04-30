@@ -71,9 +71,14 @@ def plugFunction(conn:Connection):
     # Convert this data into a dictionary
     result  = json.loads(result)
     locqry = result.get('city', conn.bbs.PlugOptions.get('wxdefault','Meyrin'))
+    geoserver = conn.bbs.PlugOptions.get('geoserver','Nominatim')
     done = False
     loop = asyncio.new_event_loop()
-    geoLoc = Photon(user_agent="RetroBBS-Weather")
+    if geoserver == 'Photon':
+        geoLoc = Photon(user_agent="RetroBBS-Weather")
+    else:
+        geoLoc = Nominatim(user_agent="RetroBBS-Weather")
+
     while conn.connected and not done:
         conn.SendTML('<CBM-B><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
@@ -88,7 +93,12 @@ def plugFunction(conn:Connection):
         else:
             conn.SendTML('Location:')
             locqry = conn.encoder.decode(conn.ReceiveStr(bytes(keys,'ascii'),30))
-            tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
+            try:
+                tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
+            except:
+                _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
+                conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
+                continue
             if tloc == None:
                 #Default to config setting, or Meyrin otherwise
                 locqry = conn.bbs.PlugOptions.get('wxdefault','Meyrin')
