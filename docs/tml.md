@@ -8,6 +8,22 @@
 
 </div>
 
+## Table of contents
+
+1. [Introduction](#introduction)
+2. [The basics](#the-basics)
+3. [The internal registers](#the-internal-registers)
+4. [Command reference](#command-reference)
+   1. [Common control codes](#common-control-codes)
+   2. [Register operations](#register-operations)
+   3. [System/connection variables](#systemconnection-variables)
+   4. [Input](#input)
+   5. [Block instructions](#block-instructions)
+   6. [Other generic instructions](#other-generic-instructions)
+   7. [Turbo56k related commands](#turbo56k-related-commands)
+   8. [RetroBBS core functions](#retrobbs-core-functions)
+---
+---
 ## **Introduction**
 
 Before the introduction of **TML** _RetroBBS_ relied in great part on hardcoding strings, control codes and special characters to match the target client platform (just the _Commodore 64_ at the time of this writing). This limited and complicated adding new target platforms.
@@ -69,7 +85,7 @@ Use HTML entities `&lt;` and `&gt;` to output `<` and `>` respectively, use the 
 ## **The internal registers**
 To make possible the execution of loops, conditional and other data manipulation, a small set of _'registers'_ are available:
 
-### **_R Return register**:
+#### **_R Return register**:
 Read only register, this register will contain the result from the last function call.
 </br>When used as a parameter, indicates to which register the result will be redirected/assigned to.
 
