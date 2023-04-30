@@ -468,3 +468,17 @@ Parameters:
 #### **&lt;GRABFRAME&gt;**
 Grab a frame from a video file/stream and display it as a graphic screen on the client's terminal.
 
+---
+</br>
+
+### **Plugin functions**
+
+</br>
+
+All plugins installed are available as functions inside _TML_, the function names and parameters remain the same used in the configuration file.</br>
+Refer to the plugin section in the main readme for more information.
+
+##### Example: Play SlayRadio audio stream
+```html
+<WEBAUDIO url='http://relay3.slayradio.org:8000/'>
+```
