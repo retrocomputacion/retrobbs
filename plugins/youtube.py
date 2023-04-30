@@ -42,6 +42,7 @@ def plugFunction(conn:Connection,url, crop):
 	if video == None:
 		slsession = streamlink.Streamlink()
 		try:
+
 			stl = slsession.resolve_url(url)
 			source = stl[0]
 		except:
@@ -49,8 +50,9 @@ def plugFunction(conn:Connection,url, crop):
 		if source != "":
 			crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
 			try:
-				pa = slsession.streams(url)
-				for k in ['1080p','720p','480p','240p','144p']:
+				plug = stl[1](slsession,url)	#Create plugin object
+				pa = plug.streams()	#slsession.streams(url)
+				for k in ['240p','360p','480p','720p','1080p','144p']:
 					s = pa.get(k,None)
 					#s = pa[k]
 					if s != None:
@@ -70,7 +72,7 @@ def plugFunction(conn:Connection,url, crop):
 			except Exception as e:
 				_LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
 				conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
-				return()
+				return
 
 	return(VV.Grabframe(conn,best,crop,tmsecs))
 
