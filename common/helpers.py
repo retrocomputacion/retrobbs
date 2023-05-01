@@ -163,7 +163,7 @@ def More(conn:Connection, text, lines, colors=default_style):
 		if cc !=0:
 			conn.Sendall('\r')
 		if not pp:
-			conn.SendTML(KeyPrompt(prompt,TML=True))
+			conn.SendTML(f'<KPROMPT t={prompt}>')
 			conn.ReceiveKey()
 	return(0)
 

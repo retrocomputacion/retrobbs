@@ -13,7 +13,6 @@ import threading
 from common.bbsdebug import _LOG,bcolors
 import common.connection
 from common.helpers import formatX
-from common.style import KeyPrompt
 import common.audio as AA
 
 
@@ -151,8 +150,8 @@ def plugFunction(conn:common.connection.Connection,url):
     conn.SendTML('<TEXT border=6 background=6><CLR><YELLOW>')
     for l in sTitle:
         conn.SendTML(l)
-    conn.SendTML(f'<BR><BR>Press {KeyPrompt("RETURN",TML=True)}<YELLOW> to start<BR>'
-                 f'<BR>Press {KeyPrompt("X",TML=True)}<YELLOW> to stop/cancel<BR>')
+    conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>'
+                 f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
 
     if conn.ReceiveKey(b'\rX') == b'X':
         return

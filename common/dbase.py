@@ -136,6 +136,9 @@ class DBase:
             lu = ut.get('latest')
             if lu == None:
                 lu = []
+            v = ut.get('visits')
+            if v == None:
+                table.update({'visits':0},dbQ.record == 'bbs_stats')
             lu = deque(lu,10)
             lu.appendleft(uname)
             table.update_multiple([(increment('visits'), where('record') == 'bbs_stats'),({'latest':list(lu)}, where('record') == 'bbs_stats')])

@@ -111,7 +111,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				conn.SendTML(fok)
 			else:
 				conn.SendTML(fabort)
-			conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+			conn.SendTML('<KPROMPT t=RETURN>')
 			return
 		else:
 			# Open Advanced Art Studio image file
@@ -148,7 +148,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				conn.SendTML(fok)
 			else:
 				conn.SendTML(fabort)
-			conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+			conn.SendTML('<KPROMPT t=RETURN>')
 			return
 		else:
 			# Open the Koala Paint image file
@@ -183,7 +183,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				conn.SendTML(fok)
 			else:
 				conn.SendTML(fabort)
-			conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+			conn.SendTML('<KPROMPT t=RETURN>')
 			return
 		else:		# Open the Art Studio image file
 			archivo=open(filename,"rb")
@@ -213,7 +213,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				conn.SendTML(fok)
 			else:
 				conn.SendTML(fabort)
-			conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+			conn.SendTML('<KPROMPT t=RETURN>')
 			return
 		else:		# Open the Art Studio image file
 			archivo=open(filename,"rb")
@@ -326,7 +326,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			conn.SendTML(fok)
 		else:
 			conn.SendTML(fabort)
-		conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+		conn.SendTML('<KPROMPT t=RETURN>')
 		return
 
 #####################################################################################
@@ -356,7 +356,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 					conn.SendTML(fok)
 				else:
 					conn.SendTML(fabort)
-				conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+				conn.SendTML('<KPROMPT t=RETURN>')
 				conn.ReceiveKey()
 			return
 		elif ext in ['.SEQ','.TXT']:
@@ -381,7 +381,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 					conn.SendTML(fok)
 				else:
 					conn.SendTML(fabort)
-				conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+				conn.SendTML('<KPROMPT t=RETURN>')
 				conn.ReceiveKey()
 			return
 		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART']:
@@ -409,7 +409,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 					conn.SendTML(fok)
 				else:
 					conn.SendTML(fabort)
-				conn.SendTML(S.KeyPrompt('RETURN',TML=True))
+				conn.SendTML('<KPROMPT t=RETURN>')
 				conn.ReceiveKey()
 	...
 

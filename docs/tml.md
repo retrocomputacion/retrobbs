@@ -80,6 +80,8 @@ Plain text in between tags is automatically encoded to the target client, newlin
 ```
 Use HTML entities `&lt;` and `&gt;` to output `<` and `>` respectively, use the break tag `<BR>` to insert line breaks.
 
+If you need to escape a control code in a string parameter, instead of using the normal _Python_ forward slash (`/`) use HTML entity numbers, for example: `/r` must be represented by `&#13;`.
+
 ---
 ---
 ## **The internal registers**
@@ -478,7 +480,7 @@ Grab a frame from a video file/stream and display it as a graphic screen on the 
 All plugins installed are available as functions inside _TML_, the function names and parameters remain the same used in the configuration file.</br>
 Refer to the plugin section in the main readme for more information.
 
-##### Example: Play SlayRadio audio stream
+##### Example: Play SlayRadio's Shoutcast audio stream
 ```html
 <WEBAUDIO url='http://relay3.slayradio.org:8000/'>
 ```

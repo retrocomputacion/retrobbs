@@ -810,8 +810,9 @@ The `bbsstyle` class is defined here, and the default_style instance of this cla
 ### RenderMenuTitle(conn,title):
 Sends the menu title header with text **\<title\>** to **\<conn\>**, using the default style. The client screen is cleared and charset is switched to lowercase. Text mode is not enforced, the caller must ensure that text mode or a text window is active on the client.
 
-### KeyPrompt(text,style=default_style):
-Returns the key prompt string for **\<text\>**. The prompt takes the form `[<text>]` using the colors defined by **\<style\>**
+### KeyPrompt(text,style=default_style,TML=False):
+Returns the key prompt string for **\<text\>**. The prompt takes the form `[<text>]` using the colors defined by **\<style\>**</br>
+Set `TML` to `True` to return a _TML_ string instead. **IMPORTANT**: _TML_ string output will become the default in the future.
 
 ### KeyLabel(conn,key,label,toggle,style=default_style):
 Renders menu option **\<label\>** for assigned **\<key\>** in the selected **\<style\>**, boolean **\<toggle\>** switches between odd/even styles.<br>The result is sent to **\<conn\>**
@@ -939,6 +940,8 @@ The user will then be asked if he wants to log in or continue as a guest.
 
 After a successful login or directly after choosing guest access, the supported files in the subdirectory `[bbsfiles]/intro` will be shown/played in alphabetical order.
 
+Starting in v0.2x an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged in user and show the amount of unread public and private messages if any.
+
 ---
 # 5.2 SID SongLength
 Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the songlength by searching for the `.ssl` files corresponding the `.sid` files found, defaulting to 3 minutes when not found.<br>
@@ -967,6 +970,10 @@ You can use userclasses 2 to 9 for more access granularity as you see fit.
 A separate script for database management is included in the form of `dbmaintenance.py`<br>Execute it by issuing the following command (while the BBS is not running):
 
     python dbmaintenance.py
+
+    or
+
+    python3 dbmaintenance.py
 
 With this script you can:
 
