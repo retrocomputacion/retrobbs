@@ -46,7 +46,7 @@ t_registers = ['_a','_c','_b','_r','_s','_i']
 t_statements = {'mode':[('m','PET64')],'switch':[('r','_A')],'case':[('c',False)],'while':[('c',False)],'if':[('c',False)]}
 
 t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
-	      		'RND':(lambda s,e:randrange(s,e),[('_R','_I'),('s',0),('e',10)]),
+	      		'RND':(lambda s,e:randrange(s,e) if s<e else s,[('_R','_I'),('s',0),('e',10)]),
 				'INKEYS':(lambda k:k,[('_R','_A'),('k','\n',False)]),
 				'USER':(lambda u:u[('_R','_C')]),
 				'LET':(lambda x:x,[('_R','_I'),('x','_I')]),'OUT':(lambda x:x,[('_R','_C'),('x','_I')]),
@@ -362,7 +362,7 @@ class TMLParser(HTMLParser):
 		if tag in t_statements:
 			epos = self.getpos()[1]
 			spos = self.rawdata[:epos].rfind('<')
-			if self.skip != 0:
+			if self.skip != 0:	# Handle nested blocks
 				self.skip += 1
 			# Handle MODE
 			elif tag == 'mode':
