@@ -17,23 +17,25 @@ VERSION 0.25 dev
 1. [Introduction](#1-introduction)
    1. [Release history](#11-release-history)
    2. [The *Turbo56K* protocol](#12-the-turbo56k-protocol)
-   3. [Features](#13-features)
-   4. [Requirements](#14-requirements)
+   3. [The *TML* language](#13-the-tml-language)
+   4. [Features](#14-features)
+   5. [Requirements](#15-requirements)
 2. [Configuration file](#2-configuration-file)
    1. [Internal Functions](#21-internal-functions)
 3. [Plug-in System](#3-plug-in-system)
    1. [Included Plug-Ins](#31-included-plug-ins)
    2. [More Plug-ins](#32-more-plug-ins)
 4. [Common modules](#4-common-modules)
-5. [Installation/Usage](#5-installationusage)
-   1. [The intro/login sequence](#51-the-intrologin-sequence)
-   2. [SID SongLength](#52-sid-songlength)
-   3. [User accounts / Database management](#53-user-accounts--database-management)
-   4. [Messaging system](#54-messaging-system)
-   5. [Temporal directory](#55-temporal-directory)
-6. [TO-DO List](#6-to-do-list)
-   1. [Known bugs](#61-known-bugsissues)
-7. [Acknowledgements](#7-acknowledgements)
+5. [Encoders](#5-encoders)
+6. [Installation/Usage](#6-installationusage)
+   1. [The intro/login sequence](#61-the-intrologin-sequence)
+   2. [SID SongLength](#62-sid-songlength)
+   3. [User accounts / Database management](#63-user-accounts--database-management)
+   4. [Messaging system](#64-messaging-system)
+   5. [Temporal directory](#65-temporal-directory)
+7. [TO-DO List](#7-to-do-list)
+   1. [Known bugs](#71-known-bugsissues)
+8. [Acknowledgements](#8-acknowledgements)
 
 
 # 1 Introduction
@@ -134,22 +136,28 @@ __Changes/Bug fixes__:
  - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
  - *YouTube* plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
  - When all the slots are in use will now correctly close any further incoming connections.
- - *Weather* and *Maps* plugins use Photon instead of Nominatim as geocoder.
- - Fixed creash when the geocoder didnt respond in time in the *Weather* plugin
+ - *Weather* and *Maps* plugins use can use either Photon or Nominatim as geocoder, selected from the configuration file.
+ - Fixed crash when the geocoder didnt respond in time in the *Weather* plugin
  - Extensive rewrite and cleanup, TML scripting integration.
  - Option to logout after transferring a program to memory
 
 ---
 # 1.2 The *Turbo56K* protocol
 
-*[Turbo56k](turbo56k.md)* was created by Jorge Castillo as a simple protocol to provide high-speed file transfer functionality to his bit-banging 57600bps RS232 routine for the C64.
+*[Turbo56k](docs/turbo56k.md)* was created by Jorge Castillo as a simple protocol to provide high-speed file transfer functionality to his bit-banging 57600bps RS232 routine for the C64.
 Over time, the protocol has been extended to include 4-bit PCM audio streaming, bitmap graphics transfer and display, SID music streaming and more.
 
 *RetroBBS* will refuse incoming connections from non-*Turbo56K* compliant terminals.
 
+---
+# 1.3 The *TML* language
+
+Introduced in v0.2x, *TML*, stading for *Turbo Markup Language* is a markup and scripting language inspired by the type-in program listings in magazines from the 1980's.
+The language's goal is to allow the description of control codes and other platform specific characteristics in plain text. With the added power of allowing the access of internal BBS functions and plugins.
+Read the [dedicated documentation](docs/tml.md) for more info. 
 
 ---
-# 1.3 Features
+# 1.4 Features
 
 *RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini` by default) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
 In addition, the plug-in system allows adding extra functionality with full support from the configuration file.
@@ -192,7 +200,7 @@ Currently included plug-ins:
 
 
 ---
-# 1.4 Requirements
+# 1.5 Requirements
 
 Python version 3.7 or above
 
@@ -524,7 +532,9 @@ Explore the world through maps based on *Openstreetmaps*. Maps are rendered usin
 
 - Configuration file function: MAPS
 - Configuration file parameters: NONE
-- Configuration file \[PLUGINS\] options: NONE
+- Configuration file \[PLUGINS\] options:
+   - `geoserver` = Geocoder used to retrieve location data. Can be set to either `Nominatim` (default) or `Photon`.
+
 
 ### Oneliner (oneliner.py):
 User-generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
@@ -549,6 +559,7 @@ Displays current weather and forecast for the next 2-3 days as a HiRes image. On
 
   - `wxunits` = `C` or `F` for metric or customary units, respectively. Defauls to metric
   - `wxdefault` = Fallback location. Defaults to Meyrin, Switzerland.
+  - `geoserver` = Geocoder used to retrieve location data. Can be set to either `Nominatim` (default) or `Photon`.
 
 ### WebAudio streamer (webaudio.py):
  On the fly conversion and streaming of on-line audio sources (*Shoutcast*,
@@ -911,7 +922,16 @@ Grab's a frame from the specified video file/stream.
 - **\<pos>\>** Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
 
 ---
-# 5 Installation/Usage
+# 5 Encoders
+Starting on v0.2x RetroBBS is moving towards an encoding agnostic implementation. This means reducing to the minimun instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
+
+For this purpose a new `Encoder` class has been created.</br>
+This class provides platform specific encoding/decoding of strings, aswell as defining the basic control codes and color palette.
+
+Currently only the `PET64` encoder is implemented, corresponding to the _Commodore 64_ PETSCII encoding.
+
+---
+# 6 Installation/Usage
 After ensuring you have installed all the required python modules and extra software, just unpack this archive into a directory of your choice.<br>
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
@@ -934,7 +954,7 @@ Optional arguments:
  - `c [file name]` sets the configuration file to be used, defaults to `config.ini`
 
 ---
-# 5.1 The intro/login sequence
+# 6.1 The intro/login sequence
 Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
 
@@ -943,12 +963,12 @@ After a successful login or directly after choosing guest access, the supported 
 Starting in v0.2x an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged in user and show the amount of unread public and private messages if any.
 
 ---
-# 5.2 SID SongLength
+# 6.2 SID SongLength
 Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the songlength by searching for the `.ssl` files corresponding the `.sid` files found, defaulting to 3 minutes when not found.<br>
 The `.ssl` format is used by the songlength files part of the *High Voltage SID Collection* (http://hvsc.c64.com). *HVSC* uses a `SONGLENGTHS` subdirectory to store the `.ssl` files, *RetroBBS* can also read these files in the same directory where the `.sid` files are located.
 
 ---
-# 5.3 User accounts / Database management
+# 6.3 User accounts / Database management
 *RetroBBS* now supports the creation of user accounts, this allows for the restriction of BBS areas according to user classes and the incorporation of the messaging system.
 
 *TinyDB* is used as the database backend. The database is a *JSON* file located in the `bbsfiles` directory.
@@ -986,7 +1006,7 @@ The script will also do a quick integrity check on the database file.
 **IMPORTANT**: When setting up a new BBS (or upgrading from v0.10) use dbmaintenance.py to create your account and set your class as 10 to assign yourself as admin/sysop.
 
 ---
-# 5.4 Messaging system
+# 6.4 Messaging system
 The messaging system permits unlimited public or semipublic boards plus a personal messages board for each registered user.
 
 At the time of writing, this early implementation supports messages of up to 720 characters in length, organized in 18 rows of 40 columns each.
@@ -997,7 +1017,7 @@ Once done with the editing, the user should press `F8` and will be prompted if t
 An user with admin/sysop userclass (10) can delete threads or individual messages (deleting the first message in a thread will delete the whole thread).
 
 ---
-# 5.5 Temporal directory
+# 6.5 Temporal directory
 The path preset `temp` is used by the BBS or it's plugins to store temporal files.
 
 Currently only the SID streaming function makes use of this path.
@@ -1042,7 +1062,7 @@ temp = /mnt/ramdisk/
 ```
 
 ---
-# 6 TO-DO List
+# 7 TO-DO List
 
  * Further code cleanup, move more functions out of the main script and into their corresponding modules.
  * Work towards user style customization
@@ -1052,7 +1072,7 @@ temp = /mnt/ramdisk/
  * BBS/User statistics displayer
 
 ---
-# 6.1 Known bugs/issues
+# 7.1 Known bugs/issues
 
   * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
@@ -1060,7 +1080,7 @@ temp = /mnt/ramdisk/
 
 
 ---
-# 7 Acknowledgements
+# 8 Acknowledgements
 
 ## Development team
 
