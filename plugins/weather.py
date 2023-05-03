@@ -110,7 +110,7 @@ def plugFunction(conn:Connection):
 async def getweather(conn:Connection,locquery,geoLoc):
 
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
-    units = conn.bbs.PlugOptions.get('wxunits',python_weather.METRIC)
+    units = python_weather.METRIC if conn.bbs.PlugOptions.get('wxunits','METRIC')=='METRIC' else python_weather.IMPERIAL
     if python_weather.__version__[0]=='0':
         client = python_weather.Client(format=units)
     else:
