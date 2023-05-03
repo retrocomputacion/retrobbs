@@ -111,7 +111,10 @@ async def getweather(conn:Connection,locquery,geoLoc):
 
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
     units = conn.bbs.PlugOptions.get('wxunits',python_weather.METRIC)
-    client = python_weather.Client(format=units)
+    if python_weather.__version__[0]=='0':
+        client = python_weather.Client(format=units)
+    else:
+        client = python_weather.Client(unit=units)
     img = GetIndexedImg(0) #Image.new('1', (320,200), color = 'black')
     draw = ImageDraw.Draw(img)
     # fetch a weather forecast from a city
