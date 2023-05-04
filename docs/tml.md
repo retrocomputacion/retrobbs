@@ -1,5 +1,6 @@
 <div align = center>
 
+![logo](tml.png)
 # **Turbo Markup Language (TML)**
 ## A markup and scripting language for RetroBBS
 ##### (preliminary)

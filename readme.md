@@ -5,7 +5,7 @@
 
 # RetroBBS
 
-VERSION 0.25 dev
+VERSION 0.50 dev
 
 (c)2020-2023 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
@@ -44,7 +44,8 @@ VERSION 0.25 dev
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
-Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside.
+Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside.</br>
+Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removing hardcoded PETSCII strings and C64 format images. With the goal of supporting other retro platforms.
 
 
 ---
@@ -95,7 +96,7 @@ Even though this is the third rewrite of this script, it is still in an early de
   - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
   - Documentation rewritten in markdown format
 
-### **v0.2x** (In development):
+### **v0.50** (In development):
 
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified.
@@ -140,6 +141,7 @@ __Changes/Bug fixes__:
  - Fixed crash when the geocoder didnt respond in time in the *Weather* plugin
  - Extensive rewrite and cleanup, TML scripting integration.
  - Option to logout after transferring a program to memory
+ - Weather plugin adapted to support `python-weather` v1.0.0+. Older versions of the module still work.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -152,7 +154,7 @@ Over time, the protocol has been extended to include 4-bit PCM audio streaming, 
 ---
 # 1.3 The *TML* language
 
-Introduced in v0.2x, *TML*, stading for *Turbo Markup Language* is a markup and scripting language inspired by the type-in program listings in magazines from the 1980's.
+Introduced in v0.50, *TML*, stading for *Turbo Markup Language* is a markup and scripting language inspired by the type-in program listings in magazines from the 1980's.
 The language's goal is to allow the description of control codes and other platform specific characteristics in plain text. With the added power of allowing the access of internal BBS functions and plugins.
 Read the [dedicated documentation](docs/tml.md) for more info. 
 
@@ -162,7 +164,7 @@ Read the [dedicated documentation](docs/tml.md) for more info.
 *RetroBBS* is quite customizable and expandable. The use of a configuration file (`config.ini` by default) and built-in file transfer, stream and display functions permits building a custom set of menus and file galleries.
 In addition, the plug-in system allows adding extra functionality with full support from the configuration file.
 
-The BBS is multi-threaded and the number of simultaneous incoming connections can be customized in teh configuration file.
+The BBS is multi-threaded and the number of simultaneous incoming connections can be customized in the configuration file.
 
 Current built-in functions:
 
@@ -180,11 +182,11 @@ Current built-in functions:
 
 - PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
-- SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDump* or *SIDDumpHR* executables in the system path.
+- SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDumpHR* or *SIDDump* executables in the system path, if neither is found a slower Python implementation will be used instead.
 
 - YM2149/AY-3-8910 music conversion and streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of SID register writes. Cyclic envelope simulation is limited. Samples and some other special effects are not supported. 
 
-- Video frame grabbing: Any file format supported by OpenCV2, files can be local or from an external URL.
+- Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
 Currently included plug-ins:
 
@@ -550,7 +552,7 @@ Retrieves the latest ten entries from the specified RSS feed, upon user selectio
 - Configuration file parameters: `entryZurl` = URL to the RSS feed
 - Configuration file \[PLUGINS\] options: NONE
 
-### Weather (weather.py) (new 0.2x):
+### Weather (weather.py) (new 0.25):
 Displays current weather and forecast for the next 2-3 days as a HiRes image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
 
 - Configuration file function: WEATHER
@@ -923,7 +925,7 @@ Grab's a frame from the specified video file/stream.
 
 ---
 # 5 Encoders
-Starting on v0.2x RetroBBS is moving towards an encoding agnostic implementation. This means reducing to the minimun instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
+Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation. This means reducing to the minimun instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
 
 For this purpose a new `Encoder` class has been created.</br>
 This class provides platform specific encoding/decoding of strings, aswell as defining the basic control codes and color palette.
@@ -960,7 +962,7 @@ The user will then be asked if he wants to log in or continue as a guest.
 
 After a successful login or directly after choosing guest access, the supported files in the subdirectory `[bbsfiles]/intro` will be shown/played in alphabetical order.
 
-Starting in v0.2x an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged in user and show the amount of unread public and private messages if any.
+Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged in user and show the amount of unread public and private messages if any.
 
 ---
 # 6.2 SID SongLength
@@ -1022,7 +1024,7 @@ The path preset `temp` is used by the BBS or it's plugins to store temporal file
 
 Currently only the SID streaming function makes use of this path.
 
-If you're running the BBS from a Raspberry PI or other SBC that uses an SD card as main storage we recommend to create a RAM disk and point the `term` path to it. This will reduce the wear on your SD card.
+If you're running the BBS from a Raspberry PI or other SBC that uses an SD card as main storage we recommend to create a RAM disk and point the `temp` path to it. This will reduce the wear on your SD card.
 
 ### Creating a RAM disk
 First create a mount point:

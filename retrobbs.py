@@ -1,5 +1,5 @@
 #################################################################################################
-# RetroBBS 0.20 (compatible with TURBO56K 0.6 and retroterm 0.14                              	#
+# RetroBBS 0.50 (compatible with TURBO56K 0.6 and retroterm 0.14                              	#
 #                                                                                           	#
 # Coded by pastbytes and Durandal, from retrocomputacion.com                                  	#
 #################################################################################################
@@ -125,7 +125,7 @@ import common.filetools as FT
 
 ##################################
 # BBS Version                    #
-_version = 0.25                  #
+_version = 0.50                  #
 ##################################
 
 
