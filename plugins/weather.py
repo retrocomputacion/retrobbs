@@ -70,6 +70,7 @@ def plugFunction(conn:Connection):
     result = response.content.decode()
     # Convert this data into a dictionary
     result  = json.loads(result)
+    _LOG(f'User IP: {conn.addr[0]} - {result.get("city","Not a public IP")}',v=4,id=conn.id)
     locqry = result.get('city', conn.bbs.PlugOptions.get('wxdefault','Meyrin'))
     geoserver = conn.bbs.PlugOptions.get('geoserver','Nominatim')
     done = False
