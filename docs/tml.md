@@ -389,9 +389,9 @@ Parameter:
 Split the client's screen in a top graphic mode section, and a bottom text mode section.</br>
 Parameters:
 
-`row`: Screen row at witch the split occurs. Default `0`
-`multi`: Boolean, `True` for multicolor graphic mode. Default `False`
-`bgtop`: Background color for the top section. Default `0`
+`row`: Screen row at witch the split occurs. Default `0`</br>
+`multi`: Boolean, `True` for multicolor graphic mode. Default `False`</br>
+`bgtop`: Background color for the top section. Default `0`</br>
 `bgbottom`: Background color for the bottom section. Default `0`
 
 ---
@@ -408,7 +408,7 @@ Parameters:
 Define text window on the client screen.</br>
 Parameters:
 
-`top`: Top most row of the window. Default `0`
+`top`: Top most row of the window. Default `0`</br>
 `bottom`: Bottom most row of the window. Default `24`
 
 ---
