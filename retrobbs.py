@@ -1272,7 +1272,7 @@ bbs_instance.plugins = EX.RegisterPlugins()
 # Init encoders
 bbs_instance.encoders = EX.RegisterEncoders()
 # Register TML tags
-EX.RegisterTPLtags()
+EX.RegisterTMLtags()
 
 # Read config file
 ConfigRead()

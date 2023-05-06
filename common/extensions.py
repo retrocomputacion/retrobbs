@@ -16,8 +16,8 @@ import plugins
 
 t_mono ={}
 
-# Register TPL tags for common modules
-def RegisterTPLtags():
+# Register TML tags for common modules
+def RegisterTMLtags():
     global t_mono
     for module in os.listdir(os.path.dirname(__file__)):
         if module in ['__init__.py','parser.py','extensions.py','petscii.py'] or module[-3:] != '.py':
