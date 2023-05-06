@@ -27,15 +27,15 @@
 ---
 ## **Introduction**
 
-Before the introduction of **TML** _RetroBBS_ relied in great part on hardcoding strings, control codes and special characters to match the target client platform (just the _Commodore 64_ at the time of this writing). This limited and complicated adding new target platforms.
+Before the introduction of **TML** _RetroBBS_ relied in great part on hard-coding strings, control codes and special characters to match the target client platform (just the _Commodore 64_ at the time of this writing). This limited and complicated adding new target platforms.
 
 The solution would come in the form of a language capable of describing platform specific encodings and control codes in plain text.
 
-Taking inspiration in the markup style used to describe control codes on type-in programs published in 80's magazines, we have developed a new markup and scripting language based on _HTML_ syntax.
+Taking inspiration in the markup style used to describe control codes on type-in programs published in 80s magazines, we have developed a new markup and scripting language based on _HTML_ syntax.
 
 In addition to help describe control codes and _Turbo56K_ commands, __TML__ also supports a limited _'register'_ set which when used with some basic statements for flow control allows for the creation of loops and conditional execution.
 
-A subset of _RetroBBS_ internal functions are also available, aswell as every installed plugin.
+A subset of _RetroBBS_ internal functions are also available, as well as every installed plugin.
 
 ---
 ---
@@ -105,13 +105,13 @@ Reading this register returns the current connection object.
 Write only register, this register accepts binary values or strings to be sent to the client
 
 #### **_A Accumulator**:
-General purpose register, values stored into, or read from this register will not be typecasted.
+General purpose register, values stored into, or read from this register will not be typecast.
 
 #### **_S String accumulator**:
-String register, any value stored into this register will be typecasted to a Python `str`.</br>If the typecasting fails `_S` will be `''`.
+String register, any value stored into this register will be typecast to a Python `str`.</br>If the typecasting fails `_S` will be `''`.
 
 #### **_I Integer accumulator**:
-Integer register, any value stored into this register will be typecasted to a Python `int`.</br>If the typecasting fails `_I` will be `0`.
+Integer register, any value stored into this register will be typecast to a Python `int`.</br>If the typecasting fails `_I` will be `0`.
 
 #### **Registers, parameter values and expressions**:
 The internal registers can be passed as parameters and can be used in any expression that's accepted by _Python's_ `eval()` function.
@@ -139,7 +139,7 @@ These control code commands are common to every target platform, the connection 
 </br>
 
 #### **&lt;BELL&gt;** BELL
-Send a BELL character, cause a aural or visual chime.
+Send a BELL character, cause an aural or visual chime.
 
 ---
 #### **&lt;CLR&gt;** Clear screen
@@ -248,7 +248,7 @@ Return the username of the current connection in **_S**
 Wait for the user to press a key from the list passed as parameter. Return as _byte_ in **_A**</br>
 Parameter:
 
-`k`: a string containing the valid keypresses in the native client encoding, default `'/r'`
+`k`: a string containing the valid key presses in the native client encoding, default `'/r'`
 
 ---
 
@@ -259,10 +259,10 @@ These instructions need a corresponding closing tag.
 </br>
 
 #### **&lt;IF&gt;**
-Execute the code inside the block if the condition is fullfilled.</br>
+Execute the code inside the block if the condition is fulfilled.</br>
 Parameter:
 
-`c`: Condition to be fullfilled, default `False`
+`c`: Condition to be fulfilled, default `False`
 
 ---
 #### **&lt;MODE&gt;**
@@ -298,10 +298,10 @@ Example:
 ```
 ---
 #### **&lt;WHILE&gt;**
-Repeat the code inside the block as long as the condition is fullfilled.<br>
+Repeat the code inside the block as long as the condition is fulfilled.<br>
 Parameter:
 
-`c`: Condition to be fullfilled, default `False`
+`c`: Condition to be fulfilled, default `False`
 
 Example:
 

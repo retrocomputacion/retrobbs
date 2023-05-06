@@ -201,6 +201,8 @@ def ConfigRead():
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
             elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
                 parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures')]
+            elif efunc == 'SENDFILE':
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),cfg.getboolean(key,'entry'+str(e+1)+'dialog', fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'save', fallback=False)]
             elif efunc == 'INBOX':
                 parms = [0]
             elif efunc == 'BOARD':
@@ -254,6 +256,7 @@ def ConfigRead():
                 'INBOX': MM.inbox,
                 'GRABFRAME': VV.Grabframe,
                 'STATS': Stats,
+                'SENDFILE': FT.SendFile,
                 'LABEL': None}
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())

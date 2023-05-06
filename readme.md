@@ -105,7 +105,7 @@ __New features__:
  - SID streaming now supports Compute's Sidplayer .mus files.
  - SID streaming now supports selection of the subtune to play.
  - SID streaming supports tunes using hardrestart, if _SIDDumpHR_ is available. 
- - New SIDPLAY function for the configuration file.
+ - New `SIDPLAY` function for the configuration file.
  - Added *[Turbo56k](docs/turbo56k.md)* v0.7 support.
  - New text viewer with support for bidirectional scroll.
  - New Maps plugin.
@@ -116,6 +116,7 @@ __New features__:
  - Added `encoders` directory. Encoder modules provide encoding/decoding functions for different platforms. 
  - Introducing TML markup/scripting language, moving towards an encoding agnostic BBS. Some functions now expect parameters in this format.
  - New STAT internal function for displaying some basic BBS and user statistics
+ - Added `SENDFILE` function for the configuration file.
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -489,6 +490,16 @@ Combine it with an entry description text in 1 column mode for a menu descriptio
 
 [^1]: Replace Z in the configuration file parameters with the entry ID number.
 
+### Function SENDFILE:
+Send a file to the client, call the appropriate transfer routine. Optionally, show a file dialog or download to disk.<br>
+Supported file types include: `JPG, GIF, PNG, ART, OCP, KOA, KLA, DD, DDL, MP3, WAV, TXT, SEQ, TML and PRG`
+
+Configuration file parameter keys:
+| key | description
+|:---:|:---
+| `entryZpath` | File path
+| `entryZdialog` | Set to True to display a file dialog if available
+| `entryZsave` | Set to True to save the file to disk
 
 ---
 # 3 Plug-In system

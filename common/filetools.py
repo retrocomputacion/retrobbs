@@ -386,13 +386,17 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			return
 		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART']:
 			SendBitmap(conn,filename,dialog,save)
-			conn.ReceiveKey()
+			conn.SendTML('<INKEYS><CURSOR>')
 		elif ext == '.C':
 			...
 		elif ext == '.PET':
 			...
 		elif ext == '.MP3' and not save:
 			AA.PlayAudio(conn,filename,None,dialog)
+		elif ext == '.TML':     #TML script
+			with open(filename,'r') as slide:
+				tml = slide.read()
+				conn.SendTML(tml)
 		elif save:	#Default -> download to disk
 			if dialog:
 				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Download file to disk', prompt='save to disk', save = False)
