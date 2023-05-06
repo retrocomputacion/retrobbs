@@ -384,14 +384,14 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 				conn.SendTML('<KPROMPT t=RETURN>')
 				conn.ReceiveKey()
 			return
-		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART']:
+		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
 			SendBitmap(conn,filename,dialog,save)
 			conn.SendTML('<INKEYS><CURSOR>')
 		elif ext == '.C':
 			...
 		elif ext == '.PET':
 			...
-		elif ext == '.MP3' and not save:
+		elif ext in ['.MP3','.WAV'] and not save:
 			AA.PlayAudio(conn,filename,None,dialog)
 		elif ext == '.TML':     #TML script
 			with open(filename,'r') as slide:
