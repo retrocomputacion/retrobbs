@@ -83,7 +83,7 @@ For example the following byte sequence enters command mode, sets the screen to 
 | `$B1` | `177` | Fills a text screen row with a given <br> character, text cursor is not moved<br>**Parameters**<br>- Screen Row : 1 byte <br>- Fill Character : 1 byte : *C64 Screen Code*
 | `$B2` | `178` | Enables or disables the text cursor<br>**Parameters**<br>- Enable : 1 byte
 | `$B3` | `179` | Screen split<br>**Parameters**<br>- Modes : 1 byte<br>  `Bit 0 - 4` : Split Row `1 - 24`<br>  `Bit 7` : Bitmap Graphics Mode in top section<br>    `0` : Hires<br>    `1` : Multicolor <br><br> - Background Color : 1 byte<br>  `Bit 0 - 3` : Top Section<br>  `Bit 4 - 7` : Bottom Section
-| `$B4` | `180` | **RESERVED**
+| `$B4` | `180` | `New v0.7`<br><br>Get text cursor position, returns 2 characters, column and row.
 | `$B5` | `181` | Set text window<br>**Parameters**<br> - Top Row : 1 byte : `0 - 23`<br> - Bottom Row : 1 byte : `1 - 24`
 | `$B6` | `182` | `New v0.7`<br><br>Scroll the text window up or down x rows<br>**Parameters**<br> - Row count: 1 byte -128/+127
 <br>

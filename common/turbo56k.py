@@ -29,6 +29,7 @@ SET_CRSR    = 0xB0  #Sets cursor position, exits command mode: Parameters: colum
 LINE_FILL   = 0xB1
 CURSOR_EN   = 0xB2  #Enables or disables cursor blink - Paramater: cursor enable
 SPLIT_SCR   = 0xB3  #Splits screen - Parameters: split line/graphic mode, background colors
+GET_CRSR    = 0xB4
 SET_WIN     = 0xB5  #Sets Text window limits - Parameters: window top and window bottom lines
 SCROLL      = 0xB6  #Scroll text window - Parameter: number of rows to scroll, signed
 
@@ -40,7 +41,7 @@ TURBO56K_LCMD = 0xB6 #Highest CMD number implemented
 T56K_CMD = {128+0:'Custom transfer address', 128+1:'Preset transfer address', 128+2:'Block transfer', 128+3:'PCM audio stream', 128+4:'SID stream', 128+5:'SID register write order', 128+6:'File transfer',
             128+16:'Set text mode', 128+17:'Set Hi-Res bitmap mode', 128+18:'Set multicolor bitmap mode',
             128+32:'Set screen as output', 128+33:'Set voice synth as output', 128+34:'Terminal ID', 128+35:'Command query',
-            128+48:'Set cursor', 128+49:'Line fill', 128+50:'Cursor enable', 128+51:'Split screen', 128+52:'Reserved', 128+53:'Set window', 128+54:'Scroll window'}
+            128+48:'Set cursor', 128+49:'Line fill', 128+50:'Cursor enable', 128+51:'Split screen', 128+52:'Get cursor', 128+53:'Set window', 128+54:'Scroll window'}
 
 # Old Turbo56K <v0.6 feature matrix
 T56Kold =  [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
