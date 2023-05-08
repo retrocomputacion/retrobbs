@@ -120,11 +120,12 @@ async def getweather(conn:Connection,locquery,geoLoc):
     draw = ImageDraw.Draw(img)
     # fetch a weather forecast from a city
     try:
-        weather = await client.get(locquery) #("Trelew")
+        weather = await asyncio.wait_for(client.get(locquery),15) # Wait for up to 15seconds.
         if weather.location == None:    #Invalid location
             await client.close()
             return None
-    except:
+    except Exception as e:
+        _LOG('Weather: TIMEOUT',id=conn.id,v=1)
         await client.close()
         return None
     draw.rectangle([0,0,319,15],15)
