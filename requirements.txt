@@ -19,3 +19,4 @@ wikipedia
 Wikipedia_API
 crc
 lhafile
+scikit-image

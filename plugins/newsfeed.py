@@ -7,6 +7,7 @@ from io import BytesIO
 from urllib.parse import urlparse,urljoin
 
 from common.bbsdebug import _LOG,bcolors
+from common.imgcvt import gfxmodes
 import common.helpers as H
 import common.style as S
 from common.connection import Connection
@@ -209,7 +210,7 @@ def webarticle(conn:Connection,url, feedname):
                 a_img = a_body.find('img')
         if a_img != None:
             conn.Sendall(TT.disable_CRSR())
-            FT.SendBitmap(conn,getImg(top_url,a_img),multi=True)
+            FT.SendBitmap(conn,getImg(top_url,a_img),gfxmode=gfxmodes.C64MULTI)
             conn.ReceiveKey()
             conn.SendTML('<CLR><TEXT><CURSOR>')
         S.RenderMenuTitle(conn,feedname)

@@ -4,6 +4,7 @@ import common.filetools as FT
 from common.helpers import formatX, More, crop, text_displayer
 from common.connection import Connection
 from common.bbsdebug import _LOG
+from common.imgcvt import gfxmodes
 
 import wikipedia
 import wikipediaapi
@@ -110,7 +111,7 @@ def plugFunction(conn:Connection):
 							w_image = timg
 						if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
 							w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
-						FT.SendBitmap(conn,w_image,multi=True)
+						FT.SendBitmap(conn,w_image,gfxmode=gfxmodes.C64MULTI)
 						conn.ReceiveKey()
 						conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,15,15))
 					except:

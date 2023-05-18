@@ -13,7 +13,8 @@ from PIL import ImageDraw
 import numpy as NP
 
 from common.connection import Connection
-from common.c64cvt import GetIndexedImg, PaletteHither, c64imconvert
+# from common.c64cvt import GetIndexedImg, PaletteHither
+from common.imgcvt import gfxmodes, GetIndexedImg, ColorProcess, colordelta
 from common.bbsdebug import _LOG
 import common.filetools as FT
 import common.turbo56k as TT
@@ -84,7 +85,7 @@ def plugFunction(conn:Connection):
         conn.SendTML('<CBM-B><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
-            FT.SendBitmap(conn,img,multi=False,preproc=False,lines=23,display=False)
+            FT.SendBitmap(conn,img,gfxmode=gfxmodes.C64HI,preproc=ColorProcess(),lines=23,display=False)
             conn.Sendall(TT.split_Screen(23,False,0,6))
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2>')
@@ -116,7 +117,8 @@ async def getweather(conn:Connection,locquery,geoLoc):
         client = python_weather.Client(format=units)
     else:
         client = python_weather.Client(unit=units)
-    img = GetIndexedImg(0) #Image.new('1', (320,200), color = 'black')
+    img, inPal = GetIndexedImg(gfxmodes.C64HI,0) #Image.new('1', (320,200), color = 'black')
+    inPal.colordelta = colordelta.EUCLIDEAN
     draw = ImageDraw.Draw(img)
     # fetch a weather forecast from a city
     try:
@@ -189,20 +191,20 @@ async def getweather(conn:Connection,locquery,geoLoc):
             wt = weather.current.type.value
         else:
             wt = weather.current.kind.value
-        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(wt,8)]))
+        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(wt,8)]))
         img.paste(tmp,(8,24))
         #Current wind conditions
-        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
+        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
         img.paste(tmp,(104,24))
         draw.text((136,28),str(weather.current.wind_speed)+('km/h' if units == python_weather.METRIC else 'mph'),1,font=font_title)
         if python_weather.__version__[0] == 0:
             wd = weather.current.wind_direction
         else:
             wd = weather.current.wind_direction.value
-        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[wd]]))
+        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[wd]]))
         img.paste(tmp,(184,32))
         #Pressure
-        tmp = PaletteHither.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
+        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
         img.paste(tmp,(224,24))
         draw.text((256,28),str(weather.current.pressure)+('hPa' if units == python_weather.METRIC else 'Hg'),1,font=font_title)
         draw.line(((0,55),(319,55)),fill=6)
@@ -227,7 +229,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
                         icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
                     except:
                         icon = Image.fromarray(wgfx24[8])
-                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
                     img.paste(tmp,(32,72+(ix*32)))
                     draw.text((56,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 elif ih == 4: #Noon
@@ -235,7 +237,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
                         icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
                     except:
                         icon = Image.fromarray(wgfx24[8])
-                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
                     img.paste(tmp,(104,72+(ix*32)))
                     draw.text((128,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 elif ih == 6: #Evening
@@ -243,7 +245,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
                         icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
                     except:
                         icon = Image.fromarray(wgfx24[8])
-                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
                     img.paste(tmp,(176,72+(ix*32)))
                     draw.text((200,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 elif ih == 7: #Night
@@ -251,7 +253,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
                         icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
                     except:
                         icon = Image.fromarray(wgfx24[8])
-                    tmp = PaletteHither.create_PIL_png_from_rgb_array(icon)
+                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
                     img.paste(tmp,(248,72+(ix*32)))
                     draw.text((272,76+(ix*32)),str(hourly.temperature)+'°',1,font=font_text)
                 ih += 1
