@@ -373,10 +373,10 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
 
 
 # Convert image
-def convert(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, bg_color=None ):
+def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, g_colors=None ):
 
-    if bg_color == None:
-        bg_color = [-1]
+    if g_colors == None:
+        g_colors = [-1]
     t_img = Source.convert('RGB')
     in_img = frameResize(t_img, gfxmode)
     if preproc == None:
@@ -387,13 +387,13 @@ def convert(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:Colo
     in_img = imageProcess(in_img,preproc)
 
 
-    cv_img, data, bgcolor = Image_convert(in_img, GFX_MODES[gfxmode.value]['palettes'][0][1], GFX_MODES[gfxmode.value]['palettes'][0][1], gfxmode,
-                    dither, threshold, cmatch,bg_color)
+    cv_img, data, gcolors = Image_convert(in_img, GFX_MODES[gfxmode.value]['palettes'][0][1], GFX_MODES[gfxmode.value]['palettes'][0][1], gfxmode,
+                    dither, threshold, cmatch,g_colors)
     #cv_data = [data, bgcolor]
-    return cv_img, data, bgcolor
+    return cv_img, data, gcolors
 
 #Create a Indexed PIL image with the desired mode dimensions and color palette, and filled with bgcolor
-def GetIndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
+def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     hd_p = []
     cc = np.ndarray([GFX_MODES[mode.value]['in_size'][1],GFX_MODES[mode.value]['in_size'][0]])
     cc.fill(bgcolor)

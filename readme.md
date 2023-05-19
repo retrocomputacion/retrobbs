@@ -143,6 +143,7 @@ __Changes/Bug fixes__:
  - Extensive rewrite and cleanup, TML scripting integration.
  - Option to logout after transferring a program to memory
  - Weather plugin adapted to support `python-weather` v1.0.0+. Older versions of the module still work.
+ - Revamped graphic conversion module(s)
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -666,7 +667,7 @@ Prints **\<message\>** on stdout. **\<message\>** can be any expression valid fo
 
 Also defined in this module is the <bcolors> class, which enumerates a few ANSI codes for use in the log messages.
 
-## common.c64cvt - Image conversion to raw C64 formats:
+## common.c64cvt - Image conversion to raw C64 formats: (DEPRECATED)
 
 ### c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
 Converts PIL image object **\<Source\>** into C64 graphic data.
@@ -681,6 +682,60 @@ Returns a tuple `(e_img,cells,screen,color,bg_color)` where:
 - **\<screen\>**: C64 screen matrix color data (1000 bytes)
 - **\<color\>**: C64 color ram data (1000 bytes), used only in multicolor mode
 - **\<bg_color\>**: C64 background color (1 byte), used only in multicolor mode
+
+## common.imgcvt - Image conversion to a native graphic format:
+
+### gfxmodes
+Enum containing all the graphic modes supported by _RetroBBS_.
+
+Current supported values:
+```
+C64HI: Commodore 64 hires bitmap
+C64MULTI: Commodore 64 multicolor bitmap
+```
+
+### dithertype
+Enum containing the available dithering methods:
+
+```
+NONE: No dithering
+BAYER2: 2x2 Bayer Ordered dither
+BAYER4: 4x4 Bayer Ordered dither
+BAYER4ODD: 4x4 Bayer Ordered dither, horizontal lines
+BAYER4EVEN: 4x4 Bayer Ordered dither, Vertical lines
+BAYER4SPOTTY: 4x4 Bayer Ordered dither, spotty
+YLILUOMA: Yliluoma type 1 dither, very slow
+CLUSTER: Cluster dither
+FLOYDSTEINBERG: Floyd-Steinberg error diffusion dither
+```
+
+### ColorProcess class
+A simple class defining the image processing values:
+
+- Brightness
+- Contrast
+- Saturation
+- Hue
+- Sharpness
+
+Creating a ColorProcess without parameters and passing it to *`convert_To`* will result in no image processing being performed.
+
+### convert_To(Source, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8, threshold=4, cmatch=1, g_colors=None)
+Convert a _PIL_ image to a native graphic format.
+
+- **\<Source\>**: PIL image source, it will automatically be scaled/cropped to fit the target graphic mode
+- **\<gfxmode\>**: Target graphic mode
+- **\<preproc\>**: Image preprocessing, pass `None` for automatic image adjustment.
+- **\<dither\>**: Dither method
+- **\<threshold\>**: Dither threshold
+- **\<cmatch\>**: Color matching method
+- **\<gcolors\>**: Global colors list, pass `None` for best guess
+
+Returns a PIL image rendering of the result, a list of buffers containing the native data (platform/mode dependent), and a list of global colors
+
+### get_IndexedImg(mode:gfxmodes, bgcolor=0)
+Returns a PIL "P" image with the dimensions of `mode` and using the palette for `mode`, filled with `bgcolor` color.
+
 
 ## common.classes - Internal use only
 
@@ -721,7 +776,7 @@ Set **\<pw\>** to `True` to echo `*` for each character received, ie, for passwo
 **ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
 ## common.filetools - Functions related to file transfer:
-### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, multi=True, preproc=True):
+### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None):
 Convert image to C64 mode and send it to the client.
 __Important: The parameter order has changed since v0.25__
 
@@ -731,8 +786,8 @@ __Important: The parameter order has changed since v0.25__
 - **\<lines\>**: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
 - **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
 - **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
-- **\<multi\>**: Set to `True` for multicolor mode. Overridden by user selection if **\<dialog\>** = `True`
-- **\<preproc\>**: Auto preprocess image brightness/contrast, default `True`
+- **\<gfxmodes\>**: Target graphic mode. Overridden by user selection if **\<dialog\>** = `True`
+- **\<preproc\>**: Image processing parameter prior to conversion. Pass `None` for automatic processing.
 
 ### SendProgram(conn:Connection, filename):
 Sends program file into the client memory at the correct address in turbo mode
@@ -1082,6 +1137,7 @@ temp = /mnt/ramdisk/
  * Localization
  * User preferences
  * Custom logout sequence, similar to the login one
+ * Figure out a way to remove hard-coded filetype handling.
 
 ---
 # 7.1 Known bugs/issues

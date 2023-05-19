@@ -9,7 +9,7 @@ from common.connection import Connection
 import common.helpers as H
 import common.audio as AA
 from PIL import Image
-from common.imgcvt import convert, gfxmodes, ColorProcess
+from common.imgcvt import convert_To, gfxmodes, ColorProcess
 from io import BytesIO
 import common.turbo56k as TT
 import common.style as S
@@ -251,7 +251,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		else:
 			mode = 1 if gfxmode == gfxmodes.C64MULTI else 0
 		gfxmode = gfxmodes.C64MULTI if (mode & 0x7f) == 1 else gfxmodes.C64HI
-		cvimg,data,gcolors = convert(Source, gfxmode, preproc)
+		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc)
 		Source.close()
 		bgcolor = gcolors[0].to_bytes(1,'big')	#Convert[4].to_bytes(1,'little')
 		border = bgcolor

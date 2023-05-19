@@ -14,7 +14,7 @@ import numpy as NP
 
 from common.connection import Connection
 # from common.c64cvt import GetIndexedImg, PaletteHither
-from common.imgcvt import gfxmodes, GetIndexedImg, ColorProcess, colordelta
+from common.imgcvt import gfxmodes, get_IndexedImg, ColorProcess, colordelta
 from common.bbsdebug import _LOG
 import common.filetools as FT
 import common.turbo56k as TT
@@ -117,7 +117,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
         client = python_weather.Client(format=units)
     else:
         client = python_weather.Client(unit=units)
-    img, inPal = GetIndexedImg(gfxmodes.C64HI,0) #Image.new('1', (320,200), color = 'black')
+    img, inPal = get_IndexedImg(gfxmodes.C64HI,0) #Image.new('1', (320,200), color = 'black')
     inPal.colordelta = colordelta.EUCLIDEAN
     draw = ImageDraw.Draw(img)
     # fetch a weather forecast from a city
