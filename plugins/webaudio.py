@@ -1,7 +1,7 @@
 import urllib
 
 import time
-import pafy
+#import pafy
 import streamlink
 
 import sys
@@ -96,15 +96,18 @@ def plugFunction(conn:common.connection.Connection,url):
     #Streaming mode
     binario = b'\xFF\x83'
 
-    try:
-        pa = pafy.new(url)
-        s= pa.streams[0]
-        sURL = s.url
-        _LOG("WebAudio - Now streaming from YouTube: "+pa.title,id=conn.id,v=3)
-        #logo = 'plugins/youtubelogo.png'
-        sTitle = formatX('YouTube Stream: '+pa.title)
-    except:
-        sURL = None
+
+    # PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
+    # try:
+    #     pa = pafy.new(url)
+    #     s= pa.streams[0]
+    #     sURL = s.url
+    #     _LOG("WebAudio - Now streaming from YouTube: "+pa.title,id=conn.id,v=3)
+    #     #logo = 'plugins/youtubelogo.png'
+    #     sTitle = formatX('YouTube Stream: '+pa.title)
+    # except:
+    #     sURL = None
+    sURL = None
     # Pafy failed, try with streamlink
     # streamlink lacks metadata functionality
     if sURL == None:

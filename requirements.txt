@@ -9,7 +9,7 @@ numpy
 opencv_python
 geopy
 youtube-dl
-pafy @ git+https://github.com/Cupcakus/pafy
+# pafy @ git+https://github.com/Cupcakus/pafy
 Pillow>=8.0.0
 python_weather
 requests>=2.26.0

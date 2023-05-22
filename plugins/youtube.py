@@ -2,7 +2,7 @@
 #          YouTube Plugin          #
 ####################################
 
-import pafy
+#import pafy
 import cv2
 import numpy as np
 from common.bbsdebug import _LOG,bcolors
@@ -28,17 +28,19 @@ def plugFunction(conn:Connection,url, crop):
 	if crop != None:
 		crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 
-	try:
-		video = pafy.new(url)
-		tmsecs = video.length*1000
-		best = video.getbestvideo()
-		if best == None:
-			best = video.getbest()
-	except:
-		_LOG(bcolors.WARNING+"YouTube: PAFY failed trying with Streamlinks"+bcolors.ENDC,id=conn.id,v=1)
-		#conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
-		#return()
-		video = None
+	# PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
+	# try:
+	# 	video = pafy.new(url)
+	# 	tmsecs = video.length*1000
+	# 	best = video.getbestvideo()
+	# 	if best == None:
+	# 		best = video.getbest()
+	# except:
+	# 	_LOG(bcolors.WARNING+"YouTube: PAFY failed trying with Streamlinks"+bcolors.ENDC,id=conn.id,v=1)
+	# 	#conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
+	# 	#return()
+	# 	video = None
+	video = None
 	if video == None:
 		slsession = streamlink.Streamlink()
 		try:
