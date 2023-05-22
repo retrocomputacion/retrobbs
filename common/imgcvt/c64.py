@@ -4,8 +4,8 @@
 import numpy as np
 import os
 
-import common.imgcvt.common as CC
-import common.imgcvt.palette as Palette
+from common.imgcvt import common as CC
+from common.imgcvt import palette as Palette
 
 #Palette structure
 Palette_Colodore = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':0},

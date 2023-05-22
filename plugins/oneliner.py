@@ -1,9 +1,9 @@
 import json
 import string
 
-import common.style as S
+from common import style as S
 from common.connection import Connection
-import common.turbo56k as TT
+from common import turbo56k as TT
 
 
 #############################

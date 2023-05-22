@@ -6,9 +6,9 @@ from datetime import datetime
 from PIL import Image
 from io import BytesIO
 
-import common.turbo56k as TT
+from common import turbo56k as TT
 from common.style import default_style, RenderMenuTitle
-import common.filetools as FT
+from common import filetools as FT
 from common.helpers import formatX, More
 from common.bbsdebug import _LOG,bcolors
 from common.connection import Connection

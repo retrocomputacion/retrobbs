@@ -7,10 +7,10 @@ from shutil import which
 from enum import IntEnum, auto
 import os
 import sys
-import common.cpu65 as c65
+from common import cpu65 as c65
 
 from common.bbsdebug import _LOG
-import common.ymparse as YM
+from common import ymparse as YM
 
 # compute sidplayer driver, taken from sidplay2/w
 

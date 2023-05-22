@@ -9,7 +9,7 @@
 import socket
 from common.bbsdebug import _LOG, bcolors
 import datetime
-import common.turbo56k as TT
+from common import turbo56k as TT
 from common.classes import BBS
 import time
 from common.parser import TMLParser

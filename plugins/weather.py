@@ -16,8 +16,8 @@ from common.connection import Connection
 # from common.c64cvt import GetIndexedImg, PaletteHither
 from common.imgcvt import gfxmodes, get_IndexedImg, ColorProcess, colordelta
 from common.bbsdebug import _LOG
-import common.filetools as FT
-import common.turbo56k as TT
+from common import filetools as FT
+from common import turbo56k as TT
 
 wgfx24: list #Weather gfx 24px 
 wgfx8:  list  #Weather gfx 8px

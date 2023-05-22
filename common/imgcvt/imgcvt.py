@@ -6,13 +6,13 @@ from PIL import Image, ImageEnhance, ImageStat
 import hitherdither
 import datetime as dt
 
-import common.imgcvt.common as CC
-import common.imgcvt.c64 as c64
+from common.imgcvt import common as CC
+from common.imgcvt import c64 as c64
 #import cvtmods.plus4 as p4
 #import cvtmods.msx as msx
 #import cvtmods.zxspectrum as zx
-import common.imgcvt.palette as Palette
-import common.imgcvt.dither as DT
+from common.imgcvt import palette as Palette
+from common.imgcvt import dither as DT
 
 from enum import Enum
 

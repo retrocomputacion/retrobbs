@@ -6,9 +6,9 @@
 import cv2
 import numpy as np
 from common.bbsdebug import _LOG,bcolors
-import common.turbo56k as TT
+from common import turbo56k as TT
 from common.connection import Connection
-import common.video as VV
+from common import video as VV
 import streamlink
 
 #############################

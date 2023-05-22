@@ -10,10 +10,10 @@ import signal
 import math
 
 from common.bbsdebug import _LOG,bcolors
-import common.helpers as H
-import common.style as S
+from common import helpers as H
+from common import style as S
 from common.connection import Connection
-import common.turbo56k as TT
+from common import turbo56k as TT
 from common.style import RenderMenuTitle, KeyLabel
 
 

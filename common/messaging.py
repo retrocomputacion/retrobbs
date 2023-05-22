@@ -1,8 +1,8 @@
 # Messaging sub-system
 from common.connection import Connection
 from datetime import datetime
-import common.turbo56k as TT
-import common.petscii as P
+from common import turbo56k as TT
+from common import petscii as P
 from common.bbsdebug import _LOG
 from common.style import RenderMenuTitle
 from common.dbase import DBase

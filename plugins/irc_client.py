@@ -5,11 +5,11 @@ import select
 import socket
 
 from common.bbsdebug import _LOG,bcolors
-import common.helpers as H
-import common.style as S
+from common import helpers as H
+from common import style as S
 from common.connection import Connection
-import common.petscii as P
-import common.turbo56k as TT
+from common import petscii as P
+from common import turbo56k as TT
 
 
 #############################

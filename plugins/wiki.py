@@ -1,6 +1,6 @@
-import common.turbo56k as TT
+from common import turbo56k as TT
 from common.style import bbsstyle
-import common.filetools as FT
+from common import filetools as FT
 from common.helpers import formatX, More, crop, text_displayer
 from common.connection import Connection
 from common.bbsdebug import _LOG

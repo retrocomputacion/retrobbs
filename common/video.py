@@ -6,7 +6,7 @@ import cv2
 import subprocess
 import io
 from PIL import Image
-import common.filetools as FT
+from common import filetools as FT
 from random import randrange
 from common.bbsdebug import _LOG,bcolors
 from common.connection import Connection

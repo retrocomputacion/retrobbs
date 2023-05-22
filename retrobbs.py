@@ -89,9 +89,9 @@ import configparser #INI file parser
 import threading
 
 #Petscii
-import common.petscii as P
+from common import petscii as P
 #Encoders
-import common.extensions as EX
+from common import extensions as EX
 
 #Turbo56K
 from common import turbo56k as TT
@@ -106,7 +106,7 @@ from common import messaging as MM
 from common import video as VV
 
 #File transfer functions
-import common.filetools as FT
+from common import filetools as FT
 
 # import importlib
 # import pkgutil

@@ -6,13 +6,13 @@ import re
 import os
 import time
 from common.connection import Connection
-import common.helpers as H
-import common.audio as AA
+from common import helpers as H
+from common import audio as AA
 from PIL import Image
 from common.imgcvt import convert_To, gfxmodes, ColorProcess
 from io import BytesIO
-import common.turbo56k as TT
-import common.style as S
+from common import turbo56k as TT
+from common import style as S
 from common.bbsdebug import _LOG, bcolors
 from crc import Calculator, Configuration
 

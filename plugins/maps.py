@@ -8,9 +8,9 @@ from PIL import Image
 from common.connection import Connection
 from common.bbsdebug import _LOG
 from common.imgcvt import gfxmodes, ColorProcess
-import common.filetools as FT
-import common.turbo56k as TT
-import common.petscii as P
+from common import filetools as FT
+from common import turbo56k as TT
+from common import petscii as P
 from geopy.geocoders import Photon, Nominatim
 
 #############################

@@ -4,8 +4,8 @@ import re
 from html import unescape
 from html.entities import name2codepoint
 from collections import deque
-import encoders.petscii as P
-import common.extensions as EX
+from encoders import petscii as P
+from common import extensions as EX
 from common.bbsdebug import _LOG
 #from common.connection import Connection
 import time

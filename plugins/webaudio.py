@@ -11,9 +11,9 @@ from queue import Queue
 import threading
 
 from common.bbsdebug import _LOG,bcolors
-import common.connection
+from common import connection
 from common.helpers import formatX
-import common.audio as AA
+from common import audio as AA
 
 
 
@@ -87,7 +87,7 @@ def setup():
 #Plugin callable function
 
 #Send Audio file
-def plugFunction(conn:common.connection.Connection,url):
+def plugFunction(conn:connection.Connection,url):
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'

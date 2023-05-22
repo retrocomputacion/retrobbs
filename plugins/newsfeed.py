@@ -8,11 +8,11 @@ from urllib.parse import urlparse,urljoin
 
 from common.bbsdebug import _LOG,bcolors
 from common.imgcvt import gfxmodes
-import common.helpers as H
-import common.style as S
+from common import helpers as H
+from common import style as S
 from common.connection import Connection
-import common.turbo56k as TT
-import common.filetools as FT
+from common import turbo56k as TT
+from common import filetools as FT
 
 ### User Agent string used for some stingy content sources
 hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
