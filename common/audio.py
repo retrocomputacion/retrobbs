@@ -264,6 +264,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 			binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
 			conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
+			streaming = conn.connected
 			sys.stderr.flush()
 			#Check for terminal cancelation
 			conn.socket.setblocking(0)	# Change socket to non-blocking

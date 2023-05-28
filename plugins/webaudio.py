@@ -186,6 +186,7 @@ def plugFunction(conn:connection.Connection,url):
             binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
             conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,2)].to_bytes(1,'little'), binario))
+            streaming = conn.connected
             sys.stderr.flush()
             #Check for terminal cancelation
             conn.socket.setblocking(0)	# Change socket to non-blocking
