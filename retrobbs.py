@@ -1066,9 +1066,6 @@ def BBSLoop(conn:Connection):
     try:
         # Sync
         conn.SendTML('<NUL n=2>')
-        # Send speech message
-        conn.Sendall(TT.to_Speech() + '.bienvenido,p\'r2esioneritarn,')
-        time.sleep(1)
         if conn.bbs.lang == 'es':
             pt = "presione RETURN..."
         else:
@@ -1091,7 +1088,7 @@ running under:<BR>
         conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
         time.sleep(1)
         datos = ""
-        conn.socket.settimeout(10.0)
+        conn.socket.settimeout(5.0)
         datos = conn.Receive(2)
         conn.socket.settimeout(_tout)
         _LOG('ID:', datos,id=conn.id,v=4)
