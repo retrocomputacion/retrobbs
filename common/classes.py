@@ -3,6 +3,7 @@
 
 from common.dbase import DBase
 import time
+from enum import Enum
 
 ########### BBS Class ###########
 
@@ -53,13 +54,78 @@ class Encoder:
         self.tml_multi = {}		#	TML Tags for characters that can be printed multiple times
         self.encode = None		#	Function to encode from ASCII/Unicode
         self.decode = None		#	Function to decode to ASCII/Unicode
-        self.palette = ()		#	List of palette control codes
+        self.palette = {}		#	Dictionary of palette control codes -> color index
+        self.colors = {}		#	Dictionary of named colors -> color index
         self.non_printable = []	#	List of non printable characters
         self.nl	= '\n'			#	New line string/character
+        self.def_gfxmode = None	#	Default graphic mode (gfxmodes enum)
 
     def color_index(self, code):
-        try:
-            return self.palette.index(code)
-        except:
-            return -1
+       return self.palette.get(code,-1)
 
+SCOLOR = Enum('style_colors',
+	      [ 'BgColor','BoColor','TxtColor','HlColor',
+			'OoddColor','ToddColor','OevenColor','TevenColor',
+			'MenuTColor1','MenuTColor2','SBorderColor1','SBorderColor2',
+			'PbColor','PtColor'])
+
+class bbsstyle:
+	def __init__(self, colors:dict=None):
+		if colors != None:
+			# Default colors (in palette index)
+			self.BgColor		= colors['BLACK']		#Background color
+			self.BoColor		= colors['BLACK']		#Border color
+			self.TxtColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Main text color
+			self.HlColor		= colors['WHITE']		#Highlight text color
+			### Menu specific colors ###
+			self.OoddColor		= colors['LIGHT_BLUE']	#Odd option key color
+			self.ToddColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Odd option text color
+			self.OevenColor		= colors['CYAN']		#Even option key color
+			self.TevenColor		= colors['YELLOW']		#Even option text color
+			self.MenuTColor1	= colors['CYAN']		#Menu title border color 1
+			self.MenuTColor2	= colors['LIGHT_GREEN']	#Menu title border color 2
+			self.SBorderColor1	= colors['LIGHT_GREEN']	#Section border color 1
+			self.SBorderColor2	= colors['GREEN']		#Section border color 1
+			### [Prompt] ###
+			self.PbColor		= colors['YELLOW']		#Key prompt brackets color
+			self.PtColor		= colors.get('LIGHT_BLUE',colors.get('CYAN'))	#Key prompt text color
+
+	# Set an style color, a section or the whole style
+	# color : SCOLOR and index != None to set a single style color
+	# color : dictionary with SCOLOR:int pairs to set the whole or part of the theme 
+	def set(self, color, index: int = None):
+		if type(color) != dict:
+			if index != None:
+				color = {color:index}
+			else:
+				return
+		for xi in color:
+			index = color[xi]
+			if color == SCOLOR.BgColor:
+				self.BgColor		= index
+			elif color == SCOLOR.BoColor:
+				self.BoColor		= index
+			elif color == SCOLOR.TxtColor:
+				self.TxtColor		= index
+			elif color == SCOLOR.HlColor:
+				self.HlColor		= index
+			elif color == SCOLOR.OoddColor:
+				self.OoddColor		= index
+			elif color == SCOLOR.ToddColor:
+				self.ToddColor		= index
+			elif color == SCOLOR.OevenColor:
+				self.OevenColor		= index
+			elif color == SCOLOR.TevenColor:
+				self.TevenColor		= index
+			elif color == SCOLOR.MenuTColor1:
+				self.MenuTColor1	= index
+			elif color == SCOLOR.MenuTColor2:
+				self.MenuTColor2	= index
+			elif color == SCOLOR.SBorderColor1:
+				self.SBorderColor1	= index
+			elif color == SCOLOR.SBorderColor2:
+				self.SBorderColor2	= index
+			elif color == SCOLOR.PbColor:
+				self.PbColor		= index
+			elif color == SCOLOR.PtColor:
+				self.PtColor		= index		

@@ -47,12 +47,13 @@ t_statements = {'mode':[('m','PET64')],'switch':[('r','_A')],'case':[('c',False)
 
 t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
 	      		'RND':(lambda s,e:randrange(s,e) if s<e else s,[('_R','_I'),('s',0),('e',10)]),
-				'INKEYS':(lambda k:k,[('_R','_A'),('k','\n',False)]),
+				'INKEYS':(lambda k:k,[('_R','_A'),('k','\r',False)]),
 				'USER':(lambda u:u[('_R','_C')]),
 				'LET':(lambda x:x,[('_R','_I'),('x','_I')]),'OUT':(lambda x:x,[('_R','_C'),('x','_I')]),
 				'INC':(lambda x:x+1,[('_R','_I'),('x','_I')]),'DEC':(lambda x:x-1,[('_R','_I'),('x','_I')]),
 				'LEN':(lambda x:len(x),[('_R','_I'),('x','_S')]),
-				'BELL':chr(7),'CHR':(lambda c:chr(c),[('_R','_C'),('c',0)])}
+				'BELL':chr(7),'CHR':(lambda c:chr(c),[('_R','_C'),('c',0)]),
+				'INK':(lambda c:'\xff\xb7'+chr(c),[('_R','_C'),('c',0)])}
 t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
 class TMLParser(HTMLParser):
@@ -76,6 +77,12 @@ class TMLParser(HTMLParser):
 		self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])								# Update OUT command
 		self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(bytes(k,'latin1')),[('_R','_A'),('k','\r',False)])	# Update INKEYS command
 		self.t_mono['USER'] = (lambda: self.conn.username,[('_R','_S')])											# Update USER command
+		if conn.QueryFeature(0xb7) >= 0x80:																			# Update INK command
+			# if terminal doesnt support the ink command, try to replace it with a text color control code
+			# if there isn't a matching color code then send NUL
+			tmp = conn.encoder.palette.items()
+			# self.t_mono['INK'] = (lambda c: chr(conn.encoder.palette[c & ((1<<len(conn.encoder.palette).bit_length())-1)]),[('_R','_C'),('c',0)])
+			self.t_mono['INK'] = (lambda c: chr([k for k,v in tmp if v == c][0] if len([k for k,v in tmp if v == c])>0 else 0),[('_R','_C'),('c',0)])
 		###
 		self.t_mono.update(EX.t_mono)			# Plugins and Extensions functions
 		self.t_mono.update(conn.encoder.tml_mono)	# Encoder definitions

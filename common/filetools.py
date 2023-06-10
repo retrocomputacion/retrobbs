@@ -9,7 +9,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, ColorProcess
+from common.imgcvt import convert_To, gfxmodes, ColorProcess, dithertype
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -69,7 +69,18 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 # gfxmode: Graphic mode
 # preproc: Preprocess image before converting
 ###########################################################
-def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = gfxmodes.C64MULTI, preproc:ColorProcess = None):
+def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:ColorProcess = None, dither:dithertype = dithertype.BAYER8):
+
+	if gfxmode == None:
+		gfxmode = conn.encoder.def_gfxmode
+	
+	if conn.mode == 'PET64':
+		gfxhi = gfxmodes.C64HI
+		gfxmulti = gfxmodes.C64MULTI
+	elif conn.mode == 'PET264':
+		gfxhi = gfxmodes.P4HI
+		gfxmulti = gfxmodes.P4MULTI
+
 
 	ftype = {'.OCP':1,	#Advanced Art Studio
 			'.KOA':2,'.KLA':2,	#Koala Paint
@@ -77,18 +88,20 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			'.DD':4,'.DDL':4,	#Doodle
 			'.GIF':5,
 			'.PNG':6,
-			'.JPG':7}
+			'.JPG':7,
+			'.BIN':8}
 
-	ftitle = {6:' GIF  Image ', 7:' PNG  Image ', 8:' JPEG Image '}
+	ftitle = {5:' GIF  Image ', 6:' PNG  Image ', 7:' JPEG Image '}
 
 	fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
 	fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
 
 	# Find image format
 	data = [None]*3
-	bgcolor = chr(0)
+	bgcolor = b'\x00'
+	mcolor2 = b'\x00'
 
-	mode = 1 if gfxmode == gfxmodes.C64MULTI else 0
+	mode = 1 if gfxmode == gfxmulti else 0
 
 	save &= conn.QueryFeature(TT.FILETR) < 0x80
 
@@ -232,7 +245,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			# Close file
 			archivo.close()
 			gfxmode = gfxmodes.C64HI #Hi-res bitmaps
-	elif 5 <= switch <= 7:	#extension in ('.gif','.png','.jpg','.GIF','.PNG','.JPG'):
+	elif  5 <= switch <= 7:	#extension in ('.gif','.png','.jpg','.GIF','.PNG','.JPG'):
 		# or bytes/image object sent as filename parameter
 		conn.SendTML('<CBM-B><CRSRL>')
 		# try:
@@ -249,16 +262,55 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				return()
 			conn.SendTML('<CBM-B><CRSRL>')
 		else:
-			mode = 1 if gfxmode == gfxmodes.C64MULTI else 0
-		gfxmode = gfxmodes.C64MULTI if (mode & 0x7f) == 1 else gfxmodes.C64HI
-		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc)
+			mode = 1 if (gfxmode == gfxmulti) else 0
+		gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
+		if preproc == None and conn.mode == 'PET264':
+			preproc = ColorProcess(1,1.5,1.5)
+		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, dither)
 		Source.close()
 		bgcolor = gcolors[0].to_bytes(1,'big')	#Convert[4].to_bytes(1,'little')
+		if conn.mode == 'PET264' and gfxmode == gfxmulti:
+			mcolor2 = gcolors[1].to_bytes(1,'big')
 		border = bgcolor
 		# except Exception as e:
 		# 	print(e)
 		# 	return()
+	elif switch == 8:	# Plus4 memory dump test
+		# if dialog and save:
+		# 	out = ImageDialog(conn,'Doodle',0,0,True)
+		# else:
+		# 	out = 0
+		# if (out & 0x80) == 0x80:	# Save image
+		# 	savename = os.path.splitext(os.path.basename(filename))[0].upper()
+		# 	savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+		# 	savename = 'DD'+(savename if len(savename)<14 else savename[:14])
+		# 	if TransferFile(conn, filename, savename):
+		# 		conn.SendTML(fok)
+		# 	else:
+		# 		conn.SendTML(fabort)
+		# 	conn.SendTML('<KPROMPT t=RETURN>')
+		# 	return
+		# else:		# Open the Art Studio image file
+		archivo=open(filename,"rb")
+		# # Skip the first couple of bytes
+		# archivo.read(2)
 
+		# Luminance data
+		data[2] = archivo.read(1000)
+		#Skip
+		archivo.read(24)
+		# Color data
+		data[1] = archivo.read(1000)
+		#Skip
+		archivo.read(24)
+		# Bitmap data
+		data[0] = archivo.read(8000)
+
+		border = b'\x0c'
+
+		# Close file
+		archivo.close()
+		gfxmode = gfxmodes.P4HI #Hi-res bitmaps
 
 	tchars = 40*lines
 	tbytes = 320*lines
@@ -283,22 +335,30 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		# Screen Data
 		binaryout += data[1][0:tchars] #Screen
 
-		if gfxmode == gfxmodes.C64MULTI:
+		if (gfxmode == gfxmulti) or (conn.mode == 'PET264' and data[2] != None):
 			# Set the transfer pointer + $20 (color memory)
 			binaryout += b'\x81\x20'
 			# Transfer color block + Byte count (low, high)
 			binaryout += b'\x82'	# Color data
 			binaryout += tchars.to_bytes(2,'little')	#Block size
 			binaryout += data[2][0:tchars] #ColorRAM
-			if display:
+			# if display:
+			# 	# Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
+			# 	binaryout += b'\x92\x00'
+			# 	binaryout += border
+			# 	binaryout += bgcolor
+		if display:
+			if gfxmode == gfxmulti:
 				# Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
 				binaryout += b'\x92\x00'
 				binaryout += border
 				binaryout += bgcolor
-		elif display:
-			# Switch to hires mode + Page number: 0 (default) + Border color: border
-			binaryout += b'\x91\x00'
-			binaryout += border
+				if conn.mode == 'PET264':
+					binaryout += mcolor2
+			else:
+				# Switch to hires mode + Page number: 0 (default) + Border color: border
+				binaryout += b'\x91\x00'
+				binaryout += border
 		# Exit command mode
 		binaryout += b'\xFE'
 		if display:
@@ -387,7 +447,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 			return
 		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
 			SendBitmap(conn,filename,dialog,save)
-			conn.SendTML('<INKEYS><CURSOR>')
+			conn.SendTML('<INKEYS><NUL><CURSOR>')
 		elif ext == '.C':
 			...
 		elif ext == '.PET':

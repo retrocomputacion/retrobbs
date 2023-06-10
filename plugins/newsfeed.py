@@ -38,7 +38,9 @@ def plugFunction(conn:Connection,url):
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
 
-    menucolors = [[14,15],[3,7]]
+    colors = conn.encoder.colors
+
+    menucolors = [[colors['LIGHT_BLUE'],colors['LIGHT_GREY']],[colors['CYAN'],colors['YELLOW']]]
 
     MenuDic = {
 			    b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
@@ -46,7 +48,7 @@ def plugFunction(conn:Connection,url):
 			  }
 
     # # Text mode
-    conn.SendTML('<TEXT><MTITLE t=Newsfeed><CBM-B><CRSRL>')
+    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t=Newsfeed><CBM-B><CRSRL>')
 
     nfeed = feedparser.parse(url)
     try:
@@ -110,7 +112,7 @@ def feedentry(conn:Connection,entry,feedname):
 
         title = H.formatX(e_title)
         title[0] = '<WHITE>'+title[0]
-        title.append(f'<YELLOW><HLINE n=40><INK c={S.default_style.TxtColor}>')
+        title.append(f'<YELLOW><HLINE n=40><INK c={conn.style.TxtColor}>')
         title.append('<BR>')
         text = title + body
         H.More(conn,text,22)
@@ -181,7 +183,7 @@ def webarticle(conn:Connection,url, feedname):
         if len(a_headers) != 0:
             for h in a_headers:
                 h2 = H.formatX(h.get_text())
-                h2[0] = f'<INK c={S.default_style.HlColor}>'+h2[0]
+                h2[0] = f'<INK c={conn.style.HlColor}>'+h2[0]
                 body += h2
                 for el in h.next_siblings:
                     if el.name and el.name.startswith('h'):
@@ -189,7 +191,7 @@ def webarticle(conn:Connection,url, feedname):
                     if el.name == 'p':
                         p = H.formatX(el.get_text())
                         if len(p)>0:
-                            p[0] = f'<INK c={S.default_style.TxtColor}>'+p[0]
+                            p[0] = f'<INK c={conn.style.TxtColor}>'+p[0]
                             body += p
                     body.append('<BR>')
         else:
@@ -212,7 +214,7 @@ def webarticle(conn:Connection,url, feedname):
             conn.Sendall(TT.disable_CRSR())
             FT.SendBitmap(conn,getImg(top_url,a_img),gfxmode=gfxmodes.C64MULTI)
             conn.ReceiveKey()
-            conn.SendTML('<CLR><TEXT><CURSOR>')
+            conn.SendTML('<CLR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
         conn.Sendall(TT.set_Window(3,24))
         #body = H.formatX(a_body)
@@ -220,7 +222,7 @@ def webarticle(conn:Connection,url, feedname):
         title[0] = '<WHITE>'+title[0]
         title.append('<YELLOW><HLINE n=40>')
         if a_author != None:
-            title.append(f'<INK c={S.default_style.TxtColor}>by: <YELLOW>{a_author}<BR>')
+            title.append(f'<INK c={conn.style.TxtColor}>by: <YELLOW>{a_author}<BR>')
             title.append('<BR>')
         body[0] = '<GREY2>'+body[0]
         text = title + body

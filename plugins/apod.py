@@ -7,7 +7,7 @@ from PIL import Image
 from io import BytesIO
 
 from common import turbo56k as TT
-from common.style import default_style, RenderMenuTitle
+from common.style import RenderMenuTitle
 from common import filetools as FT
 from common.helpers import formatX, More
 from common.bbsdebug import _LOG,bcolors
@@ -33,24 +33,24 @@ def plugFunction(conn:Connection):
 
 
 
-    apod_lang = {'en':['Connecting with NASA',f"<BR><GREEN>Press <INK c={default_style.PbColor}>"	\
-                    + f"[<INK c={default_style.PtColor}>RETURN<INK c={default_style.PbColor}>]"	\
-                    + f"<LTGREEN> to display image<BR>Press <INK c={default_style.PbColor}>[<INK c={default_style.PtColor}>"	\
-                    + f"RETURN<INK c={default_style.PbColor}>]<LTGREEN> again for a new<BR>random image<BR>Or "	\
-                    + f"<INK c={default_style.PbColor}>[<INK c={default_style.PtColor}><LARROW>"	\
-                    + f"<INK c={default_style.PbColor}>]<LTGREEN> to go back"],
-                'es':['Connectando con la NASA',f"<BR><GREEN>Presione <INK c={default_style.PbColor}>"	\
-                    + f"[<INK c={default_style.PtColor}>RETURN<INK c={default_style.PbColor}>]"	\
-                    + f"<LTGREEN> para mostrar imagen<BR>Presione <INK c={default_style.PbColor}>[<INK c={default_style.PtColor}>"	\
-                    + f"RETURN<INK c={default_style.PbColor}>]<LTGREEN> de nuevo<BR>para otra imagen al azar<BR>O "	\
-                    + f"<INK c={default_style.PbColor}>[<INK c={default_style.PtColor}><LARROW>"	\
-                    + f"<INK c={default_style.PbColor}>]<LTGREEN> para volver"]}
+    apod_lang = {'en':['Connecting with NASA',f"<BR><GREEN>Press <INK c={conn.style.PbColor}>"	\
+                    + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
+                    + f"<LTGREEN> to display image<BR>Press <INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}>"	\
+                    + f"RETURN<INK c={conn.style.PbColor}>]<LTGREEN> again for a new<BR>random image<BR>Or "	\
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to go back"],
+                'es':['Connectando con la NASA',f"<BR><GREEN>Presione <INK c={conn.style.PbColor}>"	\
+                    + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
+                    + f"<LTGREEN> para mostrar imagen<BR>Presione <INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}>"	\
+                    + f"RETURN<INK c={conn.style.PbColor}>]<LTGREEN> de nuevo<BR>para otra imagen al azar<BR>O "	\
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver"]}
 
     loop = True
     rdate = datetime.today()
     while loop == True:
         # # Text mode
-        conn.Sendall(TT.to_Text(0,0,0))
+        conn.Sendall((chr(0)*2)+TT.to_Text(0,conn.style.BoColor,conn.style.BgColor)+TT.enable_CRSR())
         RenderMenuTitle(conn,'APOD')
         conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<CBM-B><CRSRL>')
         i = 0
@@ -84,7 +84,7 @@ def plugFunction(conn:Connection):
             if autor != '':
                 at = formatX(autor)
                 at[0] = '<ORANGE>'+at[0]
-                at[-1] = f'<INK c={default_style.TxtColor}>'
+                at[-1] = f'<INK c={conn.style.TxtColor}>'
             else:
                 at = ['<BR>']
             texto += at+formatX(desc)

@@ -13,6 +13,10 @@ from common import turbo56k as TT
 from common.classes import BBS
 import time
 from common.parser import TMLParser
+from common.classes import bbsstyle
+
+# Dictionary of client variant -> Encoder
+clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264'}
 
 class Connection:
 
@@ -22,10 +26,6 @@ class Connection:
 		self.addr = addr
 		self.id = id
 		self.bbs:BBS = bbs
-		self.mode = 'PET64'							#Connection mode -> type of client
-		self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
-		self.parser = TMLParser(self)				#TML parser
-		self.p_running = False
 
 		# MenuDef entry:
 		# [Function, (Parameters tuple), Title, UserClass , WaitKey]
@@ -52,8 +52,15 @@ class Connection:
 		self.TermString = '' 		#Terminal identification string
 		self.T56KVer = 0			#Terminal Turbo56K version
 		self.TermFt = {i:None for i in range(128,256)}	#Terminal features
-		self.TermFt[0x7F] = b'\x00'
-		self.TermFt[0x7E] = b'\x00'
+		self.TermFt[0xFF] = b'\x00'
+		self.TermFt[0xFE] = b'\x00'
+
+		self.mode = 'PET64'							#Connection mode -> type of client
+		self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+		self.style = bbsstyle(self.encoder.colors)
+		self.parser = TMLParser(self)				#TML parser
+		self.p_running = False
+
 
 		_LOG('Incoming connection from', addr,id=id,v=3)
 	
@@ -71,13 +78,21 @@ class Connection:
 		except:
 			pass
 
-	#Set mode
-	def SetMode(self, mode):
+	#Set mode from the terminal string
+	def SetMode(self, idstring, t56kver):
+		self.TermString = idstring
+		self.T56KVer = t56kver
+		mode = 'PET64' if b'-' not in idstring else clients.get(idstring.decode('UTF-8').split(' ')[0].split('-')[1],'PET64')
 		if not self.p_running:		# Only change the mode if the TML parser object is not running
 			self.mode = mode							#Connection mode -> type of client
 			self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+			# Reinit Terminal features
+			self.TermFt[0xb7] = None	# Maybe reinit the whole dictionary in the future?
 			del(self.parser)
 			self.parser = TMLParser(self)
+			del(self.style)
+			self.style = bbsstyle(self.encoder.colors)
+			_LOG(f'Connection mode set to: {mode}', id=self.id, v=2)
 			return True
 		else:
 			return False
@@ -99,7 +114,7 @@ class Connection:
 							pass
 					self.socket.setblocking(1)	# Change socket to blocking
 					self.socket.settimeout(self.bbs.TOut)
-				# time.sleep(0.5)
+					time.sleep(0.5)
 				self.Sendall(chr(TT.CMDON))
 				self.Sendall(chr(TT.QUERYCMD)+chr(cmd))
 				self.TermFt[cmd] = self.Receive(1)[0]	# Store as int

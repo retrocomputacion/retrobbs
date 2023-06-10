@@ -1,8 +1,8 @@
 from . import palette as Palette
 import numpy as np
-from enum import Enum
+from enum import IntEnum
 
-dithertype = Enum('dithertype',['NONE','BAYER2','BAYER4','BAYER4ODD','BAYER4EVEN','BAYER4SPOTTY','BAYER8','YLILUOMA1','CLUSTER','FLOYDSTEINBERG'])
+dithertype = IntEnum('dithertype',['NONE','BAYER2','BAYER4','BAYER4ODD','BAYER4EVEN','BAYER4SPOTTY','BAYER8','YLILUOMA1','CLUSTER','FLOYDSTEINBERG'])
 
 ######################################
 # Custom ordered dither
@@ -41,7 +41,7 @@ def custom_dithering(image, palette:Palette, thresholds, type:dithertype=dithert
         [15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21]]], dtype=object)
 
 
-    bayer_matrix = B(np.asarray(dMatrix[type.value-2]))
+    bayer_matrix = B(np.asarray(dMatrix[type-2]))
     ni = np.array(image, "uint8")
     thresholds = np.array(thresholds, "uint8")
     xx, yy = np.meshgrid(range(ni.shape[1]), range(ni.shape[0]))

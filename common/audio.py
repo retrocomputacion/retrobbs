@@ -58,7 +58,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 	# Sync
 	conn.Sendall(chr(0)*2)
 	# # Text mode
-	conn.Sendall(TT.to_Text(0,0,0))
+	conn.Sendall(TT.to_Text(0,conn.style.BoColor,conn.style.BgColor))
 
 	RenderMenuTitle(conn,title)
 

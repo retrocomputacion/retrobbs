@@ -36,15 +36,16 @@ def plugFunction(conn:Connection):
 			conn.SendTML('<GREY1><HLINE n=40>')
 		conn.Sendall(TT.set_Window(2,24))	#Set Text Window
 
-	wcolors = bbsstyle()
-	wcolors.TxtColor = 11
-	wcolors.PbColor = 0
-	wcolors.PtColor = 6
+	ecolors = conn.encoder.colors
+	wcolors = bbsstyle(ecolors)
+	wcolors.TxtColor = ecolors['DARK_GREY']
+	wcolors.PbColor = ecolors['BLACK']
+	wcolors.PtColor = ecolors['BLUE']
 
 	wikipedia.set_lang(conn.bbs.lang)
 	wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
 
-	conn.Sendall(TT.to_Text(0,15,15))
+	conn.Sendall(TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
 	loop = True
 	while loop == True:
 		WikiTitle(conn)
@@ -111,9 +112,10 @@ def plugFunction(conn:Connection):
 							w_image = timg
 						if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
 							w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
-						FT.SendBitmap(conn,w_image,gfxmode=gfxmodes.C64MULTI)
+						FT.SendBitmap(conn,w_image)
 						conn.ReceiveKey()
-						conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,15,15))
+						conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["LIGHT_GREY"]} background={ecolors["LIGHT_GREY"]}>')
+						# conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
 					except:
 						pass
 					WikiTitle(conn)

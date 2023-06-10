@@ -14,7 +14,7 @@ import numpy as NP
 
 from common.connection import Connection
 # from common.c64cvt import GetIndexedImg, PaletteHither
-from common.imgcvt import gfxmodes, get_IndexedImg, ColorProcess, colordelta
+from common.imgcvt import gfxmodes, get_IndexedImg, ColorProcess, colordelta, dithertype
 from common.bbsdebug import _LOG
 from common import filetools as FT
 from common import turbo56k as TT
@@ -85,8 +85,9 @@ def plugFunction(conn:Connection):
         conn.SendTML('<CBM-B><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
-            FT.SendBitmap(conn,img,gfxmode=gfxmodes.C64HI,preproc=ColorProcess(),lines=23,display=False)
-            conn.Sendall(TT.split_Screen(23,False,0,6))
+            gmod = gfxmodes.P4HI if conn.mode == 'PET264' else gfxmodes.C64HI
+            FT.SendBitmap(conn,img,gfxmode=gmod.C64HI,preproc=ColorProcess(),lines=23,display=False,dither=dithertype.NONE)
+            conn.Sendall(TT.split_Screen(23,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLUE'], mode=conn.mode))
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2>')
         conn.SendTML('<CURSOR><CLR><YELLOW>[N]ew location or <LARROW> to exit<BR>')

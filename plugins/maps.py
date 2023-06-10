@@ -7,7 +7,7 @@ from io import BytesIO
 from PIL import Image
 from common.connection import Connection
 from common.bbsdebug import _LOG
-from common.imgcvt import gfxmodes, ColorProcess
+from common.imgcvt import gfxmodes, ColorProcess, dithertype
 from common import filetools as FT
 from common import turbo56k as TT
 from common import petscii as P
@@ -85,7 +85,7 @@ def plugFunction(conn:Connection):
         geoLoc = Nominatim(user_agent="RetroBBS-Maps")
 
 
-    FT.SendBitmap(conn,'plugins/maps_intro.png', gfxmode = gfxmodes.C64HI, preproc=ColorProcess(), display=False)
+    FT.SendBitmap(conn,'plugins/maps_intro.png', gfxmode = gfxmodes.C64HI, preproc=ColorProcess(), display=False, dither=dithertype.NONE)
     conn.SendTML('<SPLIT row=24><YELLOW><CLR>Location:')
     locqry = _dec(conn.ReceiveStr(bytes(keys,'ascii'),30))
     if locqry == '_':

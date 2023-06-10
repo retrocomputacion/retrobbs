@@ -173,44 +173,7 @@ def buildfile(buffers,bg,baseMode):
         t_data += b'\x00'
         #Padding
         t_data += b"M 'STU"
-    elif baseMode == 2:   #Save Hires Manager
-        t_data=b'\x00\x40'
-        for i in range(1,9):
-            t_data += bytes(buffers[i]) #screens
-            t_data += bytes(24)
-        t_data += bytes(buffers[0])
-        t_data += bytes(191)
-    elif baseMode == 3:   #AFLI PRG
-        with open(os.path.abspath(os.path.join(CC.bundle_dir, "c64/afliview.prg")),'rb') as vf:
-            t_data = vf.read()
-            t_data += bytes(buffers[0])
-            for i in range(21):
-                t_data+=b'\xff\xff\xff' #FLI-bug underlay-sprite rows all MC color2
-            t_data += b'\x00'
-            for i in range(16):
-                t_data+=b'\xff\xff\xff' #Last sprite is shorter
-            t_data += bytes(80)
-            #t_data += bytes(192)
-            for i in range(1,8):
-                t_data += bytes(buffers[i]) #screens
-                t_data += bytes(16)
-                t_data += bytes([125]*6)
-                t_data += bytes([126]*2)    #sprite pointers
-            t_data += bytes(buffers[8])
-            t_data += b'\x00'   #border color
-    elif baseMode > 4:     #Hires PRG
-        with open(os.path.abspath(os.path.join(CC.bundle_dir, "c64/64view.prg")),'rb') as vf:
-            t_data = vf.read()
-            t_data += bytes(buffers[0]) #Bitmap
-            t_data += bytes(192)
-            t_data += bytes(buffers[1]) #Screen
-            t_data += bg[0].to_bytes(1,'big')   #background color
-            if baseMode == 5:
-                t_data += b'\x18'   #Multicolor mode
-                t_data += bytes(22)
-                t_data += bytes(buffers[2]) #ColorRAM
-            else:
-                t_data += b'\x08'   #Hires mode
+
     return(t_data)
 #############################
 

@@ -78,8 +78,10 @@ def lastColor(text,defcolor=1):
 
 
 #Text pagination
-def More(conn:Connection, text, lines, colors=default_style):
+def More(conn:Connection, text, lines, colors=None):
 
+	if colors == None:
+		colors = conn.style
 	conn.SendTML(f'<INK c={colors.TxtColor}>')
 	if isinstance(text, list):
 		l = 0
@@ -129,7 +131,7 @@ def More(conn:Connection, text, lines, colors=default_style):
 				page = 0
 				cc = 0
 			elif ord(char) in P.PALETTE:
-				color = P.PALETTE.index(ord(char))	#char
+				color = conn.encoder.palette[ord(char)]	#char
 			elif char == chr(P.RVS_ON):
 				rvs = '<RVSON>'
 			elif char == chr(P.RVS_OFF):
@@ -169,14 +171,16 @@ def More(conn:Connection, text, lines, colors=default_style):
 
 # Bidirectional scroll text display
 # needs Turbo56K >= 0.7
-def text_displayer(conn:Connection, text, lines, colors=default_style):
+def text_displayer(conn:Connection, text, lines, colors=None):
+
+	if colors == None:
+		colors = conn.style
 	#initialize line color list
 	lcols = [colors.TxtColor]*len(text)
 	tcolor = lcols[0]
 
 	#Problematic TML tags
 	rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
-
 
 	#Display a whole text page
 	def _page(start,l):

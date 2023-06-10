@@ -179,7 +179,7 @@ def ConfigRead():
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
-                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.dd','.ddl','.ART','.OCP','.KOA','.KLA','.DD','.DDL','.gif','jpg','png','.GIF','.JPG','PNG'),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
+                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.dd','.ddl','.ART','.OCP','.KOA','.KLA','.DD','.DDL','.gif','jpg','png','.GIF','.JPG','PNG','BIN','bin'),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'SWITCHMENU':		#Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			#Show file list
@@ -335,7 +335,8 @@ def signal_handler(sig, frame):
     try:
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
-    except:
+    except Exception as e:
+        _LOG('Socket shutdown failed: '+e, v=1)
         pass
     del bbs_instance
     sys.exit(0)
@@ -364,7 +365,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     conn.Sendall(TT.to_Speech() + speech)
     time.sleep(1)
     # Select screen output
-    conn.SendTML('<PAUSE n=1><SETOUTPUT><NUL n=2><TEXT>')
+    conn.SendTML('<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
 
     RenderMenuTitle(conn,title)
 
@@ -445,7 +446,7 @@ def SendMenu(conn:Connection):
 
     if conn.menu < 0:
         return()
-    conn.SendTML('<SETOUTPUT><TEXT>')
+    conn.SendTML('<SETOUTPUT><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
     tmenu = conn.bbs.MenuList[conn.menu]	#Change to simply tmenu = conn.MenuDefs
     _LOG("Sending menu: "+tmenu['title'],id=conn.id,v=4)
     RenderMenuTitle(conn,tmenu['title'])
@@ -568,7 +569,7 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         else:
             time.sleep(delay)
 
-        conn.Sendall(TT.to_Text(0,0,0))
+        conn.Sendall(TT.to_Text(0,conn.style.BoColor,conn.style.BgColor))
     conn.Sendall(TT.enable_CRSR())
 
 def WaitRETURN(conn:Connection,timeout = 60.0):
@@ -992,7 +993,7 @@ def UserList(conn:Connection):
               }	
  
     # Select screen output
-    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT><MTITLE t="User list">')
+    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="User list">')
 
     users = conn.bbs.database.getUsers()
     digits = len(str(max(users[:])[0]))
@@ -1047,6 +1048,9 @@ def GetTerminalFeatures(conn:Connection, display = True):
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
+    elif b"RETROTERM-P4" in conn.TermString:
+        _LOG('Plus/4 mode, audio streaming at 3840Hz',id=conn.id,v=3)
+        conn.samplerate = 3840
     if conn.T56KVer > 0.5:
         conn.SendTML('<LTBLUE>Checking some terminal features...<BR>')
         result = [None]*(TT.TURBO56K_LCMD-127)
@@ -1071,7 +1075,7 @@ def BBSLoop(conn:Connection):
         else:
             pt = "press RETURN..."
 
-        welcome = f'''<RESET><SETOUTPUT o=True><TEXT>
+        welcome = f'''<RESET><SETOUTPUT o=True><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>
 <CLR><LOWER><CYAN><BR>
 {conn.bbs.WMess}<BR>
 RetroBBS v{conn.bbs.version:.2f}<BR>
@@ -1102,8 +1106,9 @@ running under:<BR>
             t56kver = ord(dato1)+((ord(dato2))/10)
 
             if t56kver > 0.4:
-                conn.TermString = datos
-                conn.T56KVer = t56kver
+                conn.SetMode(datos,t56kver)
+                # conn.TermString = datos
+                # conn.T56KVer = t56kver
                 GetTerminalFeatures(conn)
                 if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
                     _LOG('Sending intro pic',id=conn.id,v=4)
@@ -1114,7 +1119,7 @@ running under:<BR>
                 Done = False
                 tml = '<NUL n=2><SPLIT><CLR>'
                 while True:
-                    r = conn.SendTML('<CLR><INK c=1>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="LGS">')
+                    r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="LGS">')
                     if not conn.connected:
                         return()
                     t = r['_A']
@@ -1165,7 +1170,7 @@ running under:<BR>
                             elif data!=b'\r':
                                 if wait:
                                     WaitRETURN(conn,60.0*5)
-                                    conn.Sendall(TT.enable_CRSR())	#Enable cursor blink just in case
+                                    conn.Sendall((chr(0)*2)+TT.enable_CRSR())	#Enable cursor blink just in case
                                 Function = conn.MenuDefs[b'\r'][0]
                                 res = Function(*conn.MenuDefs[b'\r'][1])
                                 if isinstance(res,dict):
@@ -1281,6 +1286,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # Bind the socket to the port
 server_address = (bbs_instance.ip, bbs_instance.port)

@@ -29,25 +29,25 @@ SET_CRSR    = 0xB0  #Sets cursor position, exits command mode: Parameters: colum
 LINE_FILL   = 0xB1
 CURSOR_EN   = 0xB2  #Enables or disables cursor blink - Paramater: cursor enable
 SPLIT_SCR   = 0xB3  #Splits screen - Parameters: split line/graphic mode, background colors
-GET_CRSR    = 0xB4
+GET_CRSR    = 0xB4  #Get cursor position, exits command mode
 SET_WIN     = 0xB5  #Sets Text window limits - Parameters: window top and window bottom lines
 SCROLL      = 0xB6  #Scroll text window - Parameter: number of rows to scroll, signed
+INK         = 0xB7  #Set ink color - Parameter: Color index
 
-
-TURBO56K_LCMD = 0xB6 #Highest CMD number implemented
+TURBO56K_LCMD = 0xB7 #Highest CMD number implemented
 
 
 # Command descriptors
 T56K_CMD = {128+0:'Custom transfer address', 128+1:'Preset transfer address', 128+2:'Block transfer', 128+3:'PCM audio stream', 128+4:'SID stream', 128+5:'SID register write order', 128+6:'File transfer',
             128+16:'Set text mode', 128+17:'Set Hi-Res bitmap mode', 128+18:'Set multicolor bitmap mode',
             128+32:'Set screen as output', 128+33:'Set voice synth as output', 128+34:'Terminal ID', 128+35:'Command query',
-            128+48:'Set cursor', 128+49:'Line fill', 128+50:'Cursor enable', 128+51:'Split screen', 128+52:'Get cursor', 128+53:'Set window', 128+54:'Scroll window'}
+            128+48:'Set cursor', 128+49:'Line fill', 128+50:'Cursor enable', 128+51:'Split screen', 128+52:'Get cursor', 128+53:'Set window', 128+54:'Scroll window', 128+55:'Set ink color'}
 
 # Old Turbo56K <v0.6 feature matrix
 T56Kold =  [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
             b'\x03',b'\x02',b'\x03',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
             b'\x00',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',
-            b'\x02',b'\x02',b'\x01',b'\x02',b'\x80',b'\x02',b'\x80']
+            b'\x02',b'\x02',b'\x01',b'\x02',b'\x80',b'\x02',b'\x80',b'\x80']
 
 ###################################################
 
@@ -133,18 +133,32 @@ def disable_CRSR(bin = False):
     else:
         return(chr(CMDON)+chr(CURSOR_EN)+chr(0)+chr(CMDOFF))
 
-def split_Screen(line, multi, bgtop, bgbottom, bin = False):
+def split_Screen(line, multi, bgtop, bgbottom, mctop = 0, bin = False, mode:str='PET64'):
     if line < 0:
         line = 1
     elif line > 24:
         line = 24
     if line != 0 and multi == True:
         line += 128
-    par2 = bgtop+(16*bgbottom)
-    if bin == True:
-        return(bytes([CMDON,SPLIT_SCR,line,par2,CMDOFF]))
+    if line != 0: 
+        if mode == 'PET64':
+            par2 = bgtop+(16*bgbottom)
+        else:
+            line += 32
+            par2 = bgtop
     else:
-        return(chr(CMDON)+chr(SPLIT_SCR)+chr(line)+chr(par2)+chr(CMDOFF))
+        par2 = 0
+    if bin == True:
+        ret = bytes([CMDON,SPLIT_SCR,line,par2])
+        if line != 0 and mode != 'PET64':
+            ret += bytes([bgbottom,mctop])
+        ret += bytes([CMDOFF])
+    else:
+        ret = chr(CMDON)+chr(SPLIT_SCR)+chr(line)+chr(par2)
+        if line !=0 and mode != 'PET64':
+            ret += chr(bgbottom)+chr(mctop)
+        ret += chr(CMDOFF)
+    return ret
 
 def set_Window(top, bottom,bin = False):
     if bin == True:
@@ -159,6 +173,12 @@ def scroll(rows,bin = False):
     else:
         return(chr(CMDON)+chr(SCROLL)+chr(rows)+chr(CMDOFF))
     
+def set_ink(color, bin= False):
+    if bin:
+        return(bytes([CMDON,SCROLL,color]))
+    else:
+        return(chr(CMDON)+chr(SCROLL)+chr(color))
+    
 #############################################################################
 # TML definitions
 
@@ -169,7 +189,7 @@ t_mono = {'SETOUTPUT':(lambda o: to_Screen() if o else to_Speech(),[('_R','_C'),
           'LFILL':(Fill_Line,[('_R','_C'),('row',0),('code',0)]),
           'CURSOR':(lambda enable: enable_CRSR() if enable else disable_CRSR(),[('_R','_C'),('enable',True)]),
           'WINDOW':(set_Window,[('_R','_C'),('top',0),('bottom',24)]),
-          'SPLIT':(split_Screen,[('_R','_C'),('row',0),('multi',False),('bgtop',0),('bgbottom',0)]),
+          'SPLIT':(split_Screen,[('_R','_C'),('row',0),('multi',False),('bgtop',0),('bgbottom',0),('mode','PET64')]),
           'SCROLL':(scroll,[('_R','_C'),('rows',0)]),
           'AT':(set_CRSR,[('_R','_C'),('x',0),('y',0)]),
           }

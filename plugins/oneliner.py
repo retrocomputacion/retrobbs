@@ -38,7 +38,7 @@ def plugFunction(conn:Connection):
 
     refr = True
     while conn.connected:
-        conn.SendTML(f'<WINDOW top=23 bottom=24><CLR><KPROMPT t=RETURN><GREEN>to enter message {S.KeyPrompt("<LARROW>",TML=True)}<GREEN>to go back')
+        conn.SendTML(f'<WINDOW top=23 bottom=24><CLR><KPROMPT t=RETURN><GREEN>to enter message {S.KeyPrompt(conn,"<LARROW>",TML=True)}<GREEN>to go back')
         if refr == True:
             try:
                 olf = open('plugins/oneliners.json','r')

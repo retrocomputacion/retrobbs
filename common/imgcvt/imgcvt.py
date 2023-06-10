@@ -8,18 +8,18 @@ import datetime as dt
 
 from common.imgcvt import common as CC
 from common.imgcvt import c64 as c64
-#import cvtmods.plus4 as p4
+from common.imgcvt import plus4 as p4
 #import cvtmods.msx as msx
 #import cvtmods.zxspectrum as zx
 from common.imgcvt import palette as Palette
 from common.imgcvt import dither as DT
 
-from enum import Enum
+from enum import IntEnum
 
 #Gfx modes
 GFX_MODES = []
 
-gfxmodes = Enum('gfxmodes',['C64HI','C64MULTI'], start=0)
+gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI'], start=0)
 
 class ColorProcess:
 
@@ -44,8 +44,8 @@ class ColorProcess:
 def build_modes():
     for m in c64.GFX_MODES:
         GFX_MODES.append(m)
-    # for m in p4.GFX_MODES:
-    #     GFX_MODES.append(m)
+    for m in p4.GFX_MODES:
+        GFX_MODES.append(m)
     # for m in msx.GFX_MODES:
     #     GFX_MODES.append(m)
     # for m in zx.GFX_MODES:
@@ -56,7 +56,7 @@ def build_modes():
 # Image crop and resize
 def frameResize(i_image, gfxmode:gfxmodes):
     i_ratio = i_image.size[0] / i_image.size[1]
-    in_size = GFX_MODES[gfxmode.value]['in_size']
+    in_size = GFX_MODES[gfxmode]['in_size']
     dst_ratio = in_size[0]/in_size[1]   #320/200
 
     if dst_ratio >= i_ratio:
@@ -140,7 +140,7 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
     if bg_color == None:
         bg_color = [-1]
 
-    Mode = GFX_MODES[gfxmode.value]
+    Mode = GFX_MODES[gfxmode]
 
     pixelcount = Mode['out_size'][0]*Mode['out_size'][1]
 
@@ -376,7 +376,7 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
 def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, g_colors=None ):
 
     if g_colors == None:
-        g_colors = [-1]
+        g_colors = [-1]*len(GFX_MODES[gfxmode]['global_colors'])
     t_img = Source.convert('RGB')
     in_img = frameResize(t_img, gfxmode)
     if preproc == None:
@@ -387,7 +387,7 @@ def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:C
     in_img = imageProcess(in_img,preproc)
 
 
-    cv_img, data, gcolors = Image_convert(in_img, GFX_MODES[gfxmode.value]['palettes'][0][1], GFX_MODES[gfxmode.value]['palettes'][0][1], gfxmode,
+    cv_img, data, gcolors = Image_convert(in_img, GFX_MODES[gfxmode]['palettes'][0][1], GFX_MODES[gfxmode]['palettes'][0][1], gfxmode,
                     dither, threshold, cmatch,g_colors)
     #cv_data = [data, bgcolor]
     return cv_img, data, gcolors
@@ -395,9 +395,9 @@ def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:C
 #Create a Indexed PIL image with the desired mode dimensions and color palette, and filled with bgcolor
 def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     hd_p = []
-    cc = np.ndarray([GFX_MODES[mode.value]['in_size'][1],GFX_MODES[mode.value]['in_size'][0]])
+    cc = np.ndarray([GFX_MODES[mode]['in_size'][1],GFX_MODES[mode]['in_size'][0]])
     cc.fill(bgcolor)
-    for c in GFX_MODES[mode.value]['palettes'][0][1]: # iterate colors
+    for c in GFX_MODES[mode]['palettes'][0][1]: # iterate colors
         if c['enabled']:
             rgb = CC.RGB24(c['RGBA'])
             hd_p.append(rgb)

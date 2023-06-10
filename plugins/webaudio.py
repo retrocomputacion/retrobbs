@@ -150,7 +150,7 @@ def plugFunction(conn:connection.Connection,url):
             return
 
     #Display info
-    conn.SendTML('<TEXT border=6 background=6><CLR><YELLOW>')
+    conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR><YELLOW>')
     for l in sTitle:
         conn.SendTML(l)
     conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>'
