@@ -114,6 +114,7 @@ __New features__:
  - Added GRABFRAME internal function.
  - Added `lines` and `busy` parameters to the configuration file 
  - Added `encoders` directory. Encoder modules provide encoding/decoding functions for different platforms. 
+ - Added Plus/4 support.
  - Introducing TML markup/scripting language, moving towards an encoding agnostic BBS. Some functions now expect parameters in this format.
  - New STAT internal function for displaying some basic BBS and user statistics
  - Added `SENDFILE` function for the configuration file.
@@ -776,7 +777,7 @@ Set **\<pw\>** to `True` to echo `*` for each character received, ie, for passwo
 **ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
 ## common.filetools - Functions related to file transfer:
-### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None):
+### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
 Convert image to C64 mode and send it to the client.
 __Important: The parameter order has changed since v0.25__
 
@@ -786,8 +787,9 @@ __Important: The parameter order has changed since v0.25__
 - **\<lines\>**: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
 - **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
 - **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
-- **\<gfxmodes\>**: Target graphic mode. Overridden by user selection if **\<dialog\>** = `True`
+- **\<gfxmode\>**: Target graphic mode. Overridden by user selection if **\<dialog\>** = `True`
 - **\<preproc\>**: Image processing parameter prior to conversion. Pass `None` for automatic processing.
+- **\<dither>\>**: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
 
 ### SendProgram(conn:Connection, filename):
 Sends program file into the client memory at the correct address in turbo mode

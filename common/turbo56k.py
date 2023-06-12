@@ -53,21 +53,21 @@ T56Kold =  [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x
 
 def to_Text(page, border, background, bin = False):
     if bin == True:
-        return(bytes([CMDON,TEXT,page,border,background,CMDOFF]))
+        return(bytes([0x00,CMDON,TEXT,page,border,background,CMDOFF]))
     else:
-        return(chr(CMDON)+chr(TEXT)+chr(page)+chr(border)+chr(background)+chr(CMDOFF))
+        return(chr(0)+chr(CMDON)+chr(TEXT)+chr(page)+chr(border)+chr(background)+chr(CMDOFF))
 
 def to_Hires(page,border, bin = False):
     if bin == True:
-        return(bytes([CMDON,HIRES,page,border,CMDOFF]))
+        return(bytes([0x00,CMDON,HIRES,page,border,CMDOFF]))
     else:
-        return(chr(CMDON)+chr(HIRES)+chr(page)+chr(border)+chr(CMDOFF))
+        return(chr(0)+chr(CMDON)+chr(HIRES)+chr(page)+chr(border)+chr(CMDOFF))
 
 def to_Multi(page, border, background, bin = False):
     if bin == True:
-        return(bytes([CMDON,MULTI,page,border,background,CMDOFF]))
+        return(bytes([0x00,CMDON,MULTI,page,border,background,CMDOFF]))
     else:
-        return(chr(CMDON)+chr(MULTI)+chr(page)+chr(border)+chr(background)+chr(CMDOFF))
+        return(chr(0)+chr(CMDON)+chr(MULTI)+chr(page)+chr(border)+chr(background)+chr(CMDOFF))
 
 def customTransfer(address, bin = False):
     if bin == True:
@@ -109,9 +109,9 @@ def set_CRSR(column, row, bin= False):
     if row > 24:
         row = 24
     if bin == True:
-        return(bytes([CMDON,SET_CRSR,column,row]))
+        return(bytes([0x00,CMDON,SET_CRSR,column,row]))
     else:
-        return(chr(CMDON)+chr(SET_CRSR)+chr(column)+chr(row))
+        return(chr(0)+chr(CMDON)+chr(SET_CRSR)+chr(column)+chr(row))
 
 def Fill_Line(row, char, bin= False):
     if row > 24:

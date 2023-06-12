@@ -23,6 +23,8 @@
    6. [Other generic instructions](#other-generic-instructions)
    7. [Turbo56k related commands](#turbo56k-related-commands)
    8. [RetroBBS core functions](#retrobbs-core-functions)
+   9. [Plugin functions](#plugin-functions)
+5. [Platform specific commands]()
 ---
 ---
 ## **Introduction**
@@ -474,7 +476,7 @@ Grab a frame from a video file/stream and display it as a graphic screen on the 
 ---
 </br>
 
-### **Plugin functions**
+### **Plugin functions**:
 
 </br>
 
@@ -485,3 +487,154 @@ Refer to the plugin section in the main readme for more information.
 ```html
 <WEBAUDIO url='http://relay3.slayradio.org:8000/'>
 ```
+
+## **Platform specific commands and tags**:
+
+### **Commodore 64**:
+
+#### **Color control codes**
+Changes the text color to the specified color
+ - **&lt;BLACK&gt;**
+ - **&lt;WHITE&gt;**
+ - **&lt;RED&gt;**
+ - **&lt;CYAN&gt;**
+ - **&lt;PURPLE&gt;**
+ - **&lt;GREEN&gt;**
+ - **&lt;BLUE&gt;**
+ - **&lt;YELLOW&gt;**
+ - **&lt;ORANGE&gt;**
+ - **&lt;BROWN&gt;**
+ - **&lt;PINK&gt;**
+ - **&lt;GREY1&gt;** or **&lt;DARK_GREY&gt;**
+ - **&lt;GREY2&gt;** or **&lt;GREY&gt;** or **&lt;MEDIUM_GREY&gt;**
+ - **&lt;LIGHT_GREEN&gt;**
+ - **&lt;LIGHT_BLUE&gt;**
+ - **&lt;GREY3&gt;** or **&lt;LIGHT_GREY&gt;**
+
+---
+
+#### **&lt;RVSON&gt;**
+Engage reverse video mode. Mode is automatically disengaged when a carriage return character is parsed on the terminal side
+
+---
+
+#### **&lt;RVSOFF&gt;**
+Disengage reverse video mode.
+
+---
+
+#### **&lt;CBMSHIFT-D&gt;**
+Disable the manual change of character sets (CBM+SHIFT key combination)
+
+---
+
+#### **&lt;CBMSHIFT-E&gt;**
+Enable the manual change of character sets (CBM+SHIFT key combination)
+
+---
+
+#### **&lt;UPPER&gt;**
+Change the character set to Uppercase/Graphics
+
+---
+
+#### **&lt;LOWER&gt;**
+Change the character set to Uppercase/Lowercase
+
+---
+
+#### **&lt;POUND&gt;**
+Displays the pound "`£`" character.
+
+---
+
+#### **&lt;PI&gt;**
+Displays the pi "`π`" character.
+
+---
+
+#### **&lt;HASH&gt;**
+Displays a full checkerboard character
+
+---
+
+#### **&lt;LEFT-HASH&gt;**
+Displays a left half checkerboard character
+
+---
+
+#### **&lt;BOTTOM-HASH&gt;**
+Displays a bottom half checkerboard character
+
+---
+
+#### **&lt;HLINE&gt;**
+Displays a full width centered horizontal line character
+
+---
+
+#### **&lt;VLINE&gt;**
+Displays a full height centered vertical line character
+
+---
+
+#### **&lt;CROSS&gt;**
+Displays a full size cross character
+
+---
+
+#### **&lt;CHECKMARK&gt;**
+Displays a checkmark "`✓`" character
+
+---
+
+#### **&lt;UARROW&gt;**
+Displays the PETSCII upper arrow "`↑`" character, equivalent to the ASCII caret "`^`".
+
+---
+
+#### **&lt;LARROW&gt;**
+Displays the PETSCII left arrow "`←`" character.
+
+---
+
+#### **&lt;CBM-U&gt;**
+Displays the 3/8 upper block character ".
+
+---
+
+#### **&lt;CBM-O&gt;**
+Displays the 3/8 lower block character.
+
+---
+
+#### **&lt;CBM-B&gt;**
+Displays the quadrant upper left and lower right character "▚"
+
+---
+
+#### **&lt;CBM-J&gt;**
+Displays the 3/8 left block character.
+
+---
+
+#### **&lt;CBM-L&gt;**
+Displays the 3/8 right block character.
+
+---
+
+</br>
+
+### **Commodore Plus/4**:
+
+In addition to the *Commodore 64* tags...
+
+#### **&lt;FLASHON&gt;**
+Engage character flash mode. Mode is automatically disengaged when a carriage return character is parsed on the terminal side
+
+---
+
+#### **&lt;FLASHOFF&gt;**
+Disengage character flash mode.
+
+---
