@@ -27,30 +27,32 @@ class AudioStreams:
 
     def new(self, url, rate, id):
         #self.lock.acquire()
-        if not(url in self.streams):    #If url not in dict
-            self.streams[url] = [AA.PcmStream(url,rate),{id:Queue()}]   #Create new FFMPEG stream with url as key, and a Queue for id
+        key = str([url,rate])    # Generate url+samplerate dictionary key
+        if not(key in self.streams):    #If url not in dict
+            chunk = 1<<int(rate*1.5).bit_length()
+            self.streams[key] = [AA.PcmStream(url,rate),{id:Queue()},chunk]   #Create new FFMPEG stream with url as key, a Queue for id, and the chunk size
             self.refresh = True
         else:                           #if url already in dict
-            self.streams[url][1][id] = Queue()  #Just add a Queue for id to the url key
+            self.streams[key][1][id] = Queue()  #Just add a Queue for id to the url key
             self.refresh = True
 
         if len(self.streams) == 1:  #If True, we just added the first stream, we need to start the StreamThread
             self.sthread = threading.Thread(target = self.StreamThread, args = ())
             self.sthread.start()
 
-        self.CHUNK = 1<<int(rate*1.4).bit_length()
+        self.CHUNK = 1<<int(rate*1.4).bit_length()  # <remove me
 
         #self.lock.release()
-        return self.streams[url][1][id]
+        return self.streams[key][1][id],key
 
-    def delete(self, url, id):
+    def delete(self, key, id):
         #self.lock.acquire()
-        if url in self.streams:
-            self.streams[url][1].pop(id)        #Remove the Queue for id
+        if key in self.streams:
+            self.streams[key][1].pop(id)        #Remove the Queue for id
             self.refresh = True
-            if len(self.streams[url][1]) == 0:  #If no more users
-                self.streams[url][0].stop()     #stop FFMPEG stream
-                self.streams.pop(url)           #remove URL from dict
+            if len(self.streams[key][1]) == 0:  #If no more users
+                self.streams[key][0].stop()     #stop FFMPEG stream
+                self.streams.pop(key)           #remove URL from dict
                 if len(self.streams) == 0:      # No more streams
                     self.sthread.join()             #Finish the StreamThread
         #self.lock.release()
@@ -64,7 +66,7 @@ class AudioStreams:
             #self.lock.acquire()
             S = self.streams.copy()
             for url in S:    #Iterate thru streams
-                data = S[url][0].read(self.CHUNK)    #Get data from FFMPEG stream
+                data = S[url][0].read(S[url][2])    #Get data from FFMPEG stream
                 for id in S[url][1]:    #Iterate thru Queues
                     S[url][1][id].put(data)        #Push data into the Queue
             #self.lock.release()
@@ -161,7 +163,7 @@ def plugFunction(conn:connection.Connection,url):
 
     conn.SendTML('<CBM-B><CRSRL>')
 
-    pcm_stream = AStreams.new(sURL,conn.samplerate, conn.id)
+    pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
 
     t0 = time.time()
 
@@ -212,7 +214,7 @@ def plugFunction(conn:connection.Connection,url):
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
     #pcm_stream.stop()
-    AStreams.delete(sURL,conn.id)
+    AStreams.delete(skey,conn.id)
     _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
     conn.Sendallbin(binario)
     time.sleep(1)
