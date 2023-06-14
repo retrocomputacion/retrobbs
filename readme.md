@@ -145,6 +145,8 @@ __Changes/Bug fixes__:
  - Option to logout after transferring a program to memory
  - Weather plugin adapted to support `python-weather` v1.0.0+. Older versions of the module still work.
  - Revamped graphic conversion module(s)
+ - ~~Webaudio fix: Take samplerate into account when more than one client is streaming from the same source.~~
+ - Webaudio multiclient queuing disabled, falling back to one ffmpeg instance per audio stream.
 
 ---
 # 1.2 The *Turbo56K* protocol

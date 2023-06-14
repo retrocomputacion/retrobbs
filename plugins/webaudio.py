@@ -7,8 +7,9 @@ import streamlink
 import sys
 import random
 import re
-from queue import Queue
+from multiprocessing import Queue   #was from queue
 import threading
+import asyncio
 
 from common.bbsdebug import _LOG,bcolors
 from common import connection
@@ -16,7 +17,7 @@ from common.helpers import formatX
 from common import audio as AA
 
 
-
+# This class left unused until a blocking problem somewhere can be resolved
 class AudioStreams:
     def __init__(self) -> None:
         self.streams = {}
@@ -30,7 +31,7 @@ class AudioStreams:
         key = str([url,rate])    # Generate url+samplerate dictionary key
         if not(key in self.streams):    #If url not in dict
             chunk = 1<<int(rate*1.5).bit_length()
-            self.streams[key] = [AA.PcmStream(url,rate),{id:Queue()},chunk]   #Create new FFMPEG stream with url as key, a Queue for id, and the chunk size
+            self.streams[key] = [AA.PcmStream(url,rate),{id:Queue()},chunk,False]   #Create new FFMPEG stream with url as key, a Queue for id, and the chunk size
             self.refresh = True
         else:                           #if url already in dict
             self.streams[key][1][id] = Queue()  #Just add a Queue for id to the url key
@@ -40,7 +41,8 @@ class AudioStreams:
             self.sthread = threading.Thread(target = self.StreamThread, args = ())
             self.sthread.start()
 
-        self.CHUNK = 1<<int(rate*1.4).bit_length()  # <remove me
+        # if (1<<int(rate*1.5).bit_length()) > self.CHUNK:
+        #     self.CHUNK = 1<<int(rate*1.5).bit_length()
 
         #self.lock.release()
         return self.streams[key][1][id],key
@@ -54,22 +56,52 @@ class AudioStreams:
                 self.streams[key][0].stop()     #stop FFMPEG stream
                 self.streams.pop(key)           #remove URL from dict
                 if len(self.streams) == 0:      # No more streams
-                    self.sthread.join()             #Finish the StreamThread
+                    self.sthread.join()         #Finish the StreamThread
         #self.lock.release()
 
 
     # Multi user streaming thread
     # (yes my naming standards are all over the place)
     def StreamThread(self):
+        async def get_chunk(stream):
+            if stream[3] == False:
+                stream[3] = True
+                print('reading:',stream[2])
+                data = await stream[0].read(stream[2])    #Get data from FFMPEG stream
+                for id in stream[1]:    #Iterate thru Queues
+                    stream[1][id].put(data, False)        #Push data into the Queue
+                print('done:',stream[2])
+                stream[3] = False
+
+        async def loop(streams):
+            # tasks = []
+            for url in streams:    #Iterate thru streams
+                asyncio.ensure_future(get_chunk(streams[url]))
+                # tasks.append(get_chunk(streams[url]))
+                # data = S[url][0].read(S[url][2])    #Get data from FFMPEG stream
+                # for id in S[url][1]:    #Iterate thru Queues
+                #     S[url][1][id].put(data, False)        #Push data into the Queue
+            # await asyncio.gather(*tasks)
+            print('---')
+
+        l = asyncio.new_event_loop()
 
         while len(self.streams) > 0:
+
             #self.lock.acquire()
-            S = self.streams.copy()
-            for url in S:    #Iterate thru streams
-                data = S[url][0].read(S[url][2])    #Get data from FFMPEG stream
-                for id in S[url][1]:    #Iterate thru Queues
-                    S[url][1][id].put(data)        #Push data into the Queue
+            S = self.streams    #.copy()
+            l.run_until_complete(loop(S))
+            time.sleep(0.5)
+
+            # tasks = []
+            # for url in S:    #Iterate thru streams
+            #     tasks.append(get_chunk(S[url]))
+                # data = S[url][0].read(S[url][2])    #Get data from FFMPEG stream
+                # for id in S[url][1]:    #Iterate thru Queues
+                #     S[url][1][id].put(data, False)        #Push data into the Queue
+            # asyncio.gather(*tasks)
             #self.lock.release()
+        l.close()
 
 
 slsession = None
@@ -163,8 +195,9 @@ def plugFunction(conn:connection.Connection,url):
 
     conn.SendTML('<CBM-B><CRSRL>')
 
-    pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
-
+    #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
+    pcm_stream = AA.PcmStream(sURL,conn.samplerate)
+    CHUNK = 1<<int(conn.samplerate*1.5).bit_length()
     t0 = time.time()
 
     streaming = True
@@ -172,7 +205,7 @@ def plugFunction(conn:connection.Connection,url):
     while streaming == True:
         t1 = time.time()
         try:
-            audio = pcm_stream.get(True, 15)
+            audio = asyncio.run(pcm_stream.read(CHUNK))   #pcm_stream.get(True, 15)
         except:
             audio = []
         t2 = time.time()-t1
@@ -213,8 +246,8 @@ def plugFunction(conn:connection.Connection,url):
 
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
-    #pcm_stream.stop()
-    AStreams.delete(skey,conn.id)
+    pcm_stream.stop()
+    #AStreams.delete(skey,conn.id)
     _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
     conn.Sendallbin(binario)
     time.sleep(1)

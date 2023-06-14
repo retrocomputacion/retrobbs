@@ -8,6 +8,7 @@ import random
 import subprocess
 import signal
 import math
+import asyncio
 
 from common.bbsdebug import _LOG,bcolors
 from common import helpers as H
@@ -243,7 +244,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 
 	while streaming == True:
 		t1 = time.time()
-		audio = pcm_stream.read(CHUNK)
+		audio = asyncio.run(pcm_stream.read(CHUNK))
 		t2 = time.time()-t1
 		if t2 > 15:
 			streaming = False
@@ -313,7 +314,7 @@ class PcmStream:
 		self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
 						stdout=subprocess.PIPE, preexec_fn=os.setsid)
 
-	def read(self, size):
+	async def read(self, size):
 		try:
 			a = self.pcm_stream.stdout.read(size)
 			na = numpy.frombuffer(a, dtype=numpy.ubyte)
