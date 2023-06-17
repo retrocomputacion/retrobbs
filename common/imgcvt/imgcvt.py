@@ -13,6 +13,9 @@ from common.imgcvt import plus4 as p4
 #import cvtmods.zxspectrum as zx
 from common.imgcvt import palette as Palette
 from common.imgcvt import dither as DT
+from common.bbsdebug import _LOG
+import os
+import sys
 
 from enum import IntEnum
 
@@ -21,7 +24,11 @@ GFX_MODES = []
 
 gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI'], start=0)
 
-class ColorProcess:
+#Image scale/crop modes
+
+cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
+
+class PreProcess:
 
     brightness:float
     contrast:float
@@ -40,7 +47,6 @@ class ColorProcess:
 
 ####################################
 # Get GFX modes from loaded modules
-# (We're not dynamically loading modules yet)
 def build_modes():
     for m in c64.GFX_MODES:
         GFX_MODES.append(m)
@@ -54,28 +60,59 @@ def build_modes():
 
 ################################
 # Image crop and resize
-def frameResize(i_image, gfxmode:gfxmodes):
+def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
     i_ratio = i_image.size[0] / i_image.size[1]
     in_size = GFX_MODES[gfxmode]['in_size']
-    dst_ratio = in_size[0]/in_size[1]   #320/200
+    dst_ratio = in_size[0]/in_size[1]
 
-    if dst_ratio >= i_ratio:
-        i_image = i_image.resize((in_size[0],in_size[0]*i_image.size[1]//i_image.size[0]), Image.LANCZOS)
-        box = (0,(i_image.size[1]-in_size[1])/2,i_image.size[0],(i_image.size[1]+in_size[1])/2)
-        i_image = i_image.crop(box)
-    elif dst_ratio < i_ratio:
-        i_image = i_image.resize((in_size[1]*i_image.size[0]//i_image.size[1],in_size[1]),Image.LANCZOS)
+    if mode == cropmodes.FILL:
+        if dst_ratio >= i_ratio:
+            i_image = i_image.resize((in_size[0],in_size[0]*i_image.size[1]//i_image.size[0]), Image.LANCZOS)
+            box = (0,(i_image.size[1]-in_size[1])/2,i_image.size[0],(i_image.size[1]+in_size[1])/2)
+        elif dst_ratio < i_ratio:
+            i_image = i_image.resize((in_size[1]*i_image.size[0]//i_image.size[1],in_size[1]),Image.LANCZOS)
+            box = ((i_image.size[0]-in_size[0])/2,0,(i_image.size[0]+in_size[0])/2,i_image.size[1])
+    elif mode == cropmodes.FIT:
+        if dst_ratio <= i_ratio:
+            scale = i_image.size[0]/in_size[0]
+            i_image = i_image.resize((in_size[0],int(i_image.size[1]//scale)), Image.LANCZOS)
+            box = (0,(i_image.size[1]-in_size[1])/2,i_image.size[0],(i_image.size[1]+in_size[1])/2)
+        elif dst_ratio > i_ratio:
+            scale = i_image.size[1]/in_size[1]
+            i_image = i_image.resize((int(i_image.size[0]//scale),in_size[1]), Image.LANCZOS)
+            box = ((i_image.size[0]-in_size[0])//2,0,(i_image.size[0]+in_size[0])//2,i_image.size[1])
+    elif mode == cropmodes.H_FIT:
+        scale = i_image.size[0]/in_size[0]
+        i_image = i_image.resize((in_size[0],i_image.size[1]//scale), Image.LANCZOS)
+        box = (0,(i_image.size[1]-in_size[1])//2,i_image.size[0],(i_image.size[1]+in_size[1])//2)
+    elif mode == cropmodes.V_FIT:
+        scale = i_image.size[1]/in_size[1]
+        i_image = i_image.resize((i_image.size[0]//scale,in_size[1]), Image.LANCZOS)
         box = ((i_image.size[0]-in_size[0])/2,0,(i_image.size[0]+in_size[0])/2,i_image.size[1])
-        i_image = i_image.crop(box)
+    elif mode == cropmodes.LEFT:
+        box = (0,(i_image.size[1]-in_size[1])/2,in_size[0],(i_image.size[1]+in_size[1])/2)
+    elif mode == cropmodes.TOP:
+        box = ((i_image.size[0]-in_size[0])/2,0,(i_image.size[0]+in_size[0])/2,in_size[1])
+    elif mode == cropmodes.RIGHT:
+        box = (i_image.size[0]-in_size[0],(i_image.size[1]-in_size[1])/2,i_image.size[0],(i_image.size[1]+in_size[1])/2)
+    elif mode == cropmodes.BOTTOM:
+        box = ((i_image.size[0]-in_size[0])/2,i_image.size[1]-in_size[1],(i_image.size[0]+in_size[0])/2,i_image.size[1])
+    elif mode == cropmodes.T_LEFT:
+        box = (0,0,in_size[0],in_size[1])
+    elif mode == cropmodes.T_RIGHT:
+        box = (i_image.size[0]-in_size[0],0,i_image.size[0],in_size[1])
+    elif mode == cropmodes.B_LEFT:
+        box = (0,i_image.size[1]-in_size[1],in_size[0],i_image.size[1])
+    elif mode == cropmodes.B_RIGHT:
+        box = (i_image.size[0]-in_size[0],i_image.size[1]-in_size[1],i_image.size[0],i_image.size[1])
 
+    i_image = i_image.crop(box)
     return i_image
-
-
 
 ######################################
 #   Preset brightness/contrast/etc
 #
-def imagePreset(o_img:Image.Image, cmatch)->ColorProcess:
+def imagePreset(o_img:Image.Image, cmatch)->PreProcess:
 
     stat = ImageStat.Stat(o_img)
 
@@ -105,13 +142,13 @@ def imagePreset(o_img:Image.Image, cmatch)->ColorProcess:
     contrast = (1+((c[1]-c[0])/255))*(0.75 if cmatch == 3 else 1)
     sat = 3-(2*(s/128))
 
-    return ColorProcess(brightness, contrast, sat)
+    return PreProcess(brightness, contrast, sat)
 
 
 #########################################
 #   Adjust image brightness/contrast/etc
 #
-def imageProcess(o_img:Image.Image, parameters:ColorProcess):
+def imageProcess(o_img:Image.Image, parameters:PreProcess):
 
     hue = int(((parameters.hue-180)/360)*255)
     enhPic = ImageEnhance.Brightness(o_img)
@@ -373,12 +410,12 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
 
 
 # Convert image
-def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, g_colors=None ):
+def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:PreProcess=None, cropmode:cropmodes=cropmodes.FILL, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, g_colors=None ):
 
     if g_colors == None:
         g_colors = [-1]*len(GFX_MODES[gfxmode]['global_colors'])
     t_img = Source.convert('RGB')
-    in_img = frameResize(t_img, gfxmode)
+    in_img = frameResize(t_img, gfxmode, cropmode)
     if preproc == None:
         preproc = imagePreset(in_img,cmatch)
         preproc.hue = 180
@@ -404,6 +441,9 @@ def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     inPal = Palette.Palette(hd_p)
     return inPal.create_PIL_png_from_closest_colour(cc), inPal
 
+#Open an image, return Image object, (Native image data if any, Graphic mode)
+def open_Image(filename:str):
+    ...
 
 ##### On load
 build_modes()

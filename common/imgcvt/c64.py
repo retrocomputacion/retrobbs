@@ -30,6 +30,8 @@ Palette_PeptoNTSC = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':Tru
 
 C64Palettes = [['Colodore',Palette_Colodore],['Pepto (NTSC,Sony)',Palette_PeptoNTSC]]
 
+Native_Ext = ['koa','kla','art','ocp','dd','ddl']
+
 #HiRes
 def c64_get2closest(colors,p_in,p_out,fixed):
     cd = [[197000 for j in range(len(p_in))] for i in range(len(colors))]

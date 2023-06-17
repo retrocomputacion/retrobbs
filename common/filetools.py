@@ -9,7 +9,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, ColorProcess, dithertype
+from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -69,7 +69,7 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 # gfxmode: Graphic mode
 # preproc: Preprocess image before converting
 ###########################################################
-def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:ColorProcess = None, dither:dithertype = dithertype.BAYER8):
+def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:PreProcess = None, cropmode:cropmodes = cropmodes.FILL, dither:dithertype = dithertype.BAYER8):
 
 	if gfxmode == None:
 		gfxmode = conn.encoder.def_gfxmode
@@ -265,8 +265,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			mode = 1 if (gfxmode == gfxmulti) else 0
 		gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
 		if preproc == None and conn.mode == 'PET264':
-			preproc = ColorProcess(1,1.5,1.5)
-		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, dither)
+			preproc = PreProcess(1,1.5,1.5)
+		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither)
 		Source.close()
 		bgcolor = gcolors[0].to_bytes(1,'big')	#Convert[4].to_bytes(1,'little')
 		if conn.mode == 'PET264' and gfxmode == gfxmulti:
@@ -533,7 +533,7 @@ def SendProgram(conn:Connection,filename):
 # Transfer a file to be stored in media by the client
 ####################################################################################
 #conn: Connection to send the file to
-#file: name+path of the file to be sent or bytes
+#file: name+path of the file to be sent, or bytes
 #savename: if defined, the filename sent to the client (mandatory if file is bytes)
 ####################################################################################
 def TransferFile(conn:Connection, file, savename = None, seq=False):

@@ -31,6 +31,7 @@ Palette_TED = [{'color':TED_names[ix%16]+str(ix//16),'RGBA':[max(0,min(int((i[0]
 
 Plus4Palettes = [['Plus/4',Palette_TED]]
 
+Native_Ext = ['boti']
 
 #HiRes
 def plus4_get2closest(colors,p_in,p_out,fixed):
@@ -39,13 +40,9 @@ def plus4_get2closest(colors,p_in,p_out,fixed):
     _indexes = [1,1]
     xmin = -1
     for x in range(0,len(colors)):
-        #yr = [b for b in range(len(p_in)) if b not in _indexes] #avoid repeated indexes
         for y in range(0,len(p_in)):
             if y != xmin:
-                # rd = colors[x][1][0] - p_in[y][0][0]
-                # gd = colors[x][1][1] - p_in[y][0][1]
-                # bd = colors[x][1][2] - p_in[y][0][2]
-                cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])  #(rd * rd + gd * gd + bd * bd)
+                cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
         m = p_in[xmin][0] #p_out[cc]
@@ -80,22 +77,15 @@ def plus4_get4closest(colors, p_in, p_out, bgcolor):
             bi.append(tc.index(min(tc)))
             tc.pop(tc.index(min(tc)))
     xx = 1
-    #npin = np.asarray([c[0] for c in p_in])
-    #ncolors = np.asarray([c[1] for c in colors])
     for x in range(0,len(colors)):
         if x in bi:
             continue
         for y in range(0,len(p_in)):
-            # rd = colors[x][1][0] - p_in[y][0][0]
-            # gd = colors[x][1][1] - p_in[y][0][1]
-            # bd = colors[x][1][2] - p_in[y][0][2]
-            cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])  #(rd * rd + gd * gd + bd * bd)    #This is the fastest distance method
-            # cd[x][y] = sum([(a - b)**2 for a, b in zip(colors[x][1], p_in[y][0])])
-            # cd[x][y] = np.linalg.norm(ncolors[x]-npin[y])
+            cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
         m = p_in[xmin][0] #p_out[cc]
-        closest[xx] = CC.RGB24(m).tolist()  #m[2]+m[1]*256+m[0]*65536
+        closest[xx] = CC.RGB24(m).tolist()
         _indexes[xx] = cc
         xx += 1
         if xx==3:
@@ -200,5 +190,5 @@ GFX_MODES=[{'name':'Plus/4 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,Fa
             'attributes':[{'dim':(160,200),'get_attr':None,'bm_pack':None,'attr_pack':None},
                         {'dim':(4,8),'get_attr':plus4_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpackmulti}],
             'in_size':(320,200),'out_size':(160,200),'get_attr':plus4_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpackmulti,
-            'get_buffers':lambda: get_buffers(2),'save_output':[['Multi Botticelli','.art',lambda buf,c:buildfile(buf,c,2)]]}]
+            'get_buffers':lambda: get_buffers(2),'save_output':[['Multi Botticelli','.boti',lambda buf,c:buildfile(buf,c,2)]]}]
 

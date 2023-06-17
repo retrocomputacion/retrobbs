@@ -4,7 +4,7 @@ from common import filetools as FT
 from common.helpers import formatX, More, crop, text_displayer
 from common.connection import Connection
 from common.bbsdebug import _LOG
-from common.imgcvt import gfxmodes
+from common.imgcvt import gfxmodes, cropmodes, PreProcess
 
 import wikipedia
 import wikipediaapi
@@ -94,6 +94,7 @@ def plugFunction(conn:Connection):
 						src = im_p['src']
 						if src.startswith('//'):
 							src = 'http:'+src
+						_LOG(f'Wikipedia: attempting to load image: {src}',id=conn.id, v=4)
 						scrap_im = requests.get(src, allow_redirects=True)
 						w_image = Image.open(BytesIO(scrap_im.content))
 						if w_image.mode == 'P':	#Check if indexed mode with transparency
@@ -110,14 +111,17 @@ def plugFunction(conn:Connection):
 								timg = Image.new("RGBA", w_image.size, "WHITE")
 							timg.paste(w_image,((timg.size[0]-w_image.size[0])//2,(timg.size[1]-w_image.size[1])//2),w_image)
 							w_image = timg
-						if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
-							w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
-						FT.SendBitmap(conn,w_image)
+						# if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
+						# 	w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
+						FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
 						conn.ReceiveKey()
 						conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["LIGHT_GREY"]} background={ecolors["LIGHT_GREY"]}>')
 						# conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
-					except:
-						pass
+					except Exception as e:
+						exc_type, exc_obj, exc_tb = sys.exc_info()
+						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+						_LOG(e,id=conn.id,v=1)
+						_LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
 					WikiTitle(conn)
 				tt = formatX(page.title)
 				tt[0] = '<CLR><BLACK>'+tt[0]
