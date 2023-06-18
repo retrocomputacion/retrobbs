@@ -105,6 +105,8 @@ def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
         box = (0,i_image.size[1]-in_size[1],in_size[0],i_image.size[1])
     elif mode == cropmodes.B_RIGHT:
         box = (i_image.size[0]-in_size[0],i_image.size[1]-in_size[1],i_image.size[0],i_image.size[1])
+    elif mode == cropmodes.CENTER:
+        box = ((i_image.size[0]-in_size[0])/2,(i_image.size[1]-in_size[1])/2,(i_image.size[0]+in_size[0])/2,(i_image.size[1]+in_size[1])/2)
 
     i_image = i_image.crop(box)
     return i_image
