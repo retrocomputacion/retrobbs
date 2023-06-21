@@ -108,6 +108,9 @@ from common import video as VV
 #File transfer functions
 from common import filetools as FT
 
+#Image filename extensions
+from common.imgcvt import im_extensions
+
 # import importlib
 # import pkgutil
 
@@ -179,7 +182,7 @@ def ConfigRead():
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
-                parms= [tentry,'','Displaying image list',p,('.art','.ocp','.koa','.kla','.dd','.ddl','.ART','.OCP','.KOA','.KLA','.DD','.DDL','.gif','jpg','png','.GIF','.JPG','PNG','BIN','bin'),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
+                parms= [tentry,'','Displaying image list',p,tuple(['.GIF','.JPG','.PNG']+im_extensions),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'SWITCHMENU':		#Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			#Show file list
@@ -380,7 +383,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     #Filter out all files not matching 'filter'
     if len(ffilter) > 0:
         for f in files:
-            if f.endswith(ffilter):
+            if splitext(f)[1].upper() in ffilter:
                 programs.append(f)
     else:
         programs = files
@@ -518,7 +521,7 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         files.extend(entries[2])
         break
 
-    pics_e = ('.ART','.OCP','.KOA','.KLA','.GIF','.JPG','PNG')
+    pics_e = tuple(['.GIF','.JPG','PNG']+im_extensions)
     text_e = ('.TXT','.SEQ')
     bin_e = ('.BIN','.raw')
     pet_e = ('.C','.PET')
@@ -527,7 +530,7 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
 
     #Keeps only the files with matching extension 
     for f in files:
-        if f.upper().endswith(pics_e + text_e + bin_e + pet_e + aud_e + chip_e + ('.TML',)):
+        if splitext(f)[1].upper() in pics_e + text_e + bin_e + pet_e + aud_e + chip_e + ('.TML',):
             slides.append(f)
 
     slides.sort()	#Sort list

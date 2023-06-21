@@ -36,6 +36,7 @@ def plugFunction(conn:Connection):
 			conn.SendTML('<GREY1><HLINE n=40>')
 		conn.Sendall(TT.set_Window(2,24))	#Set Text Window
 
+	hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
 	ecolors = conn.encoder.colors
 	wcolors = bbsstyle(ecolors)
 	wcolors.TxtColor = ecolors['DARK_GREY']
@@ -91,32 +92,33 @@ def plugFunction(conn:Connection):
 					soup = BeautifulSoup(resp.content, "html.parser")
 					try:
 						im_p = soup.find(['table','td','div'],{'class':['infobox','infobox-image', 'infobox-full-data','sidebar-image','thumbinner']}).find('img')
-						src = im_p['src']
-						if src.startswith('//'):
-							src = 'http:'+src
-						_LOG(f'Wikipedia: attempting to load image: {src}',id=conn.id, v=4)
-						scrap_im = requests.get(src, allow_redirects=True)
-						w_image = Image.open(BytesIO(scrap_im.content))
-						if w_image.mode == 'P':	#Check if indexed mode with transparency
-							if w_image.info.get("transparency",-1) != -1:
+						if im_p != None:
+							src = im_p['src']
+							if src.startswith('//'):
+								src = 'https:'+src
+							_LOG(f'Wikipedia: attempting to load image: {src}',id=conn.id, v=4)
+							scrap_im = requests.get(src, allow_redirects=True, headers = hdrs)
+							w_image = Image.open(BytesIO(scrap_im.content))
+							if w_image.mode == 'P':	#Check if indexed mode with transparency
+								if w_image.info.get("transparency",-1) != -1:
+									w_image = w_image.convert('RGBA')
+							if w_image.mode == 'LA': #Grayscale + alpha
 								w_image = w_image.convert('RGBA')
-						if w_image.mode == 'LA': #Grayscale + alpha
-							w_image = w_image.convert('RGBA')
-						if w_image.mode == 'RGBA':	#Possible SVG/logo, fill white
-							if (w_image.size[0]/w_image.size[1]) > (4/3):
-								timg = Image.new("RGBA", (w_image.size[0],w_image.size[0]*3//4),"WHITE")
-							elif (w_image.size[0]/w_image.size[1]) < (4/3):
-								timg = Image.new("RGBA", (w_image.size[1]*4//3,w_image.size[1]),"WHITE")
-							else:
-								timg = Image.new("RGBA", w_image.size, "WHITE")
-							timg.paste(w_image,((timg.size[0]-w_image.size[0])//2,(timg.size[1]-w_image.size[1])//2),w_image)
-							w_image = timg
-						# if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
-						# 	w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
-						FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
-						conn.ReceiveKey()
-						conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["LIGHT_GREY"]} background={ecolors["LIGHT_GREY"]}>')
-						# conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
+							if w_image.mode == 'RGBA':	#Possible SVG/logo, fill white
+								if (w_image.size[0]/w_image.size[1]) > (4/3):
+									timg = Image.new("RGBA", (w_image.size[0],w_image.size[0]*3//4),"WHITE")
+								elif (w_image.size[0]/w_image.size[1]) < (4/3):
+									timg = Image.new("RGBA", (w_image.size[1]*4//3,w_image.size[1]),"WHITE")
+								else:
+									timg = Image.new("RGBA", w_image.size, "WHITE")
+								timg.paste(w_image,((timg.size[0]-w_image.size[0])//2,(timg.size[1]-w_image.size[1])//2),w_image)
+								w_image = timg
+							# if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
+							# 	w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
+							FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
+							conn.ReceiveKey()
+							conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["LIGHT_GREY"]} background={ecolors["LIGHT_GREY"]}>')
+							# conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
 					except Exception as e:
 						exc_type, exc_obj, exc_tb = sys.exc_info()
 						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

@@ -9,7 +9,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes
+from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -81,171 +81,51 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		gfxhi = gfxmodes.P4HI
 		gfxmulti = gfxmodes.P4MULTI
 
-
-	ftype = {'.OCP':1,	#Advanced Art Studio
-			'.KOA':2,'.KLA':2,	#Koala Paint
-			'.ART':3,	#Art Studio
-			'.DD':4,'.DDL':4,	#Doodle
-			'.GIF':5,
-			'.PNG':6,
-			'.JPG':7,
-			'.BIN':8}
-
-	ftitle = {5:' GIF  Image ', 6:' PNG  Image ', 7:' JPEG Image '}
+	ftitle = {'.GIF':' GIF  Image ', '.PNG':' PNG  Image ', '.JPEG':' JPEG Image ', '.JPG':' JPEG Image '}
 
 	fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
 	fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
 
 	# Find image format
 	data = [None]*3
-	bgcolor = b'\x00'
-	mcolor2 = b'\x00'
+	bgcolor = None
+	border = None
 
 	mode = 1 if gfxmode == gfxmulti else 0
 
 	save &= conn.QueryFeature(TT.FILETR) < 0x80
 
+	pimg = None
+
+	convert = False
+
 	if type(filename)==str:
-		extension = os.path.splitext(filename)[1]
-		switch = ftype[extension.upper()]
+		extension = os.path.splitext(filename)[1].upper()
+		if extension not in ['.GIF','.PNG','.JPG','JPEG']:
+			pimg = open_Image(filename)
+			if pimg == None:
+				return
+			elif pimg[1] not in conn.encoder.gfxmodes:
+				convert = True
+				filename = pimg[0]
+				if preproc == None:
+					preproc = PreProcess()
+				cropmode: cropmodes.TOP
+				if gfxmode == None:
+					gfxmode = mode_conv[conn.mode][pimg[1]]
+			else:
+				gfxmode = pimg[1]
+				data = pimg[2]
+			text = pimg[4]
+			border = pimg[3][0]
+			gcolors = pimg[3][1:]
+		else:
+			text = ftitle[extension]
+			convert = True
 	else:
-		switch = 5
+		convert = True
 
-	if switch == 1:		#extension == '.ocp' or extension == '.OCP':
-		if dialog and save:
-			out = ImageDialog(conn,'Advanced Art Studio',0,0,True)
-		else:
-			out = 0
-		if (out & 0x80) == 0x80:	# Save image
-			savename = os.path.splitext(os.path.basename(filename))[0].upper()
-			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-			savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
-			if TransferFile(conn, filename, savename):
-				conn.SendTML(fok)
-			else:
-				conn.SendTML(fabort)
-			conn.SendTML('<KPROMPT t=RETURN>')
-			return
-		else:
-			# Open Advanced Art Studio image file
-			archivo=open(filename,"rb")
-			# Discard the first couple of bytes
-			archivo.read(2)
-
-			# Bitmap data
-			data[0] = archivo.read(8000)
-			# Screen data
-			data[1] = archivo.read(1000)
-			# Read border color
-			border = archivo.read(1)
-			# Read background color
-			bgcolor = archivo.read(1)
-			# Skip the next 14 bytes
-			archivo.read(14)
-			# Color data
-			data[2] = archivo.read(1000)
-
-			archivo.close()
-			gfxmode = gfxmodes.C64MULTI #Multicolor bitmap
-
-	elif switch == 2:	#extension == '.koa' or extension == '.KOA' or extension == '.kla' or extension == '.KLA':
-		if dialog and save:
-			out = ImageDialog(conn,'Koala Paint',0,0,True)
-		else:
-			out = 0
-		if (out & 0x80) == 0x80:	# Save image
-			savename = os.path.splitext(os.path.basename(filename))[0].upper()
-			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-			savename = chr(0x81)+'PIC A '+(savename.ljust(8,' ') if len(savename)<8 else savename[:8])
-			if TransferFile(conn, filename, savename):
-				conn.SendTML(fok)
-			else:
-				conn.SendTML(fabort)
-			conn.SendTML('<KPROMPT t=RETURN>')
-			return
-		else:
-			# Open the Koala Paint image file
-			archivo=open(filename,"rb")
-			# Skip the first couple of bytes
-			archivo.read(2)
-
-			# Bitmap data
-			data[0] = archivo.read(8000)
-			# Screen data
-			data[1] = archivo.read(1000)
-			# Color data
-			data[2] = archivo.read(1000)
-			# Read background color
-			bgcolor = archivo.read(1)
-			border = bgcolor
-
-			# Close the file
-			archivo.close()
-			gfxmode = gfxmodes.C64MULTI #Multicolor bitmap
-
-	elif switch == 3:	#extension == '.art' or extension == '.ART':
-		if dialog and save:
-			out = ImageDialog(conn,'Art Studio',0,0,True)
-		else:
-			out = 0
-		if (out & 0x80) == 0x80:	# Save image
-			savename = os.path.splitext(os.path.basename(filename))[0].upper()
-			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
-			if TransferFile(conn, filename, savename):
-				conn.SendTML(fok)
-			else:
-				conn.SendTML(fabort)
-			conn.SendTML('<KPROMPT t=RETURN>')
-			return
-		else:		# Open the Art Studio image file
-			archivo=open(filename,"rb")
-			# Skip the first couple of bytes
-			archivo.read(2)
-
-			# Bitmap data
-			data[0] = archivo.read(8000)
-			# Screen data
-			data[1] = archivo.read(1000)
-			# Read border color
-			border = archivo.read(1)
-
-			# Close file
-			archivo.close()
-			gfxmode = gfxmodes.C64HI #Hi-res bitmaps
-	elif switch == 4:
-		if dialog and save:
-			out = ImageDialog(conn,'Doodle',0,0,True)
-		else:
-			out = 0
-		if (out & 0x80) == 0x80:	# Save image
-			savename = os.path.splitext(os.path.basename(filename))[0].upper()
-			savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-			savename = 'DD'+(savename if len(savename)<14 else savename[:14])
-			if TransferFile(conn, filename, savename):
-				conn.SendTML(fok)
-			else:
-				conn.SendTML(fabort)
-			conn.SendTML('<KPROMPT t=RETURN>')
-			return
-		else:		# Open the Art Studio image file
-			archivo=open(filename,"rb")
-			# Skip the first couple of bytes
-			archivo.read(2)
-
-			# Screen data
-			data[1] = archivo.read(1000)
-			#Skip
-			archivo.read(24)
-			# Bitmap data
-			data[0] = archivo.read(8000)
-
-			border = b'\x0c'
-
-			# Close file
-			archivo.close()
-			gfxmode = gfxmodes.C64HI #Hi-res bitmaps
-	elif  5 <= switch <= 7:	#extension in ('.gif','.png','.jpg','.GIF','.PNG','.JPG'):
+	if convert:
 		# or bytes/image object sent as filename parameter
 		conn.SendTML('<CBM-B><CRSRL>')
 		# try:
@@ -257,7 +137,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			Source = filename
 		Source = Source.convert("RGB")
 		if dialog:
-			mode = ImageDialog(conn,ftitle[switch],Source.size[0],Source.size[1],save)
+			mode = ImageDialog(conn,text,Source.size[0],Source.size[1],save)
 			if mode < 0:
 				return()
 			conn.SendTML('<CBM-B><CRSRL>')
@@ -268,49 +148,12 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			preproc = PreProcess(1,1.5,1.5)
 		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither)
 		Source.close()
-		bgcolor = gcolors[0].to_bytes(1,'big')	#Convert[4].to_bytes(1,'little')
-		if conn.mode == 'PET264' and gfxmode == gfxmulti:
-			mcolor2 = gcolors[1].to_bytes(1,'big')
-		border = bgcolor
-		# except Exception as e:
-		# 	print(e)
-		# 	return()
-	elif switch == 8:	# Plus4 memory dump test
-		# if dialog and save:
-		# 	out = ImageDialog(conn,'Doodle',0,0,True)
-		# else:
-		# 	out = 0
-		# if (out & 0x80) == 0x80:	# Save image
-		# 	savename = os.path.splitext(os.path.basename(filename))[0].upper()
-		# 	savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-		# 	savename = 'DD'+(savename if len(savename)<14 else savename[:14])
-		# 	if TransferFile(conn, filename, savename):
-		# 		conn.SendTML(fok)
-		# 	else:
-		# 		conn.SendTML(fabort)
-		# 	conn.SendTML('<KPROMPT t=RETURN>')
-		# 	return
-		# else:		# Open the Art Studio image file
-		archivo=open(filename,"rb")
-		# # Skip the first couple of bytes
-		# archivo.read(2)
+		bgcolor = bytes([gcolors[0]])	#Convert[4].to_bytes(1,'little')
+		#
+		border = bgcolor if border == None else bytes([border])
+	elif pimg != None and dialog:
+		mode = ImageDialog(conn,text,save=save)
 
-		# Luminance data
-		data[2] = archivo.read(1000)
-		#Skip
-		archivo.read(24)
-		# Color data
-		data[1] = archivo.read(1000)
-		#Skip
-		archivo.read(24)
-		# Bitmap data
-		data[0] = archivo.read(8000)
-
-		border = b'\x0c'
-
-		# Close file
-		archivo.close()
-		gfxmode = gfxmodes.P4HI #Hi-res bitmaps
 
 	tchars = 40*lines
 	tbytes = 320*lines
@@ -335,6 +178,11 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		# Screen Data
 		binaryout += data[1][0:tchars] #Screen
 
+		if border == None:
+			border = b'\x00' if bgcolor == None else bgcolor
+
+		border = bytes([border]) if type(border) == int else border
+
 		if (gfxmode == gfxmulti) or (conn.mode == 'PET264' and data[2] != None):
 			# Set the transfer pointer + $20 (color memory)
 			binaryout += b'\x81\x20'
@@ -342,11 +190,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			binaryout += b'\x82'	# Color data
 			binaryout += tchars.to_bytes(2,'little')	#Block size
 			binaryout += data[2][0:tchars] #ColorRAM
-			# if display:
-			# 	# Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
-			# 	binaryout += b'\x92\x00'
-			# 	binaryout += border
-			# 	binaryout += bgcolor
+		if bgcolor == None:
+			bgcolor = bytes([gcolors[0]]) if gcolors[0] != None else b'\x00'
 		if display:
 			if gfxmode == gfxmulti:
 				# Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
@@ -354,7 +199,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				binaryout += border
 				binaryout += bgcolor
 				if conn.mode == 'PET264':
-					binaryout += mcolor2
+					#mcolor2 = gcolors[1].to_bytes(1,'big')
+					binaryout += gcolors[3].to_bytes(1,'big')
 			else:
 				# Switch to hires mode + Page number: 0 (default) + Border color: border
 				binaryout += b'\x91\x00'
@@ -365,7 +211,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
 		conn.Sendallbin(binaryout)
 		return bgcolor
-	else:	# Save to file
+	else:	# Save to file --- TODO: move this to the image conversion module
 		savename = os.path.splitext(os.path.basename(filename))[0].upper()
 		savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
 		if gfxmode == gfxmodes.C64MULTI:
@@ -373,6 +219,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			binaryout += data[0][0:tbytes] #Bitmap
 			binaryout += data[1][0:tchars] #Screen
 			binaryout += border
+			if bgcolor == None:
+				bgcolor = bytes([gcolors[0]])
 			binaryout += bgcolor
 			binaryout += b'\x00'*14
 			binaryout += data[2][0:tchars] #ColorRAM

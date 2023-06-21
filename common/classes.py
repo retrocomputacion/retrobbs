@@ -59,6 +59,7 @@ class Encoder:
         self.non_printable = []	#	List of non printable characters
         self.nl	= '\n'			#	New line string/character
         self.def_gfxmode = None	#	Default graphic mode (gfxmodes enum)
+        self.gfxmodes = ()		#	List of valid graphic modes
 
     def color_index(self, code):
        return self.palette.get(code,-1)

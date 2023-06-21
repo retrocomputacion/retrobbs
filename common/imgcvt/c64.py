@@ -3,6 +3,7 @@
 #
 import numpy as np
 import os
+from PIL import Image
 
 from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
@@ -30,7 +31,7 @@ Palette_PeptoNTSC = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':Tru
 
 C64Palettes = [['Colodore',Palette_Colodore],['Pepto (NTSC,Sony)',Palette_PeptoNTSC]]
 
-Native_Ext = ['koa','kla','art','ocp','dd','ddl']
+Native_Ext = ['.KOA','.KLA','.ART','.OCP','.DD','.DDL']
 
 #HiRes
 def c64_get2closest(colors,p_in,p_out,fixed):
@@ -96,16 +97,6 @@ def c64_get4closest(colors, p_in, p_out, bgcolor):
         xx += 1
 
     return(_indexes,Palette.Palette(closest))
-
-# def packmulticolor(cell):
-#     cell_a = np.asarray(cell)
-#     out = b''
-#     for y in range(8):
-#         tbyte = 0
-#         for x in range(4):
-#             tbyte += int(cell_a[y,x])<<((3-x)*2)
-#         out+= tbyte.to_bytes(1,'big')
-#     return(out)
 
 def bmpackhi(column,row,cell,buffers):
     if len(buffers)<4:
@@ -215,3 +206,117 @@ GFX_MODES=[{'name':'C64 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False
             'in_size':(320,200),'out_size':(160,200),'get_attr':c64_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpack,
             'get_buffers':lambda: get_buffers(2),'save_output':[['Koala Paint','.koa',lambda buf,c:buildfile(buf,c,1)]]}]
 
+
+###########################
+# Load Image
+
+def load_Image(filename:str):
+
+    multi = 0
+    data = [None]*3
+    gcolors = [None]*2  # Border, Background
+    extension = os.path.splitext(filename)[1].upper()
+    fsize = os.stat(filename).st_size
+    #Read file
+    if (extension == '.ART') and (fsize == 9009):  # Art Studio
+        with open(filename,'rb') as ifile:
+            if ifile.read(2) == b'\x00\x20':
+                # Bitmap data
+                data[0] = ifile.read(8000)
+                # Screen data
+                data[1] = ifile.read(1000)
+                # Read border color
+                gcolors[0] = ifile.read(1)[0]
+                text = 'Art Studio'
+            else:
+                return None
+    elif (extension in ['.DD','.DDL']) and (fsize == 9218): # Doodle
+        with open(filename,'rb') as ifile:
+            if ifile.read(2) == b'\x00\x5c':
+                # Screen data
+                data[1] = ifile.read(1000)
+                #Skip
+                ifile.read(24)
+                # Bitmap data
+                data[0] = ifile.read(8000)
+                gcolors[0] = 0x0c    #Border color
+                text = 'Doodle'
+            else:
+                return None
+    elif (extension == '.OCP') and (fsize == 10018):
+        with open(filename,'rb') as ifile:
+            if ifile.read(2) == b'\x00\x20':
+                # Bitmap data
+                data[0] = ifile.read(8000)
+                # Screen data
+                data[1] = ifile.read(1000)
+                # Read border color
+                gcolors[0] = ifile.read(1)[0]
+                # Read background color
+                gcolors[1] = ifile.read(1)[0]
+                # Skip the next 14 bytes
+                ifile.read(14)
+                # Color data
+                data[2] = ifile.read(1000)
+                multi = 1
+                text = 'Advanced Art Studio'
+            else:
+                return None
+    elif (extension in ['.KOA','.KLA']) and (fsize == 10003):
+        with open(filename,'rb') as ifile:
+            if ifile.read(2) == b'\x00\x60':
+                # Bitmap data
+                data[0] = ifile.read(8000)
+                # Screen data
+                data[1] = ifile.read(1000)
+                # Color data
+                data[2] = ifile.read(1000)
+                # Read background color
+                gcolors[1] = ifile.read(1)[0]
+                gcolors[0] = gcolors[1]
+                multi = 1
+                text = 'Koala Paint'
+            else:
+                return None       
+    #Render image
+
+    # Generate palette(s)
+    rgb_in = []
+    for c in Palette_Colodore: # iterate colors
+        rgb_in.append(np.array(c['RGBA'][:3]))   # ignore alpha for now
+    fsPal = [element for sublist in rgb_in for element in sublist]
+    plen = len(fsPal)//3
+    fsPal.extend(fsPal[:3]*(256-plen))
+
+    if multi == 0:
+        nimg = np.empty((200,320),dtype=np.uint8)
+        for c in range(1000):
+            cell = np.unpackbits(np.array(list(data[0][c*8:(c+1)*8]),dtype=np.uint8), axis=0)
+            fgbg = {0:data[1][c]&15,1:data[1][c]>>4}
+            ncell = np.copy(cell)
+            for k,v in fgbg.items():
+                ncell[cell==k] = v
+            sr = int(c/40)*8
+            er = sr+8
+            sc = (c*8)%320
+            ec = sc+8
+            nimg[sr:er,sc:ec] = ncell.reshape(8,8)
+        tmpI = Image.fromarray(nimg,mode='P')
+        tmpI.putpalette(fsPal)
+    else:
+        nimg = np.empty((200,160),dtype=np.uint8)
+        for c in range(1000):
+            cell = np.array([[(data[0][(c*8)+x]>>6)&3,(data[0][(c*8)+x]>>4)&3,(data[0][(c*8)+x]>>2)&3,data[0][(c*8)+x]&3] for x in range(8)],dtype=np.uint8).reshape((32))
+            fgbg = {0:gcolors[1],2:data[1][c]&15,1:data[1][c]>>4,3:data[2][c]}
+            ncell = np.copy(cell)
+            for k,v in fgbg.items():
+                ncell[cell==k] = v
+
+            sr = int(c/40)*8
+            er = sr+8
+            sc = (c*4)%160
+            ec = sc+4
+            nimg[sr:er,sc:ec] = ncell.reshape(8,4)
+        tmpI = Image.fromarray(nimg,mode='P').resize((320,200),Image.NEAREST)
+        tmpI.putpalette(fsPal)
+    return [tmpI,multi,data,gcolors,text]

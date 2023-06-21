@@ -3,6 +3,7 @@
 #
 import numpy as np
 import os
+from PIL import Image
 
 from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
@@ -31,7 +32,7 @@ Palette_TED = [{'color':TED_names[ix%16]+str(ix//16),'RGBA':[max(0,min(int((i[0]
 
 Plus4Palettes = [['Plus/4',Palette_TED]]
 
-Native_Ext = ['boti']
+Native_Ext = ['.BOTI']
 
 #HiRes
 def plus4_get2closest(colors,p_in,p_out,fixed):
@@ -63,7 +64,7 @@ def plus4_get4closest(colors, p_in, p_out, bgcolor):
     brgb = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[0]))
     brgb2 = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[3]))
     
-    closest = [brgb,brgb,brgb,brgb]
+    closest = [brgb,brgb,brgb,brgb2]
     _indexes = [bgcolor[0],bgcolor[0],bgcolor[0],bgcolor[3]]
     #Attr
     indexes = 0#0x33
@@ -192,3 +193,85 @@ GFX_MODES=[{'name':'Plus/4 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,Fa
             'in_size':(320,200),'out_size':(160,200),'get_attr':plus4_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpackmulti,
             'get_buffers':lambda: get_buffers(2),'save_output':[['Multi Botticelli','.boti',lambda buf,c:buildfile(buf,c,2)]]}]
 
+
+def load_Image(filename:str):
+
+    multi = 0
+    data = [None]*3
+    gcolors = [None]*5 # Border, Background, MC1, MC2, MC3
+    extension = os.path.splitext(filename)[1].upper()
+    fsize = os.stat(filename).st_size
+    #Read file
+    if (extension == '.BOTI') and (fsize == 10050):  # Botticelli
+        with open(filename,'rb') as ifile:
+            if ifile.read(2) == b'\x00\x78':
+                # Luminance data
+                data[2] = ifile.read(1000)
+                # Skip
+                ifile.read(18)
+                # Multicolor ID
+                tmp = ifile.read(4)
+                if tmp == b'MULT':
+                    # Multicolor 3
+                    tmp = ifile.read(1)[0]
+                    gcolors[4] = ((tmp&240)>>4)+((tmp&15)<<4)
+                    # Background
+                    tmp = ifile.read(1)[0]
+                    gcolors[1] = ((tmp&240)>>4)+((tmp&15)<<4)
+                    multi = 1
+                    text = 'Multi-Botticelli'
+                    # print(f'bg:{gcolors[1]} mc:{gcolors[4]}')
+                else:
+                    # Skip
+                    ifile.read(2)
+                    text = 'Botticelli'
+                # Color data
+                data[1] = ifile.read(1000)
+                # Skip
+                ifile.read(24)
+                # Bitmap data
+                data[0] = ifile.read(8000)
+    else:
+        return None
+
+    #Render image
+
+    # Generate palette(s)
+    rgb_in = []
+    for c in Palette_TED: # iterate colors
+        rgb_in.append(np.array(c['RGBA'][:3]))   # ignore alpha for now
+    fsPal = [element for sublist in rgb_in for element in sublist]
+    plen = len(fsPal)//3
+    fsPal.extend(fsPal[:3]*(256-plen))
+
+    if multi == 0:
+        nimg = np.empty((200,320),dtype=np.uint8)
+        for c in range(1000):
+            cell = np.unpackbits(np.array(list(data[0][c*8:(c+1)*8]),dtype=np.uint8), axis=0)
+            fgbg = {0:(data[1][c]&15)|(data[2][c]&112),1:(data[1][c]>>4)|((data[2][c]&15)<<4)}
+            ncell = np.copy(cell)
+            for k,v in fgbg.items():
+                ncell[cell==k] = v
+            sr = int(c/40)*8
+            er = sr+8
+            sc = (c*8)%320
+            ec = sc+8
+            nimg[sr:er,sc:ec] = ncell.reshape(8,8)
+        tmpI = Image.fromarray(nimg,mode='P')
+        tmpI.putpalette(fsPal)
+    else:
+        nimg = np.empty((200,160),dtype=np.uint8)
+        for c in range(1000):
+            cell = np.array([[(data[0][(c*8)+x]>>6)&3,(data[0][(c*8)+x]>>4)&3,(data[0][(c*8)+x]>>2)&3,data[0][(c*8)+x]&3] for x in range(8)],dtype=np.uint8).reshape((32))
+            fgbg = {0:gcolors[1],1:(data[1][c]>>4)|((data[2][c]&15)<<4),2:(data[1][c]&15)|(data[2][c]&112),3:gcolors[4]}
+            ncell = np.copy(cell)
+            for k,v in fgbg.items():
+                ncell[cell==k] = v
+            sr = int(c/40)*8
+            er = sr+8
+            sc = (c*4)%160
+            ec = sc+4
+            nimg[sr:er,sc:ec] = ncell.reshape(8,4)
+        tmpI = Image.fromarray(nimg,mode='P').resize((320,200),Image.NEAREST)
+        tmpI.putpalette(fsPal)
+    return [tmpI,multi,data,gcolors,text]

@@ -139,6 +139,7 @@ def _Register():
     e0.non_printable = NONPRINTABLE
     e0.nl = '\r' # New line string
     e0.def_gfxmode = gfxmodes.C64MULTI
+    e0.gfxmodes = (gfxmodes.C64HI,gfxmodes.C64MULTI)
 
     e1 = Encoder('PET264')
     e1.tml_mono  = t_mono['PET264']
@@ -153,4 +154,5 @@ def _Register():
     e1.non_printable = NONPRINTABLE
     e1.nl = '\r' # New line string
     e1.def_gfxmode = gfxmodes.P4HI
+    e1.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
     return [e0,e1]  #Each encoder module can return more than one encoder object. For example here it could also return PET128.

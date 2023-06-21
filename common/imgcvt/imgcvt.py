@@ -24,9 +24,18 @@ GFX_MODES = []
 
 gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI'], start=0)
 
+#Mode conversion mapping
+
+mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64MULTI},
+             'PET264':{gfxmodes.C64HI:gfxmodes.P4HI,gfxmodes.C64MULTI:gfxmodes.P4MULTI}}
+
 #Image scale/crop modes
 
 cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
+
+#Native format filename extensions
+
+im_extensions = c64.Native_Ext + p4.Native_Ext
 
 class PreProcess:
 
@@ -284,14 +293,14 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             for j in range(0,height,y_step):        # Step thru attribute cells
                 for i in range(0,width,x_step):
                     z = np.reshape(n_img[j:j+y_step,i:i+x_step],(-1))   #get bitmap cell
-                    if len(np.unique(z)) >= k:
-                        ucount = np.bincount(z)
+                    if len(np.unique(z)) >= k:  #More than k colors in the cell?
+                        ucount = np.bincount(z) #Number of pixels for each color index
                         for l,t in enumerate(bg_color):
-                            if t == -1:
+                            if t == -1 and Mode['global_colors'][l]:
                                 ccount[l] = np.append(ccount[l],np.argmax(ucount))
                                 ucount[np.argmax(ucount)] = -1  #Remove the color 
             for j in range(len(bg_color)):
-                if bg_color[j] == -1:
+                if bg_color[j] == -1 and Mode['global_colors'][j]:
                     if len(ccount[j]) > 0:
                         bg_color[j] = int(np.argmax(np.bincount(ccount[j])))
                     else:
@@ -443,9 +452,20 @@ def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     inPal = Palette.Palette(hd_p)
     return inPal.create_PIL_png_from_closest_colour(cc), inPal
 
-#Open an image, return Image object, (Native image data if any, Graphic mode)
+#Open a native image, return Image object, (Native image data if any, Graphic mode)
 def open_Image(filename:str):
-    ...
+    extension = os.path.splitext(filename)[1].upper()
+    if extension in c64.Native_Ext:
+        result = c64.load_Image(filename)
+        if result != None:
+            result[1] = gfxmodes.C64HI + result[1]
+    elif extension in p4.Native_Ext:
+        result = p4.load_Image(filename)
+        if result != None:
+            result[1] = gfxmodes.P4HI + result[1]
+    else:
+        return None
+    return result
 
 ##### On load
 build_modes()

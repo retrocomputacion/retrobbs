@@ -154,7 +154,7 @@ def More(conn:Connection, text, lines, colors=None):
 			elif ll >= (lines*page)+(lines-1):
 				if cc !=0:
 					conn.Sendall('\r')
-				conn.SendTML(KeyPrompt(prompt+' OR <LARROW>',TML=True))
+				conn.SendTML(KeyPrompt(conn,prompt+' OR <LARROW>',TML=True))
 				k = conn.ReceiveKey(b'\r_')
 				if (conn.connected == False) or (k == b'_'):
 					conn.Sendall(TT.set_Window(0,24))

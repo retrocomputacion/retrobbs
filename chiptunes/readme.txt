@@ -1,1 +1,1 @@
-Insert your .sid and correspoding .ssl files here
+Insert your .ym, .vtx, vgz and .sid with correspoding .ssl files here
