@@ -13,11 +13,18 @@ from common import turbo56k as TT
 from common import petscii as P
 from geopy.geocoders import Photon, Nominatim
 
+
+###############
+# Missing tile
+dragons: Image.Image
+
 #############################
 #Plugin setup
 def setup():
+    global dragons
     fname = "MAPS" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
+    dragons = Image.open("plugins/maps_dragons.png")
     return(fname,parpairs)
 
 
@@ -66,12 +73,13 @@ def plugFunction(conn:Connection):
             for ytile in range(ymin-int(height/2),  ymin+1+int(height/2)):
                 try:
                     imgurl=smurl.format(zoom, xtile % tnum, ytile)
-                    imgstr = requests.get(imgurl,allow_redirects=True)
+                    imgstr = requests.get(imgurl,allow_redirects=True, headers={'User-Agent':'RetroBBS-Maps'})
                     tile = Image.open(BytesIO(imgstr.content))
                     Cluster.paste(tile, box=((xtile-(xmin-int(width/2)))*256 ,  (ytile-(ymin-int(height/2)))*256))
                     conn.SendTML('<GREEN><CHECKMARK>')
                 except:
                     conn.SendTML('<RED>X')
+                    Cluster.paste(dragons, box=((xtile-(xmin-int(width/2)))*256 ,  (ytile-(ymin-int(height/2)))*256))
                     _LOG("MAPS: Error, couldn't load tile",id=conn.id,v=1)
         return Cluster
 

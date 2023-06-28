@@ -20,7 +20,13 @@ from common import petscii as P
 from common import turbo56k as TT
 from common.style import default_style, KeyPrompt
 from html import unescape, escape
+from PIL import ImageFont
 
+
+# Bitmap Fonts
+font_bold = ImageFont.truetype("common/karen2blackint.ttf", 16)
+font_big = ImageFont.truetype("common/karen2blackint.ttf", 24)
+font_text = ImageFont.truetype("common/BetterPixels.ttf",16)
 
 # Valid keys for menu entries
 valid_keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\*;/'
@@ -262,6 +268,14 @@ def text_displayer(conn:Connection, text, lines, colors=None):
 # Crop text to the desired length, adding ellipsis if needed
 def crop(text, length):
 	return text[:length-3] + '...' if len(text) > length else text
+
+# Crop text to the desired pixel width, adding ellipsis if needed
+def gfxcrop(text, width, font = font_text):
+	x = 2
+	while font.getlength(text) > width:
+		text = text[:-x]+'...'
+		x = 4
+	return text
 
 
 # Convert an int depicting a size in bytes to a rounded up to B/KB/MB/GB or TB (base 2) string

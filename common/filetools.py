@@ -218,7 +218,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			binaryout = b'\x00\x20' # Advanced Art Studio Load address
 			binaryout += data[0][0:tbytes] #Bitmap
 			binaryout += data[1][0:tchars] #Screen
-			binaryout += border
+			binaryout += bytes([border])
 			if bgcolor == None:
 				bgcolor = bytes([gcolors[0]])
 			binaryout += bgcolor

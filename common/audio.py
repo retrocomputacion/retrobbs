@@ -9,6 +9,8 @@ import subprocess
 import signal
 import math
 import asyncio
+from PIL import Image, ImageDraw
+from io import BytesIO
 
 from common.bbsdebug import _LOG,bcolors
 from common import helpers as H
@@ -16,6 +18,8 @@ from common import style as S
 from common.connection import Connection
 from common import turbo56k as TT
 from common.style import RenderMenuTitle, KeyLabel
+from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype
+from common.filetools import SendBitmap
 
 
 import audioread
@@ -153,20 +157,48 @@ def AudioList(conn:Connection,title,speech,logtext,path):
 # Display audio dialog
 #########################################
 def _AudioDialog(conn:Connection, data):
-	S.RenderDialog(conn, 15, data['title'])
-	tml = ''
-	if data['album'] != '':
-		tml += f'<RVSON> Album:<BR><RVSON> {data["album"]}<BR><BR>'
-	if data['artist'] != '':
-		tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
-	tml += f'''<RVSON> Length: {data['length']}<BR><BR>
-<RVSON> From {data['sr']} to {conn.samplerate}Hz
-<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
-<RVSON> Press &lt;x&gt; and wait to stop<BR>
-<RVSON> Press &lt;<LARROW>&gt; to cancel'''
-	conn.SendTML(tml)
+	if data.get('apic', None) != None:
+		#im = convert_To(Image.open(BytesIO(data['apic'])), cropmode= cropmodes.LEFT)
+		im = Image.open(BytesIO(data['apic']))
+		im.thumbnail((128,128))
+		if conn.mode == "PET64":
+			gm = gfxmodes.C64HI
+		elif conn.mode == "PET264":
+			gm = gfxmodes.P4HI
+		else:
+			gm = conn.encoder.def_gfxmode
+		img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
+		pwidth = img[0].size[0]
+		draw = ImageDraw.Draw(img[0])
+		draw.text((160,2),H.gfxcrop(data['title'],pwidth,H.font_bold),1,font=H.font_bold,anchor='mt')
+		if data['album'] != '':
+			draw.text((136,20),'Album:',1,font=H.font_bold)
+			draw.text((136+40,22),H.gfxcrop(data['album'],pwidth-176),1,font=H.font_text)
+		if data['artist'] != '':
+			draw.text((136,36),'Artist:',1,font=H.font_bold)
+			draw.text((136+40,38),H.gfxcrop(data['artist'],pwidth-176),1,font=H.font_text)			
+		draw.text((136,52),'Length:',1,font=H.font_bold)
+		draw.text((136+40,54),data['length'],1,font=H.font_text)			
+		draw.text((136,68),f"From {data['sr']} to {conn.samplerate}Hz",1,font=H.font_text)
+		draw.text((136,136),"Press <RETURN> to play",1,font=H.font_text)
+		draw.text((136,152),"Press <X> and wait to stop",7,font=H.font_text)
+		draw.text((136,168),"Press < <- > to cancel",10,font=H.font_text)
+		SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
+	else:
+		S.RenderDialog(conn, 15, data['title'])
+		tml = ''
+		if data['album'] != '':
+			tml += f'<RVSON> Album:<BR><RVSON> {data["album"]}<BR><BR>'
+		if data['artist'] != '':
+			tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
+		tml += f'''<RVSON> Length: {data['length']}<BR><BR>
+	<RVSON> From {data['sr']} to {conn.samplerate}Hz
+	<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
+	<RVSON> Press &lt;x&gt; and wait to stop<BR>
+	<RVSON> Press &lt;<LARROW>&gt; to cancel'''
+		conn.SendTML(tml)
 	if conn.ReceiveKey(b'\r_') == b'_':
-		conn.SendTML('<CBM-B><CRSRL>')
+		conn.SendTML('<CURSOR><CBM-B><CRSRL>')
 		return False
 	return True
 
@@ -210,7 +242,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 		a_min = int(length/60)
 		a_sec = int(round(length,0)-(a_min*60))
 		a_meta['length'] = ('00'+str(a_min))[-2:]+':'+('00'+str(a_sec))[-2:]
-		a_meta['sr'] = str(a_data.info.sample_rate)+'hZ'
+		a_meta['sr'] = str(a_data.info.sample_rate)+'Hz'
 		a_meta['title'] = os.path.splitext(os.path.basename(filename))[0][:38]  #filename[filename.rfind('/')+1:filename.rfind('/')+39]
 		a_meta['album'] = ''
 		a_meta['artist'] = ''
@@ -224,6 +256,11 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 				if a_data.tags.getall(ars) != []:
 					a_meta['artist'] = a_data.tags.getall(ars)[0][0][:38]
 					break
+			if a_data.tags.getall('APIC') != []:
+				# print('APIC',a_data.tags.getall('APIC'))
+				a_meta['apic'] = a_data.tags.getall('APIC')[0].data
+				# im = Image.open(BytesIO(apic))
+				# im.show()
 		if not _AudioDialog(conn,a_meta):
 			return()
 		if not conn.connected:
@@ -302,6 +339,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 	conn.Sendallbin(binario)
 	time.sleep(1)
 	conn.socket.settimeout(conn.bbs.TOut)
+	conn.SendTML('<CURSOR>')
 
 #########################################    
 # PcmStream Class

@@ -372,10 +372,10 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             bg_color[bix] = err.index(max(err)) #Best bg color (index to...)
             n_img = np.asarray(in_PaletteH.create_PIL_png_from_rgb_array(np.asarray(e_img[bg_color[bix]])))
             mask = i_to[n_img]
-            o_img= Image.fromarray(np.uint8(mask))
+            e_img= Image.fromarray(np.uint8(mask))
             #o_img = in_PaletteH.create_PIL_png_from_rgb_array(mask)
-            o_img.putpalette(tPal)
-            e_img = o_img.convert('RGB')
+            e_img.putpalette(tPal)
+            #e_img = o_img.convert('RGB')
             buffers=buffers[bg_color[0]]
         else:
             en_img = np.zeros([height,width,3],dtype='uint8')   #[np.zeros([200,160,3],dtype='uint8') for j in range(16)]
@@ -392,18 +392,18 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             n_img = np.asarray(in_PaletteH.create_PIL_png_from_rgb_array(np.asarray(e_img)))
             mask = i_to[n_img]
             #rmap = i_to[mask.argmax(1)]
-            o_img= Image.fromarray(np.uint8(mask))
+            e_img= Image.fromarray(np.uint8(mask))
             #o_img = in_PaletteH.create_PIL_png_from_rgb_array(mask)
-            o_img.putpalette(tPal)
-            e_img = o_img.convert('RGB')
+            e_img.putpalette(tPal)
+            #e_img = o_img.convert('RGB')
     else:   #Unrestricted
         n_img = np.asarray(o_img)
         mask = i_to[n_img]
         #rmap = i_to[mask.argmax(1)]
-        o_img= Image.fromarray(np.uint8(mask))
+        e_img= Image.fromarray(np.uint8(mask))
         #o_img = in_PaletteH.create_PIL_png_from_rgb_array(mask)
-        o_img.putpalette(tPal)
-        e_img = o_img.convert('RGB')
+        e_img.putpalette(tPal)
+        #e_img = o_img.convert('RGB')
         buffers =[]
     #if bestbg:
     #    return(e_img[bg_color],buffers[bg_color],rgb_in[bg_color][1])

@@ -19,6 +19,10 @@ from common.bbsdebug import _LOG
 from common import filetools as FT
 from common import turbo56k as TT
 
+from common.helpers import font_bold as font_title
+from common.helpers import font_big as font_temp
+from common.helpers import font_text
+
 wgfx24: list #Weather gfx 24px 
 wgfx8:  list  #Weather gfx 8px
 wtypes =    {110:2,113:2,                                       #Clear
@@ -46,16 +50,16 @@ wwind =     {'N':0,'NNE':7,'NE':7,'ENE':7,'E':2,'ESE':6,'SE':6,'SSE':6,'S':1,'SS
 def setup():
     global wgfx8
     global wgfx24
-    global font_text
-    global font_temp
-    global font_title
+    # global font_text
+    # global font_temp
+    # global font_title
     gfx = NP.array(Image.open('plugins/weather_icons.png'))
     wgfx24 = [gfx[x:x+24,y:y+24] for x in range(0,48,24) for y in range(0,312,24)]
     wgfx8 = [gfx[x:x+8,y:y+8] for x in range(56,72,8) for y in range(0,40,8)]
 
-    font_title = ImageFont.truetype("plugins/karen2blackint.ttf", 16)   #<
-    font_temp = ImageFont.truetype("plugins/karen2blackint.ttf", 24)    #<
-    font_text = ImageFont.truetype("plugins/BetterPixels.ttf",16)       #<
+    # font_title = ImageFont.truetype("plugins/karen2blackint.ttf", 16)   #<
+    # font_temp = ImageFont.truetype("plugins/karen2blackint.ttf", 24)    #<
+    # font_text = ImageFont.truetype("plugins/BetterPixels.ttf",16)       #<
 
     fname = "WEATHER" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
@@ -86,7 +90,7 @@ def plugFunction(conn:Connection):
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
             gmod = gfxmodes.P4HI if conn.mode == 'PET264' else gfxmodes.C64HI
-            FT.SendBitmap(conn,img,gfxmode=gmod.C64HI,preproc=PreProcess(),lines=23,display=False,dither=dithertype.NONE)
+            FT.SendBitmap(conn,img,gfxmode=gmod,preproc=PreProcess(),lines=23,display=False,dither=dithertype.NONE)
             conn.Sendall(TT.split_Screen(23,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLUE'], mode=conn.mode))
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2>')
@@ -118,7 +122,11 @@ async def getweather(conn:Connection,locquery,geoLoc):
         client = python_weather.Client(format=units)
     else:
         client = python_weather.Client(unit=units)
-    img, inPal = get_IndexedImg(gfxmodes.C64HI,0) #Image.new('1', (320,200), color = 'black')
+    if conn.mode == "PET64":
+        gm = gfxmodes.C64HI
+    else:
+        gm = conn.encoder.def_gfxmode
+    img, inPal = get_IndexedImg(gm,0) #Image.new('1', (320,200), color = 'black')
     inPal.colordelta = colordelta.EUCLIDEAN
     draw = ImageDraw.Draw(img)
     # fetch a weather forecast from a city
