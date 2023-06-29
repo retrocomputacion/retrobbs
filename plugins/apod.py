@@ -132,7 +132,7 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
     while resp == None:
         try :
             param = {'api_key': key, 'date': date}
-            resp = requests.get(url, params=param).json()
+            resp = requests.get(url, params=param, timeout=8).json()
             #apod_url = resp["hdurl"]
             if "media_type" in resp:
                 m_type = resp["media_type"]
