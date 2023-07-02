@@ -18,7 +18,7 @@ from common import style as S
 from common.connection import Connection
 from common import turbo56k as TT
 from common.style import RenderMenuTitle, KeyLabel
-from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype
+from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
 from common.filetools import SendBitmap
 
 
@@ -167,22 +167,33 @@ def _AudioDialog(conn:Connection, data):
 			gm = gfxmodes.P4HI
 		else:
 			gm = conn.encoder.def_gfxmode
+
+		c_black = (0,0,0)
+		c_white = (0xff,0xff,0xff)
+		c_yellow = (0xff,0xff,0x55)
+		c_pink = (0xdd,0x66,0x66)
+
 		img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
 		pwidth = img[0].size[0]
+		pheight = img[0].size[1]
 		draw = ImageDraw.Draw(img[0])
-		draw.text((160,2),H.gfxcrop(data['title'],pwidth,H.font_bold),1,font=H.font_bold,anchor='mt')
+		# Fill unused space with black
+		draw.rectangle([0,0,128,(pheight-128)//2],fill = c_black)
+		draw.rectangle([0,((pheight-128)//2)+128,128,pheight],fill = c_black)
+		draw.rectangle([128,0,pwidth,pheight],fill = c_black)
+		draw.text((160,2),H.gfxcrop(data['title'],pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
 		if data['album'] != '':
-			draw.text((136,20),'Album:',1,font=H.font_bold)
-			draw.text((136+40,22),H.gfxcrop(data['album'],pwidth-176),1,font=H.font_text)
+			draw.text((136,20),'Album:',c_white,font=H.font_bold)
+			draw.text((136+40,22),H.gfxcrop(data['album'],pwidth-176),c_white,font=H.font_text)
 		if data['artist'] != '':
-			draw.text((136,36),'Artist:',1,font=H.font_bold)
-			draw.text((136+40,38),H.gfxcrop(data['artist'],pwidth-176),1,font=H.font_text)			
-		draw.text((136,52),'Length:',1,font=H.font_bold)
-		draw.text((136+40,54),data['length'],1,font=H.font_text)			
-		draw.text((136,68),f"From {data['sr']} to {conn.samplerate}Hz",1,font=H.font_text)
-		draw.text((136,136),"Press <RETURN> to play",1,font=H.font_text)
-		draw.text((136,152),"Press <X> and wait to stop",7,font=H.font_text)
-		draw.text((136,168),"Press < <- > to cancel",10,font=H.font_text)
+			draw.text((136,36),'Artist:',c_white,font=H.font_bold)
+			draw.text((136+40,38),H.gfxcrop(data['artist'],pwidth-176),c_white,font=H.font_text)			
+		draw.text((136,52),'Length:',c_white,font=H.font_bold)
+		draw.text((136+40,54),data['length'],c_white,font=H.font_text)			
+		draw.text((136,68),f"From {data['sr']} to {conn.samplerate}Hz",c_white,font=H.font_text)
+		draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
+		draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
+		draw.text((136,168),"Press < <- > to cancel",c_pink,font=H.font_text)
 		SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
 	else:
 		S.RenderDialog(conn, 15, data['title'])

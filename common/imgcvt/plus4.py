@@ -132,28 +132,20 @@ def get_buffers(mode:int):
     return buffers
 
 def buildfile(buffers,bg,baseMode):
-    if baseMode == 0:   #Save bitmap memory dump
-        #Luminance table
-        t_data = bytes(buffers[2])#luminance table
-        t_data += bytes(24)
-        #Color table
-        t_data += bytes(buffers[1])#color table
-        t_data += bytes(24)
-        #Bitmap
-        t_data += bytes(buffers[0])#bitmap
-        #Border
-        #t_data += b'\x00'
-    elif baseMode == 2: #Save Multi Botticelli
-        t_data = b'\x00\x78'    #Load Address
-        t_data += bytes(buffers[2])#luminance table
-        t_data += bytes(22)
+    t_data = b'\x00\x78'    #Load Address
+    t_data += bytes(buffers[2])#luminance table
+    t_data += bytes(18)
+    if len(bg) == 4:
+        t_data += b'MULT'
         t_data += bytes([((bg[3]&112)>>4)+((bg[3]&15)<<4)])
         t_data += bytes([((bg[0]&112)>>4)+((bg[0]&15)<<4)])
-        #Color table
-        t_data += bytes(buffers[1])#color table
-        t_data += bytes(24)
-        #Bitmap
-        t_data += bytes(buffers[0])#bitmap
+    else:
+        t_data += bytes(6)
+    #Color table
+    t_data += bytes(buffers[1])#color table
+    t_data += bytes(24)
+    #Bitmap
+    t_data += bytes(buffers[0])#bitmap
     return(t_data)
 #############################
 
@@ -185,13 +177,13 @@ GFX_MODES=[{'name':'Plus/4 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,Fa
             'global_names':[],
             'attributes':[{'dim':(8,8),'get_attr':plus4_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack}],
             'in_size':(320,200),'out_size':(320,200),'get_attr':plus4_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack,
-            'get_buffers':lambda: get_buffers(1),'save_output':[['Bitmap dump','.prg',lambda buf,c: buildfile(buf,c,0)]]},
+            'get_buffers':lambda: get_buffers(1),'save_output':['Botticelli',lambda buf,c: buildfile(buf,c,0)]},
             {'name':'Plus/4 Multicolor','bpp':2,'attr':(4,8),'global_colors':(True,False,False,True),'palettes':Plus4Palettes,
              'global_names':['Background color',None,None,'Multicolor 1'],
             'attributes':[{'dim':(160,200),'get_attr':None,'bm_pack':None,'attr_pack':None},
                         {'dim':(4,8),'get_attr':plus4_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpackmulti}],
             'in_size':(320,200),'out_size':(160,200),'get_attr':plus4_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpackmulti,
-            'get_buffers':lambda: get_buffers(2),'save_output':[['Multi Botticelli','.boti',lambda buf,c:buildfile(buf,c,2)]]}]
+            'get_buffers':lambda: get_buffers(2),'save_output':['Multi Botticelli',lambda buf,c:buildfile(buf,c,2)]}]
 
 
 def load_Image(filename:str):

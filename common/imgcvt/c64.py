@@ -198,13 +198,13 @@ GFX_MODES=[{'name':'C64 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False
             'global_names':[],
             'attributes':[{'dim':(8,8),'get_attr':c64_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack}],
             'in_size':(320,200),'out_size':(320,200),'get_attr':c64_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack,
-            'get_buffers':lambda: get_buffers(1),'save_output':[['Art Studio','.art',lambda buf,c: buildfile(buf,c,0)]]},
+            'get_buffers':lambda: get_buffers(1),'save_output':['Art Studio',lambda buf,c: buildfile(buf,c,0)]},
             {'name':'C64 Multicolor','bpp':2,'attr':(4,8),'global_colors':(True,False,False,False),'palettes':C64Palettes,
              'global_names':['Background color'],
             'attributes':[{'dim':(160,200),'get_attr':None,'bm_pack':None,'attr_pack':None},
                         {'dim':(4,8),'get_attr':c64_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpack}],
             'in_size':(320,200),'out_size':(160,200),'get_attr':c64_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpack,
-            'get_buffers':lambda: get_buffers(2),'save_output':[['Koala Paint','.koa',lambda buf,c:buildfile(buf,c,1)]]}]
+            'get_buffers':lambda: get_buffers(2),'save_output':['Koala Paint',lambda buf,c:buildfile(buf,c,1)]}]
 
 
 ###########################

@@ -452,6 +452,28 @@ def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     inPal = Palette.Palette(hd_p)
     return inPal.create_PIL_png_from_closest_colour(cc), inPal
 
+#Returns the color palette index closest to the passed RGB values
+def get_ColorIndex(mode: gfxmodes, rgb):
+    pal = GFX_MODES[mode]['palettes'][0][1]
+    dist = [2**1024]*len(pal)
+    for c in pal:
+        if c['enabled']:
+            dist[c['index']] = CC.Redmean(rgb,c['RGBA'][:3])
+    return dist.index(min(dist))
+
+#Returns the RGB values for the index in the color palette
+def get_RGB(mode: gfxmodes, index):
+    pal = GFX_MODES[mode]['palettes'][0][1]
+
+    rgb = [0,0,0]
+    for c in pal:
+        print(c)
+        if c['enabled']:
+            if c['index'] == index:
+                return c['RGBA'][:3]
+    return rgb
+    ...
+
 #Open a native image, return Image object, (Native image data if any, Graphic mode)
 def open_Image(filename:str):
     extension = os.path.splitext(filename)[1].upper()
@@ -469,3 +491,12 @@ def open_Image(filename:str):
 
 ##### On load
 build_modes()
+
+#Prepare a native image to be save to disk, return a byte string
+def build_File(buffers, gcolors, gfxmode):
+    return GFX_MODES[gfxmode]['save_output'][1](buffers,gcolors)
+    # if gfxmode in [gfxmodes.C64HI, gfxmodes.C64MULTI]:
+    #     c64.buildfile(buffers, gcolors, gfxmode)
+    # elif gfxmode in [gfxmodes.P4HI, gfxmodes.P4MULTI]:
+    #     p4.buildfile(buffers, gcolors, gfxmodes-2)
+    ...
