@@ -302,7 +302,12 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             for j in range(len(bg_color)):
                 if bg_color[j] == -1 and Mode['global_colors'][j]:
                     if len(ccount[j]) > 0:
-                        bg_color[j] = int(np.argmax(np.bincount(ccount[j])))
+                        count = np.bincount(ccount[j])
+                        tc = int(np.argmax(count))
+                        while tc in bg_color:
+                            count[tc] = -1
+                            tc = int(np.argmax(count))
+                        bg_color[j] = tc    #int(np.argmax(np.bincount(ccount[j])))
                     else:
                         bg_color[j] = 0
             #bg_color = rgb_in[d_colors[np.abs(d_counts-np.percentile(d_counts,55)).argmin()][1]][1] #d_counts.index(max(d_counts))
@@ -467,7 +472,6 @@ def get_RGB(mode: gfxmodes, index):
 
     rgb = [0,0,0]
     for c in pal:
-        print(c)
         if c['enabled']:
             if c['index'] == index:
                 return c['RGBA'][:3]
@@ -492,9 +496,9 @@ def open_Image(filename:str):
 ##### On load
 build_modes()
 
-#Prepare a native image to be save to disk, return a byte string
-def build_File(buffers, gcolors, gfxmode):
-    return GFX_MODES[gfxmode]['save_output'][1](buffers,gcolors)
+#Prepare a native image to be save to disk, return a byte string and formatted filename
+def build_File(buffers, gcolors, filename, gfxmode):
+    return GFX_MODES[gfxmode]['save_output'][1](buffers,gcolors,filename)
     # if gfxmode in [gfxmodes.C64HI, gfxmodes.C64MULTI]:
     #     c64.buildfile(buffers, gcolors, gfxmode)
     # elif gfxmode in [gfxmodes.P4HI, gfxmodes.P4MULTI]:

@@ -118,6 +118,7 @@ __New features__:
  - Introducing TML markup/scripting language, moving towards an encoding agnostic BBS. Some functions now expect parameters in this format.
  - New STAT internal function for displaying some basic BBS and user statistics
  - Added `SENDFILE` function for the configuration file.
+ - Show album art if embedded in MP3 files (and dialog is enabled)
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -147,6 +148,7 @@ __Changes/Bug fixes__:
  - Revamped graphic conversion module(s)
  - ~~Webaudio fix: Take samplerate into account when more than one client is streaming from the same source.~~
  - Webaudio multiclient queuing disabled, falling back to one ffmpeg instance per audio stream.
+ - Fixed missing timeout parameter in APOD plugin.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -712,6 +714,25 @@ CLUSTER: Cluster dither
 FLOYDSTEINBERG: Floyd-Steinberg error diffusion dither
 ```
 
+### cropmodes
+Enum containing the possible image position/crop/zoom presets:
+
+```
+LEFT: No scaling, positioned to the center-left and cropped to the target image size.
+TOP: No scaling, positioned to the top-center and cropped to the target image size.
+RIGHT: No scaling, positioned to the center-right and cropped to the target image size.
+BOTTOM: No scaling, positioned to the bottom-center and cropped to the target image size.
+T_LEFT: No scaling, positioned to the top-left and cropped to the target image size.
+T_RIGHT: No scaling, positioned to the top-right and cropped to the target image size.
+B_LEFT: No scaling, positioned to the bottom-left and cropped to the target image size.
+B_RIGHT: No scaling, positioned to the bottom-right and cropped to the target image size.
+CENTER: No scaling, centered and cropped to the target image size.
+FILL: Scaled and cropped to fill the whole target image size.
+FIT: Scaled to fit completely inside the target image size.
+H_FIT: Scaled and cropped to fit the target width.
+V_FIT: Scaled and cropped to fit the target height.
+```
+
 ### ColorProcess class
 A simple class defining the image processing values:
 
@@ -737,8 +758,10 @@ Convert a _PIL_ image to a native graphic format.
 Returns a PIL image rendering of the result, a list of buffers containing the native data (platform/mode dependent), and a list of global colors
 
 ### get_IndexedImg(mode:gfxmodes, bgcolor=0)
-Returns a PIL "P" image with the dimensions of `mode` and using the palette for `mode`, filled with `bgcolor` color.
+Returns a PIL "P" image with the dimensions and palette of `mode`, filled with `bgcolor` color index.
 
+### open_Image(filename)
+Open a native image file, returns a PIL image object, native image data and graphic mode
 
 ## common.classes - Internal use only
 
@@ -854,6 +877,13 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 
 **menu_colors**: List containing the odd/even color pairs for menu entries.
 
+**font_bold**: Default bold Imagefont for use on bitmaps, 16px height.
+
+**font_big**: Default big Imagefont for use on bitmaps, 24px height.
+
+**font_text**: Default text Imagefont for use on bitmaps, 16px height.
+
+
 ### formatX(text, columns = 40, convert = True)
 Formats the **\<text\>** into **\<columns\>** columns with word wrapping, **\<convert\>** selects if *PETSCII* conversion is performed.
 
@@ -871,6 +901,18 @@ Displays `text` in a text window `lines` in height. Scrolling up and down with t
 
 ### crop(text, length)
 Cuts **\<text\>** to max **\<length\>** characters, adding an ellipsis to the end if needed.
+
+### gfxcrop(text, width, font = font_text):
+Cuts **\<text\>** to max **\<width\>** pixels using **\<font\>**, adding an ellipsis to the end if needed.
+
+### format_bytes(b):
+Convert an integer **\<b\>** depicting a size in bytes to a string rounded up to B/KB/MB/GB or TB
+
+### catalog(path, dirs = False, full = True):
+Return a list of files (and subdirectories) in the specified top directory
+- **\<path\>**: Top directory
+- **\<dirs\>**: Include subdirectories? Default False
+- **\<full\>**: Each entry in the list includes the full path. Default True
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
 Many control codes and graphic characters are defined as constants in this module, it is recommended to inspect it to learn more.

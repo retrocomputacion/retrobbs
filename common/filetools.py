@@ -9,7 +9,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv
+from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -92,22 +92,20 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 	border = None
 
 	mode = 1 if gfxmode == gfxmulti else 0
-
 	save &= conn.QueryFeature(TT.FILETR) < 0x80
-
 	pimg = None
-
 	convert = False
+	Source = None
 
 	if type(filename)==str:
 		extension = os.path.splitext(filename)[1].upper()
 		if extension not in ['.GIF','.PNG','.JPG','JPEG']:
 			pimg = open_Image(filename)
-			if pimg == None:
+			if pimg == None:	#Invalid file, exit
 				return
-			elif pimg[1] not in conn.encoder.gfxmodes:
+			elif pimg[1] not in conn.encoder.gfxmodes:	#Image from another platform, convert
 				convert = True
-				filename = pimg[0]
+				Source = pimg[0]
 				if preproc == None:
 					preproc = PreProcess()
 				cropmode: cropmodes.TOP
@@ -118,7 +116,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				data = pimg[2]
 			text = pimg[4]
 			border = pimg[3][0]
-			gcolors = pimg[3][1:]
+			gcolors = pimg[3]
 		else:
 			text = ftitle[extension]
 			convert = True
@@ -129,12 +127,13 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		# or bytes/image object sent as filename parameter
 		conn.SendTML('<CBM-B><CRSRL>')
 		# try:
-		if type(filename)==str:
-			Source = Image.open(filename)
-		elif type(filename)==bytes:
-			Source = Image.open(BytesIO(filename))
-		elif isinstance(filename,Image.Image):
-			Source = filename
+		if Source == None:
+			if type(filename)==str:
+				Source = Image.open(filename)
+			elif type(filename)==bytes:
+				Source = Image.open(BytesIO(filename))
+			elif isinstance(filename,Image.Image):
+				Source = filename
 		Source = Source.convert("RGB")
 		if dialog:
 			mode = ImageDialog(conn,text,Source.size[0],Source.size[1],save)
@@ -149,6 +148,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither)
 		Source.close()
 		bgcolor = bytes([gcolors[0]])	#Convert[4].to_bytes(1,'little')
+		gcolors = [gcolors[0]]+gcolors # Border color = bgcolor
 		#
 		border = bgcolor if border == None else bytes([border])
 	elif pimg != None and dialog:
@@ -191,7 +191,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			binaryout += tchars.to_bytes(2,'little')	#Block size
 			binaryout += data[2][0:tchars] #ColorRAM
 		if bgcolor == None:
-			bgcolor = bytes([gcolors[0]]) if gcolors[0] != None else b'\x00'
+			bgcolor = bytes([gcolors[1]]) if gcolors[1] != None else b'\x00'
 		if display:
 			if gfxmode == gfxmulti:
 				# Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
@@ -200,7 +200,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 				binaryout += bgcolor
 				if conn.mode == 'PET264':
 					#mcolor2 = gcolors[1].to_bytes(1,'big')
-					binaryout += gcolors[3].to_bytes(1,'big')
+					binaryout += gcolors[4].to_bytes(1,'big')
 			else:
 				# Switch to hires mode + Page number: 0 (default) + Border color: border
 				binaryout += b'\x91\x00'
@@ -211,26 +211,29 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 			conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
 		conn.Sendallbin(binaryout)
 		return bgcolor
-	else:	# Save to file --- TODO: move this to the image conversion module
-		savename = os.path.splitext(os.path.basename(filename))[0].upper()
-		savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-		if gfxmode == gfxmodes.C64MULTI:
-			binaryout = b'\x00\x20' # Advanced Art Studio Load address
-			binaryout += data[0][0:tbytes] #Bitmap
-			binaryout += data[1][0:tchars] #Screen
-			binaryout += bytes([border])
-			if bgcolor == None:
-				bgcolor = bytes([gcolors[0]])
-			binaryout += bgcolor
-			binaryout += b'\x00'*14
-			binaryout += data[2][0:tchars] #ColorRAM
-			savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
-		else:
-			binaryout = b'\x00\x20' # Art Studio Load address
-			binaryout += data[0][0:tbytes] #Bitmap
-			binaryout += data[1][0:tchars] #Screen
-			binaryout += border
-			savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
+	else:
+		savename = os.path.splitext(os.path.basename(filename))[0]
+		if conn.mode in ['PET64','PET264']:
+			savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+		
+		binaryout, savename = build_File(data,gcolors,savename, gfxmode)
+		# if gfxmode == gfxmodes.C64MULTI:
+		# 	binaryout = b'\x00\x20' # Advanced Art Studio Load address
+		# 	binaryout += data[0][0:tbytes] #Bitmap
+		# 	binaryout += data[1][0:tchars] #Screen
+		# 	binaryout += bytes([border])
+		# 	if bgcolor == None:
+		# 		bgcolor = bytes([gcolors[0]])
+		# 	binaryout += bgcolor
+		# 	binaryout += b'\x00'*14
+		# 	binaryout += data[2][0:tchars] #ColorRAM
+		# 	savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
+		# else:
+		# 	binaryout = b'\x00\x20' # Art Studio Load address
+		# 	binaryout += data[0][0:tbytes] #Bitmap
+		# 	binaryout += data[1][0:tchars] #Screen
+		# 	binaryout += border
+		# 	savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
 		if TransferFile(conn, binaryout, savename):
 			conn.SendTML(fok)
 		else:

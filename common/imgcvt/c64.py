@@ -145,7 +145,7 @@ def get_buffers(mode:int):
         buffers.append([0]*1000)    # Color RAM
     return buffers
 
-def buildfile(buffers,bg,baseMode):
+def buildfile(buffers,gcols,baseMode,filename):
     if baseMode == 1:   #Save Koala
         t_data = b'\x00\x60' #Load address
         #Bitmap
@@ -155,7 +155,8 @@ def buildfile(buffers,bg,baseMode):
         #ColorRAM
         t_data += bytes(buffers[2])#cram
         #Background
-        t_data += bg[0].to_bytes(1,'big')
+        t_data += gcols[1].to_bytes(1,'big')
+        filename = '\x81PIC A ' + filename[:9]
     elif baseMode == 0:   #Save ArtStudio
         t_data = b'\x00\x20' #Load address
         #Bitmap
@@ -163,11 +164,11 @@ def buildfile(buffers,bg,baseMode):
         #Screen
         t_data += bytes(buffers[1])#screen
         #Border
-        t_data += b'\x00'
+        t_data += gcols[0].to_bytes(1,'big')
         #Padding
         t_data += b"M 'STU"
-
-    return(t_data)
+        filename = (filename.ljust(13,' ') if len(filename)<13 else filename[:13])+'PIC'
+    return(t_data, filename)
 #############################
 
 #####################################################################################################################
@@ -198,13 +199,13 @@ GFX_MODES=[{'name':'C64 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False
             'global_names':[],
             'attributes':[{'dim':(8,8),'get_attr':c64_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack}],
             'in_size':(320,200),'out_size':(320,200),'get_attr':c64_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack,
-            'get_buffers':lambda: get_buffers(1),'save_output':['Art Studio',lambda buf,c: buildfile(buf,c,0)]},
+            'get_buffers':lambda: get_buffers(1),'save_output':['Art Studio',lambda buf,c,fn: buildfile(buf,c,0,fn)]},
             {'name':'C64 Multicolor','bpp':2,'attr':(4,8),'global_colors':(True,False,False,False),'palettes':C64Palettes,
              'global_names':['Background color'],
             'attributes':[{'dim':(160,200),'get_attr':None,'bm_pack':None,'attr_pack':None},
                         {'dim':(4,8),'get_attr':c64_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpack}],
             'in_size':(320,200),'out_size':(160,200),'get_attr':c64_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpack,
-            'get_buffers':lambda: get_buffers(2),'save_output':['Koala Paint',lambda buf,c:buildfile(buf,c,1)]}]
+            'get_buffers':lambda: get_buffers(2),'save_output':['Koala Paint',lambda buf,c,fn:buildfile(buf,c,1,fn)]}]
 
 
 ###########################
@@ -214,7 +215,7 @@ def load_Image(filename:str):
 
     multi = 0
     data = [None]*3
-    gcolors = [None]*2  # Border, Background
+    gcolors = [0]*2  # Border, Background
     extension = os.path.splitext(filename)[1].upper()
     fsize = os.stat(filename).st_size
     #Read file
