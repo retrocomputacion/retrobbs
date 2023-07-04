@@ -278,7 +278,9 @@ def load_Image(filename:str):
                 multi = 1
                 text = 'Koala Paint'
             else:
-                return None       
+                return None    
+    else:
+        return None
     #Render image
 
     # Generate palette(s)
