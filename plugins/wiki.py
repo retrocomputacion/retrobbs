@@ -136,10 +136,12 @@ def plugFunction(conn:Connection):
 				tt += WikiSection(conn, page.sections,0)
 
 				if conn.QueryFeature(TT.SCROLL) < 0x80:
-					conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [crsr/F1/F7] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
-					text_displayer(conn,tt,22,wcolors)
+					conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [crsr/F1/F3] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
 				else:
-					More(conn,tt,22,wcolors)
+					conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [F1/F3] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
+				text_displayer(conn,tt,22,wcolors)
+				# else:
+				# 	More(conn,tt,22,wcolors)
 			except Exception as e:
 				conn.SendTML('<RED><BR>ERROR!<PAUSE n=2>')
 				exc_type, exc_obj, exc_tb = sys.exc_info()

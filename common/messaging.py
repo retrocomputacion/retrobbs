@@ -2,7 +2,6 @@
 from common.connection import Connection
 from datetime import datetime
 from common import turbo56k as TT
-from common import petscii as P
 from common.bbsdebug import _LOG
 from common.style import RenderMenuTitle
 from common.dbase import DBase
@@ -193,9 +192,20 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             conn.SendTML(f'<WINDOW top=22 bottom=22><AT x=32 y=0><RVSON><YELLOW>{line+1:0>2}/18<RVSOFF><GREY3>')
 
         vfilter = bytes(string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34),'ascii')    #Valid input characters
+        ckeys = conn.encoder.ctrlkeys
+
+        if conn.mode == 'PET64':
+            help_k = [ckeys['F1'],'F1']
+            line_k = [ckeys['F7'],'F7']
+            quit_k = [ckeys['F8'],'F8']
+        else:   #PET264
+            help_k = [ckeys['HELP'],'HELP']
+            line_k = [ckeys['F3'],'F3']
+            quit_k = [ckeys['ESC'],'ESC']
+
         conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT><MTITLE t="Message Editor"><YELLOW>'
                      f'{"<LFILL row=22 code=64>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else "<AT x=0 y=22><HLINE n=40>"}'
-                     f'<AT x=1 y=22><RVSON>F1 for help<RVSOFF>')
+                     f'<AT x=1 y=22><RVSON>{help_k[1]} for help<RVSOFF>')
         dispMsg()
         line = 0
         column = 0
@@ -207,15 +217,14 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             conn.SendTML('Topic title:<BR>')
             topic = conn.ReceiveStr(vfilter, maxlen = 32)
             conn.SendTML('<PAUSE n=0.5><CLR>')
+            topic = _dec(topic)
 
-        topic = _dec(topic)
         _LOG('Composing message',id=conn.id,v=4)
-            
         running = True
         edit = True
         while running and conn.connected:
             try:
-                i_char = conn.ReceiveKey(vfilter+b'\r\x11\x13\x14\x1d\x85\x88\x8c\x91\x93\x94\x9d') #conn.socket.recv(1)
+                i_char = conn.ReceiveKey(vfilter+bytes([0x0d,ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']])) #conn.socket.recv(1) #b'\r\x11\x13\x14\x1d\x85\x88\x8c\x91\x93\x94\x9d'
                 if edit :   # Editing text
                     if i_char == b'\r':
                         tline = ' ' if len (message[line]) == 0 else message[line]
@@ -239,27 +248,27 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                             else:                   # Keep editing
                                 conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
                                 edit = False
-                    elif (ord(i_char) == P.CRSR_RIGHT) and (column < len(message[line])):   # Cursor right
+                    elif (ord(i_char) == ckeys['CRSRR']) and (column < len(message[line])):   # Cursor right
                         column += 1
                         conn.Sendallbin(i_char)
-                    elif (ord(i_char) == P.CRSR_LEFT) and (column > 0):                     # Cursor left
+                    elif (ord(i_char) == ckeys['CRSRL']) and (column > 0):                     # Cursor left
                         column -= 1
                         conn.Sendallbin(i_char)
-                    elif ord(i_char) == P.HOME:                                             # Cursor home
+                    elif ord(i_char) == ckeys['HOME']:                                             # Cursor home
                         column = 0
                         conn.Sendallbin(i_char)
-                    elif ord(i_char) == P.CLEAR:                                            # Clear line
+                    elif ord(i_char) == ckeys['CLEAR']:                                            # Clear line
                         column = 0
                         message[line] = ''
                         conn.Sendallbin(i_char)
-                    elif (ord(i_char) == P.DELETE) and (len(message[line]) > 0) and (column > 0):   # Delete caracter
+                    elif (ord(i_char) == ckeys['DELETE']) and (len(message[line]) > 0) and (column > 0):   # Delete caracter
                         message[line] = message[line][0:column-1] + message[line][column:]
                         column -= 1
                         conn.Sendallbin(i_char)
-                    elif (ord(i_char) == P.INSERT) and (40 > len(message[line]) > 0) and (column < len(message[line])):   # Insert blank space
+                    elif (ord(i_char) == ckeys['INSERT']) and (40 > len(message[line]) > 0) and (column < len(message[line])):   # Insert blank space
                         message[line] = message[line][0:column] + ' ' + message[line][column:]
                         conn.Sendallbin(i_char)
-                    elif ord(i_char) == P.F8:                                               # Finish editing
+                    elif ord(i_char) == quit_k[0]:                                               # Finish editing
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(line+3,32))
                         else:
@@ -274,7 +283,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         else:                   # Keep editing
                             conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
                             edit = False
-                    elif ord(i_char) == P.F7:   # Select line to edit
+                    elif ord(i_char) == line_k[0]:   # Select line to edit
                         tline = ' ' if len (message[line]) == 0 else message[line]
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(line+3,32))
@@ -283,12 +292,12 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         conn.SendTML(f'<WINDOW top=3 bottom=21><AT x=0 y={line}>{_dec(message[line])}'
                                      f'<WINDOW top=23 bottom=24><CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
                         edit = False
-                    elif ord(i_char) == P.F1:   # Display help screen
+                    elif ord(i_char) == help_k[0]:   # Display help screen
                         conn.SendTML('<WINDOW top=3 bottom=21><CLR>'
                                      '<YELLOW><BR>     ---Line editor instructions---<BR>'
                                      '<BR>This editor allows you to type and edit a single line at a time.<BR>'
                                      'INS/DEL and CLR/HOME are supported<BR>'
-                                     'Press RETURN to accept a line<BR>F7 to select a new line<BR>F8 to send/abort message<BR>'
+                                     f'Press RETURN to accept a line<BR>{line_k[1]} to select a new line<BR>{quit_k[1]} to send/abort message<BR>'
                                      '<BR>Press any key to continue...')
                         conn.Receive(1)
                         dispMsg()
@@ -314,10 +323,10 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                                 column = 0
                             conn.SendTML(f'<PAUSE n=0.5><WINDOW top=23 bottom=24><CLR>{_dec(message[line])}<HOME>')  # Update edit window
                 else:   # Selecting line to edit
-                    if (ord(i_char) == P.CRSR_DOWN) and (line < 17):
+                    if (ord(i_char) == ckeys['CRSRD']) and (line < 17):
                         line += 1
                         conn.Sendallbin(i_char)
-                    elif (ord(i_char) == P.CRSR_UP) and (line > 0):
+                    elif (ord(i_char) == ckeys['CRSRU']) and (line > 0):
                         line -= 1
                         conn.Sendallbin(i_char)
                     elif i_char == b'\r':
@@ -399,6 +408,7 @@ def inbox(conn:Connection, board):
     _dec = conn.encoder.decode
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
+    ckeys = conn.encoder.ctrlkeys
     db:DBase = conn.bbs.database
     conn.SendTML('<SETOUTPUT><NUL n=2><TEXT>')
     query = {'msg_board':board,'msg_parent':0}
@@ -471,9 +481,9 @@ def inbox(conn:Connection, board):
             if pos != o_pos:
                 conn.Sendall(TT.set_CRSR(0,pos)+'>')
                 o_pos = pos
-            k = conn.ReceiveKey(bytes(chr(P.CRSR_DOWN)+chr(P.CRSR_UP)+chr(P.CRSR_LEFT)+chr(P.CRSR_RIGHT)+'FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
+            k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]) + bytes('FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
             if len(threads) > 0:
-                if ord(k) == P.CRSR_DOWN:
+                if ord(k) == ckeys['CRSRD']:
                     if pos+1 < (len(threads)-(19*page)):    # move down
                         if pos < 18:
                             pos += 1
@@ -481,18 +491,18 @@ def inbox(conn:Connection, board):
                         elif len(threads)>(19*(page+1)):
                             page +=1
                             break
-                elif ord(k) == P.CRSR_UP:                   # move up
+                elif ord(k) == ckeys['CRSRU']:                   # move up
                     if pos > 0:
                         pos -= 1
                         conn.SendTML('<CRSRL> ')
                     elif page > 0:
                         page -= 1
                         break
-                elif ord(k) == P.CRSR_RIGHT:                 # next page
+                elif ord(k) == ckeys['CRSRR']:                 # next page
                     if len(threads)>(19*(page+1)):
                         page +=1
                         break
-                elif ord(k) == P.CRSR_LEFT:                # previous page
+                elif ord(k) == ckeys['CRSRL']:                # previous page
                     if page > 0:
                         page -= 1
                         break

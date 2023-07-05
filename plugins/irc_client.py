@@ -30,7 +30,7 @@ def plugFunction(conn:Connection,server,port,channel):
 
     running = False
 
-    kfilter = P.NONPRINTABLE.copy()
+    kfilter = conn.encoder.non_printable.copy()
     kfilter.append('\r')
     
     nickname = ''
@@ -302,7 +302,7 @@ Accepted commands:
                         printchat(msg)
                         message =''
                 elif len(message)<79:
-                    if chr(i_char[0]) == chr(P.DELETE):
+                    if chr(i_char[0]) == conn.encoder.bs:
                         if message != '':
                             message = message[:-1]
                             conn.Sendallbin(i_char)

@@ -231,6 +231,10 @@ def _GetPCMLength(filename):
 #Send Audio file
 ######################################################################
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
+
+	if conn.QueryFeature(TT.STREAM) >= 0x80:	#Exit if terminal doesn't support PCM streaming
+		return
+
 	bnoise = b'\x10\x01'
 	CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
 
@@ -528,6 +532,9 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 	player = ""
 	subtune = 1
 	order = 0
+
+	if conn.QueryFeature(TT.CHIPSTREAMSTREAM) >= 0x80:	#Exit if terminal doesn't support chiptune streaming
+		return
 
 	tmp,ext = os.path.splitext(filename)
 

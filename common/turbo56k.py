@@ -11,7 +11,8 @@ LADDR       = 0x80  #Transfer Address - Parameters: addr-lo, addr-hi
 PRADDR      = 0x81  #Preset Transfer Address - Parameter: Preset number
 BLKTR       = 0x82  #Transfer block - Parameters: lenght-lo, lenght-hi
 STREAM      = 0x83  #Audio Stream, byte 0 stops the stream
-SIDSTREAM   = 0x84  #SID Stream
+SIDSTREAM   = 0x84  #SID Stream (Chiptune stream alias)
+CHIPSTREAM  = 0x84  #Chiptune Stream
 SIDORD      = 0x85  #Set the register write order for the SID Stream
 FILETR      = 0x86  #File Transfer
 

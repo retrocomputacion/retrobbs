@@ -1,31 +1,30 @@
 ########### Style ############
 # Quite lean for now
 from common.connection import Connection
-from common import petscii as P
 from common import turbo56k as TT
 from common import helpers as H
-from enum import Enum
 from common.classes import bbsstyle
 
 default_style = bbsstyle()
 
-# Default colors (in c64 palette index)
-default_style.BgColor		= P.PALETTE[P.BLACK]		#Background color
-default_style.BoColor		= P.PALETTE[P.BLACK]		#Border color
-default_style.TxtColor		= P.PALETTE[P.GREY3]		#Main text color
-default_style.HlColor		= P.PALETTE[P.WHITE]		#Highlight text color
-### Menu specific colors ###
-default_style.OoddColor		= P.PALETTE[P.LT_BLUE]		#Odd option key color
-default_style.ToddColor		= P.PALETTE[P.GREY3]		#Odd option text color
-default_style.OevenColor	= P.PALETTE[P.CYAN]			#Even option key color
-default_style.TevenColor	= P.PALETTE[P.YELLOW]		#Even option text color
-default_style.MenuTColor1	= P.PALETTE[P.CYAN]			#Menu title border color 1
-default_style.MenuTColor2	= P.PALETTE[P.LT_GREEN]		#Menu title border color 2
-default_style.SBorderColor1	= P.PALETTE[P.LT_GREEN]		#Section border color 1
-default_style.SBorderColor2	= P.PALETTE[P.GREEN]		#Section border color 1
-### [Prompt] ###
-default_style.PbColor		= P.PALETTE[P.YELLOW]		#Key prompt brackets color
-default_style.PtColor		= P.PALETTE[P.LT_BLUE]		#Key prompt text color
+# # Default colors (in c64 palette index)
+# default_style.BgColor		= P.PALETTE[P.BLACK]		#Background color
+# default_style.BoColor		= P.PALETTE[P.BLACK]		#Border color
+# default_style.TxtColor		= P.PALETTE[P.GREY3]		#Main text color
+# default_style.HlColor		= P.PALETTE[P.WHITE]		#Highlight text color
+# default_style.RvsColor		= P.PALETTE[P.LT_GREEN]		#Reverse text color
+# ### Menu specific colors ###
+# default_style.OoddColor		= P.PALETTE[P.LT_BLUE]		#Odd option key color
+# default_style.ToddColor		= P.PALETTE[P.GREY3]		#Odd option text color
+# default_style.OevenColor	= P.PALETTE[P.CYAN]			#Even option key color
+# default_style.TevenColor	= P.PALETTE[P.YELLOW]		#Even option text color
+# default_style.MenuTColor1	= P.PALETTE[P.CYAN]			#Menu title border color 1
+# default_style.MenuTColor2	= P.PALETTE[P.LT_GREEN]		#Menu title border color 2
+# default_style.SBorderColor1	= P.PALETTE[P.LT_GREEN]		#Section border color 1
+# default_style.SBorderColor2	= P.PALETTE[P.GREEN]		#Section border color 1
+# ### [Prompt] ###
+# default_style.PbColor		= P.PALETTE[P.YELLOW]		#Key prompt brackets color
+# default_style.PtColor		= P.PALETTE[P.LT_BLUE]		#Key prompt text color
 
 def RenderMenuTitle(conn:Connection,title):
 	if type(title) == tuple:

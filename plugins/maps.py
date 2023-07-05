@@ -10,7 +10,6 @@ from common.bbsdebug import _LOG
 from common.imgcvt import gfxmodes, PreProcess, dithertype
 from common import filetools as FT
 from common import turbo56k as TT
-from common import petscii as P
 from geopy.geocoders import Photon, Nominatim
 
 
@@ -126,6 +125,8 @@ def plugFunction(conn:Connection):
     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
     cpos = [1,1]
 
+    ckeys = conn.encoder.ctrlkeys
+
     display = True
     retrieve = True
     while conn.connected:
@@ -150,7 +151,7 @@ def plugFunction(conn:Connection):
             FT.SendBitmap(conn,mwindow.convert('1'),gfxmode=gfxmodes.C64HI,preproc=PreProcess())
             display = False
 
-        k = conn.ReceiveKey(b'_+-\r'+bytes([P.CRSR_DOWN,P.CRSR_UP,P.CRSR_LEFT,P.CRSR_RIGHT]))
+        k = conn.ReceiveKey(b'_+-\r'+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]))
         if (k == b'-') and (zoom > 3):
             zoom -= 1
             ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Tile containing "loc"
@@ -167,7 +168,7 @@ def plugFunction(conn:Connection):
             display = True
             retrieve = True
             cpos=[1,1]
-        elif ord(k) == P.CRSR_DOWN:
+        elif ord(k) == ckeys['CRSRD']:
             if ymax+sh >= 256*ytiles:
                 ctiley += 1
                 tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
@@ -184,7 +185,7 @@ def plugFunction(conn:Connection):
                     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]-(dppy*sh),loc[1])
                 display = True
-        elif ord(k) == P.CRSR_UP:
+        elif ord(k) == ckeys['CRSRU']:
             if ymin-sh < 0:
                 ctiley -= 1
                 tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
@@ -201,7 +202,7 @@ def plugFunction(conn:Connection):
                     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]+(dppy*sh),loc[1])
                 display = True
-        elif ord(k) == P.CRSR_RIGHT:
+        elif ord(k) == ckeys['CRSRR']:
             lon = loc[1]+(dppx*sw)
             if lon > 180:   #wrap around
                 lon -= 360
@@ -215,7 +216,7 @@ def plugFunction(conn:Connection):
             else:
                 if delta[1]+sw >= 256:
                     cpos[0]+=1
-        elif ord(k) == P.CRSR_LEFT:
+        elif ord(k) == ckeys['CRSRL']:
             lon = loc[1]-(dppx*sw)
             if lon < -180:   #wrap around
                 lon += 360

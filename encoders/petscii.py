@@ -19,6 +19,7 @@ RVS_OFF = 0x92
 #--Plus/4
 FLASH_ON = 0x82
 FLASH_OFF = 0x84
+ESC = 0x1B
 
 #--Special chars
 POUND = 0x5C
@@ -138,8 +139,11 @@ def _Register():
                  'LIGHT_GREY':15,'DARK_GREY':11, 'MEDIUM_GREY':12, 'GREY':12}
     e0.non_printable = NONPRINTABLE
     e0.nl = '\r' # New line string
+    e0.bs = chr(DELETE)
     e0.def_gfxmode = gfxmodes.C64MULTI
     e0.gfxmodes = (gfxmodes.C64HI,gfxmodes.C64MULTI)
+    e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,
+                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
 
     e1 = Encoder('PET264')
     e1.tml_mono  = t_mono['PET264']
@@ -153,6 +157,9 @@ def _Register():
                  'DARK_GREEN':0x2F,'MAGENTA':0x4B,'DARK_RED':0x12}
     e1.non_printable = NONPRINTABLE
     e1.nl = '\r' # New line string
+    e1.bs = chr(DELETE)
     e1.def_gfxmode = gfxmodes.P4HI
     e1.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
+    e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'HELP':HELP,
+                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER, 'ESC':ESC}
     return [e0,e1]  #Each encoder module can return more than one encoder object. For example here it could also return PET128.

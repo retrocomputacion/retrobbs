@@ -314,7 +314,6 @@ def load_Image(filename:str):
             ncell = np.copy(cell)
             for k,v in fgbg.items():
                 ncell[cell==k] = v
-
             sr = int(c/40)*8
             er = sr+8
             sc = (c*4)%160

@@ -380,7 +380,7 @@ Configuration file parameter keys:
 | `entryZsubt` | Subtune to play
 
 
-### Function SIDPLAY: __DEPRECATED!__ use CHIPPLAY instead
+### Function SIDPLAY: __-DEPRECATED-!__ use CHIPPLAY instead
 Streams the specified .SID or .MUS music file.
 
 Configuration file parameter keys:
@@ -643,7 +643,7 @@ Stream register writes data to the guest's sound chip
 - **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
 
-### SIDStream(conn, filename,ptime, dialog=True): __DEPRECATED!__ Use CHIPStream instead
+### SIDStream(conn, filename,ptime, dialog=True): __-DEPRECATED-!__ Use CHIPStream instead
 Stream a SID file to **\<conn\>**
 - **\<filename\>**: Path to the SID file
 - **\<ptime\>**: Playtime in seconds
@@ -672,7 +672,7 @@ Prints **\<message\>** on stdout. **\<message\>** can be any expression valid fo
 
 Also defined in this module is the <bcolors> class, which enumerates a few ANSI codes for use in the log messages.
 
-## common.c64cvt - Image conversion to raw C64 formats: (DEPRECATED)
+## common.c64cvt - Image conversion to raw C64 formats: (__-DEPRECATED-__)
 
 ### c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
 Converts PIL image object **\<Source\>** into C64 graphic data.
@@ -875,7 +875,7 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 
 **valid_keys**: A string containing the valid characters to be used as user input.
 
-**menu_colors**: List containing the odd/even color pairs for menu entries.
+**menu_colors**: List containing the odd/even color pairs for menu entries __-DEPRECATED-__.
 
 **font_bold**: Default bold Imagefont for use on bitmaps, 16px height.
 

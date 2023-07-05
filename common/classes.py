@@ -58,14 +58,16 @@ class Encoder:
         self.colors = {}		#	Dictionary of named colors -> color index
         self.non_printable = []	#	List of non printable characters
         self.nl	= '\n'			#	New line string/character
+        self.bs = '\x08'		#	Backspace string/character
         self.def_gfxmode = None	#	Default graphic mode (gfxmodes enum)
         self.gfxmodes = ()		#	List of valid graphic modes
+        self.ctrlkeys = {}		#	Named control keys (cursors, function keys, etc)
 
     def color_index(self, code):
        return self.palette.get(code,-1)
 
 SCOLOR = Enum('style_colors',
-	      [ 'BgColor','BoColor','TxtColor','HlColor',
+	      [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
 			'OoddColor','ToddColor','OevenColor','TevenColor',
 			'MenuTColor1','MenuTColor2','SBorderColor1','SBorderColor2',
 			'PbColor','PtColor'])
@@ -78,6 +80,7 @@ class bbsstyle:
 			self.BoColor		= colors['BLACK']		#Border color
 			self.TxtColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Main text color
 			self.HlColor		= colors['WHITE']		#Highlight text color
+			self.RvsColor		= colors['LIGHT_GREEN']	#Reverse text color
 			### Menu specific colors ###
 			self.OoddColor		= colors['LIGHT_BLUE']	#Odd option key color
 			self.ToddColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Odd option text color
@@ -110,6 +113,8 @@ class bbsstyle:
 				self.TxtColor		= index
 			elif color == SCOLOR.HlColor:
 				self.HlColor		= index
+			elif color == SCOLOR.RvsColor:
+				self.RvsColor
 			elif color == SCOLOR.OoddColor:
 				self.OoddColor		= index
 			elif color == SCOLOR.ToddColor:
