@@ -4,6 +4,7 @@
 from common.dbase import DBase
 import time
 from enum import Enum
+import os
 
 ########### BBS Class ###########
 
@@ -62,10 +63,17 @@ class Encoder:
         self.def_gfxmode = None	#	Default graphic mode (gfxmodes enum)
         self.gfxmodes = ()		#	List of valid graphic modes
         self.ctrlkeys = {}		#	Named control keys (cursors, function keys, etc)
+        self.bbuffer = 0x0000	#	Bottom address of the client's buffer
+        self.tbuffer = 0x0000	#	Top address/size of the client's buffer
 
     def color_index(self, code):
        return self.palette.get(code,-1)
 
+    # Function to check if a file will fit into the client's buffer 
+    def check_fit(self, filename):
+        stats = os.stat(filename)
+        return stats.st_size <= (self.tbuffer-self.bbuffer)
+    
 SCOLOR = Enum('style_colors',
 	      [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
 			'OoddColor','ToddColor','OevenColor','TevenColor',

@@ -366,7 +366,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     _LOG(logtext,id=conn.id, v=4)
     # Send speech message
     conn.Sendall(TT.to_Speech() + speech)
-    time.sleep(1)
+    #time.sleep(1)
     # Select screen output
     conn.SendTML('<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
 
@@ -437,7 +437,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     conn.SendTML(f'<AT x=1 y=23><GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
                 f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
-    time.sleep(1)
+    #time.sleep(1)
     # Select screen output
     conn.Sendall(TT.to_Screen())
     return MenuDic

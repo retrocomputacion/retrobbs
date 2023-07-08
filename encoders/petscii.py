@@ -2,6 +2,7 @@ import unicodedata
 import re
 from common.classes import Encoder
 from common.imgcvt import gfxmodes
+import os
 
 #PETSCII constants
 
@@ -108,6 +109,27 @@ t_multi['PET264'] = t_multi['PET64']
 Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"'}
 Urep = dict((re.escape(k), v) for k, v in Urep.items()) 
 
+# Petscii encoder subclass
+class PETencoder(Encoder):
+    def __init__(self, name:str) -> None:
+        super().__init__(name)
+        self.encode = toPETSCII	#	Function to encode from ASCII/Unicode
+        self.decode = toASCII	#	Function to decode to ASCII/Unicode
+        self.non_printable = NONPRINTABLE	#	List of non printable characters
+        self.nl	= '\r'			#	New line string/character
+        self.bs = chr(DELETE)	#	Backspace string/character
+
+    def check_fit(self, filename):
+        size = os.stat(filename).st_size-2
+        with open(filename,'rb') as f:
+            la = f.read(2)
+            la = la[0]|(la[1]<<8)
+        if la < self.bbuffer or la > self.tbuffer:
+            return False
+        elif la + size > self.tbuffer:
+            return False
+        return True
+
 # Convert ASCII/unicode text to PETSCII
 # full = True for aditional glyph visual conversion
 #        False for simple upper-lower case swapping
@@ -128,36 +150,40 @@ def toASCII(text):
 
 # Register with the encoder module
 def _Register():
-    e0 = Encoder('PET64')
+    e0 = PETencoder('PET64')
     e0.tml_mono  = t_mono['PET64']
     e0.tml_multi = t_multi['PET64']
-    e0.encode = toPETSCII
-    e0.decode = toASCII
+    e0.bbuffer = 0x02ed #Bottom of the buffer
+    e0.tbuffer = 0xbfff #Top of the buffer
+    #e0.encode = toPETSCII
+    #e0.decode = toASCII
     e0.palette = PALETTE
     e0.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
                  'ORANGE':8,'BROWN':9,  'PINK':10,  'GREY1':11, 'GREY2':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'GREY3':15,
                  'LIGHT_GREY':15,'DARK_GREY':11, 'MEDIUM_GREY':12, 'GREY':12}
-    e0.non_printable = NONPRINTABLE
-    e0.nl = '\r' # New line string
-    e0.bs = chr(DELETE)
+    #e0.non_printable = NONPRINTABLE
+    #e0.nl = '\r' # New line string
+    #e0.bs = chr(DELETE)
     e0.def_gfxmode = gfxmodes.C64MULTI
     e0.gfxmodes = (gfxmodes.C64HI,gfxmodes.C64MULTI)
     e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
 
-    e1 = Encoder('PET264')
+    e1 = PETencoder('PET264')
     e1.tml_mono  = t_mono['PET264']
     e1.tml_multi = t_multi['PET264']
-    e1.encode = toPETSCII
-    e1.decode = toASCII
+    e1.bbuffer = 0x0800 #Bottom of the buffer
+    e1.tbuffer = 0x6fff #Top of the buffer
+    #e1.encode = toPETSCII
+    #e1.decode = toASCII
     e1.palette = PALETTE264
     e1.colors = {'BLACK':0,    'WHITE':0x71,  'RED':0x32  ,'CYAN':0x63 ,'PURPLE':0x34,'GREEN':0x45 ,'BLUE':0x26 ,'YELLOW':0x67,
                  'ORANGE':0x48,'BROWN':0x29,  'PINK':0x52 ,'GREY1':0x31,'GREY2':0x41 ,'LIGHT_GREEN':0x65,'LIGHT_BLUE':0x46,'GREY3':0x51,
                  'LIGHT_GREY':0x51 ,'DARK_GREY':0x31,  'MEDIUM_GREY':0x41,'GREY':0x41,
                  'DARK_GREEN':0x2F,'MAGENTA':0x4B,'DARK_RED':0x12}
-    e1.non_printable = NONPRINTABLE
-    e1.nl = '\r' # New line string
-    e1.bs = chr(DELETE)
+    #e1.non_printable = NONPRINTABLE
+    #e1.nl = '\r' # New line string
+    #e1.bs = chr(DELETE)
     e1.def_gfxmode = gfxmodes.P4HI
     e1.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
     e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'HELP':HELP,

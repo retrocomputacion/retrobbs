@@ -28,35 +28,35 @@ from crc import Calculator, Configuration
 #			Bit 7: 0: View Image | 1: Save image
 ########################################################################
 def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
-	S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
-	keys= b'\r'
-	tml = ''
-	if width != 0:
-		tml += f'''<RVSON> Original size: {width}x{height}<BR><BR>
+    S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
+    keys= b'\r'
+    tml = ''
+    if width != 0:
+        tml += f'''<RVSON> Original size: {width}x{height}<BR><BR>
 <RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; form multicolor conversion<BR>
 <RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
-		keys += b'HM'
-	if save:
-		tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
-		keys += b'S'
-	tml += '<RVSON> &lt; RETURN &gt; to view image<BR><CURSOR enable=False>'
-	conn.SendTML(tml)
-	out = 1
-	while conn.connected:
-		k = conn.ReceiveKey(keys)
-		if k == b'H' and out == 1:
-			conn.SendTML('<RVSON><AT x=1 y=5> <CRSRD><CRSRL>*')
-			out = 0
-		elif k == b'M' and out == 0:
-			conn.SendTML('<RVSON><AT x=1 y=6> <CRSRU><CRSRL>*')
-			out = 1
-		elif k == b'S':
-			out |= 0x80
-			break
-		elif k == b'\r':
-			break
-	conn.SendTML('<RVSON><CURSOR>')
-	return out
+        keys += b'HM'
+    if save:
+        tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
+        keys += b'S'
+    tml += '<RVSON> &lt; RETURN &gt; to view image<BR><CURSOR enable=False>'
+    conn.SendTML(tml)
+    out = 1
+    while conn.connected:
+        k = conn.ReceiveKey(keys)
+        if k == b'H' and out == 1:
+            conn.SendTML('<RVSON><AT x=1 y=5> <CRSRD><CRSRL>*')
+            out = 0
+        elif k == b'M' and out == 0:
+            conn.SendTML('<RVSON><AT x=1 y=6> <CRSRU><CRSRL>*')
+            out = 1
+        elif k == b'S':
+            out |= 0x80
+            break
+        elif k == b'\r':
+            break
+    conn.SendTML('<RVSON><CURSOR>')
+    return out
 
 ###########################################################
 # Send bitmap image
@@ -71,175 +71,175 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 ###########################################################
 def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:PreProcess = None, cropmode:cropmodes = cropmodes.FILL, dither:dithertype = dithertype.BAYER8):
 
-	if gfxmode == None:
-		gfxmode = conn.encoder.def_gfxmode
-	
-	if conn.mode == 'PET64':
-		gfxhi = gfxmodes.C64HI
-		gfxmulti = gfxmodes.C64MULTI
-	elif conn.mode == 'PET264':
-		gfxhi = gfxmodes.P4HI
-		gfxmulti = gfxmodes.P4MULTI
+    if gfxmode == None:
+        gfxmode = conn.encoder.def_gfxmode
+    
+    if conn.mode == 'PET64':
+        gfxhi = gfxmodes.C64HI
+        gfxmulti = gfxmodes.C64MULTI
+    elif conn.mode == 'PET264':
+        gfxhi = gfxmodes.P4HI
+        gfxmulti = gfxmodes.P4MULTI
 
-	ftitle = {'.GIF':' GIF  Image ', '.PNG':' PNG  Image ', '.JPEG':' JPEG Image ', '.JPG':' JPEG Image '}
+    ftitle = {'.GIF':' GIF  Image ', '.PNG':' PNG  Image ', '.JPEG':' JPEG Image ', '.JPG':' JPEG Image '}
 
-	fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
-	fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
+    fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
+    fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
 
-	# Find image format
-	data = [None]*3
-	bgcolor = None
-	border = None
+    # Find image format
+    data = [None]*3
+    bgcolor = None
+    border = None
 
-	mode = 1 if gfxmode == gfxmulti else 0
-	save &= conn.QueryFeature(TT.FILETR) < 0x80
-	pimg = None
-	convert = False
-	Source = None
+    mode = 1 if gfxmode == gfxmulti else 0
+    save &= conn.QueryFeature(TT.FILETR) < 0x80
+    pimg = None
+    convert = False
+    Source = None
 
-	if type(filename)==str:
-		extension = os.path.splitext(filename)[1].upper()
-		if extension not in ['.GIF','.PNG','.JPG','JPEG']:
-			pimg = open_Image(filename)
-			if pimg == None:	#Invalid file, exit
-				return
-			elif pimg[1] not in conn.encoder.gfxmodes:	#Image from another platform, convert
-				convert = True
-				Source = pimg[0]
-				if preproc == None:
-					preproc = PreProcess()
-				cropmode: cropmodes.TOP
-				if gfxmode == None:
-					gfxmode = mode_conv[conn.mode][pimg[1]]
-			else:
-				gfxmode = pimg[1]
-				data = pimg[2]
-			text = pimg[4]
-			border = pimg[3][0]
-			gcolors = pimg[3]
-		else:
-			text = ftitle[extension]
-			convert = True
-	else:
-		convert = True
+    if type(filename)==str:
+        extension = os.path.splitext(filename)[1].upper()
+        if extension not in ['.GIF','.PNG','.JPG','JPEG']:
+            pimg = open_Image(filename)
+            if pimg == None:	#Invalid file, exit
+                return
+            elif pimg[1] not in conn.encoder.gfxmodes:	#Image from another platform, convert
+                convert = True
+                Source = pimg[0]
+                if preproc == None:
+                    preproc = PreProcess()
+                cropmode: cropmodes.TOP
+                if gfxmode == None:
+                    gfxmode = mode_conv[conn.mode][pimg[1]]
+            else:
+                gfxmode = pimg[1]
+                data = pimg[2]
+            text = pimg[4]
+            border = pimg[3][0]
+            gcolors = pimg[3]
+        else:
+            text = ftitle[extension]
+            convert = True
+    else:
+        convert = True
 
-	if convert:
-		# or bytes/image object sent as filename parameter
-		conn.SendTML('<CBM-B><CRSRL>')
-		# try:
-		if Source == None:
-			if type(filename)==str:
-				Source = Image.open(filename)
-			elif type(filename)==bytes:
-				Source = Image.open(BytesIO(filename))
-			elif isinstance(filename,Image.Image):
-				Source = filename
-		Source = Source.convert("RGB")
-		if dialog:
-			mode = ImageDialog(conn,text,Source.size[0],Source.size[1],save)
-			if mode < 0:
-				return()
-			conn.SendTML('<CBM-B><CRSRL>')
-		else:
-			mode = 1 if (gfxmode == gfxmulti) else 0
-		gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
-		if preproc == None and conn.mode == 'PET264':
-			preproc = PreProcess(1,1.5,1.5)
-		cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither)
-		Source.close()
-		bgcolor = bytes([gcolors[0]])	#Convert[4].to_bytes(1,'little')
-		gcolors = [gcolors[0]]+gcolors # Border color = bgcolor
-		#
-		border = bgcolor if border == None else bytes([border])
-	elif pimg != None and dialog:
-		mode = ImageDialog(conn,text,save=save)
+    if convert:
+        # or bytes/image object sent as filename parameter
+        conn.SendTML('<CBM-B><CRSRL>')
+        # try:
+        if Source == None:
+            if type(filename)==str:
+                Source = Image.open(filename)
+            elif type(filename)==bytes:
+                Source = Image.open(BytesIO(filename))
+            elif isinstance(filename,Image.Image):
+                Source = filename
+        Source = Source.convert("RGB")
+        if dialog:
+            mode = ImageDialog(conn,text,Source.size[0],Source.size[1],save)
+            if mode < 0:
+                return()
+            conn.SendTML('<CBM-B><CRSRL>')
+        else:
+            mode = 1 if (gfxmode == gfxmulti) else 0
+        gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
+        if preproc == None and conn.mode == 'PET264':
+            preproc = PreProcess(1,1.5,1.5)
+        cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither)
+        Source.close()
+        bgcolor = bytes([gcolors[0]])	#Convert[4].to_bytes(1,'little')
+        gcolors = [gcolors[0]]+gcolors # Border color = bgcolor
+        #
+        border = bgcolor if border == None else bytes([border])
+    elif pimg != None and dialog:
+        mode = ImageDialog(conn,text,save=save)
 
 
-	tchars = 40*lines
-	tbytes = 320*lines
+    tchars = 40*lines
+    tbytes = 320*lines
 
-	if mode & 0x80 == 0:	# Transfer to memory
-		# Sync
-		binaryout = b'\x00'
-		# Enter command mode
-		binaryout += b'\xFF'
-		# Set the transfer pointer + $10 (bitmap memory)
-		binaryout += b'\x81\x10'
-		# Transfer bitmap block + Byte count (low, high)
-		binaryout += b'\x82'
-		binaryout += tbytes.to_bytes(2,'little')	#Block size
-		# Bitmap data
-		binaryout += data[0][0:tbytes] #Bitmap
-		# Set the transfer pointer + $00 (screen memory)
-		binaryout += b'\x81\x00'
-		# Transfer screen block + Byte count (low, high)
-		binaryout += b'\x82'
-		binaryout += tchars.to_bytes(2,'little')	#Block size
-		# Screen Data
-		binaryout += data[1][0:tchars] #Screen
+    if mode & 0x80 == 0:	# Transfer to memory
+        # Sync
+        binaryout = b'\x00'
+        # Enter command mode
+        binaryout += b'\xFF'
+        # Set the transfer pointer + $10 (bitmap memory)
+        binaryout += b'\x81\x10'
+        # Transfer bitmap block + Byte count (low, high)
+        binaryout += b'\x82'
+        binaryout += tbytes.to_bytes(2,'little')	#Block size
+        # Bitmap data
+        binaryout += data[0][0:tbytes] #Bitmap
+        # Set the transfer pointer + $00 (screen memory)
+        binaryout += b'\x81\x00'
+        # Transfer screen block + Byte count (low, high)
+        binaryout += b'\x82'
+        binaryout += tchars.to_bytes(2,'little')	#Block size
+        # Screen Data
+        binaryout += data[1][0:tchars] #Screen
 
-		if border == None:
-			border = b'\x00' if bgcolor == None else bgcolor
+        if border == None:
+            border = b'\x00' if bgcolor == None else bgcolor
 
-		border = bytes([border]) if type(border) == int else border
+        border = bytes([border]) if type(border) == int else border
 
-		if (gfxmode == gfxmulti) or (conn.mode == 'PET264' and data[2] != None):
-			# Set the transfer pointer + $20 (color memory)
-			binaryout += b'\x81\x20'
-			# Transfer color block + Byte count (low, high)
-			binaryout += b'\x82'	# Color data
-			binaryout += tchars.to_bytes(2,'little')	#Block size
-			binaryout += data[2][0:tchars] #ColorRAM
-		if bgcolor == None:
-			bgcolor = bytes([gcolors[1]]) if gcolors[1] != None else b'\x00'
-		if display:
-			if gfxmode == gfxmulti:
-				# Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
-				binaryout += b'\x92\x00'
-				binaryout += border
-				binaryout += bgcolor
-				if conn.mode == 'PET264':
-					#mcolor2 = gcolors[1].to_bytes(1,'big')
-					binaryout += gcolors[4].to_bytes(1,'big')
-			else:
-				# Switch to hires mode + Page number: 0 (default) + Border color: border
-				binaryout += b'\x91\x00'
-				binaryout += border
-		# Exit command mode
-		binaryout += b'\xFE'
-		if display:
-			conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
-		conn.Sendallbin(binaryout)
-		return bgcolor
-	else:
-		savename = os.path.splitext(os.path.basename(filename))[0]
-		if conn.mode in ['PET64','PET264']:
-			savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-		
-		binaryout, savename = build_File(data,gcolors,savename, gfxmode)
-		# if gfxmode == gfxmodes.C64MULTI:
-		# 	binaryout = b'\x00\x20' # Advanced Art Studio Load address
-		# 	binaryout += data[0][0:tbytes] #Bitmap
-		# 	binaryout += data[1][0:tchars] #Screen
-		# 	binaryout += bytes([border])
-		# 	if bgcolor == None:
-		# 		bgcolor = bytes([gcolors[0]])
-		# 	binaryout += bgcolor
-		# 	binaryout += b'\x00'*14
-		# 	binaryout += data[2][0:tchars] #ColorRAM
-		# 	savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
-		# else:
-		# 	binaryout = b'\x00\x20' # Art Studio Load address
-		# 	binaryout += data[0][0:tbytes] #Bitmap
-		# 	binaryout += data[1][0:tchars] #Screen
-		# 	binaryout += border
-		# 	savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
-		if TransferFile(conn, binaryout, savename):
-			conn.SendTML(fok)
-		else:
-			conn.SendTML(fabort)
-		conn.SendTML('<KPROMPT t=RETURN>')
-		return
+        if (gfxmode == gfxmulti) or (conn.mode == 'PET264' and data[2] != None):
+            # Set the transfer pointer + $20 (color memory)
+            binaryout += b'\x81\x20'
+            # Transfer color block + Byte count (low, high)
+            binaryout += b'\x82'	# Color data
+            binaryout += tchars.to_bytes(2,'little')	#Block size
+            binaryout += data[2][0:tchars] #ColorRAM
+        if bgcolor == None:
+            bgcolor = bytes([gcolors[1]]) if gcolors[1] != None else b'\x00'
+        if display:
+            if gfxmode == gfxmulti:
+                # Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
+                binaryout += b'\x92\x00'
+                binaryout += border
+                binaryout += bgcolor
+                if conn.mode == 'PET264':
+                    #mcolor2 = gcolors[1].to_bytes(1,'big')
+                    binaryout += gcolors[4].to_bytes(1,'big')
+            else:
+                # Switch to hires mode + Page number: 0 (default) + Border color: border
+                binaryout += b'\x91\x00'
+                binaryout += border
+        # Exit command mode
+        binaryout += b'\xFE'
+        if display:
+            conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
+        conn.Sendallbin(binaryout)
+        return bgcolor
+    else:
+        savename = os.path.splitext(os.path.basename(filename))[0]
+        if conn.mode in ['PET64','PET264']:
+            savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+        
+        binaryout, savename = build_File(data,gcolors,savename, gfxmode)
+        # if gfxmode == gfxmodes.C64MULTI:
+        # 	binaryout = b'\x00\x20' # Advanced Art Studio Load address
+        # 	binaryout += data[0][0:tbytes] #Bitmap
+        # 	binaryout += data[1][0:tchars] #Screen
+        # 	binaryout += bytes([border])
+        # 	if bgcolor == None:
+        # 		bgcolor = bytes([gcolors[0]])
+        # 	binaryout += bgcolor
+        # 	binaryout += b'\x00'*14
+        # 	binaryout += data[2][0:tchars] #ColorRAM
+        # 	savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
+        # else:
+        # 	binaryout = b'\x00\x20' # Art Studio Load address
+        # 	binaryout += data[0][0:tbytes] #Bitmap
+        # 	binaryout += data[1][0:tchars] #Screen
+        # 	binaryout += border
+        # 	savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
+        if TransferFile(conn, binaryout, savename):
+            conn.SendTML(fok)
+        else:
+            conn.SendTML(fabort)
+        conn.SendTML('<KPROMPT t=RETURN>')
+        return
 
 #####################################################################################
 # Sends a file to the client, calls the adequate function according to the filetype
@@ -250,84 +250,97 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 # save: Allow file downloading to disk
 ###########################################
 def SendFile(conn:Connection,filename, dialog = False, save = False):
-	fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
-	fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
-	if os.path.exists(filename):
-		ext = os.path.splitext(filename)[1].upper()
-		if ext == '.PRG':
-			if dialog:
-				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program', save = save)
-			else:
-				res = 1+(1*save)
-			if res == 1:
-				SendProgram(conn,filename)
-			elif res == 2:
-				savename = os.path.splitext(os.path.basename(filename))[0].upper()
-				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-				if TransferFile(conn,filename, savename[:16]):
-					conn.SendTML(fok)
-				else:
-					conn.SendTML(fabort)
-				conn.SendTML('<KPROMPT t=RETURN>')
-				conn.ReceiveKey()
-			return
-		elif ext in ['.SEQ','.TXT']:
-			if dialog:
-				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Sequential/Text File', 'view', save = save)
-			else:
-				res = 1+(1*save)
-			if res == 1:
-				title = 'Viewing text file' if ext == '.TXT' else ''
-				SendText(conn,filename,title)
-			elif res == 2:
-				if ext == '.TXT':
-					if len(os.path.basename(filename)) > 16:
-						fn = os.path.splitext(os.path.basename(filename))
-						savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
-					else:
-						savename = os.path.basename(filename).upper()
-				else:
-					savename = os.path.splitext(os.path.basename(filename))[0].upper()
-				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-				if TransferFile(conn,filename, savename[:16],True):
-					conn.SendTML(fok)
-				else:
-					conn.SendTML(fabort)
-				conn.SendTML('<KPROMPT t=RETURN>')
-				conn.ReceiveKey()
-			return
-		elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
-			SendBitmap(conn,filename,dialog,save)
-			conn.SendTML('<INKEYS><NUL><CURSOR>')
-		elif ext == '.C':
-			...
-		elif ext == '.PET':
-			...
-		elif ext in ['.MP3','.WAV'] and not save:
-			AA.PlayAudio(conn,filename,None,dialog)
-		elif ext == '.TML':     #TML script
-			with open(filename,'r') as slide:
-				tml = slide.read()
-				conn.SendTML(tml)
-		elif save:	#Default -> download to disk
-			if dialog:
-				res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Download file to disk', prompt='save to disk', save = False)
-			else:
-				res = 1
-			if res == 1:
-				if len(os.path.basename(filename)) > 16:
-					fn = os.path.splitext(os.path.basename(filename))
-					savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
-				else:
-					savename = os.path.basename(filename).upper()
-				savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-				if TransferFile(conn,filename,savename[:16]):
-					conn.SendTML(fok)
-				else:
-					conn.SendTML(fabort)
-				conn.SendTML('<KPROMPT t=RETURN>')
-				conn.ReceiveKey()
-	...
+    fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
+    fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
+    if os.path.exists(filename):
+        ext = os.path.splitext(filename)[1].upper()
+        # Executables
+        if ext == '.PRG' and 'PET' in conn.mode:
+            if conn.encoder.check_fit(filename):
+                if dialog:
+                    res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program', save = save)
+                else:
+                    res = 1+(1*save)
+            elif save:
+                if dialog:
+                    res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program','Download to disk', save = False)*2
+                else:
+                    res = save
+            else:
+                res = 0
+            if res == 1:
+                SendProgram(conn,filename)
+            elif res == 2:
+                savename = os.path.splitext(os.path.basename(filename))[0].upper()
+                savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                if TransferFile(conn,filename, savename[:16]):
+                    conn.SendTML(fok)
+                else:
+                    conn.SendTML(fabort)
+                conn.SendTML('<KPROMPT t=RETURN>')
+                conn.ReceiveKey()
+            return
+        # Text files
+        elif ext in ['.SEQ','.TXT']:
+            if dialog:
+                res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Sequential/Text File', 'view', save = save)
+            else:
+                res = 1+(1*save)
+            if res == 1:
+                title = 'Viewing text file' if ext == '.TXT' else ''
+                SendText(conn,filename,title)
+            elif res == 2:
+                if ext == '.TXT':
+                    if len(os.path.basename(filename)) > 16:
+                        fn = os.path.splitext(os.path.basename(filename))
+                        savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
+                    else:
+                        savename = os.path.basename(filename).upper()
+                else:
+                    savename = os.path.splitext(os.path.basename(filename))[0].upper()
+                savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                if TransferFile(conn,filename, savename[:16],True):
+                    conn.SendTML(fok)
+                else:
+                    conn.SendTML(fabort)
+                conn.SendTML('<KPROMPT t=RETURN>')
+                conn.ReceiveKey()
+            return
+        # Images
+        elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
+            SendBitmap(conn,filename,dialog,save)
+            conn.SendTML('<INKEYS><NUL><CURSOR>')
+        elif ext == '.C':
+            ...
+        elif ext == '.PET':
+            ...
+        # Audio
+        elif ext in ['.MP3','.WAV'] and not save:
+            AA.PlayAudio(conn,filename,None,dialog)
+        # TML script
+        elif ext == '.TML': 
+            with open(filename,'r') as slide:
+                tml = slide.read()
+                conn.SendTML(tml)
+        #Default -> download to disk
+        elif save:
+            if dialog:
+                res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Download file to disk', prompt='save to disk', save = False)
+            else:
+                res = 1
+            if res == 1:
+                if len(os.path.basename(filename)) > 16:
+                    fn = os.path.splitext(os.path.basename(filename))
+                    savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
+                else:
+                    savename = os.path.basename(filename).upper()
+                savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                if TransferFile(conn,filename,savename[:16]):
+                    conn.SendTML(fok)
+                else:
+                    conn.SendTML(fabort)
+                conn.SendTML('<KPROMPT t=RETURN>')
+                conn.ReceiveKey()
 
 ##################################################################################
 # Sends program file into the client memory at the correct address in turbo mode
@@ -337,7 +350,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 ##################################################################################
 def SendProgram(conn:Connection,filename):
     # Verify .prg extension
-    if filename[-4:] == '.prg' or filename[-4:] == '.PRG':
+    ext = os.path.splitext(filename)[1].upper()
+    if ext == '.PRG' and conn.encoder.check_fit():
         _LOG('Memory transfer, filename: '+filename, id=conn.id,v=3)
         # Open file
         archivo=open(filename,"rb")
@@ -373,10 +387,10 @@ def SendProgram(conn:Connection,filename):
         # Send the data
         conn.Sendallbin(binaryout)
         conn.SendTML(   f'<CLR><RVSOFF><ORANGE>Program file transferred to ${staddr:0{4}x}-${endaddr:0{4}x}<BR>'
-		                f'To execute this program, <YELLOW><RVSON>L<RVSOFF><ORANGE>og off from<BR>'
+                        f'To execute this program, <YELLOW><RVSON>L<RVSOFF><ORANGE>og off from<BR>'
                         f'this BBS, and exit Retroterm with <BR>RUN/STOP.<BR>'
-			            f'Then use RUN or the correct SYS.<BR>'
-			            f'Or <YELLOW><RVSON>C<RVSOFF><ORANGE>ontinue your session')
+                        f'Then use RUN or the correct SYS.<BR>'
+                        f'Or <YELLOW><RVSON>C<RVSOFF><ORANGE>ontinue your session')
         if conn.ReceiveKey(b'CL') == b'L':
             conn.connected = False
 
@@ -388,63 +402,63 @@ def SendProgram(conn:Connection,filename):
 #savename: if defined, the filename sent to the client (mandatory if file is bytes)
 ####################################################################################
 def TransferFile(conn:Connection, file, savename = None, seq=False):
-	if isinstance(file,str):
-		if os.path.exists(file) == False:
-			return False
-		else:
-			with open(file,'rb') as fb:
-				data = fb.read()
-	else:
-		data = file
-	if (conn.QueryFeature(TT.FILETR) < 0x80):
-		basename = os.path.basename(file).upper()
-		conn.Sendall(chr(TT.CMDON)+chr(TT.FILETR))
-		if os.path.splitext(basename)[1] == '.SEQ' or seq:
-			conn.Sendallbin(b'\x00')	# File type: SEQ
-		else:
-			conn.Sendallbin(b'\xF0')	# File type: PRG
-		if savename != None:
-			basename = savename
-		else:
-			basename = os.path.splitext(basename)[0]
-		time.sleep(0.1)
-		conn.Sendall(basename+chr(0))
-		repeats = 0
-		b_crc = Calculator(Configuration(width=16, polynomial=0x1021, init_value=0xffff, final_xor_value=0, reverse_input=False, reverse_output=False))
-		if conn.ReceiveKey(b'\x81\x42\xAA') == b'\x81':
-			for i in range(0,len(data),256):
-				block = data[i:i+256]
-				repeats = 0
-				while repeats < 4:
-					conn.Sendallbin(len(block).to_bytes(2,'big')) # Endianess switched around because the terminal stores it back to forth
-					conn.Sendallbin(b_crc.checksum(block).to_bytes(2,'big')) # Endianess switched around because the terminal stores it back to forth
-					conn.Sendallbin(block)
-					rpl = conn.ReceiveKey(b'\x81\x42\xAA')
-					if  rpl == b'\x81':
-						break   # Block OK get next block
-					elif rpl == b'\xAA':
-						repeats += 1    # Block error, resend
-						_LOG('File download-Block CRC error',id=conn.id,v=3)
-					else:
-						_LOG('File download canceled',id=conn.id,v=3)
-						repeats = 5     # Disk error/User abort
+    if isinstance(file,str):
+        if os.path.exists(file) == False:
+            return False
+        else:
+            with open(file,'rb') as fb:
+                data = fb.read()
+    else:
+        data = file
+    if (conn.QueryFeature(TT.FILETR) < 0x80):
+        basename = os.path.basename(file).upper()
+        conn.Sendall(chr(TT.CMDON)+chr(TT.FILETR))
+        if os.path.splitext(basename)[1] == '.SEQ' or seq:
+            conn.Sendallbin(b'\x00')	# File type: SEQ
+        else:
+            conn.Sendallbin(b'\xF0')	# File type: PRG
+        if savename != None:
+            basename = savename
+        else:
+            basename = os.path.splitext(basename)[0]
+        time.sleep(0.1)
+        conn.Sendall(basename+chr(0))
+        repeats = 0
+        b_crc = Calculator(Configuration(width=16, polynomial=0x1021, init_value=0xffff, final_xor_value=0, reverse_input=False, reverse_output=False))
+        if conn.ReceiveKey(b'\x81\x42\xAA') == b'\x81':
+            for i in range(0,len(data),256):
+                block = data[i:i+256]
+                repeats = 0
+                while repeats < 4:
+                    conn.Sendallbin(len(block).to_bytes(2,'big')) # Endianess switched around because the terminal stores it back to forth
+                    conn.Sendallbin(b_crc.checksum(block).to_bytes(2,'big')) # Endianess switched around because the terminal stores it back to forth
+                    conn.Sendallbin(block)
+                    rpl = conn.ReceiveKey(b'\x81\x42\xAA')
+                    if  rpl == b'\x81':
+                        break   # Block OK get next block
+                    elif rpl == b'\xAA':
+                        repeats += 1    # Block error, resend
+                        _LOG('File download-Block CRC error',id=conn.id,v=3)
+                    else:
+                        _LOG('File download canceled',id=conn.id,v=3)
+                        repeats = 5     # Disk error/User abort
 
-				if repeats >= 4:
-					conn.Sendallbin(b'\x00\x00\x00\x00')    # Zero length block ends transfer
-					break
-		else:
-			repeats = 5
-		conn.Sendallbin(b'\x00\x00\x00\x00\x00\x00')    # Make sure terminal exits transfer mode. Zero length block ends transfer + NULL name + Sequential file
-		if repeats < 4:
-			_LOG('TransferFile: Transfer complete',id=conn.id,v=3)
-		elif repeats == 4:
-			_LOG('TransferFile: Transfer aborted, too many errors',id=conn.id,v=2)
-		else:
-			_LOG('TransferFile: Client aborted the transfer',id=conn.id,v=2)
-		return repeats < 4
-	else:
-		_LOG("TransferFile: Client doesn't suppport File Transfer command", id = conn.id, v=2)
-		return False
+                if repeats >= 4:
+                    conn.Sendallbin(b'\x00\x00\x00\x00')    # Zero length block ends transfer
+                    break
+        else:
+            repeats = 5
+        conn.Sendallbin(b'\x00\x00\x00\x00\x00\x00')    # Make sure terminal exits transfer mode. Zero length block ends transfer + NULL name + Sequential file
+        if repeats < 4:
+            _LOG('TransferFile: Transfer complete',id=conn.id,v=3)
+        elif repeats == 4:
+            _LOG('TransferFile: Transfer aborted, too many errors',id=conn.id,v=2)
+        else:
+            _LOG('TransferFile: Client aborted the transfer',id=conn.id,v=2)
+        return repeats < 4
+    else:
+        _LOG("TransferFile: Client doesn't suppport File Transfer command", id = conn.id, v=2)
+        return False
 
 ###################################################################################################
 # Generic file dialog
@@ -461,24 +475,24 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 #			2: <S>ave option
 ###################################################################################################
 def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfer to memory',save=False):
-	S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
-	tml = '<AT x=0 y=2>'
-	keys = b'_\r'
-	if filetype != None:
-		tml += f'<RVSON> File: {H.crop(filename,32)}<BR>'
-	if size > 0:
-		tml += f'<RVSON> Size: {size}<BR><BR>'
-	else:
-		tml += '<BR>'
-	if save:
-		tml += '<RVSON> Press &lt;S&gt; to save to disk, or<BR><RVSON>'
-		keys += b'S'
-	else:
-		tml += '<RVSON> Press'
-	tml += f' &lt;RETURN&gt; to {prompt[:26]}<BR><RVSON> &lt;<LARROW>&gt; to cancel'
-	conn.SendTML(tml)
-	rc = conn.ReceiveKey(keys)
-	return keys.index(rc)
+    S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
+    tml = '<AT x=0 y=2>'
+    keys = b'_\r'
+    if filetype != None:
+        tml += f'<RVSON> File: {H.crop(filename,32)}<BR>'
+    if size > 0:
+        tml += f'<RVSON> Size: {size}<BR><BR>'
+    else:
+        tml += '<BR>'
+    if save:
+        tml += '<RVSON> Press &lt;S&gt; to save to disk, or<BR><RVSON>'
+        keys += b'S'
+    else:
+        tml += '<RVSON> Press'
+    tml += f' &lt;RETURN&gt; to {prompt[:26]}<BR><RVSON> &lt;<LARROW>&gt; to cancel'
+    conn.SendTML(tml)
+    rc = conn.ReceiveKey(keys)
+    return keys.index(rc)
 
 #########################################################
 # Sends a file directly without processing
@@ -602,4 +616,4 @@ def SendPETPetscii(conn:Connection,filename):
 ################################################################
 # TML tags
 t_mono = {	'SENDRAW':(lambda c,file:SendRAWFile(c,file,False),[('c','_C'),('file','')]),
-	        'SENDFILE':(lambda c,file,dialog,save:SendFile(c,file,dialog,save),[('c','_C'),('file',''),('dialog',False),('save',False)])}
+            'SENDFILE':(lambda c,file,dialog,save:SendFile(c,file,dialog,save),[('c','_C'),('file',''),('dialog',False),('save',False)])}
