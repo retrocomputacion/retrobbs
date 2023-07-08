@@ -533,7 +533,8 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     subtune = 1
     order = 0
 
-    if conn.QueryFeature(TT.CHIPSTREAMSTREAM) >= 0x80:	#Exit if terminal doesn't support chiptune streaming
+    if conn.QueryFeature(TT.CHIPSTREAM) >= 0x80:	#Exit if terminal doesn't support chiptune streaming
+        conn.SendTML('<CLR><ORANGE>Not supported!<PAUSE n=1>')
         return
 
     tmp,ext = os.path.splitext(filename)
