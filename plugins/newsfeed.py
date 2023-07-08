@@ -43,9 +43,9 @@ def plugFunction(conn:Connection,url):
     menucolors = [[colors['LIGHT_BLUE'],colors['LIGHT_GREY']],[colors['CYAN'],colors['YELLOW']]]
 
     MenuDic = {
-			    b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
-				b'\r': (plugFunction,(conn,url),"",0,False)
-			  }
+                b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
+                b'\r': (plugFunction,(conn,url),"",0,False)
+              }
 
     # # Text mode
     conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t=Newsfeed><CBM-B><CRSRL>')

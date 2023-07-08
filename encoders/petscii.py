@@ -92,13 +92,13 @@ NONPRINTABLE = [chr(i) for i in range(0,13)]+[chr(i) for i in range(14,32)]+[chr
 
 #--TML tags
 t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r',
-			'CBMSHIFT-D':chr(DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(ENABLE_CBMSHIFT),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
-			'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
-			'ORANGE':chr(ORANGE),'BROWN':chr(BROWN),'PINK':chr(PINK),'GREY1':chr(GREY1),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3)
-			},
+            'CBMSHIFT-D':chr(DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(ENABLE_CBMSHIFT),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
+            'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
+            'ORANGE':chr(ORANGE),'BROWN':chr(BROWN),'PINK':chr(PINK),'GREY1':chr(GREY1),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3)
+            },
             'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)}}
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
-			'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
+            'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
             'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L)}}
 
 t_mono['PET264'].update(t_mono['PET64'])
