@@ -75,7 +75,11 @@ def plugFunction(conn:Connection,url, crop):
                 _LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
                 conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
                 return
-
+    conn.SendTML(f'<CLR><TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}>'
+                 f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> for a new image<BR>'
+                 f'<BR>Press <KPROMPT t=_><YELLOW> to exit<BR>')
+    if conn.ReceiveKey(b'\r_') == b'_':
+        return
     return(VV.Grabframe(conn,best,crop,tmsecs))
 
 
