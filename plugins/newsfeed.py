@@ -94,7 +94,8 @@ def feedentry(conn:Connection,entry,feedname):
     if webarticle(conn,entry.link,mtitle) == False:
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
-        conn.Sendall(TT.set_Window(3,24))
+        conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CRSRR n=13><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
+        conn.Sendall(TT.set_Window(3,23))
         e_text = ''
         content = entry.get('content',[]) #Atom
         for c in content:
@@ -115,7 +116,8 @@ def feedentry(conn:Connection,entry,feedname):
         title.append(f'<YELLOW><HLINE n=40><INK c={conn.style.TxtColor}>')
         title.append('<BR>')
         text = title + body
-        H.More(conn,text,22)
+        H.text_displayer(conn,text,21)
+        #H.More(conn,text,22)
     conn.Sendall(TT.set_Window(0,24))
 
 ### Try to scrap data from wordpress and some other CMS sites,
@@ -216,7 +218,8 @@ def webarticle(conn:Connection,url, feedname):
             conn.ReceiveKey()
             conn.SendTML('<CLR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
-        conn.Sendall(TT.set_Window(3,24))
+        conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CRSRR n=13><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
+        conn.Sendall(TT.set_Window(3,23))
         #body = H.formatX(a_body)
         title = H.formatX(a_title)
         title[0] = '<WHITE>'+title[0]
@@ -226,7 +229,8 @@ def webarticle(conn:Connection,url, feedname):
             title.append('<BR>')
         body[0] = '<GREY2>'+body[0]
         text = title + body
-        H.More(conn,text,22)
+        H.text_displayer(conn,text,21)
+        # H.More(conn,text,22)
         conn.Sendall(TT.set_Window(0,24))
     else:
         conn.SendTML(f'<DEL>{resp.status_code}<PAUSE n=1>')

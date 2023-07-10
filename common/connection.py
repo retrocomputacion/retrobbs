@@ -13,7 +13,7 @@ from common import turbo56k as TT
 from common.classes import BBS
 import time
 from common.parser import TMLParser
-from common.classes import bbsstyle
+from common.classes import bbsstyle, Encoder
 
 # Dictionary of client variant -> Encoder
 clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264'}
@@ -56,7 +56,7 @@ class Connection:
         self.TermFt[0xFE] = b'\x00'
 
         self.mode = 'PET64'							#Connection mode -> type of client
-        self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+        self.encoder:Encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
         self.parser = TMLParser(self)				#TML parser
         self.p_running = False

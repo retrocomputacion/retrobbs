@@ -505,11 +505,11 @@ Changes the text color to the specified color
  - **&lt;ORANGE&gt;**
  - **&lt;BROWN&gt;**
  - **&lt;PINK&gt;**
- - **&lt;GREY1&gt;** or **&lt;DARK_GREY&gt;**
- - **&lt;GREY2&gt;** or **&lt;GREY&gt;** or **&lt;MEDIUM_GREY&gt;**
- - **&lt;LIGHT_GREEN&gt;**
- - **&lt;LIGHT_BLUE&gt;**
- - **&lt;GREY3&gt;** or **&lt;LIGHT_GREY&gt;**
+ - **&lt;GREY1&gt;** or **&lt;DGREY&gt;**
+ - **&lt;GREY2&gt;** or **&lt;GREY&gt;** or **&lt;MGREY&gt;**
+ - **&lt;LTGREEN&gt;**
+ - **&lt;LTBLUE&gt;**
+ - **&lt;GREY3&gt;** or **&lt;LT_GREY&gt;**
 
 ---
 

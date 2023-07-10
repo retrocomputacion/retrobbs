@@ -178,13 +178,15 @@ def More(conn:Connection, text, lines, colors=None):
 
 # Bidirectional scroll text display
 # needs Turbo56K >= 0.7 for single line scroll up/down. Otherwise just whole page up/down
-def text_displayer(conn:Connection, text, lines, colors=None):
+def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
 
     if colors == None:
         colors = conn.style
     #initialize line color list
     lcols = [colors.TxtColor]*len(text)
     tcolor = lcols[0]
+
+    ekeys = bytes(ekeys,'ascii')
 
     #Problematic TML tags
     rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
@@ -208,9 +210,9 @@ def text_displayer(conn:Connection, text, lines, colors=None):
     rep = dict((re.escape(k), v) for k, v in rep.items())
     pattern = re.compile("|".join(rep.keys()))
     if conn.QueryFeature(TT.SCROLL)< 0x80:
-        keys = [ckeys['CRSRD'],ckeys['CRSRU'],ckeys['F1'],ckeys['F3']]
+        keys = bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['F1'],ckeys['F3']])
     else:
-        keys = [ckeys['F1'],ckeys['F3']]
+        keys = bytes([ckeys['F1'],ckeys['F3']])
     #eliminate problematic control codes
     for i,t in enumerate(text):
         text[i] = pattern.sub(lambda m: rep[re.escape(m.group(0))], t)
@@ -219,6 +221,8 @@ def text_displayer(conn:Connection, text, lines, colors=None):
     else:
         lcount = lines -1
 
+    print(keys)
+
     # Render 1st page
     tcolor = colors.TxtColor
     conn.SendTML(f'<INK c={tcolor}>')
@@ -226,49 +230,54 @@ def text_displayer(conn:Connection, text, lines, colors=None):
 
     tline = 0
     bline = i+1
-    if lcount < len(text):
-        #scroll loop
-        ldir = True	#Last scroll down?
-        while conn.connected:
-            k = conn.ReceiveKey(b'_'+bytes(keys))
-            if k == b'_':
-                break
-            elif (k[0] == ckeys['CRSRU']) and (tline > 0):	#Scroll up
-                tline -= 1
-                bline -= 1
-                if tline > 0:
-                    tcolor = lcols[tline-1]
-                else:
-                    tcolor = colors.TxtColor
-                conn.SendTML(f'<SCROLL rows=-1><HOME><INK c={tcolor}>{text[tline]}')
-                ldir = False
-            elif (k[0] == ckeys['CRSRD']) and (bline < len(text)-1):	#Scroll down
-                tline += 1
-                if bline > 0:
-                    tcolor = lcols[bline-1]
-                else:
-                    tcolor = colors.TxtColor
-                conn.Sendall(TT.scroll(1))
-                if ldir:
-                    conn.SendTML(f'<AT x=0 y={lcount-1}><INK c={tcolor}>{text[bline]}')
-                    lcols[bline] = conn.parser.color
-                bline += 1
-                ldir = True
-            elif (k[0] == ckeys['F1']) and (tline > 0):	#Page up
-                tline -= lcount
-                if tline < 0:
-                    tline = 0
-                bline = _page(tline,lcount)+1
-                ldir = True
-            elif (k[0] == ckeys['F3']) and (bline < len(text)-1):	#Page down
-                bline += lcount
-                if bline > len(text):
-                    bline = len(text)
-                tline = bline-lcount
-                _page(tline,lcount)
-                ldir = True
-    else:
-        conn.ReceiveKey(b'_')
+    # if lcount < len(text):
+    #scroll loop
+    ldir = True	#Last scroll down?
+    while conn.connected:
+        k = conn.ReceiveKey(b'_'+keys+ekeys)
+        if k == b'_':
+            ret = k.decode("ascii")
+            break
+        elif (k[0] == ckeys['CRSRU']) and (tline > 0):	#Scroll up
+            tline -= 1
+            bline -= 1
+            if tline > 0:
+                tcolor = lcols[tline-1]
+            else:
+                tcolor = colors.TxtColor
+            conn.SendTML(f'<SCROLL rows=-1><HOME><INK c={tcolor}>{text[tline]}')
+            ldir = False
+        elif (k[0] == ckeys['CRSRD']) and (bline < len(text)):	#Scroll down
+            tline += 1
+            if bline > 0:
+                tcolor = lcols[bline-1]
+            else:
+                tcolor = colors.TxtColor
+            conn.Sendall(TT.scroll(1))
+            if ldir:
+                conn.SendTML(f'<AT x=0 y={lcount-1}><INK c={tcolor}>{text[bline]}')
+                lcols[bline] = conn.parser.color
+            bline += 1
+            ldir = True
+        elif (k[0] == ckeys['F1']) and (tline > 0):	#Page up
+            tline -= lcount
+            if tline < 0:
+                tline = 0
+            bline = _page(tline,lcount)+1
+            ldir = True
+        elif (k[0] == ckeys['F3']) and (bline < len(text)):	#Page down
+            bline += lcount
+            if bline > len(text):
+                bline = len(text)
+            tline = bline-lcount
+            _page(tline,lcount)
+            ldir = True
+        elif k in ekeys:
+            ret = k.decode("utf-8")
+            break
+    # else:
+    #     conn.ReceiveKey(b'_')
+    return ret
 
 # Crop text to the desired length, adding ellipsis if needed
 def crop(text, length):

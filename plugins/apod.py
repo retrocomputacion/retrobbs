@@ -9,7 +9,7 @@ from io import BytesIO
 from common import turbo56k as TT
 from common.style import RenderMenuTitle
 from common import filetools as FT
-from common.helpers import formatX, More
+from common.helpers import formatX, More, text_displayer
 from common.bbsdebug import _LOG,bcolors
 from common.connection import Connection
 
@@ -65,6 +65,7 @@ def plugFunction(conn:Connection):
             conn.Sendall(".")
         conn.SendTML(f'<BELL><DEL n={23+i}>')
         if idata != None:
+            conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CBM-L><GREEN>v:view<CYAN><CBM-J><CRSRR n=5><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
             date = idata["date"]
             _LOG("Showing APOD info for "+date,id=conn.id,v=4)
             imurl = idata["url"]
@@ -79,29 +80,25 @@ def plugFunction(conn:Connection):
             #Prints date
             tdate = formatX('\n'+date+'\n\n')
             tdate[0] = '<LTBLUE>'+tdate[0]
-            tdate[-1] = tdate[-1]+'<WHITE><BR><BR>'
             texto += tdate
             if autor != '':
                 at = formatX(autor)
                 at[0] = '<ORANGE>'+at[0]
-                at[-1] = f'<INK c={conn.style.TxtColor}>'
             else:
                 at = ['<BR>']
-            texto += at+formatX(desc)
-
-            if More(conn,texto,25) == 0:
-                conn.SendTML('<DEL n=8>')
-            else:
-                conn.SendTML('<DEL n=13>')
-            conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[1])
-            tecla = conn.ReceiveKey(b'\r_')
+            tdesc = formatX(desc)
+            tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
+            texto += at+tdesc
+            conn.SendTML('<WINDOW top=3 bottom=23>')
+            tecla = text_displayer(conn,texto,21,ekeys='V')
+            conn.SendTML('<WINDOW>')
             if conn.connected == False:
                 return()
             if tecla == b'_' or tecla == b'':
                 loop = False
             if loop == True:
-                conn.SendTML("<BR>Converting image<YELLOW><CBM-B><CRSRL>")
-                _LOG("Downloading and generating image",id=conn.id,v=4)
+                conn.SendTML("<CLR><BR>Converting image<YELLOW><CBM-B><CRSRL>")
+                _LOG("Downloading and converting image",id=conn.id,v=4)
                 try:
                     img = apod_img(conn, imurl)
                     FT.SendBitmap(conn, img)
