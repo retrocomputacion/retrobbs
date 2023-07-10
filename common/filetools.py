@@ -33,7 +33,7 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     tml = ''
     if width != 0:
         tml += f'''<RVSON> Original size: {width}x{height}<BR><BR>
-<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; form multicolor conversion<BR>
+<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; for multicolor conversion<BR>
 <RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
         keys += b'HM'
     if save:

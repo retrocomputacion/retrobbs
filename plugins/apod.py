@@ -33,18 +33,16 @@ def plugFunction(conn:Connection):
 
 
 
-    apod_lang = {'en':['Connecting with NASA',f"<BR><GREEN>Press <INK c={conn.style.PbColor}>"	\
+    apod_lang = {'en':['Connecting with NASA',f"<CLR><BR><LTGREEN>Converting...<BR>press <INK c={conn.style.PbColor}>"	\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
-                    + f"<LTGREEN> to display image<BR>Press <INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}>"	\
-                    + f"RETURN<INK c={conn.style.PbColor}>]<LTGREEN> again for a new<BR>random image<BR>Or "	\
+                    + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to go back"],
-                'es':['Connectando con la NASA',f"<BR><GREEN>Presione <INK c={conn.style.PbColor}>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><CBM-B><CRSRL>"],
+                'es':['Conectando con la NASA',f"<CLR><BR><LTGREEN>Convirtiendo...<BR>presione <INK c={conn.style.PbColor}>"	\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
-                    + f"<LTGREEN> para mostrar imagen<BR>Presione <INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}>"	\
-                    + f"RETURN<INK c={conn.style.PbColor}>]<LTGREEN> de nuevo<BR>para otra imagen al azar<BR>O "	\
+                    + f"<LTGREEN> para mostrar otra imagen al azar<BR>O "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver"]}
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><CBM-B><CRSRL>"]}
 
     loop = True
     rdate = datetime.today()
@@ -97,7 +95,7 @@ def plugFunction(conn:Connection):
             if tecla == b'_' or tecla == b'':
                 loop = False
             if loop == True:
-                conn.SendTML("<CLR><BR>Converting image<YELLOW><CBM-B><CRSRL>")
+                conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[1])
                 _LOG("Downloading and converting image",id=conn.id,v=4)
                 try:
                     img = apod_img(conn, imurl)
