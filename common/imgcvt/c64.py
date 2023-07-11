@@ -33,23 +33,21 @@ C64Palettes = [['Colodore',Palette_Colodore],['Pepto (NTSC,Sony)',Palette_PeptoN
 
 Native_Ext = ['.KOA','.KLA','.ART','.OCP','.DD','.DDL']
 
-#HiRes
+##############################################
+# Get 2 closest colors
+##############################################
 def c64_get2closest(colors,p_in,p_out,fixed):
     cd = [[197000 for j in range(len(p_in))] for i in range(len(colors))]
     closest = []
     _indexes = [1,1]
     xmin = -1
     for x in range(0,len(colors)):
-        #yr = [b for b in range(len(p_in)) if b not in _indexes] #avoid repeated indexes
         for y in range(0,len(p_in)):
             if y != xmin:
-                # rd = colors[x][1][0] - p_in[y][0][0]
-                # gd = colors[x][1][1] - p_in[y][0][1]
-                # bd = colors[x][1][2] - p_in[y][0][2]
-                cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])  #(rd * rd + gd * gd + bd * bd)
+                cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
-        m = p_in[xmin][0] #p_out[cc]
+        m = p_in[xmin][0]
         closest.append(CC.RGB24(m).tolist())
         _indexes[x] = cc
     if len(closest) == 1:
@@ -61,43 +59,36 @@ def c64_get2closest(colors,p_in,p_out,fixed):
         _indexes = tix
     return(_indexes,Palette.Palette(closest))
 
-#Multicolor
+###################################################
+# Get 4 closest colors
+###################################################
 def c64_get4closest(colors, p_in, p_out, bgcolor):
     cd = [[0 for j in range(len(p_in))] for i in range(len(colors))]
     brgb = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[0]))
     closest = [brgb,brgb,brgb,brgb]
     _indexes = [bgcolor[0],bgcolor[0],bgcolor[0],bgcolor[0]]
-    #Attr
-    indexes = 0#0x33
-    cram = 2
     #Find least used color
     if len(colors) >= 4:
-        #c_counts = [colors[i][0] for i in range(len(colors))]
         bi = colors.index(min(colors))
     else:
         bi = 5
     xx = 1
-    #npin = np.asarray([c[0] for c in p_in])
-    #ncolors = np.asarray([c[1] for c in colors])
     for x in range(0,len(colors)):
         if x == bi:
             continue
         for y in range(0,len(p_in)):
-            # rd = colors[x][1][0] - p_in[y][0][0]
-            # gd = colors[x][1][1] - p_in[y][0][1]
-            # bd = colors[x][1][2] - p_in[y][0][2]
-            cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])  #(rd * rd + gd * gd + bd * bd)    #This is the fastest distance method
-            # cd[x][y] = sum([(a - b)**2 for a, b in zip(colors[x][1], p_in[y][0])])
-            # cd[x][y] = np.linalg.norm(ncolors[x]-npin[y])
+            cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
         m = p_in[xmin][0] #p_out[cc]
-        closest[xx] = CC.RGB24(m).tolist()  #m[2]+m[1]*256+m[0]*65536
+        closest[xx] = CC.RGB24(m).tolist()
         _indexes[xx] = cc
         xx += 1
-
     return(_indexes,Palette.Palette(closest))
 
+#######################################
+# Pack Hires bitmap cell
+#######################################
 def bmpackhi(column,row,cell,buffers):
     if len(buffers)<4:
         offset = (column*8)+(row*320)
@@ -106,6 +97,9 @@ def bmpackhi(column,row,cell,buffers):
         offset = ((column+3)*8)+(row//8)*320+(row&7)
         buffers[0][offset]=list(np.packbits(np.asarray(cell,dtype='bool')))[0]
 
+##########################################
+# Pack multicolor bitmap cell
+##########################################
 def bmpackmulti(column,row,cell,buffers):
     cell_a = np.asarray(cell)
     offset = (column*8)+(row*320)
@@ -114,8 +108,10 @@ def bmpackmulti(column,row,cell,buffers):
         for x in range(4):
             tbyte += int(cell_a[y,x])<<((3-x)*2)
         buffers[0][offset+y] = tbyte
-        #out+= tbyte.to_bytes(1,'big')
 
+#######################################
+# Pack attribute cell
+#######################################
 def attrpack(column,row,attr,buffers):
     if len(buffers) < 4:
         offset = column+(row*40)    #Normal
@@ -130,8 +126,10 @@ def attrpack(column,row,attr,buffers):
         buffers[1][offset]=attr[2]+(attr[1]*16)
         buffers[2][offset]=attr[3]
 
-
+################################
+# Get buffers to store raw data
 # Returns a list of lists
+################################
 def get_buffers(mode:int):
     if mode == 3:
         x = 8
@@ -145,6 +143,9 @@ def get_buffers(mode:int):
         buffers.append([0]*1000)    # Color RAM
     return buffers
 
+##############################################
+# Build a native image file from the raw data
+##############################################
 def buildfile(buffers,gcols,baseMode,filename):
     if baseMode == 1:   #Save Koala
         t_data = b'\x00\x60' #Load address
@@ -169,7 +170,6 @@ def buildfile(buffers,gcols,baseMode,filename):
         t_data += b"M 'STU"
         filename = (filename.ljust(13,' ') if len(filename)<13 else filename[:13])+'PIC'
     return(t_data, filename)
-#############################
 
 #####################################################################################################################
 # Graphic modes structure
@@ -208,11 +208,10 @@ GFX_MODES=[{'name':'C64 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False
             'get_buffers':lambda: get_buffers(2),'save_output':['Koala Paint',lambda buf,c,fn:buildfile(buf,c,1,fn)]}]
 
 
-###########################
-# Load Image
-
+##############################
+# Load native image format
+##############################
 def load_Image(filename:str):
-
     multi = 0
     data = [None]*3
     gcolors = [0]*2  # Border, Background
@@ -282,7 +281,6 @@ def load_Image(filename:str):
     else:
         return None
     #Render image
-
     # Generate palette(s)
     rgb_in = []
     for c in Palette_Colodore: # iterate colors
@@ -290,7 +288,6 @@ def load_Image(filename:str):
     fsPal = [element for sublist in rgb_in for element in sublist]
     plen = len(fsPal)//3
     fsPal.extend(fsPal[:3]*(256-plen))
-
     if multi == 0:
         nimg = np.empty((200,320),dtype=np.uint8)
         for c in range(1000):

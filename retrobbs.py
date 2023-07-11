@@ -70,7 +70,6 @@
 #                       MenuDef index 3 now stores the minimun user class needed to access menu #
 #################################################################################################
 
-
 from __future__ import print_function
 
 import argparse
@@ -88,14 +87,8 @@ import string
 import configparser #INI file parser
 import threading
 
-#Petscii
-from common import petscii as P
-#Encoders
 from common import extensions as EX
-
-#Turbo56K
 from common import turbo56k as TT
-
 from common.classes import BBS
 from common.connection import Connection
 from common.bbsdebug import _LOG, bcolors, set_verbosity
@@ -111,26 +104,10 @@ from common import filetools as FT
 #Image filename extensions
 from common.imgcvt import im_extensions
 
-# import importlib
-# import pkgutil
-
-
-#Import plugins ******************************
-#import plugins
-
-# def iter_namespace(ns_pkg):
-#     # Specifying the second argument (prefix) to iter_modules makes the
-#     # returned name an absolute name instead of a relative one. This allows
-#     # import_module to work without having to do additional modification to
-#     # the name.
-#     return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
-
-
 ##################################
-# BBS Version                    #
-_version = 0.50                  #
+# BBS Version
+_version = 0.50
 ##################################
-
 
 #Threads running flag
 _run = True
@@ -138,14 +115,12 @@ _run = True
 #Timeout default value (secs)
 _tout = 60.0*5
 
-
 #Configuration file
 config_file = 'config.ini'
 
-#Plugins dictionary
-#PlugDict = {}
-
-#Reads Config file
+###########################
+# Reads Configuration file
+###########################
 def ConfigRead():
     global bbs_instance
 
@@ -170,12 +145,13 @@ def ConfigRead():
                 nchar += 1
                 if nchar == '\r':
                     raise Exception('Configuration file - Too many LABEL entries')
+            emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    #Entry connection mode
             level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
             if efunc in func_dic:
-                #[function_call, parameters, title, ???, wait]
-                sentry['entrydefs'][ekey] = [func_dic[efunc],None,tentry,level,False]
+                #[function_call, parameters, title, user_level, wait, mode]
+                sentry['entrydefs'][ekey] = [func_dic[efunc],None,tentry,level,False,emode]
             elif efunc in PlugDict:
-                sentry['entrydefs'][ekey] = [PlugDict[efunc][0],None,tentry,level,False]
+                sentry['entrydefs'][ekey] = [PlugDict[efunc][0],None,tentry,level,False,emode]
             else:
                 raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
             #Parse parameters
@@ -220,13 +196,11 @@ def ConfigRead():
                     if isinstance(p[1],tuple) == True and isinstance(ep,tuple) == False:
                         ep = tuple([int(e) if e.isdigit() else 0 for e in ep.split(',')])
                     parms.append(ep)
-
             # This tuple need to be added to one (conn,) on each connection instance when calling func
             # also needs conn.MenuParameters added to this
             # finaltuple = (conn,)+ _parms_
             sentry['entrydefs'][ekey][1] = tuple(parms)
         return(sentry)
-
 
     #Iterate Menu Sections
     def MIter(cfg, key, mentry):
@@ -261,14 +235,11 @@ def ConfigRead():
                 'STATS': Stats,
                 'SENDFILE': FT.SendFile,
                 'LABEL': None}
-
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     config.read(config_file)
-
     bbs_instance.cfgmts = getmtime(config_file) # Set latest configuration file modify datestamp
 
     #MAIN variables
-
     bbs_instance.name = config['MAIN']['bbsname']
     bbs_instance.ip = config['MAIN']['ip']
     bbs_instance.port = config['MAIN'].getint('port')
@@ -277,7 +248,6 @@ def ConfigRead():
     bbs_instance.WMess = config['MAIN'].get('welcome', fallback='Welcome!')
     bbs_instance.GBMess = config['MAIN'].get('goodbye', fallback='Goodbye!')
     bbs_instance.BSYMess = config['MAIN'].get('busy', fallback='BUSY')
-
     bbs_instance.dateformat = config['MAIN'].getint('dateformat', fallback=1)
 
     #Get any paths
@@ -296,10 +266,8 @@ def ConfigRead():
     except:
         bbs_instance.PlugOptions = {}
 
-
     #Parse Menues
     mcount = config['MAIN'].getint('menues')								#Number of menues
-
     _bbs_menues = [None] * mcount
 
     for m in range(0, mcount):		#Iterate menues
@@ -313,14 +281,14 @@ def ConfigRead():
             scount = config['MENU'+str(m+1)].getint('sections')				#Menu number of sections
             prompt = config['MENU'+str(m+1)].get('prompt', fallback='sELECTION:')
             tkey = 'MENU'+str(m+1)+'SECTION'
-
         _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
         _bbs_menues[m] = MIter(config,tkey,_bbs_menues[m])
-        _bbs_menues[m]['entries'][0]['entrydefs'][b'\r']=[SendMenu,(),'',False,False]
-
+        _bbs_menues[m]['entries'][0]['entrydefs'][b'\r']=[SendMenu,(),'',0,False,'']
     bbs_instance.MenuList = _bbs_menues
 
+################################
 #Handles CTRL-C
+################################
 def signal_handler(sig, frame):
     global _run
     global conlist
@@ -344,9 +312,10 @@ def signal_handler(sig, frame):
     del bbs_instance
     sys.exit(0)
 
-
+#########################################################################################
+# Show a menu with a list of files, call fhandler on user selection
+#########################################################################################
 def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=False):
-
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
@@ -361,17 +330,13 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
                 b'_': (MenuBack,(conn,),"Previous Menu",0,False),
                 b'\r': (FileList,(conn,title,speech,logtext,path,ffilter,fhandler,transfer),title,0,False)
               }	
-
-
     _LOG(logtext,id=conn.id, v=4)
     # Send speech message
     conn.Sendall(TT.to_Speech() + speech)
     #time.sleep(1)
     # Select screen output
     conn.SendTML('<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
-
     RenderMenuTitle(conn,title)
-
     # Send menu options
     files = []	#all files
     programs = []	#filtered list
@@ -379,7 +344,6 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     for entries in walk(path):
         files.extend(entries[2])
         break
-
     #Filter out all files not matching 'filter'
     if len(ffilter) > 0:
         for f in files:
@@ -387,16 +351,13 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
                 programs.append(f)
     else:
         programs = files
-
     programs.sort()	#Sort list
-
     pages = int((len(programs)-1) / 40) + 1
     count = len(programs)
     start = conn.MenuParameters['current'] * 40
     end = start + 39
     if end >= count:
         end = count - 1
-
     #Add pagination keybindings to MenuDic
     if pages > 1:
         if conn.MenuParameters['current'] == 0:
@@ -409,14 +370,11 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         else:
             page = conn.MenuParameters['current']+1
         MenuDic[b'>'] = (SetPage,(conn,page),'Next Page',0,False)
-
     if fhandler == FT.SendFile:
         keywait = False
     else:
         keywait = True
-
     x = 0
-
     for x in range(start, end + 1):
         if len(ffilter) == 0:
             if len(programs[x]) > 16:
@@ -433,20 +391,17 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         else:
             parameters = (conn,path+programs[x],True,transfer,)
         MenuDic[valid_keys[x-start].encode('ascii','ignore')] = (fhandler,parameters,valid_keys[x-start],0,keywait)
-
     conn.SendTML(f'<AT x=1 y=23><GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
                 f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
-    #time.sleep(1)
     # Select screen output
     conn.Sendall(TT.to_Screen())
     return MenuDic
 
-#################################################
-# Render Menu from MenuList structure           #
-#################################################
+######################################
+# Render Menu from MenuList structure
+######################################
 def SendMenu(conn:Connection):
-
     if conn.menu < 0:
         return()
     conn.SendTML('<SETOUTPUT><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
@@ -459,7 +414,6 @@ def SendMenu(conn:Connection):
         if len(s['title'])>0 or scount > 0:
             conn.SendTML(f' <WHITE>{s["title"]}<BR>')
         conn.SendTML('<LTGREEN><CHR c=176><HLINE n=38><CHR c=174>')
-
         #Items
         count = 0
         toggle = False
@@ -470,11 +424,11 @@ def SendMenu(conn:Connection):
             sw = 2
             tw = 17
         for i in s['entrydefs']:
+            if s['entrydefs'][i][5] not in ['',conn.mode]:
+                continue
             if i == b'\r':
                 continue
-
             xw = (2 if i<b'\r' else 0)    # Extra width if LABEL item
-
             if isinstance(s['entrydefs'][i][2],tuple):
                 t = s['entrydefs'][i][2][0]
                 dw = 38 if len(t) == 0 and i<b'\r' else 36
@@ -482,14 +436,11 @@ def SendMenu(conn:Connection):
             else:
                 t = s['entrydefs'][i][2]
                 desc =''
-
-            title = crop(t,tw+xw-1)   #t if len(t)<(tw+xw) else t[0:(tw+xw)-4]+'...'
-
+            title = crop(t,tw+xw-1)
             if len(title) > 0 or count > (sw-1) or i >= b'\r':
                 if i < b'\r' and count % sw == 0:    #NULL entry
                         conn.SendTML('<LTGREEN><VLINE>')
                 KeyLabel(conn,chr(i[0]),title, toggle)
-
                 if count % sw == 0:
                     toggle = not toggle
                     line = ' '*((tw+xw)-1-len(title))+(' 'if sw == 2 else '<GREEN><VLINE>')
@@ -506,12 +457,11 @@ def SendMenu(conn:Connection):
         if (count % sw == 1) and (sw == 2):
             conn.SendTML('<SPC n=19><GREEN><VLINE>')
         conn.SendTML('<CHR c=173><HLINE n=38><CHR c=189>')
-    ####
     conn.SendTML(f'<AT x=0 y=24><WHITE> {tmenu["prompt"]} ')
 
-
-
-# Display sequentially all matching files inside a directory
+#####################################################################
+# Sequentially display all matching files inside a directory
+#####################################################################
 def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
     # Sends menu options
     files = []	#all files
@@ -532,7 +482,6 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
     for f in files:
         if splitext(f)[1].upper() in pics_e + text_e + bin_e + pet_e + aud_e + chip_e + ('.TML',):
             slides.append(f)
-
     slides.sort()	#Sort list
 
     #Iterate through files
@@ -571,12 +520,13 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
             WaitRETURN(conn,60.0*5)
         else:
             time.sleep(delay)
-
         conn.Sendall(TT.to_Text(0,conn.style.BoColor,conn.style.BgColor))
     conn.Sendall(TT.enable_CRSR())
 
+################################################
+# Wait for user to press RETURN
+################################################
 def WaitRETURN(conn:Connection,timeout = 60.0):
-    # Wait for user to press RETURN
     _LOG('Waiting for the user to press RETURN...',id=conn.id,v=4)
     tecla = b''
     conn.socket.settimeout(timeout)
@@ -592,8 +542,10 @@ def WaitRETURN(conn:Connection,timeout = 60.0):
             pass
     _LOG(bcolors.OKBLUE+str(tecla)+bcolors.ENDC,id=conn.id,v=4)
 
+##############################################
+# Wait 1 minute for the user to press any key
+##############################################
 def WaitKey(conn:Connection):
-    # Wait for the user to press any key
     _LOG('Waiting for the user to press a key...',id=conn.id,v=4)
     tecla = b''
     conn.socket.settimeout(60.0)
@@ -606,11 +558,12 @@ def WaitKey(conn:Connection):
             pass
     conn.socket.settimeout(_tout)
 
+################################################
 # Logoff
+################################################
 def LogOff(conn:Connection, confirmation=True):
 
     lan = {'en':['Are you sure (Y/N)? ','YN','Disconnected'],'es':['Esta seguro (S/N)? ','SN','Desconectado']}
-
     l_str = lan.get(conn.bbs.lang,lan['en'])
 
     if confirmation == True:
@@ -629,34 +582,36 @@ def LogOff(conn:Connection, confirmation=True):
         conn.connected = False
         return True
 
-
+#####################################
 # Switch menu
+#####################################
 def SwitchMenu(conn:Connection, id):
     if id-1 != conn.menu:
         if len(conn.MenuDefs) != 0:
             conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = id-1
         conn.MenuDefs = GetKeybindings(conn,id-1)
-        #Function = conn.MenuDefs[b'\r'][0]
-        #Function(*conn.MenuDefs[b'\r'][1])
 
-        #conn.newmenu = id-1	#replace
-
-# Generate keybindings
+########################################
+# Generate menu keybindings
+########################################
 def GetKeybindings(conn:Connection,id):
 
     menu = conn.bbs.MenuList[id]
     kb = {}
     for cat in menu['entries']:
-        #kb.update(cat['entrydefs'])
         for e in cat['entrydefs']:
-            kb[e] = cat['entrydefs'][e].copy()
-            if isinstance(kb[e][2],tuple):
-                kb[e][2]=kb[e][2][0]
-            kb[e][1] = (conn,)+kb[e][1]
+            print(cat['entrydefs'][e][5],['',conn.mode])
+            if cat['entrydefs'][e][5] in ['',conn.mode]:
+                kb[e] = cat['entrydefs'][e].copy()
+                if isinstance(kb[e][2],tuple):
+                    kb[e][2]=kb[e][2][0]
+                kb[e][1] = (conn,)+kb[e][1]
     return kb
 
+############################
 # Show BBS/User statistics
+############################
 def Stats(conn:Connection):
     _LOG("Displaying stats",v=4,id=conn.id)
     conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
@@ -694,16 +649,13 @@ def Stats(conn:Connection):
         tdwn = format_bytes(udata.get('downbytes',0) + conn.outbytes)
         text += [f'<CYAN>Total session time: <WHITE>{datetime.timedelta(seconds=round(tt))}<BR>',
                  f'<CYAN>Total Upload/Download: <WHITE>{tup}<YELLOW>/<WHITE>{tdwn}<BR>']
-    
     More(conn,text,22)
     conn.Sendall(TT.set_Window(0,24))
 
+#############################
 # SignIn/SignUp
+#############################
 def SignIn(conn:Connection):
-
-    # dateord = [[0,1,2],[1,0,2],[2,1,0]]
-    # dateleft = [[0,3,3],[3,0,3],[3,5,0]]
-
     _dec = conn.encoder.decode
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
@@ -809,13 +761,13 @@ def SignIn(conn:Connection):
                     return
         else:
             Done = True
-#
 
+######################################################################
 # Edit logged in user
 # This always runs outside the mainloop regardless of where is called
+######################################################################
 def EditUser(conn:Connection):
     _dec = conn.encoder.decode
-
     _LOG('Editing user '+conn.username, v=3)
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     if conn.bbs.dateformat == 1:
@@ -980,7 +932,9 @@ def EditUser(conn:Connection):
                         conn.SendTML('<AT x=0 y=14><SPC n=80><CRSRU n=3>')
                     n += 1
 
+###############################
 # Display user list
+###############################
 def UserList(conn:Connection):
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
@@ -988,16 +942,13 @@ def UserList(conn:Connection):
     # Init Menu parameter dictionary if needed
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
-
     # Start with barebones MenuDic
     MenuDic = { 
                 b'_': (MenuBack,(conn,),"Previous Menu",0,False),
                 b'\r': (UserList,(conn,),"",0,False)
               }	
- 
     # Select screen output
     conn.SendTML('<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="User list">')
-
     users = conn.bbs.database.getUsers()
     digits = len(str(max(users[:])[0]))
     tml = '<WHITE> ID         Username<BR><BR><LTGREEN>'
@@ -1006,14 +957,12 @@ def UserList(conn:Connection):
     else:
         tml += '<CRSRU><HLINE n=40>'
     conn.SendTML(tml)
-
     pages = int((len(users)-1) / 18) + 1
     count = len(users)
     start = conn.MenuParameters['current'] * 18
     end = start + 17
     if end >= count:
         end = count - 1
-
     #Add pagination keybindings to MenuDic
     if pages > 1:
         if conn.MenuParameters['current'] == 0:
@@ -1026,7 +975,6 @@ def UserList(conn:Connection):
         else:
             page = conn.MenuParameters['current']+1
         MenuDic[b'>'] = (SetPage,(conn,page),'Next Page',0,False)
-
     x = 0
     for x in range(start, end + 1):
         KeyLabel(conn, str(users[x][0]).zfill(digits), f'   {users[x][1]}<BR>', x % 2)
@@ -1043,11 +991,12 @@ def UserList(conn:Connection):
     conn.Sendall(TT.to_Screen())
     return MenuDic
 
+##########################################################
+# Check terminal for some basic features on connection
+##########################################################
 def GetTerminalFeatures(conn:Connection, display = True):
-
     conn.SendTML(f'<CLR><LTBLUE>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR>'
                 f'<LTBLUE>Turbo56K version: <WHITE>{conn.T56KVer}<BR><PAUSE n=0.5>')
-
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
@@ -1064,10 +1013,9 @@ def GetTerminalFeatures(conn:Connection, display = True):
         conn.SendTML(f'<GREY3>PCM audio samplerate <YELLOW>{conn.samplerate}Hz<BR>')
     time.sleep(0.5)
 
-#######################################################
-##					  BBS Loop						 ##
-#######################################################
-
+##############################
+# Main BBS Loop
+##############################
 def BBSLoop(conn:Connection):
 
     try:
@@ -1087,7 +1035,6 @@ running under:<BR>
 <LTBLUE>{pt}<BR>'''
 
         conn.SendTML(welcome)
-
         # Connected, wait for the user to press RETURN
         WaitRETURN(conn)
 
@@ -1105,13 +1052,9 @@ running under:<BR>
             dato1 = conn.Receive(1)
             dato2 = conn.Receive(1)
             _LOG('TURBO56K version: '+ bcolors.OKGREEN + str(ord(dato1)) + '.' + str(ord(dato2)) + bcolors.ENDC,id=conn.id,v=4) 
-
             t56kver = ord(dato1)+((ord(dato2))/10)
-
             if t56kver > 0.4:
                 conn.SetMode(datos,t56kver)
-                # conn.TermString = datos
-                # conn.T56KVer = t56kver
                 GetTerminalFeatures(conn)
                 if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
                     _LOG('Sending intro pic',id=conn.id,v=4)
@@ -1145,18 +1088,13 @@ running under:<BR>
                 _LOG('Old terminal detected - Terminating',id=conn.id)
                 conn.SendTML('Please user RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
                 conn.connected = False
-
             #Increment visit counters
             conn.bbs.visits += 1            #Session counter
             conn.bbs.database.newVisit(conn.username)    #Total counter
-
-
             # Display the main menu
-
             conn.menu = 0		# Starting at the main menu
             conn.MenuDefs = GetKeybindings(conn,0)
             SendMenu(conn)
-
             while conn.connected == True and _run == True:
                 data = conn.Receive(1)
                 _LOG('received "'+bcolors.OKBLUE+str(data)+bcolors.ENDC+'"',id=conn.id,v=4)
@@ -1186,7 +1124,6 @@ running under:<BR>
                 else:
                     _LOG('no more data from', conn.addr, id=conn.id)
                     break
-
         else:
             conn.SendTML(   '<CYAN><BR>This BBS requires a terminal<BR>compatible with TURBO56K 0.3 or newer.<BR>'
                             'For the lastest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><LTBLUE>Disconnected...')
@@ -1199,8 +1136,12 @@ running under:<BR>
         conn.socket.close()
         _LOG('Disconnected',id=conn.id,v=3)
 
-
-## Connection check thread ##
+###################################################
+# Connection management thread
+# Checks if connections are alive, once per second
+# Reloads configuration file if it's modified and
+# the BBS is idling
+###################################################
 def ConnTask():
     global conlist
     global bbs_instance
@@ -1232,24 +1173,22 @@ def ConnTask():
                     conlist.pop(t)
                     _LOG('Slot freed - Awaiting a connection',v=3)
 
+
 #######################################################
-##              		MAIN                         ##
+# MAIN
 #######################################################
 
 # Initialize variables
-
 parser = argparse.ArgumentParser(description='Python BBS server for Turbo56K enabled terminals')
 parser.add_argument('-v', dest='verb', type=int, choices=range(1,5),nargs='?', const=1, default=1, help='Verbosity level (1-4): 1 = Errors only | 4 = All logs')
 parser.add_argument('-c', dest='config', type=str, nargs='?', const='config.ini', default='config.ini', help='Path to the configuration file to be used')
 
 if AA.wavs != True:
     _LOG('Audio fileformats not available!', v=2)
-
 if AA.meta != True:
     _LOG('Audio Metadata not available!', v=2)
 
 args = parser.parse_args()
-
 set_verbosity(args.verb)
 
 #Set configuration file
@@ -1286,25 +1225,19 @@ bbs_instance.start()
 
 # Register CTRL-C handler
 signal.signal(signal.SIGINT, signal_handler)
-
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
 # Bind the socket to the port
 server_address = (bbs_instance.ip, bbs_instance.port)
 _LOG('Initializing server on %s port %s' % server_address,v=3)
 sock.bind(server_address)
-
 # Listen for incoming connections. Max 2 connections in queue
 sock.listen(2)
-
 #List of current active connections
 conlist = {}
-
 conthread = threading.Thread(target = ConnTask, args = ())
 conthread.start()
-
 while True:
     # Wait for a connection
     _LOG('Awaiting a connection',v=3)
@@ -1322,6 +1255,5 @@ while True:
             conlist[newid][0].start()
             break
     else:   # No free slot, refuse connection
-        c.sendall(bytes(P.toPETSCII(bbs_instance.BSYMess),'latin1'))
+        c.sendall(bytes(bbs_instance.BSYMess,'latin1'))
         c.close()
-    

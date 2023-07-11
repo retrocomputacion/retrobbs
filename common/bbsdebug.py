@@ -1,4 +1,6 @@
-##### Debug logging #####
+##########################
+# Debug logging
+##########################
 
 import sys
 import datetime
@@ -20,7 +22,9 @@ Verbosity = 3
 # 3 = INFO
 # 4 = LOG
 
-
+##########################
+# Set verbosity level
+##########################
 def set_verbosity(v = 1):
     global Verbosity
     if v > 0:
@@ -28,7 +32,9 @@ def set_verbosity(v = 1):
     else:
         Verbosity = 1
 
-#Print Log message to console
+#######################################################
+# Print Log message to console
+#######################################################
 def _LOG(*message, _end='\n', date=True, id=0, v = 1):
     if v <= Verbosity:
         if id != 0:

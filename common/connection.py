@@ -18,8 +18,8 @@ from common.classes import bbsstyle, Encoder
 # Dictionary of client variant -> Encoder
 clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264'}
 
+########### Connection class ###########
 class Connection:
-
     def __init__(self, socket, addr, bbs, id):
         self.connected = True
         self.socket = socket
@@ -28,7 +28,7 @@ class Connection:
         self.bbs:BBS = bbs
 
         # MenuDef entry:
-        # [Function, (Parameters tuple), Title, UserClass , WaitKey]
+        # [Function, (Parameters tuple), Title, UserClass , WaitKey, Mode]
         self.MenuDefs = {}			#Current Menu functions dictionary
         self.MenuParameters = {}	#Current Menu parameters dictionary
         self.MenuStack = []			#Menu stack
@@ -60,7 +60,6 @@ class Connection:
         self.style = bbsstyle(self.encoder.colors)
         self.parser = TMLParser(self)				#TML parser
         self.p_running = False
-
 
         _LOG('Incoming connection from', addr,id=id,v=3)
     
@@ -125,7 +124,6 @@ class Connection:
 
     #Converts string to binary string and sends it via socket
     def Sendall(self, cadena):
-
         if self.connected == True:
             _bytes = bytes(cadena,'latin1')
             try:
@@ -137,7 +135,6 @@ class Connection:
 
     #Send binary string via socket
     def Sendallbin(self, cadena=b''):
-
         if self.connected == True:
             try:
                 self.socket.sendall(cadena)
@@ -149,7 +146,6 @@ class Connection:
 
     #Receive (count) binary chars from socket
     def Receive(self, count):
-
         cadena = b''
         if self.connected == True:
             for c in range(0,count):
@@ -162,15 +158,15 @@ class Connection:
                     self.connected = False
                     cadena = b''
                     break
-
         return cadena
 
     #Receive single binary char from socket
-    def ReceiveKey(self, lista=b'\r'):
+    def ReceiveKey(self, lista=b''):
+        if lista == b'':
+            lista = bytes(self.encoder.nl,'ascii')
         t = True
         while t == True:
             cadena = b''
-
             if self.connected == True:
                 try:
                     _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
@@ -196,12 +192,12 @@ class Connection:
         return cadena
 
     #Receive single binary char from socket - NO LOG
-    def ReceiveKeyQuiet(self, lista=b'\r'):
-
+    def ReceiveKeyQuiet(self, lista=b''):
+        if lista == b'':
+            lista = bytes(self.encoder.nl,'ascii')
         t = True
         while t == True:
             cadena = b''
-
             if self.connected == True:
                 try:
                     cadena = self.socket.recv(1)
@@ -228,11 +224,12 @@ class Connection:
     #maxlen = max number of characters to receive
     #pw = True for password entry
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
-        
-        if b'\r' not in keys:
-            keys += b'\r'	#Add RETURN if not originaly included
-        if b'\x14' not in keys:
-            keys += b'\x14' #Add DELETE if not originaly included
+        cr = bytes(self.encoder.nl,'ascii')
+        bs = bytes(self.encoder.bs,'ascii')
+        if cr not in keys:
+            keys += cr	#Add RETURN if not originaly included
+        if bs not in keys:
+            keys += bs #Add DELETE if not originaly included
         cadena = b''
         done = False
         while not done:
@@ -241,8 +238,8 @@ class Connection:
             else:
                 k = self.ReceiveKey(keys)
             if self.connected:
-                if k != b'\r' and k != b'':
-                    if k == b'\x14':
+                if k != cr and k != b'':
+                    if k == bs:
                         if len(cadena) > 0:
                             cadena = cadena[:-1]	#Delete character
                             self.Sendallbin(k)
@@ -265,7 +262,8 @@ class Connection:
     #auto = if True entry can be canceled by pressing delete with no value entered,
     #		and is completed if the number of digits matches the limits
     def ReceiveInt(self, minv, maxv, defv, auto = False):
-
+        cr = bytes(self.encoder.nl,'ascii')
+        bs = bytes(self.encoder.bs,'ascii')
         if minv < 0:
             minv = -minv
         if maxv < 0:
@@ -274,8 +272,6 @@ class Connection:
             maxv = minv+1
         if not(minv <= defv <= maxv):
             defv = minv
-
-        #keys = b'0123456789\x14\r'
         temp = b''
         done = False
         vall = max(len(str(minv)),len(str(maxv))) #Max digits
@@ -283,40 +279,38 @@ class Connection:
         maxs = str(maxv).zfill(vall)	#Max value string with padding 0s
         defs = str(defv).zfill(vall)	#Default value string with padding 0s
         tval = ['0']*vall
-
         d = 0
         minr = int(mins[0])
         maxr =int(maxs[0])+1
         while True:
-            keys = b'\x14'
+            keys = bs
             if d < vall:
                 for x in range(minr,maxr):
                     keys += bytearray(str(x),'utf-8')
                     if d == 0:
-                        keys += b'\r'
+                        keys += cr
             else:
-                keys += b'\r'
+                keys += cr
             temp = self.ReceiveKey(keys)
             if not self.connected:
                 return(None)
             if d == 0:
-                if temp == b'\x14':
+                if temp == bs:
                     if auto:
                         return(None)
                     else:
                         continue
-                elif temp == b'\r':
+                elif temp == cr:
                     self.Sendall(defs)
                     return(defv)
-            if temp != b'\r':
+            if temp != cr:
                 self.Sendallbin(temp)
-            if temp != b'\x14':
+            if temp != bs:
                 tval[d] = temp.decode('utf-8')
                 d += 1
             else:
                 d -= 1
-                self.Sendallbin(b'\x94') #Insert
-
+                self.Sendallbin(b'\x94') #Insert **TODO: replace with adecuate encoder character
             # Calculate next digit range
             if d == 0:
                 minr = int(mins[0])
@@ -342,15 +336,15 @@ class Connection:
     # all dates of datetime.date type
     # Returns a datetime.date object, None if the parameters are incorrect
     def ReceiveDate(self, prompt, mindate, maxdate, defdate):
-
         if (mindate > maxdate) or not (mindate <= defdate <= maxdate):
             return None
+        
+        cr = bytes(self.encoder.nl,'ascii')
+        bs = bytes(self.encoder.bs,'ascii')
 
         odate = defdate
-
         dateord = [[0,1,2],[1,0,2],[2,1,0]]		#Fields order
         dateleft = [[0,3,3],[3,0,3],[3,5,0]]	#Left cursor count
-
         dord = dateord[self.bbs.dateformat]
         dleft = dateleft[self.bbs.dateformat]
         if self.bbs.dateformat == 1:
@@ -379,7 +373,7 @@ class Connection:
                         x += 1
                         self.SendTML('<CRSRR>')
                     else:
-                        if self.ReceiveKey(b'\x14\r') == b'\r':
+                        if self.ReceiveKey(bs+cr) == cr:
                             break
                         else:
                             self.SendTML('<DEL n=2>')
@@ -396,7 +390,7 @@ class Connection:
                         x += 1
                         self.SendTML('<CRSRR>')
                     else:
-                        if self.ReceiveKey(b'\x14\r') == b'\r':
+                        if self.ReceiveKey(bs+cr) == cr:
                             break
                         else:
                             self.SendTML('<DEL n=2>')
@@ -413,20 +407,19 @@ class Connection:
                         x += 1
                         self.SendTML('<CRSRR>')
                     else:
-                        if self.ReceiveKey(b'\x14\r') == b'\r':
+                        if self.ReceiveKey(bs+cr) == cr:
                             break
                         else:
                             self.SendTML('<DEL n=4>')
             try:
                 odate = datetime.date(year,month,day)
                 if mindate <= odate <= maxdate:
-                    break;
+                    break
                 else:
                     self.SendTML("<BR>Invalid date!<BR>")
             except ValueError:
                 self.SendTML("<BR>Invalid date!<BR>")
         return odate
-    
 
     # Send TML script
     def SendTML(self, data):

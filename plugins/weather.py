@@ -1,4 +1,3 @@
-from base64 import decode
 import python_weather
 import asyncio
 import requests
@@ -7,13 +6,11 @@ import json
 from geopy.geocoders import Photon, Nominatim
 
 from PIL import Image
-from PIL import ImageFont
 from PIL import ImageDraw
 
 import numpy as NP
 
 from common.connection import Connection
-# from common.c64cvt import GetIndexedImg, PaletteHither
 from common.imgcvt import gfxmodes, get_IndexedImg, PreProcess, colordelta, dithertype, get_ColorIndex
 from common.bbsdebug import _LOG
 from common import filetools as FT
@@ -23,8 +20,8 @@ from common.helpers import font_bold as font_title
 from common.helpers import font_big as font_temp
 from common.helpers import font_text
 
-wgfx24: list #Weather gfx 24px 
-wgfx8:  list  #Weather gfx 8px
+wgfx24: list  # Weather gfx 24px 
+wgfx8:  list  # Weather gfx 8px
 wtypes =    {110:2,113:2,                                       #Clear
             116:7,                                              #Partly Cloudy
             119:1,                                              #Cloudy
@@ -44,30 +41,22 @@ wtypes =    {110:2,113:2,                                       #Clear
 }
 wwind =     {'N':0,'NNE':7,'NE':7,'ENE':7,'E':2,'ESE':6,'SE':6,'SSE':6,'S':1,'SSW':5,'SW':5,'WSW':5,'W':3,'WNW':8,'NW':8,'NNW':8}
 
-
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     global wgfx8
     global wgfx24
-    # global font_text
-    # global font_temp
-    # global font_title
     gfx = NP.array(Image.open('plugins/weather_icons.png'))
     wgfx24 = [gfx[x:x+24,y:y+24] for x in range(0,48,24) for y in range(0,312,24)]
     wgfx8 = [gfx[x:x+8,y:y+8] for x in range(56,72,8) for y in range(0,40,8)]
-
-    # font_title = ImageFont.truetype("plugins/karen2blackint.ttf", 16)   #<
-    # font_temp = ImageFont.truetype("plugins/karen2blackint.ttf", 24)    #<
-    # font_text = ImageFont.truetype("plugins/BetterPixels.ttf",16)       #<
-
     fname = "WEATHER" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
-#############################
 
-##########################################
-#Plugin callable function
+###################################
+# Plugin function
+###################################
 def plugFunction(conn:Connection):
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     #First get location from the connection IP
@@ -84,7 +73,6 @@ def plugFunction(conn:Connection):
         geoLoc = Photon(user_agent="RetroBBS-Weather")
     else:
         geoLoc = Nominatim(user_agent="RetroBBS-Weather")
-
     while conn.connected and not done:
         conn.SendTML('<CBM-B><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
@@ -113,9 +101,10 @@ def plugFunction(conn:Connection):
     conn.SendTML('<NUL n=2><SPLIT>')
     return
 
-
+#######################################################
+# Get weather data and render image
+#######################################################
 async def getweather(conn:Connection,locquery,geoLoc):
-
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
     units = python_weather.METRIC if conn.bbs.PlugOptions.get('wxunits','C')=='C' else python_weather.IMPERIAL
     if python_weather.__version__[0]=='0':
@@ -156,9 +145,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
     j = 3
     for i in range(0,7):
         draw.line(((2+(int(j*i)),0),(-13+(int(j*i)),15)),fill=c_dgrey)
-        #j += 0.1
     # Get full location from returned coordinates
-    #geoLoc = Nominatim(user_agent="RetroBBS")
     try:
         floc = geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
         address = floc.raw.get('address',floc.raw.get('properties',{})) #'address' in nominatim, 'properties in photon
@@ -178,7 +165,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
             draw.point((i+1,18),fill=c_dgrey)
             draw.point((i,54),fill=c_blue)
             draw.point((i+1,53),fill=c_blue)
-
         #Current temperature
         ctemp = weather.current.temperature
         if units == python_weather.IMPERIAL:
@@ -230,14 +216,12 @@ async def getweather(conn:Connection,locquery,geoLoc):
         img.paste(tmp,(224,24))
         draw.text((256,28),str(weather.current.pressure)+('hPa' if units == python_weather.METRIC else 'Hg'),c_white,font=font_title)
         draw.line(((0,55),(319,55)),fill=c_blue)
-
         # get the weather forecast for a few days
         draw.text((54,58),'Morning',c_white,font=font_text,anchor='mt')
         draw.text((126,58),'Noon',c_white,font=font_text,anchor='mt')
         draw.text((198,58),'Evening',c_white,font=font_text,anchor='mt')
         draw.text((268,58),'Night',c_white,font=font_text,anchor='mt')
         ix = 0
-
         for forecast in weather.forecasts:
             draw.text((0,76+(ix*32)),forecast.date.strftime('%a'),c_white,font=font_text)
             ih = 0
@@ -284,8 +268,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
         _LOG('Error getting location data',id=conn.id, v=1)
         conn.SendTML('ERROR!')
         img = None
-
     # close the wrapper once done
     await client.close()
     return(img)
-

@@ -90,7 +90,9 @@ PALETTE264 = {BLACK:0x00,WHITE:0x71,RED:0x32,CYAN:0x63,PURPLE:0x34,GREEN:0x45,BL
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,13)]+[chr(i) for i in range(14,32)]+[chr(i) for i in range(128,160)]
 
-#--TML tags
+###########
+# TML tags
+###########
 t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r',
             'CBMSHIFT-D':chr(DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(ENABLE_CBMSHIFT),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
@@ -109,7 +111,7 @@ t_multi['PET264'] = t_multi['PET64']
 Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"'}
 Urep = dict((re.escape(k), v) for k, v in Urep.items()) 
 
-# Petscii encoder subclass
+######### Petscii encoder subclass #########
 class PETencoder(Encoder):
     def __init__(self, name:str) -> None:
         super().__init__(name)
@@ -130,9 +132,11 @@ class PETencoder(Encoder):
             return False
         return True
 
+####################################################
 # Convert ASCII/unicode text to PETSCII
 # full = True for aditional glyph visual conversion
 #        False for simple upper-lower case swapping
+####################################################
 def toPETSCII(text:str,full=True):
     if full:
         pattern = re.compile("|".join(Urep.keys()))
@@ -143,12 +147,17 @@ def toPETSCII(text:str,full=True):
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
     return(text)
 
+###########################
+# Convert PETSCII to ASCII
+###########################
 def toASCII(text):
     text = ''.join(chr(ord(c)-96) if ord(c)>192 else c for c in text)
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
     return(text)
 
+###################################
 # Register with the encoder module
+###################################
 def _Register():
     e0 = PETencoder('PET64')
     e0.tml_mono  = t_mono['PET64']

@@ -5,25 +5,22 @@ from common import style as S
 from common.connection import Connection
 from common import turbo56k as TT
 
-
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "ONELINER" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
 #############################
 
- 
-
-##########################################
-#Plugin callable function
+###################################
+# Plugin  function
+###################################
 def plugFunction(conn:Connection):
 
     _dec = conn.encoder.decode
-
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
-
     try:
         f = open('plugins/oneliner.seq','rb')
         title = f.read()
@@ -35,7 +32,6 @@ def plugFunction(conn:Connection):
         conn.Sendall(TT.Fill_Line(3,192)+TT.Fill_Line(22,192)) # Window borders
     else:
         conn.SendTML('<AT x=0 y=3><RVSON><HLINE n=40><AT x=0 y=22><HLINE n=40><RVSOFF>')
-
     refr = True
     while conn.connected:
         conn.SendTML(f'<WINDOW top=23 bottom=24><CLR><KPROMPT t=RETURN><GREEN>to enter message {S.KeyPrompt(conn,"<LARROW>",TML=True)}<GREEN>to go back')
@@ -48,7 +44,6 @@ def plugFunction(conn:Connection):
                 onelines = []
             sendOneliners(conn, onelines)
             refr = False
-
         comm = conn.ReceiveKey(b'\r_')
         if comm == b'_':
             break
@@ -75,10 +70,11 @@ def plugFunction(conn:Connection):
                 json.dump(onelines,olf)
                 olf.close()
                 refr = True
-
     conn.Sendall(TT.set_Window(0,24))
-######################
 
+##########################################
+# Send oneliners to connection
+##########################################
 def sendOneliners(conn:Connection,lines):
     conn.SendTML('<WINDOW top=4 bottom=21><CLR>')
     for i,l in enumerate(lines):

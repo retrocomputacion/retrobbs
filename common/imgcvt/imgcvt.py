@@ -4,7 +4,6 @@ import numpy as np
 import math
 from PIL import Image, ImageEnhance, ImageStat
 import hitherdither
-import datetime as dt
 
 from common.imgcvt import common as CC
 from common.imgcvt import c64 as c64
@@ -13,38 +12,31 @@ from common.imgcvt import plus4 as p4
 #import cvtmods.zxspectrum as zx
 from common.imgcvt import palette as Palette
 from common.imgcvt import dither as DT
-from common.bbsdebug import _LOG
 import os
-import sys
 
 from enum import IntEnum
 
 #Gfx modes
 GFX_MODES = []
-
 gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI'], start=0)
 
 #Mode conversion mapping
-
 mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64MULTI},
              'PET264':{gfxmodes.C64HI:gfxmodes.P4HI,gfxmodes.C64MULTI:gfxmodes.P4MULTI}}
 
 #Image scale/crop modes
-
 cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
 
 #Native format filename extensions
-
 im_extensions = c64.Native_Ext + p4.Native_Ext
 
+######## Image preprocess class ########
 class PreProcess:
-
     brightness:float
     contrast:float
     saturation:float
     hue:float
     sharpness:float
-
 
     def __init__(self, brightness=1, contrast=1, saturation=1,hue=180,sharpness=1):
         self.brightness = brightness
@@ -53,9 +45,9 @@ class PreProcess:
         self.hue = hue
         self.sharpness = sharpness
 
-
 ####################################
 # Get GFX modes from loaded modules
+####################################
 def build_modes():
     for m in c64.GFX_MODES:
         GFX_MODES.append(m)
@@ -66,14 +58,13 @@ def build_modes():
     # for m in zx.GFX_MODES:
     #     GFX_MODES.append(m)
 
-
-################################
+###########################################################################
 # Image crop and resize
+###########################################################################
 def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
     i_ratio = i_image.size[0] / i_image.size[1]
     in_size = GFX_MODES[gfxmode]['in_size']
     dst_ratio = in_size[0]/in_size[1]
-
     if mode == cropmodes.FILL:
         if dst_ratio >= i_ratio:
             i_image = i_image.resize((in_size[0],in_size[0]*i_image.size[1]//i_image.size[0]), Image.LANCZOS)
@@ -116,51 +107,39 @@ def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
         box = (i_image.size[0]-in_size[0],i_image.size[1]-in_size[1],i_image.size[0],i_image.size[1])
     elif mode == cropmodes.CENTER:
         box = ((i_image.size[0]-in_size[0])/2,(i_image.size[1]-in_size[1])/2,(i_image.size[0]+in_size[0])/2,(i_image.size[1]+in_size[1])/2)
-
     i_image = i_image.crop(box)
     return i_image
 
-######################################
-#   Preset brightness/contrast/etc
-#
+########################################################
+# Preset brightness/contrast/etc
+########################################################
 def imagePreset(o_img:Image.Image, cmatch)->PreProcess:
-
     stat = ImageStat.Stat(o_img)
-
     r,g,b = stat.rms
     perbright = math.sqrt(0.241*(r**2) + 0.691*(g**2) + 0.068*(b**2))
-
     if perbright < 25:
         perbright = 25
     elif perbright > 128:
         perbright = 128
-
     brightness= (64/perbright)*(1.75 if cmatch == 3 else 1.9)
-
     #Saturation
     tmpImg = o_img.convert('HSV')
     stat = ImageStat.Stat(tmpImg)
     h,s,v = stat.rms
     c = tmpImg.getextrema()[2]
-
     tmpImg.close()
-
     if s < 96:
         s = 96
     elif s > 128:
         s = 128
-
     contrast = (1+((c[1]-c[0])/255))*(0.75 if cmatch == 3 else 1)
     sat = 3-(2*(s/128))
-
     return PreProcess(brightness, contrast, sat)
 
-
-#########################################
-#   Adjust image brightness/contrast/etc
-#
+############################################################
+# Adjust image brightness/contrast/etc
+############################################################
 def imageProcess(o_img:Image.Image, parameters:PreProcess):
-
     hue = int(((parameters.hue-180)/360)*255)
     enhPic = ImageEnhance.Brightness(o_img)
     tPic = enhPic.enhance(parameters.brightness)
@@ -174,22 +153,16 @@ def imageProcess(o_img:Image.Image, parameters:PreProcess):
     th = np.asarray(H,dtype=np.uint16)
     temp = np.mod(th+hue,255).astype(np.uint8)
     o_img = Image.merge('HSV',(Image.fromarray(temp),S,V)).convert('RGB')
-
     return o_img
 
-
-######################################
-#   Convert image
-#
+################################################################################################################################################################################################
+# Convert image
+################################################################################################################################################################################################
 def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmodes=gfxmodes.C64MULTI, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=3, bg_color=None):
-
     Matchmodes = {1: Palette.colordelta.EUCLIDEAN,2: Palette.colordelta.CCIR,3: Palette.colordelta.LAB}
-
     if bg_color == None:
         bg_color = [-1]
-
     Mode = GFX_MODES[gfxmode]
-
     pixelcount = Mode['out_size'][0]*Mode['out_size'][1]
 
     # Callbacks
@@ -214,11 +187,6 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             # if  lmode == 'Over input palette':
             rgb_y.append([CC.Luma(c['RGBA']),CC.Luma(c['RGBA']),CC.Luma(c['RGBA'])])
             y_in.append(CC.RGB24([CC.Luma(c['RGBA']),CC.Luma(c['RGBA']),CC.Luma(c['RGBA'])]))
-
-    # if lmode == 'Black & White':
-    #     rgb_y = [[0,0,0],[255,255,255]]
-    #     y_in = [0x000000,0xffffff]
-
     for c in out_pal:
         rgb = CC.RGB24(c['RGBA'])
         rgb_out[c['index']]=np.array(c['RGBA'][:3])   # ignore alpha for now
@@ -230,7 +198,6 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
     plen = len(tPal)//3
     tPal.extend(tPal[:3]*(256-plen))
 
-
     in_PaletteH = Palette.Palette(hd_in)   #hitherdither.palette.Palette(hd_in)   #Palette to dither/quantize against
     out_PaletteH = Palette.Palette(hd_out)  #hitherdither.palette.Palette(hd_out) #Palette to display
     y_PaletteH = Palette.Palette(y_in)  #hitherdither.palette.Palette(y_in)     #Luminance palette to dither/quantize against
@@ -239,11 +206,8 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
     in_PaletteH.colordelta = Matchmodes[cmatch]
     out_PaletteH.colordelta = Matchmodes[cmatch]
     y_PaletteH.colordelta = Matchmodes[cmatch]
-
     c_count = len(rgb_in)   # Number of colors to quantize to
-
     o_img = Source
-
     if Mode['in_size']!=Mode['out_size']:
         o_img = o_img.resize(Mode['out_size'],Image.LANCZOS)
     width = Mode['out_size'][0]
@@ -251,13 +215,8 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
     k = 2<<(Mode['bpp']-1)
     x_step = Mode['attr'][0]
     y_step = Mode['attr'][1]
-
-    start = dt.datetime.now()
-
     # Dither threshold
     Fthr =[2<<threshold]*3
-    
-
     # Full dither
     if dither != DT.dithertype.NONE:
         if dither == DT.dithertype.FLOYDSTEINBERG:
@@ -276,15 +235,12 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             o_img = DT.custom_dithering(o_img, in_PaletteH, Fthr, type = dither) # Fastest custom matrix
     else:
         o_img = in_PaletteH.create_PIL_png_from_rgb_array(o_img)  # Fastest, no dither
-
     d_colors = o_img.getcolors()
     d_counts = [d_colors[i][0] for i in range(len(d_colors))]
-
     #Prevent iterating for more than one best global color, replace with estimated
     for x in range(len(bg_color)):
         if (bg_color[x] == -2) and (bg_color.count(-2)>1):
             bg_color[x] = -1
-
     bestbg = [False]*k
     if Mode['global_colors'].count(True) > 0:
         if -1 in bg_color:  #Estimate best global colors
@@ -307,30 +263,21 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
                         while tc in bg_color:
                             count[tc] = -1
                             tc = int(np.argmax(count))
-                        bg_color[j] = tc    #int(np.argmax(np.bincount(ccount[j])))
+                        bg_color[j] = tc
                     else:
                         bg_color[j] = 0
-            #bg_color = rgb_in[d_colors[np.abs(d_counts-np.percentile(d_counts,55)).argmin()][1]][1] #d_counts.index(max(d_counts))
         bestbg = [True if x == -2 else False for x in bg_color]
-
     if Mode['attr']!=(0,0):
         o2_img = o_img.convert('RGB')
         n_img = np.asarray(o2_img)
-
-        if True in bestbg:    #gfxmode == 2 and bestbg:
-            cells3 = [[] for j in range(c_count)]     #[[] for j in range(16)]
+        if True in bestbg:
+            cells3 = [[] for j in range(c_count)]
             buffers = [get_buffers() for j in range(c_count)]
         else:
-            cells3 = []     #[[] for j in range(16)]
+            cells3 = []
             buffers = get_buffers()
-        # cells3 = []
-        # buffers = []
-
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        #k = 4
-
-        pal:Palette.Palette    #hitherdither.palette.Palette
-
+        pal:Palette.Palette
         for j in range(0,height,y_step):        # Step thru attribute cells
             for i in range(0,width,x_step):
                 z = np.reshape(n_img[j:j+y_step,i:i+x_step],(-1,3))   #get bitmap cell
@@ -347,11 +294,6 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
                         pcc = pal.create_PIL_png_from_rgb_array(pc)
                         bm_pack(i//x_step,j//y_step,pcc,buffers[bg])
                         attr_pack(i//x_step,j//y_step,attr,buffers[bg])
-                        #i_to = np.array(attr)   #Translate to display palette
-                        #t_img=np.asarray(pcc)
-                        #mask = i_to[t_img-t_img.min()]
-                        #pcc= Image.fromarray(np.uint8(mask))    #now it should be indexed to the display palette
-                        #pcc.putpalette(tPal)
                         cells3[bg].append(np.asarray(pcc.convert('RGB'))) #bitmap cells
                 else:
                     attr,pal = get_attr(cc,rgb_in,rgb_out,bg_color)     #get closest colors to the kmeans palette + background color
@@ -378,9 +320,7 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
             n_img = np.asarray(in_PaletteH.create_PIL_png_from_rgb_array(np.asarray(e_img[bg_color[bix]])))
             mask = i_to[n_img]
             e_img= Image.fromarray(np.uint8(mask))
-            #o_img = in_PaletteH.create_PIL_png_from_rgb_array(mask)
             e_img.putpalette(tPal)
-            #e_img = o_img.convert('RGB')
             buffers=buffers[bg_color[0]]
         else:
             en_img = np.zeros([height,width,3],dtype='uint8')   #[np.zeros([200,160,3],dtype='uint8') for j in range(16)]
@@ -396,27 +336,14 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
                 e_img = e_img.resize(Mode['in_size'],Image.NEAREST)
             n_img = np.asarray(in_PaletteH.create_PIL_png_from_rgb_array(np.asarray(e_img)))
             mask = i_to[n_img]
-            #rmap = i_to[mask.argmax(1)]
             e_img= Image.fromarray(np.uint8(mask))
-            #o_img = in_PaletteH.create_PIL_png_from_rgb_array(mask)
             e_img.putpalette(tPal)
-            #e_img = o_img.convert('RGB')
     else:   #Unrestricted
         n_img = np.asarray(o_img)
         mask = i_to[n_img]
-        #rmap = i_to[mask.argmax(1)]
         e_img= Image.fromarray(np.uint8(mask))
-        #o_img = in_PaletteH.create_PIL_png_from_rgb_array(mask)
         e_img.putpalette(tPal)
-        #e_img = o_img.convert('RGB')
         buffers =[]
-    #if bestbg:
-    #    return(e_img[bg_color],buffers[bg_color],rgb_in[bg_color][1])
-    #else:
-    # if (bg_color[0]<0) or (Mode['global_colors'].count(True) == 0):
-    #     bg_color[0]=0
-    # else:
-    #     bg_color[0]=next(i for i,x in enumerate(rgb_in) if x[1]==bg_color[0])
     for i in range(len(bg_color)):
         if bg_color[i]<0:
             bg_color[i] = 0
@@ -424,10 +351,10 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
         buffers[i] = bytes(buffers[i])
     return(e_img,buffers,bg_color)
 
-
-# Convert image
+###############################################################################################################################################################################################################################
+# Convert image to specified graphic mode
+###############################################################################################################################################################################################################################
 def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:PreProcess=None, cropmode:cropmodes=cropmodes.FILL, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, g_colors=None ):
-
     if g_colors == None:
         g_colors = [-1]*len(GFX_MODES[gfxmode]['global_colors'])
     t_img = Source.convert('RGB')
@@ -436,16 +363,14 @@ def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:P
         preproc = imagePreset(in_img,cmatch)
         preproc.hue = 180
         preproc.sharpness = 1.5
-
     in_img = imageProcess(in_img,preproc)
-
-
     cv_img, data, gcolors = Image_convert(in_img, GFX_MODES[gfxmode]['palettes'][0][1], GFX_MODES[gfxmode]['palettes'][0][1], gfxmode,
                     dither, threshold, cmatch,g_colors)
-    #cv_data = [data, bgcolor]
     return cv_img, data, gcolors
 
-#Create a Indexed PIL image with the desired mode dimensions and color palette, and filled with bgcolor
+#########################################################################################################
+# Create a Indexed PIL image with the desired mode dimensions and color palette, and filled with bgcolor
+#########################################################################################################
 def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     hd_p = []
     cc = np.ndarray([GFX_MODES[mode]['in_size'][1],GFX_MODES[mode]['in_size'][0]])
@@ -457,7 +382,9 @@ def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     inPal = Palette.Palette(hd_p)
     return inPal.create_PIL_png_from_closest_colour(cc), inPal
 
-#Returns the color palette index closest to the passed RGB values
+###################################################################
+# Returns the color palette index closest to the passed RGB values
+###################################################################
 def get_ColorIndex(mode: gfxmodes, rgb):
     pal = GFX_MODES[mode]['palettes'][0][1]
     dist = [2**1024]*len(pal)
@@ -466,19 +393,21 @@ def get_ColorIndex(mode: gfxmodes, rgb):
             dist[c['index']] = CC.Redmean(rgb,c['RGBA'][:3])
     return dist.index(min(dist))
 
-#Returns the RGB values for the index in the color palette
+############################################################
+# Returns the RGB values for the index in the color palette
+############################################################
 def get_RGB(mode: gfxmodes, index):
     pal = GFX_MODES[mode]['palettes'][0][1]
-
     rgb = [0,0,0]
     for c in pal:
         if c['enabled']:
             if c['index'] == index:
                 return c['RGBA'][:3]
     return rgb
-    ...
 
-#Open a native image, return Image object, (Native image data if any, Graphic mode)
+#####################################################################################
+# Open a native image, return Image object, (Native image data if any, Graphic mode)
+#####################################################################################
 def open_Image(filename:str):
     extension = os.path.splitext(filename)[1].upper()
     if extension in c64.Native_Ext:
@@ -493,14 +422,11 @@ def open_Image(filename:str):
         return None
     return result
 
-##### On load
-build_modes()
-
-#Prepare a native image to be save to disk, return a byte string and formatted filename
+#########################################################################################
+#Prepare a native image to be saved to disk, return a byte string and formatted filename
+#########################################################################################
 def build_File(buffers, gcolors, filename, gfxmode):
     return GFX_MODES[gfxmode]['save_output'][1](buffers,gcolors,filename)
-    # if gfxmode in [gfxmodes.C64HI, gfxmodes.C64MULTI]:
-    #     c64.buildfile(buffers, gcolors, gfxmode)
-    # elif gfxmode in [gfxmodes.P4HI, gfxmodes.P4MULTI]:
-    #     p4.buildfile(buffers, gcolors, gfxmodes-2)
-    ...
+
+##### On load
+build_modes()

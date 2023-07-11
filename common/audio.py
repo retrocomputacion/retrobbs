@@ -228,29 +228,23 @@ def _GetPCMLength(filename):
     return tsecs
 
 ######################################################################
-#Send Audio file
+# Send Audio file
 ######################################################################
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
-
     if conn.QueryFeature(TT.STREAM) >= 0x80:	#Exit if terminal doesn't support PCM streaming
         return
-
     bnoise = b'\x10\x01'
     CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
-
     if length == None:
         length = _GetPCMLength(filename)
-
     conn.socket.settimeout(conn.bbs.TOut+length)	#<<<< This might be pointless
     _LOG('Timeout set to:'+bcolors.OKGREEN+str(length)+bcolors.ENDC+' seconds',id=conn.id,v=3)
-
     #Send any other supported audio file format
     conn.Sendall(chr(255) + chr(161) + '..enviando,')
     time.sleep(1)
     # Select screen output
     conn.Sendall(chr(255) + chr(160))
     _LOG('Sending audio: '+filename,id=conn.id,v=3)
-
     if (dialog == True) and (meta == True):
         a_meta = {}
         a_data = mutagen.File(filename)
@@ -281,19 +275,13 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
         if not conn.connected:
             return()
         conn.SendTML('<CBM-B><CRSRL>')
-
-
     #Streaming mode
     binario = b'\xFF\x83'
-
     pcm_stream = PcmStream(filename,conn.samplerate)
-
     t0 = time.time()
-
     streaming = True
     t_samples = length * conn.samplerate # Total number of samples for the selected playtime
     c_samples = 0   # Sample counter
-
     while streaming == True:
         t1 = time.time()
         audio = asyncio.run(pcm_stream.read(CHUNK))
@@ -356,10 +344,8 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     conn.socket.settimeout(conn.bbs.TOut)
     conn.SendTML('<CURSOR>')
 
-#########################################    
-# PcmStream Class
-# Receive an audio stream through FFMPEG
-#########################################
+############# PcmStream Class ############
+# Receive an audio stream through FFMPEG #
 class PcmStream:
     def __init__(self, fn, sr):
         # self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
@@ -410,9 +396,9 @@ def _GetCHIPLength(filename):
     
     return length
 
-############################################
+#############################################
 # Display CHIPtune info dialog
-############################################
+#############################################
 def _DisplayCHIPInfo(conn:Connection, info):
     
     def calctime():
@@ -499,15 +485,15 @@ def _DisplayCHIPInfo(conn:Connection, info):
 #                     return st
 #     return 'default'
 
-#############################################################
+##########################################
 # Stream SID/MUS files >>> DEPRECATED <<<
 # Use CHIPStream instead
-#############################################################
+##########################################
 SIDStream = lambda conn,filename,ptime,dialog=True,_subtune=None:CHIPStream(conn,filename,ptime,dialog,_subtune)
 
-#############################################################
+#############################################################################
 # Stream register writes to the guest's sound chip
-#############################################################
+#############################################################################
 def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 
     # V1f = '\x00\x01'    #Voice 1 Frequency

@@ -13,25 +13,23 @@ from common.helpers import formatX, More, text_displayer
 from common.bbsdebug import _LOG,bcolors
 from common.connection import Connection
 
-
 url = 'https://api.nasa.gov/planetary/apod'
 
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "APOD"
     parpairs= []
     return(fname,parpairs)
-#############################
 
 start_date = datetime.today().replace(day=16, month=6, year=1995).toordinal()
 end_date = datetime.today().toordinal()
 
-##########################################
-#Plugin callable function
+###################################
+# Plugin function
+###################################
 def plugFunction(conn:Connection):
-
-
 
     apod_lang = {'en':['Connecting with NASA',f"<CLR><BR><LTGREEN>Converting...<BR>press <INK c={conn.style.PbColor}>"	\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
@@ -43,11 +41,10 @@ def plugFunction(conn:Connection):
                     + f"<LTGREEN> para mostrar otra imagen al azar<BR>O "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
                     + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><CBM-B><CRSRL>"]}
-
     loop = True
     rdate = datetime.today()
     while loop == True:
-        # # Text mode
+        # Text mode
         conn.Sendall((chr(0)*2)+TT.to_Text(0,conn.style.BoColor,conn.style.BgColor)+TT.enable_CRSR())
         RenderMenuTitle(conn,'APOD')
         conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<CBM-B><CRSRL>')
@@ -73,17 +70,18 @@ def plugFunction(conn:Connection):
                 autor = idata["copyright"]
             else:
                 autor = ''
-
             texto = formatX(title)
-            #Prints date
+            #Date
             tdate = formatX('\n'+date+'\n\n')
             tdate[0] = '<LTBLUE>'+tdate[0]
             texto += tdate
+            #Author
             if autor != '':
                 at = formatX(autor)
                 at[0] = '<ORANGE>'+at[0]
             else:
                 at = ['<BR>']
+            #Description
             tdesc = formatX(desc)
             tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
             texto += at+tdesc
@@ -115,11 +113,11 @@ def plugFunction(conn:Connection):
             conn.SendTML("<BR>ERROR, unable to connect with NASA")
             _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id,v=2)
             loop = False
-##########################################
 
-
+#####################################################
+# Retrieve APOD data
+#####################################################
 def apod_info(idate, key='DEMO_KEY', retry = False):
-
     global url
 
     date = idate.strftime("%Y-%m-%d")
@@ -145,12 +143,12 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
                 resp = -1
     if m_type != 'image':
         resp = None
-
     return(resp)
 
-
+###################################
+# Retrieve APOD image
+###################################
 def apod_img(conn:Connection,url):
-
     cv_img = None
     bitmap = None
     screen = None
@@ -167,6 +165,5 @@ def apod_img(conn:Connection,url):
         img = img.convert("RGB")
     except:
         _LOG('APOD - Error converting image', id=conn.id, v=1)
-
     return (img)
 

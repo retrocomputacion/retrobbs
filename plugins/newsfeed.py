@@ -17,51 +17,40 @@ from common import filetools as FT
 ### User Agent string used for some stingy content sources
 hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
 
-
-
-
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "NEWSFEED" #UPPERCASE function name for config.ini
     parpairs = [('url','')] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
 #############################
 
- 
-
-##########################################
-#Plugin callable function
+#######################################
+# Plugin callable function
+#######################################
 def plugFunction(conn:Connection,url):
-    
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
-
     colors = conn.encoder.colors
-
     menucolors = [[colors['LIGHT_BLUE'],colors['LIGHT_GREY']],[colors['CYAN'],colors['YELLOW']]]
-
     MenuDic = {
                 b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
                 b'\r': (plugFunction,(conn,url),"",0,False)
               }
-
-    # # Text mode
+    # Text mode
     conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t=Newsfeed><CBM-B><CRSRL>')
-
     nfeed = feedparser.parse(url)
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
-
         conn.SendTML("Recent from:<BR>")
         title = H.formatX(nfeed.feed.get('title','No title'))
         for t in title:
             conn.SendTML(t)
         conn.SendTML('<BR>')
         lines +=len(title)
-
         i = 1
         for e in nfeed.entries:
             text = textwrap.shorten(e.get('title','No title'),width=72,placeholder='...')
@@ -79,18 +68,15 @@ def plugFunction(conn:Connection,url):
         conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><CBM-J><LARROW><CBM-L><RVSOFF><INK c={menucolors[i%2][1]}>Back<BR>'
                      f'<WHITE><BR>Your choice: ')
         return MenuDic
-
     except:
         _LOG('Newsfeed - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)
 
-##############################################
-
+###############################################
+# Parse an RSS/Atom feed entry
+###############################################
 def feedentry(conn:Connection,entry,feedname):
     _LOG('NewsFeeds - Entry: '+entry.get('title','-no title-'),id=conn.id,v=4)
-
     mtitle = textwrap.shorten(feedname,width=38-(len(conn.bbs.name)+7),placeholder='...')
-
-
     if webarticle(conn,entry.link,mtitle) == False:
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
@@ -106,11 +92,8 @@ def feedentry(conn:Connection,entry,feedname):
             e_text = entry.get('description','') #RSS
         soup= BeautifulSoup(e_text, "html.parser")
         texts = soup.find_all(text=True)
-
         e_text = " ".join(t.strip() for t in texts)
-
         body = H.formatX(e_text)
-
         title = H.formatX(e_title)
         title[0] = '<WHITE>'+title[0]
         title.append(f'<YELLOW><HLINE n=40><INK c={conn.style.TxtColor}>')
@@ -120,8 +103,10 @@ def feedentry(conn:Connection,entry,feedname):
         #H.More(conn,text,22)
     conn.Sendall(TT.set_Window(0,24))
 
-### Try to scrap data from wordpress and some other CMS sites,
-### returns False if entry title or body cannot be found 
+#############################################################
+# Try to scrap data from wordpress and some other CMS sites,
+# returns False if entry title or body cannot be found
+#############################################################
 def webarticle(conn:Connection,url, feedname):
     conn.SendTML('<CBM-B><CRSRL>')
     resp = requests.get(url, allow_redirects = False, headers = hdrs)
@@ -144,7 +129,6 @@ def webarticle(conn:Connection,url, feedname):
         # Replace </br> tags
         for br in soup.find_all("br"):
             br.replace_with('\n')
-
         #####   Title   #####
         try:
             a_title = soup.find(['h1','h2','h3'],{'class':['entry-title','post-title','title']}).get_text()
@@ -220,7 +204,6 @@ def webarticle(conn:Connection,url, feedname):
         S.RenderMenuTitle(conn,feedname)
         conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CRSRR n=13><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
         conn.Sendall(TT.set_Window(3,23))
-        #body = H.formatX(a_body)
         title = H.formatX(a_title)
         title[0] = '<WHITE>'+title[0]
         title.append('<YELLOW><HLINE n=40>')
@@ -230,7 +213,6 @@ def webarticle(conn:Connection,url, feedname):
         body[0] = '<GREY2>'+body[0]
         text = title + body
         H.text_displayer(conn,text,21)
-        # H.More(conn,text,22)
         conn.Sendall(TT.set_Window(0,24))
     else:
         conn.SendTML(f'<DEL>{resp.status_code}<PAUSE n=1>')
@@ -238,7 +220,9 @@ def webarticle(conn:Connection,url, feedname):
         return(False)
     return(True)
 
-
+#######################
+# Get entry image
+#######################
 def getImg(url,img_t):
     src = img_t['src']
     src = urljoin(url, src)
@@ -247,5 +231,4 @@ def getImg(url,img_t):
         img = Image.open(BytesIO(scrap_im.content))
     except:
         img = Image.new("RGB",(320,200),"red")
-
     return(img)

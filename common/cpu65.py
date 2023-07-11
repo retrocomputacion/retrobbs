@@ -1,7 +1,6 @@
 # Basic 65xx CPU simulator, based on Lasse Oorni (loorni@gmail.com) and Stein Pedersen's work for SIDdump
 from common.bbsdebug import _LOG
 
-
 # Global variables
 pc:int  = 0
 a:int   = 0
@@ -12,7 +11,6 @@ sp:int  = 0
 mem:list = [0]*65536
 cpucycles:int = 0
 watchp:int = 0
-
 
 #Status register bits
 FN:int = 0x80
@@ -108,12 +106,10 @@ def ASSIGNSETFLAGS(data):
     flags = (flags & _FN) | FZ
   else:
     flags = (flags & (~(FN|FZ)&0xff)) | (dest & FN)
-
   return dest
 
 def ADC(data):
     global flags, a
-    #tempval = data
 
     if (flags & FD):
         temp = (a & 0xf) + (data & 0xf) + (flags & FC)
@@ -203,7 +199,6 @@ def CMP(src, data):
 def ASL(data):
   global flags
 
-  #temp = data
   data <<= 1
   if (data & 0x100):
     flags |= FC
@@ -214,7 +209,6 @@ def ASL(data):
 def LSR(data):
   global flags
 
-  #temp = data
   if (data & 1):
     flags |= FC
   else:
@@ -225,7 +219,6 @@ def LSR(data):
 def ROL(data):
   global flags
 
-  #temp = data
   data <<= 1
   if (flags & FC):
     data |= 1
@@ -238,7 +231,6 @@ def ROL(data):
 def ROR(data):
   global flags
 
-  #temp = data
   if (flags & FC):
     data |= 0x100
   if (data & 1):
@@ -305,8 +297,6 @@ cpucycles_table = [
   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7
 ]
 
-
-
 wpoint ={'acctype':0,'startaddr':0,'endaddr':0}
 
 def initcpu(newpc, newa, newx, newy):
@@ -327,13 +317,11 @@ def watch(startaddr, endaddr, acctype):
   global wpoint
   wpoint = {'acctype':acctype,'startaddr':startaddr,'endaddr':endaddr}
 
-
 def runcpu():
   global a, x, y, sp, cpucycles, flags, pc, mem, watchp
+
   op = FETCH()
-
   #print(f"PC: {pc-1:#0{6}x} OP: {op:#0{4}x} A:{a:#0{4}x} X:{x:#0{4}x} Y:{y:#0{4}x}")
-
   cpucycles += cpucycles_table[op]
   watchp = -1
   if op == 0xa7:

@@ -1,3 +1,7 @@
+######################################################
+# TML Parser
+######################################################
+
 from html.parser import HTMLParser, starttagopen, charref, entityref, incomplete, endendtag, endtagfind, tagfind_tolerant
 import re
 #import _markupbase
@@ -31,7 +35,6 @@ from random import randrange
 # _C = As parameter value:
 #		Connection object
 
-
 # Tag definitions:
 # 'NAME': char
 # or
@@ -57,18 +60,13 @@ t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
 t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
 class TMLParser(HTMLParser):
-
-
     conn = None
     mode = 'PET64'
-
     # Conversion function for plain text
     t_conv = P.toPETSCII
 
-    modes = ['PET64']
-
     def __init__(self, conn):
-        mode = conn.mode
+        self.mode = conn.mode
         self.conn = conn
         self.t_conv = conn.encoder.encode
         ##### Build dictionaries
@@ -81,7 +79,6 @@ class TMLParser(HTMLParser):
             # if terminal doesnt support the ink command, try to replace it with a text color control code
             # if there isn't a matching color code then send NUL
             tmp = conn.encoder.palette.items()
-            # self.t_mono['INK'] = (lambda c: chr(conn.encoder.palette[c & ((1<<len(conn.encoder.palette).bit_length())-1)]),[('_R','_C'),('c',0)])
             self.t_mono['INK'] = (lambda c: chr([k for k,v in tmp if v == c][0] if len([k for k,v in tmp if v == c])>0 else 0),[('_R','_C'),('c',0)])
         ###
         self.t_mono.update(EX.t_mono)			# Plugins and Extensions functions
@@ -101,9 +98,9 @@ class TMLParser(HTMLParser):
         self._I = 0
         self._R = None
         ###############
-        self.color = 0	# Last color index from color o ink tags 
+        self.color = 0	# Last color index from color or ink tags 
         HTMLParser.__init__(self)
-    
+
     def close(self) -> None:
         self.buffer = []
         return super().close()
@@ -143,13 +140,11 @@ class TMLParser(HTMLParser):
             if _i != None:
                 return _i, j
             return _i, gtpos+1
-
         elem = match.group(1).lower() # script or style
         if self.cdata_elem is not None:
             if elem != self.cdata_elem:
                 self.handle_data(rawdata[i:gtpos])
                 return _i, gtpos
-
         _i, j = self.handle_endtag(elem)
         if _i != None:
             return _i, j
@@ -297,7 +292,6 @@ class TMLParser(HTMLParser):
         else:
             self.offset = j
         return j
-
     #
     #############################################################
 
@@ -317,7 +311,6 @@ class TMLParser(HTMLParser):
         super().close()
         super().reset()
         return {'_A':self._A,'_S':self._S,'_I':self._I,'_R':self._R}
-
 
     def _insert(self,data):
         if len(self.buffer) == 0:
@@ -347,7 +340,6 @@ class TMLParser(HTMLParser):
             while en[0] != tag:
                 en = self.stack.popleft()
                 pass
-
             return en
         else:
             return None
@@ -454,7 +446,6 @@ class TMLParser(HTMLParser):
                 i,j = pos[2][0],pos[2][1]
             elif tag in ['switch','case','if']:	# SWITCH/CASE/IF
                 pos = self._popLatest(tag)
-
         return (i, j)
 
     def handle_data(self, data):

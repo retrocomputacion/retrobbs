@@ -11,16 +11,17 @@ from common.connection import Connection
 from common import video as VV
 import streamlink
 
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "GRABYT" #UPPERCASE function name for config.ini
     parpairs = [('url',"https://www.youtube.com/watch?v=46kn3thI-Mo"),('crop',None)] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
-#############################
 
-##########################################
-#Plugin callable function
+#############################################
+# Plugin function
+#############################################
 def plugFunction(conn:Connection,url, crop):
 
     conn.SendTML('<YELLOW><CBM-B><CRSRL>')
@@ -44,7 +45,6 @@ def plugFunction(conn:Connection,url, crop):
     if video == None:
         slsession = streamlink.Streamlink()
         try:
-
             stl = slsession.resolve_url(url)
             source = stl[0]
         except:
@@ -82,7 +82,9 @@ def plugFunction(conn:Connection,url, crop):
         return
     return(VV.Grabframe(conn,best,crop,tmsecs))
 
-
+####################################
+# Adjust image gamma
+####################################
 def adjust_gamma(image, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to
     # their adjusted gamma values

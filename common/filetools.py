@@ -58,9 +58,9 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     conn.SendTML('<RVSON><CURSOR>')
     return out
 
-###########################################################
+######################################################################################################################################################################################################################################
 # Send bitmap image
-###########################################################
+######################################################################################################################################################################################################################################
 # conn: Connection to send the image/dialog to
 # filename: file name or image object
 # lines: Number of "text" lines to send, from the top
@@ -68,12 +68,11 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 # dialog: Show convert options dialog before file transfer
 # gfxmode: Graphic mode
 # preproc: Preprocess image before converting
-###########################################################
+######################################################################################################################################################################################################################################
 def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:PreProcess = None, cropmode:cropmodes = cropmodes.FILL, dither:dithertype = dithertype.BAYER8):
 
     if gfxmode == None:
         gfxmode = conn.encoder.def_gfxmode
-    
     if conn.mode == 'PET64':
         gfxhi = gfxmodes.C64HI
         gfxmulti = gfxmodes.C64MULTI
@@ -82,7 +81,6 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         gfxmulti = gfxmodes.P4MULTI
 
     ftitle = {'.GIF':' GIF  Image ', '.PNG':' PNG  Image ', '.JPEG':' JPEG Image ', '.JPG':' JPEG Image '}
-
     fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
     fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
 
@@ -124,9 +122,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         convert = True
 
     if convert:
-        # or bytes/image object sent as filename parameter
         conn.SendTML('<CBM-B><CRSRL>')
-        # try:
         if Source == None:
             if type(filename)==str:
                 Source = Image.open(filename)
@@ -177,12 +173,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         binaryout += tchars.to_bytes(2,'little')	#Block size
         # Screen Data
         binaryout += data[1][0:tchars] #Screen
-
         if border == None:
             border = b'\x00' if bgcolor == None else bgcolor
-
         border = bytes([border]) if type(border) == int else border
-
         if (gfxmode == gfxmulti) or (conn.mode == 'PET264' and data[2] != None):
             # Set the transfer pointer + $20 (color memory)
             binaryout += b'\x81\x20'
@@ -199,7 +192,6 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                 binaryout += border
                 binaryout += bgcolor
                 if conn.mode == 'PET264':
-                    #mcolor2 = gcolors[1].to_bytes(1,'big')
                     binaryout += gcolors[4].to_bytes(1,'big')
             else:
                 # Switch to hires mode + Page number: 0 (default) + Border color: border
@@ -215,25 +207,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         savename = os.path.splitext(os.path.basename(filename))[0]
         if conn.mode in ['PET64','PET264']:
             savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-        
         binaryout, savename = build_File(data,gcolors,savename, gfxmode)
-        # if gfxmode == gfxmodes.C64MULTI:
-        # 	binaryout = b'\x00\x20' # Advanced Art Studio Load address
-        # 	binaryout += data[0][0:tbytes] #Bitmap
-        # 	binaryout += data[1][0:tchars] #Screen
-        # 	binaryout += bytes([border])
-        # 	if bgcolor == None:
-        # 		bgcolor = bytes([gcolors[0]])
-        # 	binaryout += bgcolor
-        # 	binaryout += b'\x00'*14
-        # 	binaryout += data[2][0:tchars] #ColorRAM
-        # 	savename = (savename.ljust(12,' ') if len(savename)<12 else savename[:12])+'MPIC'
-        # else:
-        # 	binaryout = b'\x00\x20' # Art Studio Load address
-        # 	binaryout += data[0][0:tbytes] #Bitmap
-        # 	binaryout += data[1][0:tchars] #Screen
-        # 	binaryout += border
-        # 	savename = (savename.ljust(13,' ') if len(savename)<13 else savename[:13])+'PIC'
         if TransferFile(conn, binaryout, savename):
             conn.SendTML(fok)
         else:
@@ -241,14 +215,14 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         conn.SendTML('<KPROMPT t=RETURN>')
         return
 
-#####################################################################################
+####################################################################################
 # Sends a file to the client, calls the adequate function according to the filetype
-#####################################################################################
+####################################################################################
 # conn: Connection
 # filename: path to the file to transfer
 # dialog: Show dialog before transfer
 # save: Allow file downloading to disk
-###########################################
+####################################################################################
 def SendFile(conn:Connection,filename, dialog = False, save = False):
     fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
     fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
@@ -342,12 +316,12 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 conn.SendTML('<KPROMPT t=RETURN>')
                 conn.ReceiveKey()
 
-##################################################################################
+#################################################################################
 # Sends program file into the client memory at the correct address in turbo mode
-##################################################################################
-#conn: Connection to send the file to
-#filename: name+path of the file to be sent
-##################################################################################
+#################################################################################
+# conn: Connection to send the file to
+# filename: name+path of the file to be sent
+#################################################################################
 def SendProgram(conn:Connection,filename):
     # Verify .prg extension
     ext = os.path.splitext(filename)[1].upper()
@@ -394,13 +368,13 @@ def SendProgram(conn:Connection,filename):
         if conn.ReceiveKey(b'CL') == b'L':
             conn.connected = False
 
-####################################################################################
+#####################################################################################
 # Transfer a file to be stored in media by the client
-####################################################################################
-#conn: Connection to send the file to
-#file: name+path of the file to be sent, or bytes
-#savename: if defined, the filename sent to the client (mandatory if file is bytes)
-####################################################################################
+#####################################################################################
+# conn: Connection to send the file to
+# file: name+path of the file to be sent, or bytes
+# savename: if defined, the filename sent to the client (mandatory if file is bytes)
+#####################################################################################
 def TransferFile(conn:Connection, file, savename = None, seq=False):
     if isinstance(file,str):
         if os.path.exists(file) == False:
@@ -460,20 +434,20 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
         _LOG("TransferFile: Client doesn't suppport File Transfer command", id = conn.id, v=2)
         return False
 
-###################################################################################################
+##########################################################################################################
 # Generic file dialog
-###################################################################################################
+##########################################################################################################
 # conn: Connection
 # filename: File basename
 # size:	File size, 0 to ignore
 # filetype: File type, shown as title, if none, filename is used as title
 # prompt: <return> option prompt text
 # save: Show save option
-###################################################################################################
+##########################################################################################################
 # Returns: 	0: Cancel
 #			1: <RETURN> option
 #			2: <S>ave option
-###################################################################################################
+##########################################################################################################
 def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfer to memory',save=False):
     S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
     tml = '<AT x=0 y=2>'
@@ -494,28 +468,27 @@ def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfe
     rc = conn.ReceiveKey(keys)
     return keys.index(rc)
 
-#########################################################
+########################################################
 # Sends a file directly without processing
-#########################################################
-#conn: Connection to send the file to
-#filename: name+path of the file to be sent
-#wait: boolean, wait for RETURN after sending the file
-#########################################################
+########################################################
+# conn: Connection to send the file to
+# filename: name+path of the file to be sent
+# wait: boolean, wait for RETURN after sending the file
+########################################################
 def SendRAWFile(conn:Connection,filename, wait=True):
     _LOG('Sending RAW file: ', filename, id=conn.id,v=3)
 
     with open(filename,'rb') as rf:
         binary=rf.read()
         conn.Sendallbin(binary)
-
     # Wait for the user to press RETURN
     if wait == True:
         conn.ReceiveKey()
 
 
-##############################################################
+#############################################################
 # Sends a text or sequential file
-##############################################################
+#############################################################
 def SendText(conn:Connection, filename, title='', lines=25):
     if title != '':
         S.RenderMenuTitle(conn, title)
@@ -531,7 +504,6 @@ def SendText(conn:Connection, filename, title='', lines=25):
             ot = tf.read()
         text = H.formatX(ot)
     elif filename.endswith(('.seq','.SEQ')):
-        # prompt='RETURN'
         with open(filename,"rb") as tf:
             ot = tf.read()
         tf.close()
@@ -542,9 +514,9 @@ def SendText(conn:Connection, filename, title='', lines=25):
         conn.Sendall(TT.set_Window(0,24))
     return -1
 
-###########################################################
+####################################################
 # Send C formatted C64 screens
-########################################################### 
+#################################################### 
 def SendCPetscii(conn:Connection,filename,pause=0):
     try:
         fi = open(filename,'r')
@@ -613,7 +585,8 @@ def SendPETPetscii(conn:Connection,filename):
         conn.SendTML('<LOWER>')
     return 0
 
-################################################################
+###########
 # TML tags
+###########
 t_mono = {	'SENDRAW':(lambda c,file:SendRAWFile(c,file,False),[('c','_C'),('file','')]),
             'SENDFILE':(lambda c,file,dialog,save:SendFile(c,file,dialog,save),[('c','_C'),('file',''),('dialog',False),('save',False)])}

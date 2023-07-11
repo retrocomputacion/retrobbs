@@ -8,7 +8,6 @@ from PIL import Image
 from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
 
-
 # TED YCbCr Values, Derived from Yape/VICE
 TED_luminances = [0.125, 0.1875, 0.25, 0.3125, 0.46875, 0.5625, 0.75, 1]	#VICE luminances
 
@@ -16,16 +15,13 @@ TED_luminances = [0.125, 0.1875, 0.25, 0.3125, 0.46875, 0.5625, 0.75, 1]	#VICE l
 CbCr_TED = [[0,0],[0,0],[-0.0516623,0.1640681],[0.0509762,-0.1565439],[0.1222589,0.1209588],[-0.1215972,-0.1229196],[0.1692892,-0.0293838],[-0.1267406,0.0076390],
              [-0.1187715,0.1267993],[-0.1250720,0.0740819],[-0.1258353,-0.0499566],[0.0502255,0.1641772],[-0.0189016,-0.1581522],[0.1382575,-0.1021706],[0.1710308,0.0203686],[-0.1230180,-0.0967441]]
 
-
 YCbCr_TED = [[TED_luminances[i] if j != 0 else 0,CbCr_TED[j][0],CbCr_TED[j][1]] for i in range(len(TED_luminances)) for j in range(len(CbCr_TED)) ]
 
 TED_names = ['Black','White','Red','Cyan','Purple','Green','Blue','Yellow','Orange','Brown','Yellow-Green','Pink','Blue-Green','Light Blue','Dark Blue','Light Green']
 
-
 Blacks = [i for i in range(0,128,16)]	# All black indexes
 
 #Palette structure
-
 Palette_TED = [{'color':TED_names[ix%16]+str(ix//16),'RGBA':[max(0,min(int((i[0] + (i[2]*1.402))*255),255)),
             max(0,min(int((i[0] + ((i[1]*-0.344136) + (i[2]*-0.714136)))*255),255)),
             max(0,min(int((i[0] + (i[1]*1.772))*255),255)),0xff], 'enabled':True, 'index':ix} for ix,i in enumerate(YCbCr_TED)]
@@ -34,7 +30,9 @@ Plus4Palettes = [['Plus/4',Palette_TED]]
 
 Native_Ext = ['.BOTI']
 
-#HiRes
+################################################
+# Get 2 closest colors
+################################################
 def plus4_get2closest(colors,p_in,p_out,fixed):
     cd = [[197000 for j in range(len(p_in))] for i in range(len(colors))]
     closest = []
@@ -46,7 +44,7 @@ def plus4_get2closest(colors,p_in,p_out,fixed):
                 cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
-        m = p_in[xmin][0] #p_out[cc]
+        m = p_in[xmin][0]
         closest.append(CC.RGB24(m).tolist())
         _indexes[x] = cc
     if len(closest) == 1:
@@ -58,21 +56,18 @@ def plus4_get2closest(colors,p_in,p_out,fixed):
         _indexes = tix
     return(_indexes,Palette.Palette(closest))
 
-#Multicolor
+#####################################################
+# Get 4 closest colors
+#####################################################
 def plus4_get4closest(colors, p_in, p_out, bgcolor):
     cd = [[0 for j in range(len(p_in))] for i in range(len(colors))]
     brgb = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[0]))
     brgb2 = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[3]))
-    
     closest = [brgb,brgb,brgb,brgb2]
     _indexes = [bgcolor[0],bgcolor[0],bgcolor[0],bgcolor[3]]
-    #Attr
-    indexes = 0#0x33
-    cram = 2
     #Find least used color
     bi = []
     tc = colors.copy()
-
     for i in range(2):
         if len(tc) >= 3:
             bi.append(tc.index(min(tc)))
@@ -85,16 +80,17 @@ def plus4_get4closest(colors, p_in, p_out, bgcolor):
             cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
-        m = p_in[xmin][0] #p_out[cc]
+        m = p_in[xmin][0]
         closest[xx] = CC.RGB24(m).tolist()
         _indexes[xx] = cc
         xx += 1
         if xx==3:
             break
-
     return(_indexes,Palette.Palette(closest))
 
-
+#######################################
+# Pack Hires bitmap cell
+#######################################
 def bmpackhi(column,row,cell,buffers):
     if len(buffers)<4:
         offset = (column*8)+(row*320)
@@ -103,6 +99,9 @@ def bmpackhi(column,row,cell,buffers):
         offset = ((column+3)*8)+(row//8)*320+(row&7)
         buffers[0][offset]=list(np.packbits(np.asarray(cell,dtype='bool')))[0]
 
+##########################################
+# Pack multicolor bitmap cell
+##########################################
 def bmpackmulti(column,row,cell,buffers):
     cell_a = np.asarray(cell)
     offset = (column*8)+(row*320)
@@ -112,17 +111,26 @@ def bmpackmulti(column,row,cell,buffers):
             tbyte += int(cell_a[y,x])<<((3-x)*2)
         buffers[0][offset+y] = tbyte
 
+#######################################
+# Pack Hires attribute cell
+#######################################
 def attrpack(column,row,attr,buffers):
     offset = column+(row*40)    #Normal
     buffers[1][offset]=(attr[0]&15)+((attr[1]&15)<<4)   #Color Table
     buffers[2][offset]=((attr[1]&112)>>4)+(attr[0]&112) #Luminance Table
 
+############################################
+# Pack multicolor attribute cell
+############################################
 def attrpackmulti(column,row,attr,buffers):
     offset = column+(row*40)    #Normal
     buffers[1][offset]=(attr[2]&15)+((attr[1]&15)<<4)   #Color Table
     buffers[2][offset]=((attr[1]&112)>>4)+(attr[2]&112) #Luminance Table
 
+################################
+# Get buffers to store raw data
 # Returns a list of lists
+################################
 def get_buffers(mode:int):
     x = 1 
     buffers=[]
@@ -131,6 +139,9 @@ def get_buffers(mode:int):
     buffers.append([0]*1000) # Luminance table
     return buffers
 
+##############################################
+# Build a native image file from the raw data
+##############################################
 def buildfile(buffers,bg,baseMode, filename):
     t_data = b'\x00\x78'    #Load Address
     t_data += bytes(buffers[2])#luminance table
@@ -149,7 +160,6 @@ def buildfile(buffers,bg,baseMode, filename):
     #Bitmap
     t_data += bytes(buffers[0])#bitmap
     return(t_data,filename)
-#############################
 
 #####################################################################################################################
 # Graphic modes structure
@@ -187,9 +197,10 @@ GFX_MODES=[{'name':'Plus/4 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,Fa
             'in_size':(320,200),'out_size':(160,200),'get_attr':plus4_get4closest,'bm_pack':bmpackmulti,'attr_pack':attrpackmulti,
             'get_buffers':lambda: get_buffers(2),'save_output':['Multi Botticelli',lambda buf,c,fn:buildfile(buf,c,2,fn)]}]
 
-
+##############################
+# Load native image format
+##############################
 def load_Image(filename:str):
-
     multi = 0
     data = [None]*3
     gcolors = [0]*5 # Border, Background, MC1, MC2, MC3
@@ -214,7 +225,6 @@ def load_Image(filename:str):
                     gcolors[1] = ((tmp&240)>>4)+((tmp&15)<<4)
                     multi = 1
                     text = 'Multi-Botticelli'
-                    # print(f'bg:{gcolors[1]} mc:{gcolors[4]}')
                 else:
                     # Skip
                     ifile.read(2)
@@ -227,9 +237,7 @@ def load_Image(filename:str):
                 data[0] = ifile.read(8000)
     else:
         return None
-
     #Render image
-
     # Generate palette(s)
     rgb_in = []
     for c in Palette_TED: # iterate colors
@@ -237,7 +245,6 @@ def load_Image(filename:str):
     fsPal = [element for sublist in rgb_in for element in sublist]
     plen = len(fsPal)//3
     fsPal.extend(fsPal[:3]*(256-plen))
-
     if multi == 0:
         nimg = np.empty((200,320),dtype=np.uint8)
         for c in range(1000):

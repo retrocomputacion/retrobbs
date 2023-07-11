@@ -12,13 +12,12 @@ from common import filetools as FT
 from common import turbo56k as TT
 from geopy.geocoders import Photon, Nominatim
 
-
-###############
-# Missing tile
+# Missing tile image
 dragons: Image.Image
 
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     global dragons
     fname = "MAPS" #UPPERCASE function name for config.ini
@@ -26,14 +25,19 @@ def setup():
     dragons = Image.open("plugins/maps_dragons.png")
     return(fname,parpairs)
 
-
+#####################################
+# Degrees to tile numbers
+#####################################
 def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(lat_deg)
   n = 2.0 ** zoom
   xtile = int((lon_deg + 180.0) / 360.0 * n)
   ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
   return (xtile, ytile)
-  
+
+#################################
+# Tile numbers to degrees
+#################################  
 def num2deg(xtile, ytile, zoom):
   n = 2.0 ** zoom
   lon_deg = xtile / n * 360.0 - 180.0
@@ -41,6 +45,9 @@ def num2deg(xtile, ytile, zoom):
   lat_deg = math.degrees(lat_rad)
   return (lat_deg, lon_deg)
   
+############################
+# Latitude to resolution
+############################
 def lat2res(lat_deg, zoom):
     dptx = 360/(2**zoom)    #degrees per tile, x
     dpty = dptx*math.cos(math.radians(lat_deg)) #y (latitude)
@@ -48,8 +55,10 @@ def lat2res(lat_deg, zoom):
     dppy = dpty/256 #degrees per pixel, y
     return dptx, dpty, dppx, dppy
 
+###################################
+# Plugin function
+###################################
 def plugFunction(conn:Connection):
-
     _dec = conn.encoder.decode
 
     # Avoid Geocode timeout/Unavailable errors
@@ -65,7 +74,6 @@ def plugFunction(conn:Connection):
     def getImageCluster(xmin, ymin, width, height, zoom):
         smurl = r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
         tnum = 2**zoom #Number of tiles per row/column
-        
         Cluster = Image.new('RGB',((width)*256,(height)*256))
         conn.SendTML('<GREY1><CLR>Loading .........<CRSRL n=9>')
         for xtile in range((xmin-int(width/2)), (xmin+1+int(width/2))):
@@ -83,15 +91,11 @@ def plugFunction(conn:Connection):
         return Cluster
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
-
     geoserver = conn.bbs.PlugOptions.get('geoserver','Nominatim')
-
     if geoserver == 'Photon':
         geoLoc = Photon(user_agent="RetroBBS-Maps")
     else:
         geoLoc = Nominatim(user_agent="RetroBBS-Maps")
-
-
     FT.SendBitmap(conn,'plugins/maps_intro.png', gfxmode = gfxmodes.C64HI, preproc=PreProcess(), display=False, dither=dithertype.NONE)
     conn.SendTML('<SPLIT row=24><YELLOW><CLR>Location:')
     locqry = _dec(conn.ReceiveStr(bytes(keys,'ascii'),30))
@@ -99,7 +103,7 @@ def plugFunction(conn:Connection):
         conn.SendTML('<SPLIT><CURSOR>')
         return
     conn.SendTML('<CBM-B><CRSRL>')
-    tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
+    tloc = do_geocode(locqry)
     if tloc == None:
         conn.SendTML('<CLR>ERROR!<PAUSE n=0.5>')
         #Default to Greenwich observatory
@@ -109,7 +113,6 @@ def plugFunction(conn:Connection):
         loc = tuple(map(float,result.get('loc',"51.47679219,-0.00073887").split(',')))
     else:
         loc = (tloc.latitude,tloc.longitude)
-
     zoom = 16
     sw = 320    #Screen width
     sh = 200    #Screen height
@@ -124,9 +127,7 @@ def plugFunction(conn:Connection):
     tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
     cpos = [1,1]
-
     ckeys = conn.encoder.ctrlkeys
-
     display = True
     retrieve = True
     while conn.connected:
@@ -150,7 +151,6 @@ def plugFunction(conn:Connection):
             mwindow = mwindow.point(lambda p: 255 if p>218 else 0)
             FT.SendBitmap(conn,mwindow.convert('1'),gfxmode=gfxmodes.C64HI,preproc=PreProcess())
             display = False
-
         k = conn.ReceiveKey(b'_+-\r'+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]))
         if (k == b'-') and (zoom > 3):
             zoom -= 1

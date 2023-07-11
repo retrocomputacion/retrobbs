@@ -1,10 +1,10 @@
 from common import turbo56k as TT
 from common.style import bbsstyle
 from common import filetools as FT
-from common.helpers import formatX, More, crop, text_displayer
+from common.helpers import formatX, crop, text_displayer
 from common.connection import Connection
 from common.bbsdebug import _LOG
-from common.imgcvt import gfxmodes, cropmodes, PreProcess
+from common.imgcvt import cropmodes, PreProcess
 
 import wikipedia
 import wikipediaapi
@@ -15,17 +15,17 @@ from bs4 import BeautifulSoup
 import requests
 import sys, os
 
-
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "WIKI"
     parpairs = []
     return(fname,parpairs)
-#############################
 
-##########################################
-#Plugin callable function
+###################################
+# Plugin callable function
+###################################
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
@@ -35,23 +35,19 @@ def plugFunction(conn:Connection):
         else:
             conn.SendTML('<GREY1><HLINE n=40>')
         conn.Sendall(TT.set_Window(2,24))	#Set Text Window
-
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
     ecolors = conn.encoder.colors
     wcolors = bbsstyle(ecolors)
     wcolors.TxtColor = ecolors['DARK_GREY']
     wcolors.PbColor = ecolors['BLACK']
     wcolors.PtColor = ecolors['BLUE']
-
     wikipedia.set_lang(conn.bbs.lang)
     wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
-
     conn.Sendall(TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
     loop = True
     while loop == True:
         WikiTitle(conn)
         conn.SendTML('<BR>Search: <BR>(<LARROW> to exit)<CRSRU><CRSRL n=3>')
-
         keys = string.ascii_letters + string.digits + ' +-_,.$%&'
         termino = ''
         #Receive search term
@@ -64,13 +60,9 @@ def plugFunction(conn:Connection):
                 return()
         conn.SendTML('<CBM-B><CRSRL>')
         results = wikipedia.search(termino, results = 15)
-
         conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the COMM_B wait character
-
         i = 0
-
         options = ''
-
         for r in results:
             res = crop(r,36)
             conn.SendTML(f'<BLACK>[<BLUE>{string.ascii_lowercase[i]}<BLACK>]<GREY1>{res}<BR>')
@@ -113,12 +105,9 @@ def plugFunction(conn:Connection):
                                     timg = Image.new("RGBA", w_image.size, "WHITE")
                                 timg.paste(w_image,((timg.size[0]-w_image.size[0])//2,(timg.size[1]-w_image.size[1])//2),w_image)
                                 w_image = timg
-                            # if (w_image.size[0]/w_image.size[1])<1: #Try to avoid chopping off heads
-                            # 	w_image = w_image.crop((0,0,w_image.size[0],w_image.size[0]*3/4))
                             FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
                             conn.ReceiveKey()
                             conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["LIGHT_GREY"]} background={ecolors["LIGHT_GREY"]}>')
-                            # conn.Sendall(TT.enable_CRSR()+TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
                     except Exception as e:
                         exc_type, exc_obj, exc_tb = sys.exc_info()
                         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -128,33 +117,26 @@ def plugFunction(conn:Connection):
                 tt = formatX(page.title)
                 tt[0] = '<CLR><BLACK>'+tt[0]
                 tt.append('<GREY1><HLINE n=40>')
-
                 tt += WikiParseParas(page.summary)	#<+
-
                 tt.append('<BR>')
-
                 tt += WikiSection(conn, page.sections,0)
-
                 if conn.QueryFeature(TT.SCROLL) < 0x80:
                     conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [crsr/F1/F3] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
                 else:
                     conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [F1/F3] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
                 text_displayer(conn,tt,22,wcolors)
-                # else:
-                # 	More(conn,tt,22,wcolors)
             except Exception as e:
                 conn.SendTML('<RED><BR>ERROR!<PAUSE n=2>')
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 _LOG(e,id=conn.id,v=1)
                 _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
-
     conn.Sendall(TT.set_Window(0,24))	#Set Text Window
 
-    #MenuBack()
-
+##################################################################
+# Parse a wiki article sections
+##################################################################
 def WikiSection(conn:Connection, sections, level = 0, lines = 0):
-
     tt = []
     for s in sections:
         title = ('-'*level)+WikiParseTitles(s.title)
@@ -167,9 +149,11 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0):
         tt += WikiSection(conn, s.sections, level + 1, lines)
     return(tt) #lines
 
+##################################################################################################
 # Get plain text,
 # replace <p> and <br>with new lines
 # based on: https://stackoverflow.com/questions/10491223/how-can-i-turn-br-and-p-into-line-breaks
+##################################################################################################
 def WikiParseParas(text, level = 0):
     def replace_with_newlines(element):
         text = ''
@@ -181,7 +165,6 @@ def WikiParseParas(text, level = 0):
             elif elem.name == 'li':
                 text += '*'+elem.get_text()+'\n'
         return formatX(text)
-
     if isinstance(text,str):
         soup = BeautifulSoup(text, "html.parser")
     else:
@@ -209,11 +192,13 @@ def WikiParseParas(text, level = 0):
                 nitem = item.find(['p','ul','ol'])
                 if nitem:
                     plain_text += WikiParseParas(item,level=level+1)+'\r'				
-
     if plain_text == []:
         plain_text == formatX(soup.get_text())
     return(plain_text)
 
+############################
+# Parse wiki article titles
+############################
 def WikiParseTitles(text):
     soup = BeautifulSoup(text, "html.parser")
     return(soup.get_text())

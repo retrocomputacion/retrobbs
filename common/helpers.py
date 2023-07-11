@@ -16,9 +16,8 @@ import os
 import re
 
 from common.connection import Connection
-from common import petscii as P
 from common import turbo56k as TT
-from common.style import default_style, KeyPrompt
+from common.style import KeyPrompt
 from html import unescape, escape
 from PIL import ImageFont
 
@@ -31,21 +30,20 @@ font_text = ImageFont.truetype("common/BetterPixels.ttf",16)
 # Valid keys for menu entries
 valid_keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\*;/'
 
-
-# Menu alternating colors
-menu_colors = [[P.LT_BLUE,P.GREY3],[P.CYAN,P.YELLOW]]
-
 # convert int to Byte
 _byte = lambda i: i.to_bytes(1,'little')
 
-
+###################################
 # Paginate current menu
+###################################
 def SetPage(conn:Connection,page):
     if conn.MenuParameters != {}:
         conn.MenuParameters['current'] = page
 
 
+################################
 # Go back to previous/main menu
+################################
 def MenuBack(conn:Connection):
     conn.MenuDefs,conn.menu = conn.MenuStack[-1]#0
     conn.MenuStack.pop()
@@ -53,9 +51,11 @@ def MenuBack(conn:Connection):
     #reset menuparameters
     conn.MenuParameters = {}
 
+#########################################################################
 #Format text to X columns with wordwrapping, PETSCII conversion optional
 # Returns a list of text lines
-# New in v0.x:	No encoding conversion is ever performed
+# New in v0.5:	No encoding conversion is ever performed
+#########################################################################
 def formatX(text, columns = 40, convert = True):
     output = []
     text = unescape(text)
@@ -72,18 +72,9 @@ def formatX(text, columns = 40, convert = True):
             output[i] = escape(output[i])
     return(output)
 
-# Find last color control code used in a string
-def lastColor(text,defcolor=1):
-    pos = -1
-    for c in P.PALETTE:
-        x = text.rfind(chr(c))
-        if x > pos:
-            pos = x
-            defcolor = c
-    return defcolor
-
-
-#Text pagination
+#####################################################
+# Text pagination
+#####################################################
 def More(conn:Connection, text, lines, colors=None):
 
     if colors == None:
@@ -176,8 +167,10 @@ def More(conn:Connection, text, lines, colors=None):
             conn.ReceiveKey()
     return(0)
 
+##########################################################################################
 # Bidirectional scroll text display
 # needs Turbo56K >= 0.7 for single line scroll up/down. Otherwise just whole page up/down
+##########################################################################################
 def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
 
     if colors == None:
@@ -187,10 +180,8 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     tcolor = lcols[0]
 
     ekeys = bytes(ekeys,'ascii')
-
     #Problematic TML tags
     rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
-
     #This connection ctrl keys
     ckeys = conn.encoder.ctrlkeys
 
@@ -205,7 +196,6 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             conn.SendTML(t)
             tcolor = lcols[i] = conn.parser.color
         return(i)
-
     
     rep = dict((re.escape(k), v) for k, v in rep.items())
     pattern = re.compile("|".join(rep.keys()))
@@ -220,17 +210,12 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
         lcount = lines[1]-lines[0]
     else:
         lcount = lines -1
-
-    print(keys)
-
     # Render 1st page
     tcolor = colors.TxtColor
     conn.SendTML(f'<INK c={tcolor}>')
     i = _page(0,lines)
-
     tline = 0
     bline = i+1
-    # if lcount < len(text):
     #scroll loop
     ldir = True	#Last scroll down?
     while conn.connected:
@@ -279,11 +264,15 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     #     conn.ReceiveKey(b'_')
     return ret
 
+#############################################################
 # Crop text to the desired length, adding ellipsis if needed
+#############################################################
 def crop(text, length):
     return text[:length-3] + '...' if len(text) > length else text
 
+##################################################################
 # Crop text to the desired pixel width, adding ellipsis if needed
+##################################################################
 def gfxcrop(text, width, font = font_text):
     x = 2
     while font.getlength(text) > width:
@@ -291,10 +280,10 @@ def gfxcrop(text, width, font = font_text):
         x = 4
     return text
 
-
+##########################################################################################################
 # Convert an int depicting a size in bytes to a rounded up to B/KB/MB/GB or TB (base 2) string
 # https://stackoverflow.com/questions/12523586/python-format-size-application-converting-b-to-kb-mb-gb-tb
-###########################################################################################################
+##########################################################################################################
 def format_bytes(b:int):
     p = 2**10
     n = 0
@@ -304,11 +293,12 @@ def format_bytes(b:int):
         n += 1
     return str(round(b,1))+pl[n]+'B'
 
+#############################################################################
 # Return a list of files (and subdirectories) in the specified top directory
 # path: top directory path
 # dirs: include subdirectories in list?
 # full: add the full path to the resulting list
-########################################################
+#############################################################################
 def catalog(path, dirs=False, full=True):
     files = []
     for entries in os.walk(path):
@@ -321,6 +311,7 @@ def catalog(path, dirs=False, full=True):
             files[i] = os.path.join(path,files[i])
     return files
 
-################################################################
+###########
 # TML tags
+###########
 t_mono = {'CAT':(catalog,[('_R','_A'),('path','.'),('d',False),('f',True)])}

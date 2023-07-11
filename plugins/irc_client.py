@@ -8,35 +8,27 @@ from common.bbsdebug import _LOG,bcolors
 from common import helpers as H
 from common import style as S
 from common.connection import Connection
-from common import petscii as P
 from common import turbo56k as TT
 
-
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "IRC" #UPPERCASE function name for config.ini
     parpairs = [('server','irc.libera.chat'),('port',6667),('channel','')] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
-#############################
 
-
-##########################################
-#Plugin callable function
+#######################################################
+# Plugin function
+#######################################################
 def plugFunction(conn:Connection,server,port,channel):
-
     _dec = conn.encoder.decode
     _enc = conn.encoder.encode
-
     running = False
-
     kfilter = conn.encoder.non_printable.copy()
     kfilter.append('\r')
-    
     nickname = ''
-
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
-
     #Current cursor position in input window
     curcolumn = 0
     curline = 0
@@ -60,7 +52,6 @@ def plugFunction(conn:Connection,server,port,channel):
         txt = H.formatX('['+channel+'] Topic changed to: '+event.arguments[0]+'\r')
         txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
-
 
     def on_nicknameinuse(c, e):
         nonlocal nickname
@@ -206,7 +197,6 @@ Accepted commands:
             else:
                 printchat(H.formatX('Usage: ME <action> send action (written in 3rd person) to the channel'))
 
-
     ####
     S.RenderMenuTitle(conn,'IRC')
     conn.SendTML('<GREEN><LFILL row=22 code=64>')
@@ -226,7 +216,6 @@ Accepted commands:
         conn.SendTML('<YELLO>Enter channel: #<GREY3>')
         channel = '#'+(conn.ReceiveStr(bytes(keys,'ascii'),20)).translate({ord(i): None for i in '#@/"'}) #Get channel
     conn.SendTML('<CLR><CBM-B><CRSRL><GREY3>')
-
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer
     irc.client.ServerConnection.buffer_class.errors = "replace"
@@ -253,8 +242,6 @@ Accepted commands:
     c.add_global_handler("action", on_action)
     c.add_global_handler("privnotice", on_privnotice)
 
-    
-
     running = False
     t0 = time.process_time()
     while running == False:
@@ -266,11 +253,8 @@ Accepted commands:
             conn.Sendall(TT.set_Window(0,24))
             time.sleep(1)
             return
-
     conn.SendTML('<CLR>')
-
     printchat('*** Use /help for help ***<BR>')
-
     conn.socket.setblocking(0)
     _LOG('Connected to IRC',id=conn.id,v=4)
     message = ''
@@ -278,7 +262,6 @@ Accepted commands:
         r,w,e= select.select((conn.socket,), (), (), 0)
         if r:
             try:
-                #conn.socket.setblocking(0)
                 i_char = conn.socket.recv(1)
                 if i_char == b'\r' and message != '':
                     if message =='_':
@@ -317,17 +300,13 @@ Accepted commands:
                         if curcolumn >= 40:
                             curcolumn = 0
                             curline +=1
-                #conn.socket.setblocking(1)
             except socket.error:
                 running = False
                 conn.connected = False
         else:
             time.sleep(0.1)
         reactor.process_once()
-
-
     conn.Sendall(TT.set_Window(0,24))            
     _LOG('Leaving IRC',id=conn.id,v=4)
     conn.socket.setblocking(1)
     conn.socket.settimeout(60*5)
-#################

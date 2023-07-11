@@ -140,7 +140,7 @@ __Changes/Bug fixes__:
  - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
  - *YouTube* plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
  - When all the slots are in use will now correctly close any further incoming connections.
- - *Weather* and *Maps* plugins use can use either Photon or Nominatim as geocoder, selected from the configuration file.
+ - *Weather* and *Maps* plugins can now use either Photon or Nominatim as geocoder, selected from the configuration file.
  - Fixed crash when the geocoder didn't respond in time in the *Weather* plugin
  - Extensive rewrite and cleanup, TML scripting integration.
  - Option to logout after transferring a program to memory
@@ -149,6 +149,7 @@ __Changes/Bug fixes__:
  - ~~Webaudio fix: Take samplerate into account when more than one client is streaming from the same source.~~
  - Webaudio multiclient queuing disabled, falling back to one ffmpeg instance per audio stream.
  - Fixed missing timeout parameter in APOD plugin.
+ - Both *APOD* and *Newsfeed* plugins now use *text_displayer* instead or *More*
 
 ---
 # 1.2 The *Turbo56K* protocol

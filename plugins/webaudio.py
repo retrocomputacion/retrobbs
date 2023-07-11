@@ -36,14 +36,11 @@ class AudioStreams:
         else:                           #if url already in dict
             self.streams[key][1][id] = Queue()  #Just add a Queue for id to the url key
             self.refresh = True
-
         if len(self.streams) == 1:  #If True, we just added the first stream, we need to start the StreamThread
             self.sthread = threading.Thread(target = self.StreamThread, args = ())
             self.sthread.start()
-
         # if (1<<int(rate*1.5).bit_length()) > self.CHUNK:
         #     self.CHUNK = 1<<int(rate*1.5).bit_length()
-
         #self.lock.release()
         return self.streams[key][1][id],key
 
@@ -58,7 +55,6 @@ class AudioStreams:
                 if len(self.streams) == 0:      # No more streams
                     self.sthread.join()         #Finish the StreamThread
         #self.lock.release()
-
 
     # Multi user streaming thread
     # (yes my naming standards are all over the place)
@@ -107,20 +103,19 @@ class AudioStreams:
 slsession = None
 AStreams = AudioStreams()
 
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     global slsession
     fname = "WEBAUDIO" #UPPERCASE function name for config.ini
     parpairs = [('url',"http://relay4.slayradio.org:8000/")] #config.ini Parameter pairs (name,defaultvalue)
     slsession = streamlink.Streamlink()
     return(fname,parpairs)
-#############################
 
-##########################################
-#Plugin callable function
-
-#Send Audio file
+##################################################
+# Plugin function
+##################################################
 def plugFunction(conn:connection.Connection,url):
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
@@ -129,7 +124,6 @@ def plugFunction(conn:connection.Connection,url):
 
     #Streaming mode
     binario = b'\xFF\x83'
-
 
     # PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
     # try:
@@ -199,9 +193,7 @@ def plugFunction(conn:connection.Connection,url):
     pcm_stream = AA.PcmStream(sURL,conn.samplerate)
     CHUNK = 1<<int(conn.samplerate*1.5).bit_length()
     t0 = time.time()
-
     streaming = True
-
     while streaming == True:
         t1 = time.time()
         try:
@@ -219,7 +211,6 @@ def plugFunction(conn:connection.Connection,url):
             else:
                 hnibble = 0
             binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
-
             conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,2)].to_bytes(1,'little'), binario))
             streaming = conn.connected
             sys.stderr.flush()
@@ -243,7 +234,6 @@ def plugFunction(conn:connection.Connection,url):
                 pass
             conn.socket.setblocking(1)
             binario = b''
-
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
     pcm_stream.stop()

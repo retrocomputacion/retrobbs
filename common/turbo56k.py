@@ -3,7 +3,6 @@
 #####################
 
 #Constants
-
 CMDON = 0xFF    #Enters command mode
 CMDOFF = 0xFE   #Exits command mode
 
@@ -36,7 +35,6 @@ SCROLL      = 0xB6  #Scroll text window - Parameter: number of rows to scroll, s
 INK         = 0xB7  #Set ink color - Parameter: Color index
 
 TURBO56K_LCMD = 0xB7 #Highest CMD number implemented
-
 
 # Command descriptors
 T56K_CMD = {128+0:'Custom transfer address', 128+1:'Preset transfer address', 128+2:'Block transfer', 128+3:'PCM audio stream', 128+4:'SID stream', 128+5:'SID register write order', 128+6:'File transfer',
@@ -180,9 +178,9 @@ def set_ink(color, bin= False):
     else:
         return(chr(CMDON)+chr(SCROLL)+chr(color))
     
-#############################################################################
-# TML definitions
-
+###########
+# TML tags
+###########
 t_mono = {'SETOUTPUT':(lambda o: to_Screen() if o else to_Speech(),[('_R','_C'),('o',True)]),
           'TEXT':(to_Text,[('_R','_C'),('page',0),('border',0),('background',0)]),
           'GRAPHIC':(lambda mode,page,border,background: to_Multi(page,border,background) if mode else to_Hires(page,border),[('_R','_C'),('mode',False),('page',0),('border',0),('background',0)]),

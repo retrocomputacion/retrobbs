@@ -8,12 +8,10 @@ from enum import IntEnum, auto
 import os
 import sys
 from common import cpu65 as c65
-
 from common.bbsdebug import _LOG
 from common import ymparse as YM
 
-# compute sidplayer driver, taken from sidplay2/w
-
+# compute's sidplayer driver, taken from sidplay2/w
 mus_driver = \
     b"\x00\xe0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
@@ -252,7 +250,10 @@ class SIDbits(IntEnum):
     FRES	= 23
     VOL		= 24
 
-#SIDParser using external SIDdumpHR or SIDdump
+######################################################
+# SIDParser using external SIDdumpHR or SIDdump
+# defaulting to Python version otherwise
+######################################################
 def SIDParser(filename,ptime,order = 0, subtune = 1):
 
     if which('siddumphr') != None:
@@ -262,7 +263,6 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
     else:
         _LOG('WARNING: siddump not found on PATH, using python version', v=2)
         return SIDParser2(filename, ptime, order, subtune)
-
     V1f = [1,1] # Voice 1 Frequency
     V1p = [6,1] # Voice 1 Pulse Width
     V1c = [4,0] # Voice 1 Control
@@ -282,7 +282,6 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
     Frs = [20,0] # Filter Resonance
     Vol = [21,0] # Filter and Volume Control
 
-
     #RTable = [[[V1f,0],[V1p,2],[V1c,4],[V1e,5] , [V2f,7],[V2p,9],[V2c,11],[V2e,12] , [V3f,14],[V3p,16],[V3c,18],[V3e,19] , [Fco,21],[Frs,23],[Vol,24]], #Default
     #          [[Frs,0],[Fco,1] , [V3f,3],[V3p,5],[V3c,7],[V3e,8] , [V2f,10],[V2p,12],[V2c,14],[V2e,15] , [V1f,17],[V1p,19],[V1c,21],[V1e,22] , [Vol,24]]] #MoN/Bjerregaard
 
@@ -291,22 +290,12 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
 
     FilterMode = {'Off':b'\x00', 'Low':b'\x10', 'Bnd':b'\x20', 'L+B':b'\x30', 'Hi':b'\x40', 'L+H':b'\x50', 'B+H':b'\x60', 'LBH':b'\x70'}
 
-    # if os.path.isfile(filename[:-3]+'ssl') == True:
-    #     tf = open(filename[:-3]+'ssl')
-    #     tstr = tf.read()
-    #     tf.close()
-    #     ptime = str((ord(tstr[0])*60)+ord(tstr[1])) # Playtime for the 1st subtune
-    # else:
-    #     ptime = str(60*3)
-
-
     try:
         sidsub = subprocess.Popen(_siddump+' '+filename+' -t'+str(ptime)+' -a'+str(subtune-1), shell=True, stdout=subprocess.PIPE)
     except:
         return(None)
     output = sidsub.stdout.read()
     outlines = output.split(b'\n')[7:-1] #Split in lines, skip first 7
-
     oldmode = 0 #Last filter mode
     oldvol = 0  #Last volume
 
@@ -325,7 +314,6 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
     oldff = b'\x00\x00' #Last filter cutoff freq
 
     dump = []
-
     for line in outlines:
         sidregs= b''
         rbitmap = 0
@@ -512,13 +500,16 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
         dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(4,'big'),sidregs])
     return(dump)
 
-#Fallback internal SIDParser using Python 6502 simulator
+##########################################################
+# Fallback internal SIDParser using Python 6502 simulator
+##########################################################
 def SIDParser2(filename,ptime,order = 0, subtune = 1):
     MAX_INSTR = 0x100000
 
     def readword(f):
         w = f.read(2)
         return (w[0]<<8)|w[1]
+
     try:
         with open(filename,'rb') as f_in:
             header = f_in.read(4)
@@ -540,7 +531,6 @@ def SIDParser2(filename,ptime,order = 0, subtune = 1):
                 memconf = 0x37
                 if loadsize + loadaddress > 0x10000:
                     _LOG("SIDParser Error: SID data continues past end of C64 memory.")
-                
                 c65.mem[loadaddress:loadaddress+loadsize] = list(f_in.read(loadsize))
             else: #MUS file
                 f_in.seek(2, 0) # Skip load address
@@ -582,7 +572,6 @@ def SIDParser2(filename,ptime,order = 0, subtune = 1):
                 playaddress = c65.mem[0xfffe] | (c65.mem[0xffff] << 8)
             else:
                 playaddress = c65.mem[0x314] | (c65.mem[0x315] << 8)
-        
         #Clear temporal registers
         oldregs = [0]*25
         #writecnt = [0]*25
@@ -619,7 +608,6 @@ def SIDParser2(filename,ptime,order = 0, subtune = 1):
                         rbitmap |= 2**(29+int((r-4)/7))
                     elif r in [5,6,12,13,19,20]:	# ADSR hardrestart
                         rbitmap |= 2**(26+round((r-5)/7))
-            #print(f'{rcount:#0{4}x} {rbitmap:#0{6}x} {list(sidregs)}')
             oldregs = c65.mem[0xd400:0xd419]
             out.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(4,'big'),sidregs])
             frames += 1
@@ -629,10 +617,9 @@ def SIDParser2(filename,ptime,order = 0, subtune = 1):
         _LOG(f'SIDParser error:{exc_type} on {fname} line {exc_tb.tb_lineno}')
     return out
 
-
-    
-
+#########################################
 # Convert AY register dump to SID stream
+#########################################
 def AYtoSID(filename):
 
     sidsus = lambda i: round(2**(((i*2)+1-31)/4)*15)	# Converts the AY logarithmic volume level to SID linear sustain level
@@ -713,7 +700,6 @@ def AYtoSID(filename):
                             prev_stat[v]['Gate'] = Gate[v]
                         rbitmap |= 2**(SIDbits.V1CTRL+(v*7))
                         srtmp[SIDbits.V1CTRL+(v*7)] = Wave|(1 if Gate[v] else 0)
-
                     if (prev_stat[3]['Nfreq'] != frame[6]) or (fn == 0):
                         prev_stat[3]['Nfreq'] = frame[6]
                     for i in range(3):  #set noise frequency if used

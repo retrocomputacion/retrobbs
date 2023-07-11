@@ -8,7 +8,6 @@ from common.bbsdebug import _LOG
 from common.classes import Encoder 
 import importlib
 import pkgutil
-#from common.connection import Connection
 import os
 
 import encoders
@@ -16,7 +15,9 @@ import plugins
 
 t_mono ={}
 
+#######################################
 # Register TML tags for common modules
+#######################################
 def RegisterTMLtags():
     global t_mono
     for module in os.listdir(os.path.dirname(__file__)):
@@ -28,7 +29,9 @@ def RegisterTMLtags():
             _LOG(f'TML tags added for: {module[:-3].upper()}',v=4)
         del(m)
 
-# Import plugins
+#######################
+# Register plugins
+#######################
 def RegisterPlugins():
     global t_mono
     Plugins = {}
@@ -41,7 +44,9 @@ def RegisterPlugins():
             t_mono[fname] = (a.plugFunction,[('c','_C')]+parms)
     return Plugins
 
-# Import encoders
+########################
+# Register encoders
+########################
 def RegisterEncoders():
     Encoders = {}
     e_mods = [importlib.import_module(name) for finder, name, ispkg in pkgutil.iter_modules(encoders.__path__, encoders.__name__ + ".")]

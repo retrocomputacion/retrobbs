@@ -7,7 +7,6 @@ from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 import hashlib
 import os
-import inspect
 import time
 import re
 from collections import deque
@@ -21,6 +20,7 @@ from collections import deque
 User_Fields = {'User name':['uname',0,[6,15]], 'Password':['pass',1,[6,15]], 'First name':['fname',0,[1,15]], 'Last name':['lname',0,[1,15]],
                 'Birthdate':['bday',2,[10,10]], 'Country':['country',0,[2,15]]}
 
+######### DBase class #########
 class DBase:
     def __init__(self,path):
     #Open DataBase
@@ -53,7 +53,6 @@ class DBase:
         table = self.db.table('USERS')
         dbQ = Query()
         return table.get(dbQ.uname.search('^'+username+'$',flags=re.IGNORECASE))
-
 
     #Check if password matches for the user, and optionally login
     #uentry must be a dictionary

@@ -1,5 +1,7 @@
-        ############ Classes ############
-# any generic classses without companion functions here
+#########################################################
+# Classes
+# any generic classes here
+#########################################################
 
 from common.dbase import DBase
 import time
@@ -7,7 +9,6 @@ from enum import Enum
 import os
 
 ########### BBS Class ###########
-
 class BBS:
     def __init__(self, name, ip, port):
         self.name = name
@@ -48,6 +49,7 @@ class BBS:
     def __del__(self):
         self.stop()
 
+############# Encoder class #############
 class Encoder:
     def __init__(self, name:str) -> None:
         self.name = name
@@ -80,6 +82,7 @@ SCOLOR = Enum('style_colors',
             'MenuTColor1','MenuTColor2','SBorderColor1','SBorderColor2',
             'PbColor','PtColor'])
 
+############# bbstyle class #############
 class bbsstyle:
     def __init__(self, colors:dict=None):
         if colors != None:
@@ -142,4 +145,4 @@ class bbsstyle:
             elif color == SCOLOR.PbColor:
                 self.PbColor		= index
             elif color == SCOLOR.PtColor:
-                self.PtColor		= index		
+                self.PtColor		= index

@@ -12,7 +12,6 @@ import time
 import string
 import difflib
 
-
 ###########################################
 # Message db fields
 # msg_id:       automatic from tinydb (doc_id)
@@ -28,7 +27,9 @@ import difflib
 # msg_text:     message text
 ###########################################
 
-#Read a message
+##############################################
+# Read a message
+##############################################
 def readMessage(conn:Connection, msg_id:int):
     db:DBase = conn.bbs.database
     table = db.db.table('MESSAGES')
@@ -137,18 +138,19 @@ def readMessage(conn:Connection, msg_id:int):
                         else:
                             msg_id = deleteMessage(conn,msg_id)
                             break
-                    
                     break
         else:
             _LOG('readMessage: ERROR - Invalid message',id=conn.id,v=1)
             conn.SendTML('ERROR - Invalid message<PAUSE n=1>')
             done = True
 
-#Write a message
+####################################################################
+# Write a message
 # destination = int for a public board
 #               string for username PM
 # thread = message id for this thread, 0 for new thread
 # returns msg_id or 0 if unsuccessful
+####################################################################
 def writeMessage(conn:Connection, destination = 1, thread:int = 0):
 
     _dec = conn.encoder.decode
@@ -193,7 +195,6 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
 
         vfilter = bytes(string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34),'ascii')    #Valid input characters
         ckeys = conn.encoder.ctrlkeys
-
         if conn.mode == 'PET64':
             help_k = [ckeys['F1'],'F1']
             line_k = [ckeys['F7'],'F7']
@@ -202,7 +203,6 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             help_k = [ckeys['HELP'],'HELP']
             line_k = [ckeys['F3'],'F3']
             quit_k = [ckeys['ESC'],'ESC']
-
         conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT><MTITLE t="Message Editor"><YELLOW>'
                      f'{"<LFILL row=22 code=64>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else "<AT x=0 y=22><HLINE n=40>"}'
                      f'<AT x=1 y=22><RVSON>{help_k[1]} for help<RVSOFF>')
@@ -210,15 +210,12 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
         line = 0
         column = 0
         hl_line()
-
         conn.SendTML('<PAUSE n=1><WINDOW top=23 bottom=24><GREY3>')
-
         while topic == '': # Get message topic if none provided
             conn.SendTML('Topic title:<BR>')
             topic = conn.ReceiveStr(vfilter, maxlen = 32)
             conn.SendTML('<PAUSE n=0.5><CLR>')
             topic = _dec(topic)
-
         _LOG('Composing message',id=conn.id,v=4)
         running = True
         edit = True
@@ -337,10 +334,8 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             except Exception as e:
                 running = False
                 conn.connected = False
-
         conn.Sendall(TT.set_Window(0,24))
         return(topic,message)
-
     #check user is logged in
     if conn.username == '_guest_':
         return
@@ -348,8 +343,6 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
     db = conn.bbs.database
     table = db.db.table('MESSAGES')
     dbQ = Query()
-
-
     # thread exist?
     dthread = None
     topic = ''
@@ -362,7 +355,6 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             return
         else: 
             topic = dthread['msg_topic']
-        ...
     if type(destination) == str:    # Private message
         # user exist?
         duser = db.chkUser(destination)
@@ -376,9 +368,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
     else:   # Board message
         user = 0
         board = destination
-
     # Note - fixme: You can get to this point even if the thread doesnt belong to the destination board
-
     topic, message = composer(topic=topic)  ###### Test composer
     if message != None:
         i = 0
@@ -403,10 +393,11 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
         _LOG('Messaging: Message cancelled',id=conn.id,v=4)
     return m_id
 
-#Display user private messages (board = 0) or public board
+############################################################
+# Display user private messages (board = 0) or public board
+############################################################
 def inbox(conn:Connection, board):
     _dec = conn.encoder.decode
-
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     ckeys = conn.encoder.ctrlkeys
     db:DBase = conn.bbs.database
@@ -448,7 +439,6 @@ def inbox(conn:Connection, board):
             tt += f'{to}<YELLOW><CRSRR n={24-len(to)}<VLINE><WHITE>{tu}'
             ts = tl['msg_sent']    # Get timestamp of last message in thread
             threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
-
         # sort by sent timestamp, newest thread first
         threads.sort(key=lambda threads: threads[3],reverse=True)
         conn.Sendall(TT.enable_CRSR())
@@ -467,7 +457,6 @@ def inbox(conn:Connection, board):
                          '<AT x=0 y=24>Read <RVSON>f<RVSOFF>irst/<RVSON>l<RVSOFF>ast or <RVSON>u<RVSOFF>nread message'
                          '<WINDOW top=3 bottom=21>')
             refresh = False
-
         conn.SendTML('<CLR>')
         last = len(threads) if len(threads) < (19*(page+1)) else 19*(page+1)
         for i in range(19*page,last):
@@ -582,11 +571,15 @@ def inbox(conn:Connection, board):
                 done = True
                 break
 
-#Toggle the read status of a private message
+##############################################
+# Toggle the read status of a private message
+##############################################
 def toggleRead(conn:Connection, msg_id):
     ...
 
-#Get number of unread messages
+##################################
+# Get number of unread messages
+##################################
 def unreadCount(conn:Connection):
     table = conn.bbs.database.db.table('MESSAGES')
     dbQ = Query()
@@ -603,7 +596,9 @@ def unreadCount(conn:Connection):
                 count[1] += 1
     return count
 
-#Get first unread message in a given thread
+#############################################
+# Get first unread message in a given thread
+#############################################
 def getUnread(conn:Connection, thread:int):
     table = conn.bbs.database.db.table('MESSAGES')
     tt = table.get(doc_id=thread)
@@ -624,6 +619,10 @@ def getUnread(conn:Connection, thread:int):
         _LOG('Messaging: ERROR-invalid thread',id=conn.id)
     return res
 
+############################################
+# Delete thread
+# Limited to admin users
+############################################
 def deleteThread(conn:Connection,thread=0):
     if thread != 0 and conn.userclass == 10:
         table = conn.bbs.database.db.table('MESSAGES')
@@ -640,6 +639,10 @@ def deleteThread(conn:Connection,thread=0):
     else:
         _LOG("ERROR: deleteThread - invalid thread or user class")
 
+##########################################
+# Delete message
+# Limited to admin users
+##########################################
 def deleteMessage(conn:Connection,msg=0):
     m_id = 0
     if msg != 0 and conn.userclass == 10:
@@ -662,7 +665,6 @@ def deleteMessage(conn:Connection,msg=0):
                         table.upsert(Document({'msg_prev':dmsg['msg_parent']},doc_id=dmsg['msg_parent']))
                 table.remove(doc_ids= [msg])
                 _LOG('Message id:'+str(msg)+' DELETED',id=conn.id,v=3)
-            
         else:
             _LOG('ERROR: Message not found', id=conn.id)
     else:
@@ -670,6 +672,7 @@ def deleteMessage(conn:Connection,msg=0):
     return m_id # Return the previous message
 
 
-################################################################
+###########
 # TML tags
+###########
 t_mono = {'UNREAD':(lambda c:unreadCount(c),[('_R','_A'),('c','_C')])}

@@ -8,7 +8,6 @@ import gzip
 from io import BytesIO
 from common.bbsdebug import _LOG
 
-
 #YM formats magic strings
 magicYM = [b'YM2!',b'YM3!',b'YM3b',b'YM4!',b'YM5!',b'YM6!']
 #VTX format magic strings
@@ -17,21 +16,22 @@ magicVTX = [b'ym',b'ay']
 #YM frequency -> platform dict
 platform = {2000000:' - Atari', 1000000:' - Amstrad'}
 
+#############################################################################################
+# Decode BCD number
+# https://stackoverflow.com/questions/11668969/python-how-to-decode-binary-coded-decimal-bcd
+#############################################################################################
 def bcd_decode(data: bytes, decimals: int):
-    '''
-    Decode BCD number
-    https://stackoverflow.com/questions/11668969/python-how-to-decode-binary-coded-decimal-bcd
-    '''
     res = 0
     for n, b in enumerate(data):	#reversed(data) for big endian
         res += (b & 0x0F) * 10 ** (n * 2 - decimals)
         res += (b >> 4) * 10 ** (n * 2 + 1 - decimals)
     return res
 
+################################
 # Open file, returns data
 # Depack file if its lha packed
+################################
 def YMOpen(filename:str):
-
     #Try for unpacked file first
     try:
         data = None
@@ -88,11 +88,12 @@ def YMOpen(filename:str):
                 return data
         except:
             pass
-
     _LOG('YMOpen: Unsupported file format',v=2)
     return None
 
+##############################
 # Get metadata if there's any
+##############################
 def YMGetMeta(data):
     if data != None:
         out = {'clock':2000000, 'interleave':True, 'frames':0, 'offset':4, 'title':'???', 'artist':'???','comments':'','copyright':'???', 'rate':50, 'type':'YM', 'subsongs':1, 'startsong':1}
@@ -197,9 +198,10 @@ def YMGetMeta(data):
     else:
         return None
 
+#########################################################################
 # Parse YM file, return list of frames with register values and Metadata
+#########################################################################
 def YMDump(data):
-
     meta = YMGetMeta(data)
     if meta != None:
         if data[:4] == b'Vgm ':	#.VGM
@@ -304,7 +306,6 @@ def YMDump(data):
                 elif cmd == 0x31:
                     dd = data[ix+1]
                     ix += 2
-
                 count +=1
                 if samples >= (44100/meta['rate']):
                     for i in range(round(samples/(44100/meta['rate']))):	#

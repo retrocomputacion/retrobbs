@@ -4,11 +4,12 @@ from enum import IntEnum
 
 dithertype = IntEnum('dithertype',['NONE','BAYER2','BAYER4','BAYER4ODD','BAYER4EVEN','BAYER4SPOTTY','BAYER8','YLILUOMA1','CLUSTER','FLOYDSTEINBERG'])
 
-######################################
+###################################
 # Custom ordered dither
 # code derived from hitherdither
 # custom Bayer matrixes taken from
 # Project One
+###################################
 
 def B(m):
     """Get the Bayer matrix with side of length ``n``.
@@ -40,7 +41,6 @@ def custom_dithering(image, palette:Palette, thresholds, type:dithertype=dithert
         [3,35,11,43,1,33,9,41],[51,19,59,27,49,17,57,25],
         [15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21]]], dtype=object)
 
-
     bayer_matrix = B(np.asarray(dMatrix[type-2]))
     ni = np.array(image, "uint8")
     thresholds = np.array(thresholds, "uint8")
@@ -50,4 +50,3 @@ def custom_dithering(image, palette:Palette, thresholds, type:dithertype=dithert
     factor_threshold_matrix = np.expand_dims(bayer_matrix[yy, xx], axis=2) * thresholds
     new_image = ni + factor_threshold_matrix
     return palette.create_PIL_png_from_rgb_array(new_image)
-
