@@ -99,7 +99,7 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
 ### **v0.50** (In development):
 
 __New features__:
- - Idle BBS will reload the configuration file if it has been modified.
+ - Idle BBS will reload the configuration file if it has been modified during runtime.
  - New LABEL internal function for displaying non-interactive text in menus.
  - New command line parameter `-c`, select configuration file.
  - SID streaming now supports Compute's Sidplayer .mus files.
@@ -119,6 +119,7 @@ __New features__:
  - New STAT internal function for displaying some basic BBS and user statistics
  - Added `SENDFILE` function for the configuration file.
  - Show album art if embedded in MP3 files (and dialog is enabled)
+ - New `mode` config file parameter allows for platform specific versions of menu entries
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -233,6 +234,7 @@ Python modules:
   * python_weather (For the weather plugin)
   * crc
   * lhafile (For .YM and .VTX file support)
+  * scikit-image
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
@@ -334,7 +336,8 @@ Common menu entry keys:
 | `entryZkey` | Key press associated with this entry (UPPERCASE only)
 | `entryZdesc` | Entry description text, optional, only when the section is configured for 1 column
 | `entryZfunc` | Internal function or plug-in associated with this entry.<br>Depending on the function, specific entry keys may be needed (See next chapter)<br>Defaults to `LABEL` if omitted.
-| `entryZlevel` | (Optional) Minimum useclass required to access this entry, default 0 (public)
+| `entryZlevel` | (Optional) Minimum userclass required to access this entry, default 0 (public)
+| `entryZmode` | (Optional) Only display this entry if the client's platform matches.<br>Multiple entries with same `entryZkey` but different `entryZmode` are allowed.
 
 Function/plug-in specific entry keys:
 | key | description
