@@ -9,7 +9,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File
+from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File, im_extensions
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -281,7 +281,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 conn.ReceiveKey()
             return
         # Images
-        elif ext in ['.JPG','.GIF','.PNG','.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
+        elif ext in ['.JPG','.GIF','.PNG']+im_extensions:    #,'.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
             SendBitmap(conn,filename,dialog,save)
             conn.SendTML('<INKEYS><NUL><CURSOR>')
         elif ext == '.C':

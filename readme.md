@@ -151,6 +151,7 @@ __Changes/Bug fixes__:
  - Webaudio multiclient queuing disabled, falling back to one ffmpeg instance per audio stream.
  - Fixed missing timeout parameter in APOD plugin.
  - Both *APOD* and *Newsfeed* plugins now use *text_displayer* instead or *More*
+ - *Sendfile* checks if executable file fits in the client's available memory size and range and disables transfer to memory if the file is too large or resides outside the valid memory range.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -502,7 +503,8 @@ Combine it with an entry description text in 1 column mode for a menu descriptio
 
 ### Function SENDFILE:
 Send a file to the client, call the appropriate transfer routine. Optionally, show a file dialog or download to disk.<br>
-Supported file types include: `JPG, GIF, PNG, ART, OCP, KOA, KLA, DD, DDL, MP3, WAV, TXT, SEQ, TML and PRG`
+Supported file types include: `JPG, GIF, PNG, ART, OCP, KOA, KLA, DD, DDL, BOTI, MP3, WAV, TXT, SEQ, TML and PRG`
+If the save option is enabled, any unsupported file will be transferred to disk
 
 Configuration file parameter keys:
 | key | description
@@ -517,14 +519,14 @@ Configuration file parameter keys:
 
 All plug-in modules should implement at least two functions:
 
-__setup()__ : Calling this function returns a tuple consisting of the plug-in name in uppercase, which will be used as the callable function on the config file. And a list of parameters, each element being a tuple itself. This tuple is made of the parameter name to use in the config file, and the corresponding default value in case the parameter is not found.
+__setup()__ : This function must returns a tuple consisting of the plug-in name in uppercase, which will be used as the callable function on the config file. And a list of parameters, each element being a tuple itself. This tuple is made of the parameter name to use in the config file, and the corresponding default value in case the parameter is not found.
 
 Example of the returned tuple for a plugin that will use the name 'CHAT' with parameters 'channel' and 'nick', which default to 'offtopic' and 'John' respectively:
 ```python
 ('CHAT',[('channel','offtopic'),('nick','John')])
 ```
 
-__plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function to perform the plug-in task.<br>The first parameter **\<conn\>** is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
+__plugfunction(conn, \<extra parameters\>)__ : The BBS will call this function to perform the plug-in's task.<br>The first parameter **\<conn\>** is a Connection object (see Chapter 4) to which the plug-in should direct its output.<br>Any extra parameters will follow, with the same names as returned by setup().
 
 ---
 # 3.1 Included Plug-Ins
