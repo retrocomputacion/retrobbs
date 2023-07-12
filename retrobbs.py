@@ -147,13 +147,6 @@ def ConfigRead():
                     raise Exception('Configuration file - Too many LABEL entries')
             emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    #Entry connection mode
             level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
-            if efunc in func_dic:
-                #[function_call, parameters, title, user_level, wait, mode]
-                sentry['entrydefs'][ekey] = [func_dic[efunc],None,tentry,level,False,emode]
-            elif efunc in PlugDict:
-                sentry['entrydefs'][ekey] = [PlugDict[efunc][0],None,tentry,level,False,emode]
-            else:
-                raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
             #Parse parameters
             parms = []
             if efunc == 'IMAGEGALLERY':		#Show image file list
@@ -199,7 +192,14 @@ def ConfigRead():
             # This tuple need to be added to one (conn,) on each connection instance when calling func
             # also needs conn.MenuParameters added to this
             # finaltuple = (conn,)+ _parms_
-            sentry['entrydefs'][ekey][1] = tuple(parms)
+            if efunc in func_dic:
+                # [function_call, parameters, title, user_level, wait, mode]
+                sentry['entrydefs'][ekey] = [func_dic[efunc],tuple(parms),tentry,level,False,emode]
+            elif efunc in PlugDict:
+                sentry['entrydefs'][ekey] = [PlugDict[efunc][0],tuple(parms),tentry,level,False,emode]
+            else:
+                raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
+
         return(sentry)
 
     #Iterate Menu Sections
@@ -601,7 +601,6 @@ def GetKeybindings(conn:Connection,id):
     kb = {}
     for cat in menu['entries']:
         for e in cat['entrydefs']:
-            print(cat['entrydefs'][e][5],['',conn.mode])
             if cat['entrydefs'][e][5] in ['',conn.mode]:
                 kb[e] = cat['entrydefs'][e].copy()
                 if isinstance(kb[e][2],tuple):
