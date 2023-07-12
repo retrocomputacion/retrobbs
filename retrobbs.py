@@ -145,6 +145,8 @@ def ConfigRead():
                 nchar += 1
                 if nchar == '\r':
                     raise Exception('Configuration file - Too many LABEL entries')
+            if ekey not in sentry['entrydefs']:
+                sentry['entrydefs'][ekey] = {}
             emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    #Entry connection mode
             level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
             #Parse parameters
@@ -189,14 +191,14 @@ def ConfigRead():
                     if isinstance(p[1],tuple) == True and isinstance(ep,tuple) == False:
                         ep = tuple([int(e) if e.isdigit() else 0 for e in ep.split(',')])
                     parms.append(ep)
-            # This tuple need to be added to one (conn,) on each connection instance when calling func
+            # Parameter tuple need to be added to one (conn,) on each connection instance when calling func
             # also needs conn.MenuParameters added to this
             # finaltuple = (conn,)+ _parms_
             if efunc in func_dic:
-                # [function_call, parameters, title, user_level, wait, mode]
-                sentry['entrydefs'][ekey] = [func_dic[efunc],tuple(parms),tentry,level,False,emode]
+                # [function_call, parameters, title, user_level, wait]
+                sentry['entrydefs'][ekey][emode] = [func_dic[efunc],tuple(parms),tentry,level,False]
             elif efunc in PlugDict:
-                sentry['entrydefs'][ekey] = [PlugDict[efunc][0],tuple(parms),tentry,level,False,emode]
+                sentry['entrydefs'][ekey][emode] = [PlugDict[efunc][0],tuple(parms),tentry,level,False]
             else:
                 raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
 
@@ -283,7 +285,7 @@ def ConfigRead():
             tkey = 'MENU'+str(m+1)+'SECTION'
         _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
         _bbs_menues[m] = MIter(config,tkey,_bbs_menues[m])
-        _bbs_menues[m]['entries'][0]['entrydefs'][b'\r']=[SendMenu,(),'',0,False,'']
+        _bbs_menues[m]['entries'][0]['entrydefs'][b'\r']={'':[SendMenu,(),'',0,False]}
     bbs_instance.MenuList = _bbs_menues
 
 ################################
@@ -424,17 +426,21 @@ def SendMenu(conn:Connection):
             sw = 2
             tw = 17
         for i in s['entrydefs']:
-            if s['entrydefs'][i][5] not in ['',conn.mode]:
+            if conn.mode in s['entrydefs'][i]:
+                mode = conn.mode
+            elif '' in s['entrydefs'][i]:
+                mode = ''
+            else:
                 continue
             if i == b'\r':
                 continue
             xw = (2 if i<b'\r' else 0)    # Extra width if LABEL item
-            if isinstance(s['entrydefs'][i][2],tuple):
-                t = s['entrydefs'][i][2][0]
+            if isinstance(s['entrydefs'][i][mode][2],tuple):
+                t = s['entrydefs'][i][mode][2][0]
                 dw = 38 if len(t) == 0 and i<b'\r' else 36
-                desc = formatX(s['entrydefs'][i][2][1],columns=dw)
+                desc = formatX(s['entrydefs'][i][mode][2][1],columns=dw)
             else:
-                t = s['entrydefs'][i][2]
+                t = s['entrydefs'][i][mode][2]
                 desc =''
             title = crop(t,tw+xw-1)
             if len(title) > 0 or count > (sw-1) or i >= b'\r':
@@ -601,8 +607,10 @@ def GetKeybindings(conn:Connection,id):
     kb = {}
     for cat in menu['entries']:
         for e in cat['entrydefs']:
-            if cat['entrydefs'][e][5] in ['',conn.mode]:
-                kb[e] = cat['entrydefs'][e].copy()
+            print(cat['entrydefs'][e])
+            entry = cat['entrydefs'][e].get(conn.mode, cat['entrydefs'][e].get('',None))
+            if entry != None:
+                kb[e] = entry.copy()
                 if isinstance(kb[e][2],tuple):
                     kb[e][2]=kb[e][2][0]
                 kb[e][1] = (conn,)+kb[e][1]
