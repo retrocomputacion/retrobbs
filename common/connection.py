@@ -55,7 +55,7 @@ class Connection:
         self.TermFt[0xFF] = b'\x00'
         self.TermFt[0xFE] = b'\x00'
 
-        self.mode = 'PET64'							#Connection mode -> type of client
+        self.mode = 'ASCII'							#Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
         self.parser = TMLParser(self)				#TML parser

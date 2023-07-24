@@ -1002,7 +1002,8 @@ def UserList(conn:Connection):
 # Check terminal for some basic features on connection
 ##########################################################
 def GetTerminalFeatures(conn:Connection, display = True):
-    conn.SendTML(f'<CLR><LTBLUE>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR>'
+    conn.SendTML(f'<RESET><SETOUTPUT o=True><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>'
+                 f'<CLR><LOWER><LTBLUE>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR>'
                 f'<LTBLUE>Turbo56K version: <WHITE>{conn.T56KVer}<BR><PAUSE n=0.5>')
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
@@ -1029,29 +1030,36 @@ def BBSLoop(conn:Connection):
         # Sync
         conn.SendTML('<NUL n=2>')
         if conn.bbs.lang == 'es':
-            pt = "presione RETURN..."
+            pt = "intentando detectar terminal,<BR>espere por favor...<BR>"
         else:
-            pt = "press RETURN..."
+            pt = "trying to detect terminal,<BR>please wait...<BR>"
 
-        welcome = f'''<RESET><SETOUTPUT o=True><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>
-<CLR><LOWER><CYAN><BR>
-{conn.bbs.WMess}<BR>
-RetroBBS v{conn.bbs.version:.2f}<BR>
-running under:<BR>
-{conn.bbs.OSText}<BR>
-<LTBLUE>{pt}<BR>'''
+        welcome = f'''{conn.bbs.WMess.upper()}<BR>
+RETROBBS V{conn.bbs.version:.2f}<BR>
+RUNNING UNDER:<BR>
+{conn.bbs.OSText.upper()}<BR>
+{pt.upper()}<BR>'''
 
         conn.SendTML(welcome)
         # Connected, wait for the user to press RETURN
-        WaitRETURN(conn)
+        # WaitRETURN(conn)
 
         # Ask for ID and supported TURBO56K version
-        conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
         time.sleep(1)
         datos = ""
-        conn.socket.settimeout(5.0)
-        datos = conn.Receive(2)
-        conn.socket.settimeout(_tout)
+        # conn.socket.settimeout(5.0)
+        conn.socket.setblocking(0)
+        conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
+        tmp = time.time()
+        while ((time.time()-tmp) < 3) and (datos != b'RT'):
+            print(datos)
+            try:
+                datos += conn.socket.recv(2) # conn.Receive(2)
+            except:
+                # datos = None
+                pass
+        conn.socket.setblocking(1)
+        # conn.socket.settimeout(_tout)
         _LOG('ID:', datos,id=conn.id,v=4)
         if datos == b"RT":
             datos = conn.Receive(20)

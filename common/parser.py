@@ -399,7 +399,7 @@ class TMLParser(HTMLParser):
                 if isinstance(self.t_mono[tag],str):
                     #print(self.t_mono[tag], flush=True, end='')
                     c = self.t_mono[tag]
-                    i = self.conn.encoder.color_index(ord(c))	#Check if last tag was a color control code
+                    i = self.conn.encoder.color_index(ord(c[0]))	#Check if last tag was a color control code
                     if i >= 0:
                         self.color = i
                     self.conn.Sendall(c)
