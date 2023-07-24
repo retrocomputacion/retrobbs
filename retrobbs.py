@@ -86,6 +86,7 @@ import signal
 import string
 import configparser #INI file parser
 import threading
+import errno
 
 from common import extensions as EX
 from common import turbo56k as TT
@@ -607,7 +608,6 @@ def GetKeybindings(conn:Connection,id):
     kb = {}
     for cat in menu['entries']:
         for e in cat['entrydefs']:
-            print(cat['entrydefs'][e])
             entry = cat['entrydefs'][e].get(conn.mode, cat['entrydefs'][e].get('',None))
             if entry != None:
                 kb[e] = entry.copy()
@@ -1046,19 +1046,23 @@ RUNNING UNDER:<BR>
 
         # Ask for ID and supported TURBO56K version
         time.sleep(1)
-        datos = ""
+        datos = b""
         # conn.socket.settimeout(5.0)
-        conn.socket.setblocking(0)
+        conn.socket.setblocking(False)
         conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
         tmp = time.time()
-        while ((time.time()-tmp) < 3) and (datos != b'RT'):
-            print(datos)
+        while ((time.time()-tmp) < 5) and (datos != b'RT'):
             try:
-                datos += conn.socket.recv(2) # conn.Receive(2)
-            except:
-                # datos = None
-                pass
-        conn.socket.setblocking(1)
+                datos += conn.socket.recv(2) 
+            except socket.error as e:
+                err = e.args[0]
+                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                    time.sleep(0.5)
+                    continue
+                else:
+                    pass
+        conn.socket.setblocking(True)
+        # datos = conn.Receive(2)
         # conn.socket.settimeout(_tout)
         _LOG('ID:', datos,id=conn.id,v=4)
         if datos == b"RT":

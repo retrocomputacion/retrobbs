@@ -10,10 +10,9 @@ import socket
 from common.bbsdebug import _LOG, bcolors
 import datetime
 from common import turbo56k as TT
-from common.classes import BBS
+from common.classes import BBS, bbsstyle, Encoder
 import time
 from common.parser import TMLParser
-from common.classes import bbsstyle, Encoder
 
 # Dictionary of client variant -> Encoder
 clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264'}
