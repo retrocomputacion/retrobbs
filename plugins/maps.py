@@ -60,6 +60,9 @@ def lat2res(lat_deg, zoom):
 ###################################
 def plugFunction(conn:Connection):
     _dec = conn.encoder.decode
+    api_key = conn.bbs.PlugOptions.get('stadiakey','DEMO_KEY')
+    if api_key == 'DEMO_KEY':
+        return
 
     # Avoid Geocode timeout/Unavailable errors
     # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
@@ -72,14 +75,14 @@ def plugFunction(conn:Connection):
             return None
 
     def getImageCluster(xmin, ymin, width, height, zoom):
-        smurl = r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
+        smurl = r"https://tiles.stadiamaps.com/tiles/stamen_toner/{0}/{1}/{2}.png?api_key={3}"   #r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
         tnum = 2**zoom #Number of tiles per row/column
         Cluster = Image.new('RGB',((width)*256,(height)*256))
         conn.SendTML('<GREY1><CLR>Loading .........<CRSRL n=9>')
         for xtile in range((xmin-int(width/2)), (xmin+1+int(width/2))):
             for ytile in range(ymin-int(height/2),  ymin+1+int(height/2)):
                 try:
-                    imgurl=smurl.format(zoom, xtile % tnum, ytile)
+                    imgurl=smurl.format(zoom, xtile % tnum, ytile, api_key)
                     imgstr = requests.get(imgurl,allow_redirects=True, headers={'User-Agent':'RetroBBS-Maps'})
                     tile = Image.open(BytesIO(imgstr.content))
                     Cluster.paste(tile, box=((xtile-(xmin-int(width/2)))*256 ,  (ytile-(ymin-int(height/2)))*256))

@@ -554,11 +554,13 @@ Basic and very experimental IRC client.
 
 ### Maps (maps.py) (new 0.50):
 Explore the world through maps based on *Openstreetmaps*. Maps are rendered using the _Stamen Design's_ **Toner** tiles.
+The map tiles are served by _Stadia Maps_, an API key is required for the plugin to work. To get the API key a free _[Stadia Maps](https://stadiamaps.com/stamen/onboarding/create-account/)_  account is required.
 
 - Configuration file function: MAPS
 - Configuration file parameters: NONE
 - Configuration file \[PLUGINS\] options:
    - `geoserver` = Geocoder used to retrieve location data. Can be set to either `Nominatim` (default) or `Photon`.
+   - `stadiakey` = StadiaMaps API key.
 
 
 ### Oneliner (oneliner.py):

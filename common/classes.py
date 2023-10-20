@@ -69,7 +69,10 @@ class Encoder:
         self.tbuffer = 0x0000	#	Top address/size of the client's buffer
 
     def color_index(self, code):
-       return self.palette.get(code,-1)
+        if type(code) == str:
+            if len(code) == 1:
+                code = ord(code)
+        return self.palette.get(code,-1)
 
     # Function to check if a file will fit into the client's buffer 
     def check_fit(self, filename):

@@ -274,7 +274,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             return()
         if not conn.connected:
             return()
-        conn.SendTML('<CBM-B><CRSRL>')
+        conn.SendTML('<CBM-B><CRSRL><NUL><NUL>')
     #Streaming mode
     binario = b'\xFF\x83'
     pcm_stream = PcmStream(filename,conn.samplerate)
