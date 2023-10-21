@@ -62,6 +62,7 @@ def plugFunction(conn:Connection):
     _dec = conn.encoder.decode
     api_key = conn.bbs.PlugOptions.get('stadiakey','DEMO_KEY')
     if api_key == 'DEMO_KEY':
+        _LOG("MAPS: Missing Stadia Maps API key - Exiting", id=conn.id,v=2)
         return
 
     # Avoid Geocode timeout/Unavailable errors
