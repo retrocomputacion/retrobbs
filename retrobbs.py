@@ -1030,9 +1030,9 @@ def BBSLoop(conn:Connection):
         # Sync
         conn.SendTML('<NUL n=2>')
         if conn.bbs.lang == 'es':
-            pt = "intentando detectar terminal,<BR>espere por favor...<BR>"
+            pt = "intentando detectar terminal,<BR>presione ENTER/RETURN...<BR>"
         else:
-            pt = "trying to detect terminal,<BR>please wait...<BR>"
+            pt = "trying to detect terminal,<BR>press ENTER/RETURN...<BR>"
 
         welcome = f'''{conn.bbs.WMess.upper()}<BR>
 RETROBBS V{conn.bbs.version:.2f}<BR>
@@ -1042,7 +1042,8 @@ RUNNING UNDER:<BR>
 
         conn.SendTML(welcome)
         # Connected, wait for the user to press RETURN
-        # WaitRETURN(conn)
+        # TODO: Accept any valid RETURN/ENTER character
+        WaitRETURN(conn)
 
         # Ask for ID and supported TURBO56K version
         time.sleep(1)
@@ -1051,9 +1052,9 @@ RUNNING UNDER:<BR>
         conn.socket.setblocking(False)
         conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
         tmp = time.time()
-        while ((time.time()-tmp) < 5) and (datos != b'RT'):
+        while ((time.time()-tmp) < 5) and (len(datos) < 2):
             try:
-                datos += conn.socket.recv(2) 
+                datos += conn.socket.recv(1) 
             except socket.error as e:
                 err = e.args[0]
                 if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
@@ -1062,11 +1063,13 @@ RUNNING UNDER:<BR>
                 else:
                     pass
         conn.socket.setblocking(True)
+        print(datos)
         # datos = conn.Receive(2)
         # conn.socket.settimeout(_tout)
-        _LOG('ID:', datos,id=conn.id,v=4)
-        if datos == b"RT":
-            datos = conn.Receive(20)
+        _LOG('ID:', datos[0:2],id=conn.id,v=4)
+        if datos[0:2] == b"RT":
+            datos = datos[2:]
+            datos += conn.Receive(20-len(datos))
             _LOG('Terminal: ['+ bcolors.OKGREEN + str(datos) + bcolors.ENDC + ']',id=conn.id,v=4)
             dato1 = conn.Receive(1)
             dato2 = conn.Receive(1)
