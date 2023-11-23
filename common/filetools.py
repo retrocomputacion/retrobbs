@@ -325,7 +325,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 def SendProgram(conn:Connection,filename):
     # Verify .prg extension
     ext = os.path.splitext(filename)[1].upper()
-    if ext == '.PRG' and conn.encoder.check_fit():
+    if ext == '.PRG' and conn.encoder.check_fit(filename):
         _LOG('Memory transfer, filename: '+filename, id=conn.id,v=3)
         # Open file
         archivo=open(filename,"rb")
