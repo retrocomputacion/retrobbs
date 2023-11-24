@@ -1065,7 +1065,7 @@ RUNNING UNDER:<BR>
         conn.socket.setblocking(True)
         print(datos)
         # datos = conn.Receive(2)
-        # conn.socket.settimeout(_tout)
+        conn.socket.settimeout(_tout)
         _LOG('ID:', datos[0:2],id=conn.id,v=4)
         if datos[0:2] == b"RT":
             datos = datos[2:]
