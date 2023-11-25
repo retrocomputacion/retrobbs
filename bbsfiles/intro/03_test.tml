@@ -1,4 +1,7 @@
 <CAT path='bbsfiles/intro/intro_pics'>
+<MODE m=PET264>
+	<CAT path='bbsfiles/intro/intro_pics/pet264'>
+</MODE>
 <LEN x='_A'>
 <IF c='_I>0'>
 	<RND e=_I>
