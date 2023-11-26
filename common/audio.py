@@ -629,15 +629,16 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                         count = 0
                         if (b'\xff' in ack) or not conn.connected:
                             #Abort stream
-                            conn.socket.setblocking(0)	# Change socket to non-blocking
-                            t0 = time.time()
-                            while time.time()-t0 < 1:   # Flush receive buffer for 1 second
-                                try:
-                                    conn.socket.recv(10)
-                                except:
-                                    pass
-                            conn.socket.setblocking(1)	# Change socket to blocking
-                            conn.socket.settimeout(conn.bbs.TOut)
+                            conn.Flush(1)   # Flush receive buffer for 1 second
+                            # conn.socket.setblocking(0)	# Change socket to non-blocking
+                            # t0 = time.time()
+                            # while time.time()-t0 < 1:   # Flush receive buffer for 1 second
+                            #     try:
+                            #         conn.socket.recv(10)
+                            #     except:
+                            #         pass
+                            # conn.socket.setblocking(1)	# Change socket to blocking
+                            # conn.socket.settimeout(conn.bbs.TOut)
                             break
                     
                 conn.Sendall(chr(0))	#End stream

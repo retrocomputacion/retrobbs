@@ -103,15 +103,16 @@ class Connection:
         if self.T56KVer > 0.5:
             if self.TermFt[cmd] == None:
                 if self.T56KVer < 0.7:	#Try to avoid retroterm0.14 bug
-                    self.socket.setblocking(0)	# Change socket to non-blocking
-                    t0 = time.time()
-                    while time.time()-t0 < 0.5:   # Flush receive buffer for 1/2 second
-                        try:
-                            self.socket.recv(10)
-                        except Exception as e:
-                            pass
-                    self.socket.setblocking(1)	# Change socket to blocking
-                    self.socket.settimeout(self.bbs.TOut)
+                    self.Flush(0.5)
+                    # self.socket.setblocking(0)	# Change socket to non-blocking
+                    # t0 = time.time()
+                    # while time.time()-t0 < 0.5:   # Flush receive buffer for 1/2 second
+                    #     try:
+                    #         self.socket.recv(10)
+                    #     except Exception as e:
+                    #         pass
+                    # self.socket.setblocking(1)	# Change socket to blocking
+                    # self.socket.settimeout(self.bbs.TOut)
                     time.sleep(0.5)
                 self.Sendall(chr(TT.CMDON))
                 self.Sendall(chr(TT.QUERYCMD)+chr(cmd))
@@ -142,6 +143,19 @@ class Connection:
                 #if e == errno.EPIPE:
                 _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Sendallbin'+bcolors.ENDC, id=self.id,v=2)
                 self.connected = False
+
+    # Flush receive buffer for ftime seconds
+    def Flush(self, ftime):
+        self.socket.setblocking(0)	# Change socket to non-blocking
+        t0 = time.time()
+        while time.time()-t0 < ftime:
+            try:
+                self.socket.recv(10)
+            except Exception as e:
+                pass
+        self.socket.setblocking(1)	# Change socket to blocking
+        self.socket.settimeout(self.bbs.TOut)
+
 
     #Receive (count) binary chars from socket
     def Receive(self, count):

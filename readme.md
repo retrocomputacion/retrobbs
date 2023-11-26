@@ -794,6 +794,8 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **Sendallbin(cadena)**: Sends binary string **\<cadena\>** to the client.
 
+**Flush(ftime)**: Flush the receiving buffer for **\<ftime\>** seconds.
+
 **Receive(count)**: Receives **\<count\>** binary chars from the client.<br>Returns: binary string.
 
 **ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** binary string.<br>Returns: The received matching char as a binary string.

@@ -1044,6 +1044,7 @@ RUNNING UNDER:<BR>
         # Connected, wait for the user to press RETURN
         # TODO: Accept any valid RETURN/ENTER character
         WaitRETURN(conn)
+        conn.Flush(0.5) # Flush for 0.5 seconds
 
         # Ask for ID and supported TURBO56K version
         time.sleep(1)
