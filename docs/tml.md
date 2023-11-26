@@ -340,7 +340,7 @@ Parameter:
 Move the client's text cursor to the requested position.</br>
 Parameters:
 
-`x`: Screen column. Default `0`
+`x`: Screen column. Default `0`</br>
 `y`: Screen row. Default `0`
 
 ---
@@ -441,7 +441,7 @@ Parameter:
 Render the file dialog background</br>
 Parameters:
 
-`h`: Height of the dialog box in screen rows. Default `4`
+`h`: Height of the dialog box in screen rows. Default `4`</br>
 `t`: Title string. Default `''`
 
 ---
