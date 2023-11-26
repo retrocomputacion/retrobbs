@@ -599,17 +599,17 @@ Displays the PETSCII left arrow "`←`" character.
 ---
 
 #### **&lt;CBM-U&gt;**
-Displays the 3/8 upper block character ".
+Displays the 3/8 upper block character.
 
 ---
 
 #### **&lt;CBM-O&gt;**
-Displays the 3/8 lower block character.
+Displays the 3/8 lower block "`▃`" character.
 
 ---
 
 #### **&lt;CBM-B&gt;**
-Displays the quadrant upper left and lower right character "▚"
+Displays the quadrant upper left and lower right character "`▚`"
 
 ---
 
