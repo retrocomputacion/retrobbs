@@ -119,6 +119,12 @@ class DBase:
         #dbQ = Query()
         params.pop('self')
         table.update(params, doc_ids=[id])
+
+    #Update user preferences
+    def updateUserPrefs(self,id,prefs:dict):
+        table = self.db.table('USERS')
+        #data = table.get(doc_id = id)
+        table.update({'preferences':prefs}, doc_ids=[id])
     
     ################################
     # BBS session functions
