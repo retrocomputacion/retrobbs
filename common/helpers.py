@@ -30,6 +30,9 @@ font_text = ImageFont.truetype("common/BetterPixels.ttf",16)
 # Valid keys for menu entries
 valid_keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\*;/'
 
+# Date format strings
+date_strings = [["%d/%m/%Y","dd/mm/yyyy"],["%m/%d/%Y","mm/dd/yyyy"],["%Y/%m/%d","yyyy/mm/dd"]]
+
 # convert int to Byte
 _byte = lambda i: i.to_bytes(1,'little')
 

@@ -16,6 +16,7 @@ from common.bbsdebug import _LOG
 from common import filetools as FT
 from common import turbo56k as TT
 
+
 from common.helpers import font_bold as font_title
 from common.helpers import font_big as font_temp
 from common.helpers import font_text
@@ -53,6 +54,30 @@ def setup():
     fname = "WEATHER" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
+
+#########################################
+# Register/Get/Set Plugin preferences
+#-------------------------------------
+# Pass no parameters to get a list of
+# preference parameters.
+#
+# Pass connection & param but no value
+# to get the parameter value for this
+# user
+#
+# Pass all connection, param & value to
+# set the parameter for this user
+#########################################
+def plugPrefs(conn:Connection = None, param = None, value = None):
+    if conn == None: # Get parameter list
+        return [{'name':'wxunits','title':'Weather units:','prompt':'Set weather units:','values':{'F':'Imperial','C':'Metric'}}]
+    elif param != None:
+        if value == None: # Get parameter value
+            if param == 'wxunits':
+                return conn.bbs.database.getUserPrefs(conn.userid, {'wxunits':conn.bbs.PlugOptions.get('wxunits','C')})['wxunits']
+        elif param == 'wxunits': # Set parameter
+            conn.bbs.database.updateUserPrefs(conn.userid, {'wxunits':value})
+
 
 ###################################
 # Plugin function
@@ -106,7 +131,7 @@ def plugFunction(conn:Connection):
 #######################################################
 async def getweather(conn:Connection,locquery,geoLoc):
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
-    units = python_weather.METRIC if conn.bbs.PlugOptions.get('wxunits','C')=='C' else python_weather.IMPERIAL
+    units = python_weather.METRIC if conn.bbs.database.getUserPrefs(conn.userid, {'wxunits':conn.bbs.PlugOptions.get('wxunits','C')})['wxunits']=='C' else python_weather.IMPERIAL
     if python_weather.__version__[0]=='0':
         client = python_weather.Client(format=units)
     else:

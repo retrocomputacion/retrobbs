@@ -39,7 +39,12 @@ def RegisterPlugins():
     for a in p_mods:
         if 'setup' in dir(a):
             fname,parms = a.setup()
-            Plugins[fname] = (a.plugFunction,parms) 
+            if 'plugPrefs' in dir(a):
+                _LOG('Plugin: '+fname+' has preferences', v=4)
+                prefs = a.plugPrefs
+            else:
+                prefs = None
+            Plugins[fname] = (a.plugFunction,parms,prefs) 
             _LOG('Loaded plugin: '+fname,v=4)
             t_mono[fname] = (a.plugFunction,[('c','_C')]+parms)
     return Plugins

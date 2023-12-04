@@ -93,7 +93,7 @@ from common import turbo56k as TT
 from common.classes import BBS
 from common.connection import Connection
 from common.bbsdebug import _LOG, bcolors, set_verbosity
-from common.helpers import MenuBack, valid_keys, formatX, More, SetPage, crop, format_bytes
+from common.helpers import MenuBack, valid_keys, formatX, More, SetPage, crop, format_bytes, date_strings
 from common.style import RenderMenuTitle, KeyLabel
 from common import audio as AA
 from common import messaging as MM
@@ -705,15 +705,17 @@ def SignIn(conn:Connection):
                 if conn.ReceiveKey(b'YN') == b'Y':
                     # dord = dateord[conn.bbs.dateformat]
                     # dleft = dateleft[conn.bbs.dateformat]
-                    if conn.bbs.dateformat == 1:
-                        datestr = "%m/%d/%Y"
-                        dout = "mm/dd/yyyy"
-                    elif conn.bbs.dateformat == 2:
-                        datestr = "%Y/%m/%d"
-                        dout = "yyyy/mm/dd"
-                    else:
-                        datestr = "%d/%m/%Y"
-                        dout = "dd/mm/yyyy"
+                    datestr = date_strings[conn.bbs.dateformat][0]
+                    dout = date_strings[conn.bbs.dateformat][1]
+                    # if conn.bbs.dateformat == 1:
+                    #     datestr = "%m/%d/%Y"
+                    #     dout = "mm/dd/yyyy"
+                    # elif conn.bbs.dateformat == 2:
+                    #     datestr = "%Y/%m/%d"
+                    #     dout = "yyyy/mm/dd"
+                    # else:
+                    #     datestr = "%d/%m/%Y"
+                    #     dout = "dd/mm/yyyy"
                     if not conn.connected:
                         return
                     if conn.QueryFeature(179) < 0x80:
@@ -777,21 +779,24 @@ def EditUser(conn:Connection):
     _dec = conn.encoder.decode
     _LOG('Editing user '+conn.username, v=3)
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
-    if conn.bbs.dateformat == 1:
-        datestr = "%m/%d/%Y"
-        dout = "mm/dd/yyyy"
-    elif conn.bbs.dateformat == 2:
-        datestr = "%Y/%m/%d"
-        dout = "yyyy/mm/dd"
-    else:
-        datestr = "%d/%m/%Y"
-        dout = "dd/mm/yyyy"
+    # if conn.bbs.dateformat == 1:
+    #     datestr = "%m/%d/%Y"
+    #     dout = "mm/dd/yyyy"
+    # elif conn.bbs.dateformat == 2:
+    #     datestr = "%Y/%m/%d"
+    #     dout = "yyyy/mm/dd"
+    # else:
+    #     datestr = "%d/%m/%Y"
+    #     dout = "dd/mm/yyyy"
     if conn.userid == 0:
         return
     conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
     done = False
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
+        prefs = uentry.get('preferences',{'datef':conn.bbs.dateformat})
+        datestr = date_strings[prefs.get('datef',conn.bbs.dateformat)][0]
+        dout = date_strings[prefs.get('datef',conn.bbs.dateformat)][1]
         RenderMenuTitle(conn,"Edit User Data")
         conn.SendTML('<CRSRD n=2>')
         KeyLabel(conn,'a','Username: '+uentry['uname'],True)
@@ -952,19 +957,42 @@ def EditPrefs(conn:Connection):
     done = False
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
-        prefs = uentry.get('preferences',{'intro':True})
+        options = b'AB_'
+        prefs = uentry.get('preferences',{'intro':True,'datef':conn.bbs.dateformat})
         RenderMenuTitle(conn,"Edit User Preferences")
         conn.SendTML('<CRSRD n=2>')
-        KeyLabel(conn,'a','Login to Main menu: '+('No' if prefs['intro'] else 'Yes'),True)
+        KeyLabel(conn,'a','Login to Main menu: '+('No' if prefs.get('intro',True) else 'Yes'),True)
         conn.SendTML('<BR>')
-        KeyLabel(conn,'_','Exit',False)
+        KeyLabel(conn,'b','Date format: '+date_strings[prefs.get('datef',conn.bbs.dateformat)][1],False)
+        conn.SendTML('<BR>')
+        x = 2
+        st = True
+        opdic = {}
+        for p in bbs_instance.plugins:
+            ppf = bbs_instance.plugins[p][2]    # Plugin preferences function present?
+            if ppf != None:
+                pp = ppf()  # Get plugin preferences
+                for i in pp:
+                    pv = i['values']
+                    value = ppf(conn,i['name'])
+                    if type(pv) == dict:    # Preference can have a given set of values
+                        value = pv[value]   # Translate preference value to a verbose string
+                    KeyLabel(conn,valid_keys[x],i['title']+' '+value, st)
+                    conn.SendTML('<BR>')
+                    options += bytes(valid_keys[x],'ascii')
+                    opdic[valid_keys[x]] = (ppf, i)
+                    x += 1
+                    st = not st
+                print(p)
+
+        KeyLabel(conn,'_','Exit',True)
         conn.SendTML('<BR><BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-            conn.Sendall(TT.Fill_Line(7,64))
+            conn.Sendall(TT.Fill_Line(6+x,64))  # TODO: paginate preferences
         else:
             conn.SendTML('<CRSRU><HLINE n=40>')
         conn.SendTML('Press option')
-        k = conn.ReceiveKey(b'A_')
+        k = conn.ReceiveKey(options)
         if k == b'_':
             done = True
         elif k == b'A':
@@ -977,6 +1005,34 @@ def EditPrefs(conn:Connection):
                 conn.SendTML('YES<PAUSE n=1>')
                 prefs['intro'] = False
             conn.bbs.database.updateUserPrefs(uentry.doc_id,prefs)
+        elif k == b'B':
+            conn.SendTML('<BR><CRSRU>Date format:<BR><BR>0) DD/MM/YYYY<BR>1) MM/DD/YYYY<BR>2) YYYY/MM/DD<CRSRU n=4>')
+            k = conn.ReceiveKey(b'012')
+            conn.Sendallbin(k)
+            time.sleep(1)
+            prefs['datef'] = int(k)
+            conn.bbs.database.updateUserPrefs(uentry.doc_id,prefs)
+        else:   # Plugin preferences
+            option = opdic[k.decode('ascii')][1]
+            conn.SendTML('<BR><CRSRU>'+option['prompt'])
+            if type(option['values']) == dict:
+                # Render options
+                conn.SendTML('<BR>')
+                options = b''
+                ans = {}
+                for x,o in enumerate(option['values']):
+                    KeyLabel(conn,valid_keys[x],option['values'][o], st)
+                    conn.SendTML('<BR>')
+                    st = not st
+                    ans[bytes(valid_keys[x],'ascii')] = o
+                    options += bytes(valid_keys[x],'ascii')
+                k = conn.ReceiveKey(options)
+                conn.bbs.database.updateUserPrefs(uentry.doc_id,{option['name']:ans[k]})
+                print(option['name'],ans[k])
+            else:
+                #TODO: Implement string and integer preferences
+                ...
+            time.sleep(2)
 
 
 ###############################

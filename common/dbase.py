@@ -115,16 +115,25 @@ class DBase:
         for x,v in temp.items():
             if v != None:
                 params[x]=v
-                #data[x]=v
-        #dbQ = Query()
         params.pop('self')
         table.update(params, doc_ids=[id])
+
+    #Get user preferences
+    def getUserPrefs(self,id,defaults = {}):
+        table = self.db.table('USERS')
+        data = table.get(doc_id = id)
+        if data != None:
+            prefs = data.get('preferences',defaults)
+            defaults.update(prefs)
+        return defaults
 
     #Update user preferences
     def updateUserPrefs(self,id,prefs:dict):
         table = self.db.table('USERS')
-        #data = table.get(doc_id = id)
-        table.update({'preferences':prefs}, doc_ids=[id])
+        data = table.get(doc_id = id)
+        oldp:dict = data.get('preferences',{})
+        oldp.update(prefs)
+        table.update({'preferences':oldp}, doc_ids=[id])
     
     ################################
     # BBS session functions
