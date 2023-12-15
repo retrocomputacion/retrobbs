@@ -121,6 +121,7 @@ __New features__:
  - Show album art if embedded in MP3 files (and dialog is enabled)
  - New `mode` config file parameter allows for platform specific versions of menu entries
  - Added user preferences, both global and plugin specific
+ - New plugin game *Mindle*, a Wordle clone, guess the computer science/videogame/tech term. Supports high scores for registered users
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -212,6 +213,7 @@ Included plug-ins:
 - YouTube snapshot (youtube.py): Display a frame from the specified *YouTube* video. It grabs the latest frame if the video is a live stream, otherwise it grabs a random frame.
 - Weather (weather.py): Query the weather forecast for any part of the world.
 - Maps (maps.py): Display and navigate the map of the world. 
+- Mindle (mindle.py): A Wordle clone, with variable word length.
 
 
 ---
@@ -565,6 +567,9 @@ The map tiles are served by _Stadia Maps_, an API key is required for the plugin
    - `geoserver` = Geocoder used to retrieve location data. Can be set to either `Nominatim` (default) or `Photon`.
    - `stadiakey` = StadiaMaps API key.
 
+### Mindle (mindle.py) (new 0.50):
+Guess the word in this Wordle game clone. Solution list includes word from computer science, retrocomputing, programming, videogames and technology.<br>
+Registered users can play for a place in the high score table.
 
 ### Oneliner (oneliner.py):
 User-generated messages of up to 39 characters. The last 10 messages are stored in a JSON file located in the \<plugins\> directory.
