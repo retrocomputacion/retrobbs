@@ -40,7 +40,6 @@ def RegisterPlugins():
         if 'setup' in dir(a):
             fname,parms = a.setup()
             if 'plugPrefs' in dir(a):
-                _LOG('Plugin: '+fname+' has preferences', v=4)
                 prefs = a.plugPrefs
             else:
                 prefs = None

@@ -120,6 +120,7 @@ __New features__:
  - Added `SENDFILE` function for the configuration file.
  - Show album art if embedded in MP3 files (and dialog is enabled)
  - New `mode` config file parameter allows for platform specific versions of menu entries
+ - Added user preferences, both global and plugin specific
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -182,7 +183,7 @@ Current built-in functions:
 
 - Public message boards and private messaging system
 
-- Program transfer: Send Commodore 64 .prg files to the computer memory at the correct memory address.
+- Program transfer: Send Commodore 64 and Plus/4 .prg files to the computer memory at the correct memory address.
 
 - RAW file transfer: Send RAW file data directly to the computer, no processing is done to the input data.
 
@@ -197,6 +198,8 @@ Current built-in functions:
 - YM2149/AY-3-8910 music conversion and streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of SID register writes. Cyclic envelope simulation is limited. Samples and some other special effects are not supported. 
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
+
+- File transfer to the client's (disk) storage device.
 
 Included plug-ins:
 
