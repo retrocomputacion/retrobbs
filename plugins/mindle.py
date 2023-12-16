@@ -60,7 +60,12 @@ def plugFunction(conn:Connection):
 
     players = mdata.get('players',[])
 
-    conn.SendTML('<TEXT border=11 background=11><CLR>')
+    if conn.mode == 'PET264':
+        scolor = 49
+    else:
+        scolor = 11
+
+    conn.SendTML(f'<TEXT border={scolor} background={scolor}><CLR>')
     conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><CHR c=172> <CHR c=172><LTGREEN><CHR c=172>     <CHR c=187><CHR c=187> <YELLOW><CHR c=162> <WHITE><BOTTOM-HASH n=11><BR>')
     conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><CHR c=161><RVSOFF><CBM-B><RVSON><CHR c=187><RVSOFF><LTGREEN><CHR c=172> <RVSON><CHR c=172><RVSOFF><CBM-B><CHR c=172><RVSON><CHR c=162><RVSOFF><CHR c=161><CHR c=161><YELLOW><RVSON><CHR c=161><RVSOFF><CHR c=162><CHR c=161><GREY3><BOTTOM-HASH n=10><BR>')
     conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><CHR c=161><CRSRR><CHR c=161><LTGREEN><CHR c=161><RVSOFF><CHR c=187><CHR c=161><RVSON><CHR c=161><RVSOFF><CHR c=188><CHR c=162><CHR c=161><RVSON><CHR c=188><RVSOFF><YELLOW><CHR c=188><CHR c=162><CHR c=187><GREY2><BOTTOM-HASH n=9><BR>')
@@ -79,7 +84,7 @@ def plugFunction(conn:Connection):
         conn.SendTML('<BR><CRSRR n=10>')
         KeyLabel(conn,'_','Exit',True)
         rec = conn.ReceiveKey(keys)
-        if rec == b'B':
+        if rec == b'B':     ##### Free play
             conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
             xwords = [] # Include _all_ words for free play
             for wl in wordlist:
@@ -113,13 +118,14 @@ def plugFunction(conn:Connection):
             conn.SendTML('<BR>       Press any key to continue')
             conn.Receive(1)
             conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
-        elif rec == b'A':
+        elif rec == b'A':       ##### Daily Mindle
             conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
             score = mindle(conn, mdata['daily'],valid)
-            if score < 0:
+            if score != -1:
                 players.append(conn.userid)
                 mdata['players'] = players
-                score = 0
+                if score < 0:
+                    score = 0
             mdata['scores'][str(conn.userid)] = mdata['scores'].get(str(conn.userid),0)+score
             table.update(mdata, where('record') == 'mindle')
             tops = sorted(mdata['scores'].items(), key=lambda x:x[1], reverse=True) # Re-Sorted list of top scores
@@ -182,7 +188,7 @@ def mindle(conn:Connection, xword: str, valid):
                 keys += bytes(string.ascii_letters,'ascii')
             rec = conn.ReceiveKey(keys)
             if rec == b'_': # Quit game
-                return -1*t
+                return -1*(t+1)
             if (len(guess) == wlen) and (rec == bytes(conn.encoder.nl,'ascii')):   # A 5 letter word has been received and return/enter pressed
                 break
             elif (len(guess) != 0) and (rec == bytes(conn.encoder.bs,'ascii')): # Backspace/delete

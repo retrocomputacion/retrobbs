@@ -106,6 +106,7 @@
 2 bloat
 1 block
 0 bmp
+2 bnc
 0 board
 2 bob
 3 boing
@@ -795,6 +796,7 @@
 3 puzzle
 2 qbasic
 0 qbert
+2 qnx
 0 quake
 2 query
 2 quest
