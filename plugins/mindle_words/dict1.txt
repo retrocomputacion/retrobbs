@@ -18,6 +18,7 @@
 1 agp
 3 aiff
 6 aiken
+6 aix
 1 akira
 2 alert
 2 algol
@@ -31,6 +32,7 @@
 0 alpha
 2 alps
 1 altair
+2 alto
 2 altos
 1 amber
 1 amd
@@ -40,6 +42,7 @@
 3 amos
 5 ampere
 4 ampex
+6 amsdos
 6 amsoft
 1 and
 1 analog
@@ -58,6 +61,7 @@
 2 arm
 2 aros
 0 array
+4 arthur
 0 ascii
 1 asm
 1 assert
@@ -124,6 +128,7 @@
 2 bright
 2 broad
 1 bsave
+6 bsd
 6 btx
 1 buffer
 0 bug
@@ -131,7 +136,6 @@
 3 bugsy
 1 build
 5 bull
-3 bullet
 2 bungie
 0 bus
 1 burst
@@ -160,6 +164,7 @@
 2 catch
 2 cause
 4 ccitt
+1 cell
 0 cdrom
 2 cga
 1 chain
@@ -200,6 +205,7 @@
 3 cmd
 3 cobol
 2 cobra
+1 coco
 5 cocoa
 0 code
 0 coder
@@ -236,8 +242,11 @@
 4 csdb
 2 css
 2 csv
+3 ctia
 2 ctrl
+2 cubase
 4 curl
+1 cursor
 0 cut
 1 cyber
 1 cycle
@@ -252,6 +261,7 @@
 2 dec
 6 decus
 3 def
+4 degas
 3 del
 0 delay
 2 delete
@@ -414,6 +424,7 @@
 0 gates
 2 gato
 3 gcode
+3 gem
 5 geneve
 6 genie
 1 genius
@@ -436,8 +447,10 @@
 0 gosub
 0 goto
 4 gpib
+1 gpu
 2 grid
 0 gryzor
+3 gtia
 0 guest
 0 gui
 1 guide
@@ -506,6 +519,7 @@
 2 iomega
 6 irem
 4 iris
+4 irix
 2 irq
 1 isa
 4 isdn
@@ -536,6 +550,7 @@
 3 kane
 1 karate
 3 karnov
+5 kay
 2 kbit
 2 kbits
 1 kbyte
@@ -677,6 +692,7 @@
 6 myarc
 0 mysql
 1 myst
+6 nabu
 2 namco
 3 nand
 2 narc
@@ -686,6 +702,7 @@
 0 nes
 2 nested
 1 net
+2 netbsd
 1 new
 0 next
 2 newton
@@ -699,12 +716,14 @@
 2 none
 2 noob
 2 nor
+1 norton
 1 not
 2 novell
-3 nvram
+1 ntsc
 3 nubus
 1 null
 0 number
+3 nvram
 2 object
 1 ocean
 3 ocs
@@ -735,9 +754,11 @@
 2 page
 2 paged
 1 paint
+1 pal
 1 palm
 1 pang
 1 paper
+2 parc
 1 parse
 2 party
 2 pascal
@@ -762,6 +783,7 @@
 2 ping
 0 pixel
 1 pkzip
+3 planar
 1 play
 1 player
 2 plot
@@ -782,6 +804,7 @@
 0 print
 1 printf
 4 probe
+3 prodos
 3 prolog
 3 prompt
 2 psg
@@ -813,6 +836,7 @@
 1 rallyx
 0 ram
 0 rambo
+3 ramdac
 1 rand
 2 range
 1 rar
@@ -848,6 +872,7 @@
 1 root
 1 round
 2 route
+1 router
 2 rtf
 0 rtype
 0 run
@@ -866,7 +891,9 @@
 1 say
 3 scala
 1 scale
+5 sco
 3 scope
+1 scroll
 3 scnclr
 0 screen
 1 script
@@ -877,6 +904,7 @@
 2 sdram
 1 search
 4 sears
+2 secam
 0 sega
 3 seiko
 2 select
@@ -906,6 +934,7 @@
 1 skyfox
 1 sleep
 2 slice
+3 slip
 1 slots
 0 smart
 0 snes
@@ -956,11 +985,13 @@
 2 switch
 3 swiv
 6 swtpc
+4 symdos
 1 syntax
 1 sys
 0 system
 1 tab
 1 table
+1 tabs
 2 taito
 5 talent
 2 tandon
@@ -989,14 +1020,17 @@
 2 thread
 3 throw
 2 thrust
+3 tia
 2 tick
 3 tiff
+1 tile
 1 time
 1 timer
 1 timex
 1 token
 1 toki
 5 tomy
+3 tos
 2 touch
 1 trace
 0 track
@@ -1006,6 +1040,7 @@
 3 traz
 0 tree
 1 trees
+4 tripos
 2 troff
 1 tron
 1 troll
@@ -1026,6 +1061,7 @@
 2 unit
 6 unisys
 1 univac
+0 unix
 1 until
 0 unzip
 1 upload
@@ -1039,6 +1075,7 @@
 0 valve
 2 var
 2 vax
+2 vdp
 2 vector
 2 verify
 2 vesa
@@ -1052,6 +1089,7 @@
 0 virus
 2 vixen
 1 vlc
+3 vms
 2 voice
 1 void
 2 voodoo
@@ -1063,10 +1101,12 @@
 4 vtech
 1 wait
 1 wally
+1 wan
 3 wang
 0 warez
 0 wav
 2 wave
+5 wavy
 0 web
 1 webcam
 1 wedge
@@ -1075,6 +1115,7 @@
 1 widget
 1 width
 1 wifi
+2 wimp
 0 window
 2 wine
 1 wings
