@@ -1,3 +1,4 @@
+1 abacus
 0 abort
 1 abyss
 1 accept
@@ -5,6 +6,7 @@
 0 acorn
 3 act
 3 ada
+1 adam
 2 adf
 0 admin
 0 adobe
@@ -166,6 +168,7 @@
 4 ccitt
 1 cell
 0 cdrom
+3 cdtv
 2 cga
 1 chain
 1 chaos
@@ -246,6 +249,7 @@
 2 ctrl
 2 cubase
 4 curl
+5 currah
 1 cursor
 0 cut
 1 cyber
@@ -335,6 +339,7 @@
 0 else
 1 elseif
 3 emacs
+6 emate
 1 emote
 1 empire
 0 empty
@@ -365,6 +370,7 @@
 1 esc
 3 escom
 2 eval
+1 even
 1 event
 0 excel
 0 exe
@@ -425,6 +431,7 @@
 2 gato
 3 gcode
 3 gem
+4 gemini
 5 geneve
 6 genie
 1 genius
@@ -481,6 +488,7 @@
 1 hook
 1 hooks
 1 hosts
+3 hotbit
 1 hotkey
 4 hpib
 1 htm
@@ -500,6 +508,7 @@
 1 iff
 1 ikari
 2 ilbm
+1 imac
 0 image
 0 images
 4 imagic
@@ -551,11 +560,12 @@
 1 karate
 3 karnov
 5 kay
+1 kaypro
 2 kbit
 2 kbits
 1 kbyte
 1 kbytes
-1 kaypro
+4 kenbak
 1 kernel
 2 kernal
 0 key
@@ -605,6 +615,7 @@
 3 lock
 3 locks
 2 loco
+0 log
 0 logic
 0 login
 2 logo
@@ -660,6 +671,7 @@
 4 mingw
 3 minix
 1 mits
+2 mitsao
 2 mmc
 2 mmo
 1 mod
@@ -729,6 +741,7 @@
 3 ocs
 1 octal
 5 octane
+1 odd
 2 ogg
 3 oki
 2 old
@@ -759,6 +772,7 @@
 1 pang
 1 paper
 2 parc
+2 parity
 1 parse
 2 party
 2 pascal
@@ -781,6 +795,7 @@
 4 pict
 3 pilot
 2 ping
+6 pippin
 0 pixel
 1 pkzip
 3 planar
@@ -820,6 +835,7 @@
 2 qbasic
 0 qbert
 2 qnx
+2 quadra
 0 quake
 2 query
 2 quest
@@ -896,6 +912,7 @@
 1 scroll
 3 scnclr
 0 screen
+3 scribe
 1 script
 6 scrld
 6 scrsv

@@ -94,6 +94,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     pimg = None
     convert = False
     Source = None
+    th = 4
 
     if type(filename)==str:
         extension = os.path.splitext(filename)[1].upper()
@@ -109,6 +110,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                 cropmode: cropmodes.TOP
                 if gfxmode == None:
                     gfxmode = mode_conv[conn.mode][pimg[1]]
+                th = 3
             else:
                 gfxmode = pimg[1]
                 data = pimg[2]
@@ -141,7 +143,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
         if preproc == None and conn.mode == 'PET264':
             preproc = PreProcess(1,1.5,1.5)
-        cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither)
+        cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither, threshold=th)
         Source.close()
         bgcolor = bytes([gcolors[0]])	#Convert[4].to_bytes(1,'little')
         gcolors = [gcolors[0]]+gcolors # Border color = bgcolor
