@@ -203,10 +203,10 @@ def _AudioDialog(conn:Connection, data):
         if data['artist'] != '':
             tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
         tml += f'''<RVSON> Length: {data['length']}<BR><BR>
-    <RVSON> From {data['sr']} to {conn.samplerate}Hz
-    <AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
-    <RVSON> Press &lt;x&gt; and wait to stop<BR>
-    <RVSON> Press &lt;<LARROW>&gt; to cancel'''
+<RVSON> From {data['sr']} to {conn.samplerate}Hz
+<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
+<RVSON> Press &lt;x&gt; and wait to stop<BR>
+<RVSON> Press &lt;<LARROW>&gt; to cancel'''
         conn.SendTML(tml)
     if conn.ReceiveKey(b'\r_') == b'_':
         conn.SendTML('<CURSOR><CBM-B><CRSRL>')
