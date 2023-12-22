@@ -295,16 +295,16 @@ class TMLParser(HTMLParser):
     #
     #############################################################
 
-    def process(self, data: str):
+    def process(self, data: str, registers: dict = {'_A':None,'_S':'','_I':0}):
         data = data.translate({ord(i): None for i in '\t\r\n'})	# remove control characters
         self.close()
         self.skip = 0
         self.stack.clear()
         self.prev = [0,0]
         ##### Registers
-        self._A = None
-        self._S = ''
-        self._I = 0
+        self._A = registers['_A']
+        self._S = registers['_S']
+        self._I = registers['_I']
         self._R = None
         ###############
         super().feed(data)

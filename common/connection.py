@@ -435,13 +435,13 @@ class Connection:
         return odate
 
     # Send TML script
-    def SendTML(self, data):
+    def SendTML(self, data, registers: dict = {'_A':None,'_S':'','_I':0}):
         if self.p_running:				# If original parser is in use
             parser = TMLParser(self)	# create new TML parser for each call, to allow for nested calls
-            ret = parser.process(data)
+            ret = parser.process(data,registers)
             del(parser)					# Delete aditional parser after use
         else:							# Use original parser if this is the first call, this is faster than just creating a new object every time
             self.p_running = True
-            ret = self.parser.process(data)
+            ret = self.parser.process(data,registers)
             self.p_running = False
         return ret
