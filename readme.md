@@ -568,7 +568,7 @@ The map tiles are served by _Stadia Maps_, an API key is required for the plugin
    - `stadiakey` = StadiaMaps API key.
 
 ### Mindle (mindle.py) (new 0.50):
-Guess the word in this Wordle game clone. Solution list includes word from computer science, retrocomputing, programming, videogames and technology.<br>
+Guess the word in this _Wordle_ game clone. Solution list includes words from computer science, retrocomputing, programming, videogames and technology.<br>
 Registered users can play for a place in the high score table.
 
 ### Oneliner (oneliner.py):
@@ -819,6 +819,10 @@ Set **\<pw\>** to `True` to echo `*` for each character received, ie, for passwo
 
 **ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
+**ReceiveDate(prompt, mindate, maxdate, defdate)**: Interactive reception of a calendar date with echo. The user will be restricted to enter a date between **\<mindate\>** and **\<maxdate\>**, if the user presses `RETURN` instead, the function will return **\<defdate\>**. The date format will follow the user preference if set, otherwise the global BBS date format will be used. Returns a _datetime.date_ object
+
+**SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a **\<data\>** **TML** script to the client, optionally initialize the TML parser **\<registers\>**. Returns a dictionary with the last states of the TML parser registers.
+
 ## common.filetools - Functions related to file transfer:
 ### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
 Convert image to C64 mode and send it to the client.
@@ -1060,7 +1064,7 @@ Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation
 For this purpose a new `Encoder` class has been created.</br>
 This class provides platform specific encoding/decoding of strings, as well as defining the basic control codes and color palette.
 
-Currently, only the `PET64` encoder is implemented, corresponding to the _Commodore 64_ PETSCII encoding.
+Currently, only the `PET64` and `PET264` encoders are implemented, corresponding to the _Commodore 64_ and _Commodore Plus/4_ PETSCII encodings respectively.
 
 ---
 # 6 Installation/Usage
