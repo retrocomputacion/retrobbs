@@ -823,6 +823,16 @@ Set **\<pw\>** to `True` to echo `*` for each character received, ie, for passwo
 
 **SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a **\<data\>** **TML** script to the client, optionally initialize the TML parser **\<registers\>**. Returns a dictionary with the last states of the TML parser registers.
 
+## common.dbase - Database management:
+### getUsers(): 
+Get a list of (id, username) pairs. Both `id` and `username` are strings.
+
+### getUserPrefs(id, defaults={}):
+Get a dictionary containing the preferences corresponding to the user **\<id\>**. Pass the **\<defaults\>** values in case the user has no/incomplete preferences.
+
+### updateUserPrefs(id,prefs:dict):
+Update the preferences correspoding to user **\<id\>** with the contents of the **\<prefs\>** dictionary
+
 ## common.filetools - Functions related to file transfer:
 ### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
 Convert image to C64 mode and send it to the client.

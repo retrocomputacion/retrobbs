@@ -23,7 +23,6 @@ def setup():
             d = 6
             w = l
         wordlist[int(d)].append(w)
-        #valid.append(w)
     fname = "MINDLE" #UPPERCASE function name for config.ini
     parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)

@@ -39,12 +39,12 @@ class DBase:
     ################################
 
     #Get all users
-    #Return list of [id,username] pairs
+    #Return list of (id,username) pairs
     def getUsers(self):
         table = self.db.table('USERS')
         ul = []
         for u in table.all():
-            ul.append([u.doc_id,u['uname']])
+            ul.append((u.doc_id,u['uname']))
         return ul
 
     #Check if user exists
