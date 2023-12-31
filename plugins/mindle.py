@@ -94,7 +94,7 @@ def plugFunction(conn:Connection):
                 xvalid = wf.read().splitlines()
                 xvalid += [word for word in xwords if len(word)== len(xword)]
             mindle(conn, xword, xvalid)
-            conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
+            conn.SendTML('<PAUSE n=5><WINDOW top=3 bottom=24><CLR><WINDOW>')
         elif rec == b'C':   # High scores
             if len(tops) > 0:
                 conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
@@ -125,6 +125,7 @@ def plugFunction(conn:Connection):
                 mdata['players'] = players
                 if score < 0:
                     score = 0
+            conn.SendTML(f'<AT x=16 y=20>{score} points<PAUSE n=5>')
             mdata['scores'][str(conn.userid)] = mdata['scores'].get(str(conn.userid),0)+score
             table.update(mdata, where('record') == 'mindle')
             tops = sorted(mdata['scores'].items(), key=lambda x:x[1], reverse=True) # Re-Sorted list of top scores
@@ -180,7 +181,7 @@ def mindle(conn:Connection, xword: str, valid):
         guess = ''
         line = 6+(t*2)
         column = offset+1
-        conn.SendTML(f'<GREY3><AT x={column} y={line}>')
+        conn.SendTML(f'<AT x={column} y={line}><GREY3>')
         while conn.connected:   # Receive guess word
             keys = bytes(conn.encoder.bs + conn.encoder.nl,'ascii')+b'_'
             if len(guess) < wlen:
@@ -200,16 +201,16 @@ def mindle(conn:Connection, xword: str, valid):
         guess = guess.lower()
         if guess not in valid:
             conn.SendTML('<AT x=6 y=19><GREY2>NOT A VALID WORD, try again...<BR><PAUSE n=2>')
+            conn.SendTML('<LFILL code=32 row=19>')
             conn.SendTML(f'<AT x={column} y={line}>') # <CRSRR> <CRSRR> <CRSRR> <CRSRR> ')
             for i in range(wlen):
                 conn.SendTML(' <CRSRR>')
-            conn.SendTML('<LFILL code=32 row=19>')
             continue
         if guess == xword:
             conn.SendTML(f'<AT x={column} y={line}><LTGREEN>')
             for c in xword:
                 conn.SendTML(f'{c.upper()}<CRSRR>')
-            conn.SendTML(f'<AT x=11 y=19><WHITE><FLASHON>CONGRATULATIONS !!!<FLASHOFF><PAUSE n=5>')
+            conn.SendTML(f'<AT x=11 y=19><WHITE><FLASHON>CONGRATULATIONS !!!<FLASHOFF>')
             break
         else:
             out = ''

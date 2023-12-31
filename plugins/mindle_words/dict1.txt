@@ -92,7 +92,6 @@
 1 batch
 0 batman
 0 bauds
-0 bauds
 3 baudot
 2 bbc
 4 bcpl
@@ -161,6 +160,7 @@
 0 carts
 1 case
 0 casio
+1 cast
 1 casts
 2 cat
 2 catch
