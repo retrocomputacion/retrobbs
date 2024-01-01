@@ -193,7 +193,7 @@ def _AudioDialog(conn:Connection, data):
         draw.text((136,68),f"From {data['sr']} to {conn.samplerate}Hz",c_white,font=H.font_text)
         draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
         draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
-        draw.text((136,168),"Press < <- > to cancel",c_pink,font=H.font_text)
+        draw.text((136,168),u"Press <\u2190> to cancel",c_pink,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
         S.RenderDialog(conn, 15, data['title'])
