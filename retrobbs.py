@@ -1176,7 +1176,11 @@ RUNNING UNDER:<BR>
                 GetTerminalFeatures(conn)
                 if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
                     _LOG('Sending intro pic',id=conn.id,v=4)
-                    bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+'splash.art',lines=12,display=False)
+                    if conn.mode == 'PET264':
+                        splash = 'splash-p4.boti'
+                    else:
+                        splash = 'splash.art'
+                    bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
                     _LOG('Spliting Screen',id=conn.id,v=4)
                     conn.Sendall(TT.split_Screen(12,False,ord(bg),0))
                 time.sleep(1)

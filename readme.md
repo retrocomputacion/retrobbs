@@ -96,7 +96,7 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
   - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
   - Documentation rewritten in Markdown format
 
-### **v0.50** (In development):
+### **v0.50** (02/01/2024):
 
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified during runtime.
@@ -105,7 +105,7 @@ __New features__:
  - SID streaming now supports Compute's Sidplayer .mus files.
  - SID streaming now supports selection of the subtune to play.
  - SID streaming supports tunes using hardrestart, if _SIDDumpHR_ is available. 
- - New `SIDPLAY` function for the configuration file.
+ - New `CHIPPLAY` and `SIDPLAY` functions for the configuration file.
  - Added *[Turbo56k](docs/turbo56k.md)* v0.7 support.
  - New text viewer with support for bidirectional scroll.
  - New Maps plugin.
@@ -121,7 +121,7 @@ __New features__:
  - Show album art if embedded in MP3 files (and dialog is enabled)
  - New `mode` config file parameter allows for platform specific versions of menu entries
  - Added user preferences, both global and plugin specific
- - New plugin game *Mindle*, a Wordle clone, guess the computer science/videogame/tech term. Supports high scores for registered users
+ - New plugin game *Mindle*, a Wordle clone, guess the computer science/video game/tech term. Supports high scores for registered users
 
 __Changes/Bug fixes__:
  - Simplified initial terminal feature check, now is more reliable.
@@ -141,7 +141,7 @@ __Changes/Bug fixes__:
  - Improved Wikipedia article parsing
  - **FILES** function will show file extensions if no file extension parameter is given
  - Main video frame grabbing routine moved to new `common/video.py`, YouTube plugin now calls this internal routine.
- - *YouTube* plugin tries to use *Streamlink* to resolve video URL if *Pafy* fails.
+ - *YouTube* plugin now uses *Streamlink* instead of the now obsolete/no longer under development *pafy*.
  - When all the slots are in use will now correctly close any further incoming connections.
  - *Weather* and *Maps* plugins can now use either Photon or Nominatim as geocoder, selected from the configuration file.
  - Fixed crash when the geocoder didn't respond in time in the *Weather* plugin
@@ -154,6 +154,7 @@ __Changes/Bug fixes__:
  - Fixed missing timeout parameter in APOD plugin.
  - Both *APOD* and *Newsfeed* plugins now use *text_displayer* instead or *More*
  - *Sendfile* checks if executable file fits in the client's available memory size and range and disables transfer to memory if the file is too large or resides outside the valid memory range.
+ - Added `←` glyph to BetterPixels font
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -188,9 +189,9 @@ Current built-in functions:
 
 - RAW file transfer: Send RAW file data directly to the computer, no processing is done to the input data.
 
-- Text file transfer: Process different text formats (*ASCII* or *PETSCII*) and send it to the computer in pages.
+- Text file transfer: Process different text formats (*ASCII* or *PETSCII*) and send it to the client computer either paginated or with interactive scrolling.
 
-- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64 Hires or Multicolor, also supports Koala Painter, Advanced Art Studio, Doodle! and Art Studio native file formats. Images larger than 320x200 pixels are resized and cropped for best fit. This functionality can be used from plug-ins. 
+- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64 and Plus/4 Hires or Multicolor, also supports Koala Painter, Advanced Art Studio, Doodle!, Art Studio C64 native file formats and Botticelli Plus/4 native file format. Images larger than 320x200 pixels are resized and cropped for best fit. This functionality can be used from plug-ins. 
 
 - PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
@@ -229,7 +230,7 @@ Python modules:
   * numpy
   * opencv-python
   * ~~pafy (For the YouTube plug-in) (use this version: https://github.com/Cupcakus/pafy)~~
-  * streamlink (Will catch *YouTube* links if pafy fails, it also supports other stream services such as *Twitch*)
+  * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)
   * hitherdither (https://www.github.com/hbldh/hitherdither)
   * beautifulsoup4
@@ -246,9 +247,6 @@ Python modules:
   
     pip install -r requirements.txt
 
-  If you already have _pafy_ installed, you'll need to uninstall it beforehand:
-
-    pip uninstall -y pafy
 
 
 ### External software:
@@ -796,7 +794,7 @@ Implements the Connection class, this is the class used to communicate with clie
 
 ### Connection class methods:
 
-**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.
+**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.<br>If the command exist the returned value is the number of parameter bytes needed (up to 127). Otherwise the return value will have it's 7th bit set.
 
 **Sendall(cadena)**: Converts string **\<cadena\>** to a binary string and sends it to the client.
 
@@ -831,7 +829,7 @@ Get a list of (id, username) pairs. Both `id` and `username` are strings.
 Get a dictionary containing the preferences corresponding to the user **\<id\>**. Pass the **\<defaults\>** values in case the user has no/incomplete preferences.
 
 ### updateUserPrefs(id,prefs:dict):
-Update the preferences correspoding to user **\<id\>** with the contents of the **\<prefs\>** dictionary
+Update the preferences corresponding to user **\<id\>** with the contents of the **\<prefs\>** dictionary
 
 ## common.filetools - Functions related to file transfer:
 ### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
@@ -845,7 +843,7 @@ __Important: The parameter order has changed since v0.25__
 - **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
 - **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
 - **\<gfxmode\>**: Target graphic mode. Overridden by user selection if **\<dialog\>** = `True`
-- **\<preproc\>**: Image processing parameter prior to conversion. Pass `None` for automatic processing.
+- **\<preproc\>**: Image processing parameters prior to conversion. Pass `None` for automatic processing.
 - **\<dither>\>**: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
 
 ### SendProgram(conn:Connection, filename):
@@ -1213,7 +1211,6 @@ temp = /mnt/ramdisk/
  * More code cleanup, move more functions out of the main script and into their corresponding modules.
  * Work towards user style customization
  * Localization
- * User preferences
  * Custom logout sequence, similar to the login one
  * Figure out a way to remove hard-coded filetype handling.
 
@@ -1222,7 +1219,6 @@ temp = /mnt/ramdisk/
 
   * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
-  * SID files that use the hard restart technique will sound wrong or not play at all.
 
 
 ---
