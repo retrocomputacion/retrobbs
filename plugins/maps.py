@@ -65,6 +65,10 @@ def plugFunction(conn:Connection):
         _LOG("MAPS: Missing Stadia Maps API key - Exiting", id=conn.id,v=2)
         return
 
+    if conn.QueryFeature(TT.PRADDR) >= 80:
+        _LOG("MAPS: terminal doesn't support graphic transfers", id=conn.id, v=2)
+        return
+
     # Avoid Geocode timeout/Unavailable errors
     # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
     def do_geocode(location, attempt=1, max_attempts=5):
@@ -106,7 +110,7 @@ def plugFunction(conn:Connection):
     if locqry == '_':
         conn.SendTML('<SPLIT><CURSOR>')
         return
-    conn.SendTML('<CBM-B><CRSRL>')
+    conn.SendTML('<SPINNER><CRSRL>')
     tloc = do_geocode(locqry)
     if tloc == None:
         conn.SendTML('<CLR>ERROR!<PAUSE n=0.5>')
@@ -243,7 +247,7 @@ def plugFunction(conn:Connection):
             if locqry == '_':
                 conn.Sendall(TT.split_Screen(0,False,0,0)+TT.enable_CRSR())
                 break
-            conn.SendTML('<CBM-B><CRSRL>')
+            conn.SendTML('<SPINNER><CRSRL>')
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
             if tloc == None:
                 conn.SendTML('<CLR>ERROR!><PAUSE n=0.5>')

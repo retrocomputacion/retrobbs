@@ -47,10 +47,12 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
 
+    fcount = conn.encoder.txt_geo[1]-5
+    scwidth = conn.encoder.txt_geo[0]
     # Start with barebones MenuDic
     MenuDic = { 
-                b'_': (H.MenuBack,(conn,),"Previous Menu",0,False),
-                b'\r': (AudioList,(conn,title,speech,logtext,path),title,0,False)
+                conn.encoder.back: (H.MenuBack,(conn,),"Previous Menu",0,False),
+                conn.encoder.nl: (AudioList,(conn,title,speech,logtext,path),title,0,False)
             }
 
     _LOG(logtext,id=conn.id,v=4)
@@ -96,10 +98,10 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     length = [0.0]*len(audios)	#Audio length list
 
     #Calc pages
-    pages = int((len(audios)-1) / 20) + 1
+    pages = int((len(audios)-1) / fcount) + 1
     count = len(audios)
-    start = conn.MenuParameters['current'] * 20
-    end = start + 19
+    start = conn.MenuParameters['current'] * fcount
+    end = start + fcount -1
     if end >= count:
         end = count - 1
 
@@ -109,19 +111,19 @@ def AudioList(conn:Connection,title,speech,logtext,path):
             page = pages-1
         else:
             page = conn.MenuParameters['current']-1
-        MenuDic[b'<'] = (H.SetPage,(conn,page),'Previous Page',0,False)
+        MenuDic['<'] = (H.SetPage,(conn,page),'Previous Page',0,False)
         if conn.MenuParameters['current'] == pages-1:
             page = 0
         else:
             page = conn.MenuParameters['current']+1
-        MenuDic[b'>'] = (H.SetPage,(conn,page),'Next Page',0,False)
+        MenuDic['>'] = (H.SetPage,(conn,page),'Next Page',0,False)
 
     row = 3
     for x in range(start, end + 1, 1):
         afunc = PlayAudio
         bname = os.path.splitext(os.path.basename(audios[x]))[0]
-        KeyLabel(conn, H.valid_keys[x-start],(bname)[:30]+' ', x % 2)
-        tml = f'<AT x=34 y={row}><CBM-B><CRSRL>'
+        KeyLabel(conn, H.valid_keys[x-start],H.crop(bname,scwidth-10,conn.encoder.ellipsis)+' ', x % 2)
+        tml = f'<AT x={scwidth-6} y={row}><SPINNER><CRSRL>'
         if (wavs == True) and (audios[x].lower().endswith(wext)):   #PCM file
             conn.SendTML(tml)
             tsecs = _GetPCMLength(path+audios[x])
@@ -139,15 +141,18 @@ def AudioList(conn:Connection,title,speech,logtext,path):
         conn.SendTML(f'<WHITE>{tmins:0>2}:{tsecs:0>2}<BR>')
         row += 1
         #Add keybinding to MenuDic
-        MenuDic[H.valid_keys[x-start].encode('ascii','ignore')] = (afunc,(conn,path+audios[x],length[x],True),H.valid_keys[x-start],0,False)
+        MenuDic[H.valid_keys[x-start]] = (afunc,(conn,path+audios[x],length[x],True),H.valid_keys[x-start],0,False)
     else:
         lineasimpresas = end - start + 1
-        if lineasimpresas < 20:
-            for x in range(20 - lineasimpresas):
-                conn.Sendall('\r')
+        if lineasimpresas < fcount:
+            for x in range(fcount - lineasimpresas):
+                conn.Sendall(conn.encoder.nl)
 
-    conn.SendTML(f' <GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
-                f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
+    if 'PET' in conn.mode:
+        conn.SendTML(f' <GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
+    else:
+        conn.SendTML(f' <GREY><RVSON> <BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
+    conn.SendTML(f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
     # Selects screen output
     conn.SendTML('<PAUSE n=1><SETOUTPUT>')
@@ -206,10 +211,10 @@ def _AudioDialog(conn:Connection, data):
 <RVSON> From {data['sr']} to {conn.samplerate}Hz
 <AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
 <RVSON> Press &lt;x&gt; and wait to stop<BR>
-<RVSON> Press &lt;<LARROW>&gt; to cancel'''
+<RVSON> Press &lt;<BACK>&gt; to cancel'''
         conn.SendTML(tml)
-    if conn.ReceiveKey(b'\r_') == b'_':
-        conn.SendTML('<CURSOR><CBM-B><CRSRL>')
+    if conn.ReceiveKey(conn.encoder.nl+conn.encoder.back) == conn.encoder.back:
+        conn.SendTML('<CURSOR><SPINNER><CRSRL>')
         return False
     return True
 
@@ -274,7 +279,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             return()
         if not conn.connected:
             return()
-        conn.SendTML('<CBM-B><CRSRL><NUL><NUL>')
+        conn.SendTML('<SPINNER><CRSRL><NUL><NUL>')
     #Streaming mode
     binario = b'\xFF\x83'
     pcm_stream = PcmStream(filename,conn.samplerate)
@@ -405,30 +410,32 @@ def _DisplayCHIPInfo(conn:Connection, info):
         m = int(info['songlength'][subtune-1]/60)
         return m,info['songlength'][subtune-1]- (m*60)
 
+
+    scwidth = conn.encoder.txt_geo[0]
     if isinstance(info,dict):   #.SID file
         subtune = info['startsong']
         minutes, seconds = calctime()
         S.RenderDialog(conn,12,info['type'])
-        tml = f'''<RVSON> Title: {H.crop(info['title'],30)}<BR>
-<RVSON> Artist: {H.crop(info['artist'],29)}<BR>
-<RVSON> Copyright: {H.crop(info['copyright'],27)}<BR>
+        tml = f'''<RVSON> Title: {H.crop(info['title'],scwidth-10)}<BR>
+<RVSON> Artist: {H.crop(info['artist'],scwidth-11)}<BR>
+<RVSON> Copyright: {H.crop(info['copyright'],scwidth-13)}<BR>
 <RVSON> Playtime: {minutes:0>2}:{seconds:0>2}<BR>'''
         if info['subsongs'] > 1:    #Subtune
             tml += f'<RVSON><CRSRD> Subtune: <GREY2>&lt;<WHITE><RVSOFF>{subtune:0>2}<RVSON><GREY2>&gt;<GREY3><BR>'
-        tml += '<RVSON><CRSRD> Press <LARROW> to exit<BR><RVSON> RETURN to play<BR><RVSON> Any key to stop<RVSOFF><CURSOR enable=False>'
+        tml += '<RVSON><CRSRD> Press <BACK> to exit<BR><RVSON> RETURN to play<BR><RVSON> Any key to stop<RVSOFF><CURSOR enable=False>'
         conn.SendTML(tml)
         while True and conn.connected:
-            k = conn.ReceiveKey(b'<>_\r')
-            if k == b'_':
+            k = conn.ReceiveKey('<>'+conn.encoder.back+conn.encoder.nl)
+            if k == conn.encoder.back:
                 subtune = -1
                 break
-            elif k == b'\r':
+            elif k == conn.encoder.nl:
                 break
-            elif k == b'<' and subtune > 1:
+            elif k == '<' and subtune > 1:
                 subtune -= 1
                 minutes, seconds = calctime()
                 conn.SendTML(f'<RVSOFF><AT x=11 y=6><WHITE>{subtune:0>2}<RVSON><AT x=11 y=4><GREY3>{minutes:0>2}:{seconds:0>2}')
-            elif k == b'>' and subtune < info['subsongs']:
+            elif k == '>' and subtune < info['subsongs']:
                 subtune += 1
                 minutes, seconds = calctime()
                 conn.SendTML(f'<RVSOFF><AT x=11 y=6><WHITE>{subtune:0>2}<RVSON><AT x=11 y=4><GREY3>{minutes:0>2}:{seconds:0>2}')
@@ -436,8 +443,8 @@ def _DisplayCHIPInfo(conn:Connection, info):
         subtune = 1
         conn.SendTML('<CLR><CBMSHIFT-E><UPPER>')
         conn.Sendallbin(info)
-        conn.SendTML('<YELLOW><BR>press return to play<BR><LARROW> to exit<BR>any key to stop<CURSOR enable=False>')
-        if conn.ReceiveKey(b'_\r') == b'_':
+        conn.SendTML('<YELLOW><BR>press return to play<BR><BACK> to exit<BR>any key to stop<CURSOR enable=False>')
+        if conn.ReceiveKey(conn.encoder.back+conn.encoder.nl) == conn.encoder.back:
             subtune = -1
     conn.SendTML('<CURSOR enable=True>')
     return subtune
@@ -582,7 +589,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
         while subtune > 0:
             if dialog == True:
                 subtune = _DisplayCHIPInfo(conn, info)
-            conn.SendTML('<CBM-B><CRSRL>')
+            conn.SendTML('<SPINNER><CRSRL>')
             if player != "" and subtune > 0:
                 _LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
                 if ext.lower() == '.sid':

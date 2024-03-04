@@ -29,31 +29,32 @@ from crc import Calculator, Configuration
 ########################################################################
 def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
-    keys= b'\r'
+    keys= conn.encoder.nl
     tml = ''
     if width != 0:
-        tml += f'''<RVSON> Original size: {width}x{height}<BR><BR>
-<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; for multicolor conversion<BR>
+        tml += f'<RVSON> Original size: {width}x{height}<BR><BR>'
+        if 'MSX' not in conn.mode:
+            tml +='''<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; for multicolor conversion<BR>
 <RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
-        keys += b'HM'
+            keys += 'hm'
     if save:
         tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
-        keys += b'S'
+        keys += 's'
     tml += '<RVSON> &lt; RETURN &gt; to view image<BR><CURSOR enable=False>'
     conn.SendTML(tml)
     out = 1
     while conn.connected:
         k = conn.ReceiveKey(keys)
-        if k == b'H' and out == 1:
+        if k == 'h' and out == 1:
             conn.SendTML('<RVSON><AT x=1 y=5> <CRSRD><CRSRL>*')
             out = 0
-        elif k == b'M' and out == 0:
+        elif k == 'm' and out == 0:
             conn.SendTML('<RVSON><AT x=1 y=6> <CRSRU><CRSRL>*')
             out = 1
-        elif k == b'S':
+        elif k == 's':
             out |= 0x80
             break
-        elif k == b'\r':
+        elif k == conn.encoder.nl:
             break
     conn.SendTML('<RVSON><CURSOR>')
     return out
@@ -71,6 +72,9 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 ######################################################################################################################################################################################################################################
 def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:PreProcess = None, cropmode:cropmodes = cropmodes.FILL, dither:dithertype = dithertype.BAYER8):
 
+    if conn.QueryFeature(TT.PRADDR) >= 0x80:
+        return False
+
     if gfxmode == None:
         gfxmode = conn.encoder.def_gfxmode
     if conn.mode == 'PET64':
@@ -79,6 +83,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     elif conn.mode == 'PET264':
         gfxhi = gfxmodes.P4HI
         gfxmulti = gfxmodes.P4MULTI
+    elif conn.mode == 'MSX1':
+        gfxhi = gfxmodes.MSXSC2
+        gfxmulti = -1
 
     ftitle = {'.GIF':' GIF  Image ', '.PNG':' PNG  Image ', '.JPEG':' JPEG Image ', '.JPG':' JPEG Image '}
     fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
@@ -100,8 +107,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         extension = os.path.splitext(filename)[1].upper()
         if extension not in ['.GIF','.PNG','.JPG','JPEG']:
             pimg = open_Image(filename)
+            print(pimg[1])
             if pimg == None:	#Invalid file, exit
-                return
+                return False
             elif pimg[1] not in conn.encoder.gfxmodes:	#Image from another platform, convert
                 convert = True
                 Source = pimg[0]
@@ -124,7 +132,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         convert = True
 
     if convert:
-        conn.SendTML('<CBM-B><CRSRL>')
+        conn.SendTML('<SPINNER><CRSRL>')
         if Source == None:
             if type(filename)==str:
                 Source = Image.open(filename)
@@ -136,8 +144,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         if dialog:
             mode = ImageDialog(conn,text,Source.size[0],Source.size[1],save)
             if mode < 0:
-                return()
-            conn.SendTML('<CBM-B><CRSRL>')
+                return False
+            conn.SendTML('<SPINNER><CRSRL>')
         else:
             mode = 1 if (gfxmode == gfxmulti) else 0
         gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
@@ -284,8 +292,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
             return
         # Images
         elif ext in ['.JPG','.GIF','.PNG']+im_extensions:    #,'.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
-            SendBitmap(conn,filename,dialog,save)
-            conn.SendTML('<INKEYS><NUL><CURSOR>')
+            if type(SendBitmap(conn,filename,dialog,save)) != bool:
+                conn.SendTML('<INKEYS><NUL><CURSOR>')
         elif ext == '.C':
             ...
         elif ext == '.PET':
@@ -367,7 +375,7 @@ def SendProgram(conn:Connection,filename):
                         f'this BBS, and exit Retroterm with <BR>RUN/STOP.<BR>'
                         f'Then use RUN or the correct SYS.<BR>'
                         f'Or <YELLOW><RVSON>C<RVSOFF><ORANGE>ontinue your session')
-        if conn.ReceiveKey(b'CL') == b'L':
+        if conn.ReceiveKey('cl') == 'l':
             conn.connected = False
 
 #####################################################################################
@@ -453,19 +461,20 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfer to memory',save=False):
     S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
     tml = '<AT x=0 y=2>'
-    keys = b'_\r'
+    keys = conn.encoder.back+conn.encoder.nl
+    scwidth = conn.encoder.txt_geo[0]
     if filetype != None:
-        tml += f'<RVSON> File: {H.crop(filename,32)}<BR>'
+        tml += f'<RVSON> File: {H.crop(filename,scwidth-8,conn.encoder.ellipsis)}<BR>'
     if size > 0:
         tml += f'<RVSON> Size: {size}<BR><BR>'
     else:
         tml += '<BR>'
     if save:
         tml += '<RVSON> Press &lt;S&gt; to save to disk, or<BR><RVSON>'
-        keys += b'S'
+        keys += 's'
     else:
         tml += '<RVSON> Press'
-    tml += f' &lt;RETURN&gt; to {prompt[:26]}<BR><RVSON> &lt;<LARROW>&gt; to cancel'
+    tml += f' &lt;RETURN&gt; to {prompt[:scwidth-14]}<BR><RVSON> &lt;<BACK>&gt; to cancel'
     conn.SendTML(tml)
     rc = conn.ReceiveKey(keys)
     return keys.index(rc)
@@ -494,8 +503,8 @@ def SendRAWFile(conn:Connection,filename, wait=True):
 def SendText(conn:Connection, filename, title='', lines=25):
     if title != '':
         S.RenderMenuTitle(conn, title)
-        l = 22
-        conn.Sendall(TT.set_Window(3,24))
+        l = conn.encoder.txt_geo[1]-3
+        conn.Sendall(TT.set_Window(3,l+2))
     else:
         l = lines
         conn.SendTML('<CLR>')
@@ -504,7 +513,7 @@ def SendText(conn:Connection, filename, title='', lines=25):
         #Convert plain text to PETSCII and display with More
         with open(filename,"r") as tf:
             ot = tf.read()
-        text = H.formatX(ot)
+        text = H.formatX(ot,conn.encoder.txt_geo[0])
     elif filename.endswith(('.seq','.SEQ')):
         with open(filename,"rb") as tf:
             ot = tf.read()

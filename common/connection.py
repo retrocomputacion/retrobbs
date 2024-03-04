@@ -15,7 +15,7 @@ import time
 from common.parser import TMLParser
 
 # Dictionary of client variant -> Encoder
-clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264'}
+clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264', 'M1':'MSX1'}
 
 ########### Connection class ###########
 class Connection:
@@ -54,7 +54,7 @@ class Connection:
         self.TermFt[0xFF] = b'\x00'
         self.TermFt[0xFE] = b'\x00'
 
-        self.mode = 'ASCII'							#Connection mode -> type of client
+        self.mode = 'ASCII'			#Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
         self.parser = TMLParser(self)				#TML parser
@@ -176,7 +176,12 @@ class Connection:
     #Receive single binary char from socket
     def ReceiveKey(self, lista=b''):
         if lista == b'':
-            lista = bytes(self.encoder.nl,'ascii')
+            lista = bytes(self.encoder.nl,'latin1')
+        if type(lista) == str:
+            lista = bytes(self.encoder.encode(lista,False),'latin1') 
+            decode = True
+        else:
+            decode = False
         t = True
         while t == True:
             cadena = b''
@@ -187,7 +192,7 @@ class Connection:
                     self.inbytes += 1
                     _LOG("ReceiveKey - Received", cadena, id=self.id,v=4)
                     if cadena != b'':
-                        if cadena[0] in range(0xC1,0xDA + 1):
+                        if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
                             cadena = bytes([cadena[0]-96])
                         if cadena in lista:
                             t = False
@@ -202,12 +207,17 @@ class Connection:
                     t = False
             else:
                 t = False
-        return cadena
+        return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
 
     #Receive single binary char from socket - NO LOG
     def ReceiveKeyQuiet(self, lista=b''):
         if lista == b'':
-            lista = bytes(self.encoder.nl,'ascii')
+            lista = bytes(self.encoder.nl,'latin1')
+        if type(lista) == str:
+            lista = bytes(self.encoder.encode(lista,False),'latin1')
+            decode = True
+        else:
+            decode = False
         t = True
         while t == True:
             cadena = b''
@@ -216,7 +226,7 @@ class Connection:
                     cadena = self.socket.recv(1)
                     self.inbytes += 1
                     if cadena != b'':
-                        if cadena[0] in range(0xC1,0xDA + 1):
+                        if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
                             cadena = bytes([cadena[0]-96])
                         if cadena in lista:
                             t = False
@@ -231,14 +241,14 @@ class Connection:
                     t = False
             else:
                 t = False
-        return cadena
+        return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
 
     #Interactive string reception with echo
     #maxlen = max number of characters to receive
     #pw = True for password entry
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
-        cr = bytes(self.encoder.nl,'ascii')
-        bs = bytes(self.encoder.bs,'ascii')
+        cr = bytes(self.encoder.nl,'latin1')
+        bs = bytes(self.encoder.bs,'latin1')
         if cr not in keys:
             keys += cr	#Add RETURN if not originaly included
         if bs not in keys:

@@ -34,19 +34,20 @@ def plugFunction(conn:Connection,url):
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
     colors = conn.encoder.colors
+    scwidth,scheight = conn.encoder.txt_geo
     menucolors = [[colors['LIGHT_BLUE'],colors['LIGHT_GREY']],[colors['CYAN'],colors['YELLOW']]]
     MenuDic = {
-                b'_': (H.MenuBack,(conn,),"Previous menu",0,False),
-                b'\r': (plugFunction,(conn,url),"",0,False)
+                conn.encoder.back: (H.MenuBack,(conn,),"Previous menu",0,False),
+                conn.encoder.nl: (plugFunction,(conn,url),"",0,False)
               }
     # Text mode
-    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t=Newsfeed><CBM-B><CRSRL>')
+    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t=Newsfeed><SPINNER><CRSRL>')
     nfeed = feedparser.parse(url)
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
         conn.SendTML("Recent from:<BR>")
-        title = H.formatX(nfeed.feed.get('title','No title'))
+        title = H.formatX(nfeed.feed.get('title','No title'),scwidth)
         for t in title:
             conn.SendTML(t)
         conn.SendTML('<BR>')
@@ -54,18 +55,18 @@ def plugFunction(conn:Connection,url):
         i = 1
         for e in nfeed.entries:
             text = textwrap.shorten(e.get('title','No title'),width=72,placeholder='...')
-            text = H.formatX(text,columns=37)
+            text = H.formatX(text,columns=scwidth-3)
             lines+=len(text)
-            if lines>22:
+            if lines>scheight-2:
                 continue
-            conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><CBM-J>{H.valid_keys[i-1].lower()}<CBM-L><RVSOFF><INK c={menucolors[i%2][1]}>')
+            conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><L-NARROW>{H.valid_keys[i-1]}<R-NARROW><RVSOFF><INK c={menucolors[i%2][1]}>')
             x = 0
             for t in text:
                 conn.SendTML(f'<SPC n={3*x}>{t}')
                 x=1
-            MenuDic[H.valid_keys[i-1].encode('ascii','ignore')] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
+            MenuDic[H.valid_keys[i-1]] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
             i+=1
-        conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><CBM-J><LARROW><CBM-L><RVSOFF><INK c={menucolors[i%2][1]}>Back<BR>'
+        conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><L-NARROW><BACK><R-NARROW><RVSOFF><INK c={menucolors[i%2][1]}>Back<BR>'
                      f'<WHITE><BR>Your choice: ')
         return MenuDic
     except:
@@ -77,11 +78,16 @@ def plugFunction(conn:Connection,url):
 def feedentry(conn:Connection,entry,feedname):
     _LOG('NewsFeeds - Entry: '+entry.get('title','-no title-'),id=conn.id,v=4)
     mtitle = textwrap.shorten(feedname,width=38-(len(conn.bbs.name)+7),placeholder='...')
+    scwidth,scheight = conn.encoder.txt_geo
     if webarticle(conn,entry.link,mtitle) == False:
+        if 'MSX' in conn.mode:
+            bcode = 0xDB
+        else:
+            bcode = 0xA0
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
-        conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CRSRR n=13><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
-        conn.Sendall(TT.set_Window(3,23))
+        conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-2-25}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+        conn.Sendall(TT.set_Window(3,scheight-2))
         e_text = ''
         content = entry.get('content',[]) #Atom
         for c in content:
@@ -93,22 +99,22 @@ def feedentry(conn:Connection,entry,feedname):
         soup= BeautifulSoup(e_text, "html.parser")
         texts = soup.find_all(text=True)
         e_text = " ".join(t.strip() for t in texts)
-        body = H.formatX(e_text)
-        title = H.formatX(e_title)
+        body = H.formatX(e_text,scwidth)
+        title = H.formatX(e_title,scwidth)
         title[0] = '<WHITE>'+title[0]
-        title.append(f'<YELLOW><HLINE n=40><INK c={conn.style.TxtColor}>')
+        title.append(f'<YELLOW><HLINE n={scwidth}><INK c={conn.style.TxtColor}>')
         title.append('<BR>')
         text = title + body
-        H.text_displayer(conn,text,21)
+        H.text_displayer(conn,text,scheight-4)
         #H.More(conn,text,22)
-    conn.Sendall(TT.set_Window(0,24))
+    conn.Sendall(TT.set_Window(0,scheight-1))
 
 #############################################################
 # Try to scrap data from wordpress and some other CMS sites,
 # returns False if entry title or body cannot be found
 #############################################################
 def webarticle(conn:Connection,url, feedname):
-    conn.SendTML('<CBM-B><CRSRL>')
+    conn.SendTML('<SPINNER><CRSRL>')
     resp = requests.get(url, allow_redirects = False, headers = hdrs)
     r = 0   # Redirect loop disconnector
     while resp.status_code == 301 or resp.status_code == 302 and r < 10:
@@ -118,6 +124,11 @@ def webarticle(conn:Connection,url, feedname):
     purl = urlparse(url)
     top_url = purl.scheme + '://' + purl.netloc
     if resp.status_code == 200:
+        scwidth,scheight = conn.encoder.txt_geo
+        if 'MSX' in conn.mode:
+            bcode = 0xDB
+        else:
+            bcode = 0xA0        
         soup= BeautifulSoup(resp.content, "html.parser")
         # Remove unwanted sections
         for div in soup.find_all(['div','nav','aside','header'],
@@ -168,14 +179,14 @@ def webarticle(conn:Connection,url, feedname):
         body = []
         if len(a_headers) != 0:
             for h in a_headers:
-                h2 = H.formatX(h.get_text())
+                h2 = H.formatX(h.get_text(),scwidth)
                 h2[0] = f'<INK c={conn.style.HlColor}>'+h2[0]
                 body += h2
                 for el in h.next_siblings:
                     if el.name and el.name.startswith('h'):
                         break
                     if el.name == 'p':
-                        p = H.formatX(el.get_text())
+                        p = H.formatX(el.get_text(),scwidth)
                         if len(p)>0:
                             p[0] = f'<INK c={conn.style.TxtColor}>'+p[0]
                             body += p
@@ -183,37 +194,38 @@ def webarticle(conn:Connection,url, feedname):
         else:
             a_paras = a_body.find_all(['p'])
             for p in a_paras:
-                body +=  H.formatX(p.get_text())+['<BR>']
+                body +=  H.formatX(p.get_text(),scwidth)+['<BR>']
             if body == []:
-                body = H.formatX(a_body.get_text())
+                body = H.formatX(a_body.get_text(),scwidth)
         #####   Entry image   #####
-        d_img = soup.find('div',{'class':'entry-featured-image'})
-        if d_img != None:
-            a_img = d_img.find('img')
-        else:
-            a_img = None
-        if a_img == None:
-            a_img = soup.find('img',{'class':['wp-post-image','header','news_image']})
+        if conn.QueryFeature(TT.PRADDR) < 0x80:
+            d_img = soup.find('div',{'class':'entry-featured-image'})
+            if d_img != None:
+                a_img = d_img.find('img')
+            else:
+                a_img = None
             if a_img == None:
-                a_img = a_body.find('img')
-        if a_img != None:
-            conn.Sendall(TT.disable_CRSR())
-            FT.SendBitmap(conn,getImg(top_url,a_img),gfxmode=gfxmodes.C64MULTI)
-            conn.ReceiveKey()
-            conn.SendTML('<CLR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
+                a_img = soup.find('img',{'class':['wp-post-image','header','news_image']})
+                if a_img == None:
+                    a_img = a_body.find('img')
+            if a_img != None:
+                conn.Sendall(TT.disable_CRSR())
+                FT.SendBitmap(conn,getImg(top_url,a_img),gfxmode=gfxmodes.C64MULTI)
+                conn.ReceiveKey()
+                conn.SendTML('<CLR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
-        conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CRSRR n=13><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
-        conn.Sendall(TT.set_Window(3,23))
-        title = H.formatX(a_title)
+        conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+        conn.Sendall(TT.set_Window(3,scheight-2))
+        title = H.formatX(a_title,scwidth)
         title[0] = '<WHITE>'+title[0]
-        title.append('<YELLOW><HLINE n=40>')
+        title.append(f'<YELLOW><HLINE n={scwidth}>')
         if a_author != None:
             title.append(f'<INK c={conn.style.TxtColor}>by: <YELLOW>{a_author}<BR>')
             title.append('<BR>')
         body[0] = '<GREY2>'+body[0]
         text = title + body
-        H.text_displayer(conn,text,21)
-        conn.Sendall(TT.set_Window(0,24))
+        H.text_displayer(conn,text,scheight-4)
+        conn.Sendall(TT.set_Window(0,scheight))
     else:
         conn.SendTML(f'<DEL>{resp.status_code}<PAUSE n=1>')
         _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - defaulting to rss description'+bcolors.ENDC, id=conn.id,v=2)

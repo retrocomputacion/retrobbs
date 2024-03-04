@@ -31,6 +31,11 @@ import difflib
 # Read a message
 ##############################################
 def readMessage(conn:Connection, msg_id:int):
+    scwidth,scheight = conn.encoder.txt_geo
+    if 'MSX' in conn.mode:
+        hcode = 0x17
+    else:
+        hcode = 0x40
     db:DBase = conn.bbs.database
     table = db.db.table('MESSAGES')
     dbQ = Query()
@@ -62,7 +67,7 @@ def readMessage(conn:Connection, msg_id:int):
                     ol.append('<RVSON>R<RVSOFF>eply')
                     keys += b'R'
 
-            conn.SendTML(f'<WINDOW top=0 bottom=24><CLR><GREEN>{dmsg["msg_topic"]}<GREY2><BR>'
+            conn.SendTML(f'<WINDOW top=0 bottom={scheight}><CLR><GREEN>{dmsg["msg_topic"]}<GREY2><BR>'
                          f'by:<LTGREEN>{"*"+user if type(user)==str else " "+user["uname"]}')
             if conn.bbs.dateformat == 1:
                 datestr = "%m/%d/%Y"
@@ -75,17 +80,17 @@ def readMessage(conn:Connection, msg_id:int):
                     rcp = utable.get(doc_id = dmsg['msg_to'])
                 else:
                     rcp = dmsg['msg_to']
-                conn.SendTML(f'<AT x=20 y=1><GREY3><RVSON>to:<LTGREEN>{"*"+rcp if type(rcp)==str else " "+rcp["uname"]}<RVSOFF>')
+                conn.SendTML(f'<AT x={scwidth//2} y=1><GREY3><RVSON>to:<LTGREEN>{"*"+rcp if type(rcp)==str else " "+rcp["uname"]}<RVSOFF>')
             else:   # public message, display post date
-                conn.SendTML(f'<AT x=20 y=1><GREY3><RVSON>on:<LTGREEN>{datetime.utcfromtimestamp(dmsg["msg_sent"]):{datestr}}<RVSOFF>')
-            conn.SendTML(f'{"<YELLOW><LFILL row=2 code=64><LFILL row=22 code=64>" if conn.QueryFeature(TT.LINE_FILL)<0x80 else "<AT x=0 y=2><YELLOW><HLINE n=40><AT x=0 y=22><HLINE n=40>"}'
-                         f'<AT x=0 y=23><GREY3>')
+                conn.SendTML(f'<AT x={scwidth//2} y=1><GREY3><RVSON>on:<LTGREEN>{datetime.utcfromtimestamp(dmsg["msg_sent"]):{datestr}}<RVSOFF>')
+            conn.SendTML(f'{f"<YELLOW><LFILL row=2 code={hcode}><LFILL row={scheight-3} code={hcode}>" if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y=2><YELLOW><HLINE n={scwidth}><AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
+                         f'<AT x=0 y={scheight-2}><GREY3>')
             for i,o in enumerate(ol):
                 conn.SendTML(o)
                 if (i+1) < len(ol):
                     conn.Sendall('/')
-            conn.SendTML(f'<BR><LARROW> Exit{adm}<AT x=0 y=3><GREY3>')
-            msg = formatX(dmsg['msg_text'])
+            conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
+            msg = formatX(dmsg['msg_text'],scwidth)
             # display message
             for i,l in enumerate(msg):
                 conn.SendTML(l)
@@ -127,7 +132,7 @@ def readMessage(conn:Connection, msg_id:int):
                         msg_id = r_id
                     break
                 elif k == b'D': #Delete:
-                    conn.SendTML(f'<RED>{"<LFILL row=10 code=64><LFILL row=14 code=64>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else "<AT x=0 y=10><HLINE n=40><AT x=0 y=14><HLINE n=40>"}'
+                    conn.SendTML(f'<RED>{f"<LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>"}'
                                  f'<WINDOW top=11 bottom=13>'
                                  f'<CLR><CRSRD><WHITE>          Delete message?(Y/N)')
                     if conn.ReceiveKey(b'YN') == b'Y':
@@ -162,7 +167,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
     
         def dialog1(): # Send or cancel message
             nonlocal message
-            conn.Sendall(TT.set_Window(23,24))
+            conn.Sendall(TT.set_Window(scheight-2,scheight-1))
             ond = True
             while ond:
                 conn.SendTML('<CLR>Send/Edit/Quit(S/E/Q)?')
@@ -178,10 +183,10 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
         
         def dispMsg(): # Display message
             nonlocal message
-            conn.SendTML('<WINDOW top=3 bottom=21><GREY3><CLR>')
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><GREY3><CLR>')
             for l in message:
                 conn.Sendall(l)
-                if len(l)<40:
+                if len(l)<scwidth:
                     conn.SendTML('<BR>')
 
         def hl_line():  # Highlight selected line
@@ -191,26 +196,35 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                 conn.Sendall('>')
             else:
                 conn.SendTML(f'<RVSON>{_dec(message[line][0])}<RVSOFF>')
-            conn.SendTML(f'<WINDOW top=22 bottom=22><AT x=32 y=0><RVSON><YELLOW>{line+1:0>2}/18<RVSOFF><GREY3>')
+            conn.SendTML(f'<WINDOW top={scheight-3} bottom={scheight-3}><AT x=32 y=0><RVSON><YELLOW>{line+1:0>2}/18<RVSOFF><GREY3>')
 
+        scwidth,scheight = conn.encoder.txt_geo
+        if 'MSX' in conn.mode:
+            hcode = 0x17
+        else:
+            hcode = 0x40
         vfilter = bytes(string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34),'ascii')    #Valid input characters
         ckeys = conn.encoder.ctrlkeys
         if conn.mode == 'PET64':
             help_k = [ckeys['F1'],'F1']
             line_k = [ckeys['F7'],'F7']
             quit_k = [ckeys['F8'],'F8']
-        else:   #PET264
+        elif conn.mode == "PET264":
             help_k = [ckeys['HELP'],'HELP']
             line_k = [ckeys['F3'],'F3']
             quit_k = [ckeys['ESC'],'ESC']
+        else: #MSX
+            help_k = [ckeys['F1'],'F1']
+            line_k = [ckeys['F5'],'F5']
+            quit_k = [ckeys['F10'],'F10']
         conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT><MTITLE t="Message Editor"><YELLOW>'
-                     f'{"<LFILL row=22 code=64>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else "<AT x=0 y=22><HLINE n=40>"}'
-                     f'<AT x=1 y=22><RVSON>{help_k[1]} for help<RVSOFF>')
+                     f'{f"<LFILL row={scheight-3} code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
+                     f'<AT x=1 y={scheight-3}><RVSON>{help_k[1]} for help<RVSOFF>')
         dispMsg()
         line = 0
         column = 0
         hl_line()
-        conn.SendTML('<PAUSE n=1><WINDOW top=23 bottom=24><GREY3>')
+        conn.SendTML(f'<PAUSE n=1><WINDOW top={scheight-2} bottom={scheight-1}><GREY3>')
         while topic == '': # Get message topic if none provided
             conn.SendTML('Topic title:<BR>')
             topic = conn.ReceiveStr(vfilter, maxlen = 32)
@@ -228,13 +242,13 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(line+3,32))
                         else:
-                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
-                        conn.SendTML(f'<WINDOW top=3 bottom=21><AT x=0 y={line}>{_dec(tline)}')
+                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*scwidth))
+                        conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>{_dec(tline)}')
                         if line < 17:
                             line += 1
                             column = 0
                             hl_line()
-                            conn.SendTML(f'<WINDOW top=23 bottom=24><CLR>{_dec(message[line])}<HOME>')
+                            conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>{_dec(message[line])}<HOME>')
                         else:   # Past last line
                             option = dialog1()
                             if option == b'S':      # Send message
@@ -243,7 +257,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                                 running = False
                                 message = None
                             else:                   # Keep editing
-                                conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
+                                conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                                 edit = False
                     elif (ord(i_char) == ckeys['CRSRR']) and (column < len(message[line])):   # Cursor right
                         column += 1
@@ -262,15 +276,15 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         message[line] = message[line][0:column-1] + message[line][column:]
                         column -= 1
                         conn.Sendallbin(i_char)
-                    elif (ord(i_char) == ckeys['INSERT']) and (40 > len(message[line]) > 0) and (column < len(message[line])):   # Insert blank space
+                    elif (ord(i_char) == ckeys['INSERT']) and (scwidth > len(message[line]) > 0) and (column < len(message[line])):   # Insert blank space
                         message[line] = message[line][0:column] + ' ' + message[line][column:]
                         conn.Sendallbin(i_char)
                     elif ord(i_char) == quit_k[0]:                                               # Finish editing
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(line+3,32))
                         else:
-                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
-                        conn.SendTML(f'<WINDOW top=3 bottom=21><AT x=0 y={line}>{_dec(message[line])}') # Clear line in display window, print newly edited line
+                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*scwidth))
+                        conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>{_dec(message[line])}') # Clear line in display window, print newly edited line
                         option = dialog1()
                         if option == b'S':      # Send message
                             running = False
@@ -278,19 +292,19 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                             running = False
                             message = None
                         else:                   # Keep editing
-                            conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
+                            conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                             edit = False
                     elif ord(i_char) == line_k[0]:   # Select line to edit
                         tline = ' ' if len (message[line]) == 0 else message[line]
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(line+3,32))
                         else:
-                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*40))
-                        conn.SendTML(f'<WINDOW top=3 bottom=21><AT x=0 y={line}>{_dec(message[line])}'
-                                     f'<WINDOW top=23 bottom=24><CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
+                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*scwidth))
+                        conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>{_dec(message[line])}'
+                                     f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                         edit = False
                     elif ord(i_char) == help_k[0]:   # Display help screen
-                        conn.SendTML('<WINDOW top=3 bottom=21><CLR>'
+                        conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><CLR>'
                                      '<YELLOW><BR>     ---Line editor instructions---<BR>'
                                      '<BR>This editor allows you to type and edit a single line at a time.<BR>'
                                      'INS/DEL and CLR/HOME are supported<BR>'
@@ -298,7 +312,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                                      '<BR>Press any key to continue...')
                         conn.Receive(1)
                         dispMsg()
-                        conn.SendTML(f'<WINDOW top=23 bottom=24><CLR>Select line (CRSR UP/DWN)<WINDOW top=3 bottom=21><AT x=0 y={line}>')
+                        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select line (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                         edit = False
                     elif ord(i_char) in vfilter:
                         # Alphanumeric characters
@@ -309,16 +323,16 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         else:
                             message[line] += chr(ord(i_char))
                         conn.Sendallbin(i_char)
-                        if column == 40:
+                        if column == scwidth:
                             if conn.QueryFeature(TT.LINE_FILL):
                                 conn.Sendall(TT.Fill_Line(line+3,32))
                             else:
-                                conn.SendTML(f'<AT x=0 y={line+3}><SPC n=40>')
-                            conn.SendTML(f'<WINDOW top=3 bottom=21><AT x=0 y={line}>{_dec(message[line])}') # Clear line in display window, print newly edited line
+                                conn.SendTML(f'<AT x=0 y={line+3}><SPC n={scwidth}>')
+                            conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>{_dec(message[line])}') # Clear line in display window, print newly edited line
                             if line < 17:
                                 line += 1
                                 column = 0
-                            conn.SendTML(f'<PAUSE n=0.5><WINDOW top=23 bottom=24><CLR>{_dec(message[line])}<HOME>')  # Update edit window
+                            conn.SendTML(f'<PAUSE n=0.5><WINDOW top={scheight-2} bottom={scheight-1}><CLR>{_dec(message[line])}<HOME>')  # Update edit window
                 else:   # Selecting line to edit
                     if (ord(i_char) == ckeys['CRSRD']) and (line < 17):
                         line += 1
@@ -330,11 +344,11 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
                         edit = True
                         column = 0
                         hl_line()
-                        conn.SendTML(f'<WINDOW top=23 bottom=24><CLR>{_dec(message[line])}<HOME>')  # Update edit window
+                        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>{_dec(message[line])}<HOME>')  # Update edit window
             except Exception as e:
                 running = False
                 conn.connected = False
-        conn.Sendall(TT.set_Window(0,24))
+        conn.Sendall(TT.set_Window(0,scheight))
         return(topic,message)
     #check user is logged in
     if conn.username == '_guest_':
@@ -397,6 +411,12 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
 # Display user private messages (board = 0) or public board
 ############################################################
 def inbox(conn:Connection, board):
+    scwidth,scheight = conn.encoder.txt_geo
+    ellipsis = conn.encoder.ellipsis
+    if 'MSX' in conn.mode:
+        hcode = 0x17
+    else:
+        hcode = 0x40
     _dec = conn.encoder.decode
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     ckeys = conn.encoder.ctrlkeys
@@ -426,16 +446,16 @@ def inbox(conn:Connection, board):
         for i in msgs:
             um = getUnread(conn,i.doc_id)
             if um == None:
-                tt = f' <GREY1><CHR c=188>{"<LTBLUE>" if i["msg_from"] == conn.userid else "<GREEN>"} '
+                tt = f' <GREY1><UR-QUAD>{"<LTBLUE>" if i["msg_from"] == conn.userid else "<GREEN>"} '
             else:
-                tt = f' <GREEN><CHR c=188>{"<CYAN>" if i["msg_to"] == conn.userid else "<LTGREEN>"} '
-            to = crop(i['msg_topic'],24)
+                tt = f' <GREEN><UR-QUAD>{"<CYAN>" if i["msg_to"] == conn.userid else "<LTGREEN>"} '
+            to = crop(i['msg_topic'],24,ellipsis)
             tl = table.get(doc_id=i['msg_prev'])
             if type(tl['msg_from'])==int:
                 user = utable.get(doc_id = tl['msg_from'])['uname']
             else:
                 user = tl['msg_from']
-            tu = crop(user,11)
+            tu = crop(user,11,ellipsis)
             tt += f'{to}<YELLOW><CRSRR n={24-len(to)}<VLINE><WHITE>{tu}'
             ts = tl['msg_sent']    # Get timestamp of last message in thread
             threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
@@ -443,19 +463,19 @@ def inbox(conn:Connection, board):
         threads.sort(key=lambda threads: threads[3],reverse=True)
         conn.Sendall(TT.enable_CRSR())
         if refresh:
-            conn.Sendall(TT.set_Window(0,24))
+            conn.Sendall(TT.set_Window(0,scheight))
             RenderMenuTitle(conn,title)
             if int(conn.bbs.BoardOptions.get('board'+str(board)+'post',1)) <= conn.userclass:
                 tt = f'<RVSON>n<RVSOFF>ew {"thread" if board != 0 else "message"}{"<BR>" if conn.userclass < 10 else "-<RVSON>d<RVSOFF>elete"}'
             else:
                 tt = '<BR>' #'\r'
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                tt += '<YELLOW><LFILL row=22 code=64>'
+                tt += f'<YELLOW><LFILL row={scheight-3} code={hcode}>'
             else:
-                tt += '<AT x=0 y=22><YELLOW><HLINE n=40>'
-            conn.SendTML('<AT x=0 y=23><GREY3>Navigate with <RVSON>crsr<RVSOFF> - '+ tt +
-                         '<AT x=0 y=24>Read <RVSON>f<RVSOFF>irst/<RVSON>l<RVSOFF>ast or <RVSON>u<RVSOFF>nread message'
-                         '<WINDOW top=3 bottom=21>')
+                tt += f'<AT x=0 y={scheight-3}><YELLOW><HLINE n={scwidth}>'
+            conn.SendTML(f'<AT x=0 y={scheight-2}><GREY3>Navigate with <RVSON>crsr<RVSOFF> - '+ tt +
+                         f'<AT x=0 y={scheight-1}>Read <RVSON>f<RVSOFF>irst/<RVSON>l<RVSOFF>ast or <RVSON>u<RVSOFF>nread msg'
+                         f'<WINDOW top=3 bottom={scheight-4}>')
             refresh = False
         conn.SendTML('<CLR>')
         last = len(threads) if len(threads) < (19*(page+1)) else 19*(page+1)
@@ -496,28 +516,28 @@ def inbox(conn:Connection, board):
                         page -= 1
                         break
                 elif k == b'F':                  # First message
-                    conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,24))
+                    conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
                     readMessage(conn,threads[pos+(19*page)][1])
                     refresh = True
                     break
                 elif k == b'L':                  # Last message
                     m = table.get(doc_id=threads[pos+(19*page)][1])
-                    conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,24))
+                    conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
                     readMessage(conn,m['msg_prev'])
                     refresh = True
                     break
                 elif k == b'U':                  # First unread message
                     if threads[pos+(19*page)][2] != None:
-                        conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,24))
+                        conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
                         readMessage(conn,threads[pos+(19*page)][2].doc_id)
                         refresh = True
                         break
                 elif k == b'D':                 # Delete thread
                     tml = ''
                     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                        tml += '<RED><LFILL row=10 code=64><LFILL row=14 code=64>'
+                        tml += f'<RED><LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
                     else:
-                        tml += '<RED><AT x=0 y=10><HLINE n=40><AT x=0 y=14><HLINE n=40>'
+                        tml += f'<RED><AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
                     conn.SendTML(tml+'<WINDOW top=11 bottom=13><CLR><CRSRD><WHITE>           Delete thread?(Y/N)')
                     if conn.ReceiveKey(b'YN') == b'Y':
                         deleteThread(conn,threads[pos+(19*page)][1])
@@ -529,9 +549,9 @@ def inbox(conn:Connection, board):
                     # get destination username
                     tml = ''
                     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                        tml += '<LFILL row=10 code=64><LFILL row=14 code=64>'
+                        tml += f'<LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
                     else:
-                        tml += '<AT x=0 y=10><HLINE n=40><AT x=0 y=14><HLINE n=40>'
+                        tml += f'<AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
                     conn.SendTML(tml+'<WINDOW top=11 bottom=13>')
                     while conn.connected:
                         conn.SendTML('<CLR>Send PM to: ')
@@ -561,13 +581,13 @@ def inbox(conn:Connection, board):
                             break
                 else:
                     dest = board
-                conn.Sendall(TT.set_Window(0,24))
+                conn.Sendall(TT.set_Window(0,scheight))
                 if dest != '':
                     writeMessage(conn, destination=dest)
                 refresh = True
                 break
             if k == b'_':
-                conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,24))
+                conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
                 done = True
                 break
 

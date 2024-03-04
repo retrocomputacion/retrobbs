@@ -35,21 +35,21 @@ def plugFunction(conn:Connection,server,port,channel):
 
     # Send TML or PETSCII list to the chat window
     def printchat(text):
-        conn.SendTML('<NUL n=2><WINDOW top=3 bottom=21><AT x=0 y=18>')
+        conn.SendTML(f'<NUL n=2><WINDOW top=3 bottom={scheight-4}><AT x=0 y={scheight-7}>')
         if isinstance(text,list):
             for t in text:
                 conn.SendTML(t)
         else:
             conn.SendTML(text)
-        conn.SendTML(f'<WINDOW top=23 bottom=24><AT x={curcolumn} y={curline}><GREY3>')
+        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><AT x={curcolumn} y={curline}>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
 
     def on_currenttopic(c, event):
-        txt = H.formatX('['+event.arguments[0]+'] Topic is: '+event.arguments[1])
+        txt = H.formatX('['+event.arguments[0]+'] Topic is: '+event.arguments[1],scwidth)
         txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
 
     def on_topic(c, event):
-        txt = H.formatX('['+channel+'] Topic changed to: '+event.arguments[0]+'\r')
+        txt = H.formatX('['+channel+'] Topic changed to: '+event.arguments[0]+'\r',scwidth)
         txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
 
@@ -58,8 +58,8 @@ def plugFunction(conn:Connection,server,port,channel):
         printchat(f'<CYAN>{nickname} in use<BR>Trying {nickname}-<BR>')
         nickname += '-'
         c.nick(nickname)
-        conn.SendTML(f'<GREEN><LFILL row=22 code=64><WINDOW top=22 bottom=22><RVSON><CRSRR>{nickname}'
-                     f'<GREY3><WINDOW top=23 bottom=24><RVSOFF>')
+        conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}><WINDOW top={scheight-3} bottom={scheight-3}><RVSON><CRSRR>{nickname}'
+                     f'{"<GREY3>" if "PET" in conn.mode else "<GREY>"}<WINDOW top={scheight-2} bottom={scheight-1}><RVSOFF>')
 
     def on_pubmsg(connection, event):
         user = event.source
@@ -67,8 +67,8 @@ def plugFunction(conn:Connection,server,port,channel):
             user = user[0:user.index('!')]
         elif '@' in user:
             user = user[0:user.index('@')]
-        txt = H.formatX(user+': '+event.arguments[0])
-        txt[0]= f'<LTBLUE>{txt[0][0:len(user)+1]}<GREY2>{txt[0][len(user)+2:]}'
+        txt = H.formatX(user+': '+event.arguments[0],scwidth)
+        txt[0]= f'<LTBLUE>{txt[0][0:len(user)+1]}{"<GREY2>" if "PET" in conn.mode else "<GREY>"}{txt[0][len(user)+2:]}'
         printchat(txt)
 
     def on_action(connection, event):
@@ -77,20 +77,20 @@ def plugFunction(conn:Connection,server,port,channel):
             user = user[0:user.index('!')]
         elif '@' in user:
             user = user[0:user.index('@')]
-        txt = H.formatX('* '+user+' '+event.arguments[0])
-        txt[0]= f'<ORANGE>{txt[0][0:len(user)+2]}<GREY3>{txt[0][len(user)+2:]}'
+        txt = H.formatX('* '+user+' '+event.arguments[0],scwidth)
+        txt[0]= f'{"<ORANGE>" if "PET" in conn.mode else "<DRED>"}{txt[0][0:len(user)+2]}{"<GREY3>" if "PET" in conn.mode else "<GREY>"}{txt[0][len(user)+2:]}'
         printchat(txt)
 
     def on_privmsg(connection, event):
         _LOG(event,id=conn.id,v=4)
     
     def on_privnotice(connection, event):
-        txt = H.formatX(event.arguments[0])
-        txt[0] = '<ORANGE>'+txt[0]
+        txt = H.formatX(event.arguments[0],scwidth)
+        txt[0] = ("<ORANGE>" if "PET" in conn.mode else "<DRED>")+txt[0]
         printchat(txt)
 
     def on_pubnotice(connection, event):
-        txt = H.formatX('>'+_enc(event.target)+'<'+_enc(event.arguments[0]))
+        txt = H.formatX('>'+_enc(event.target)+'<'+_enc(event.arguments[0]),scwidth)
         txt[0] = '<YELLOW>'+txt[0]
         for x in range(len(txt)):
             txt[x] = '<RVSON>'+txt[x]
@@ -98,7 +98,7 @@ def plugFunction(conn:Connection,server,port,channel):
 
     def on_connect(connection, event):
         printchat(f'<CYAN>Connected to: {server}<BR>')
-        txt = H.formatX(event.arguments[0])
+        txt = H.formatX(event.arguments[0],scwidth)
         txt[0] = '<CYAN>'+txt[0]
         printchat(txt)
         if irc.client.is_channel(channel):
@@ -106,7 +106,7 @@ def plugFunction(conn:Connection,server,port,channel):
         #main_loop(connection)
 
     def on_names(connection, event):
-        text = H.formatX('Users in '+channel+': '+event.arguments[2])
+        text = H.formatX('Users in '+channel+': '+event.arguments[2],scwidth)
         text[0] = '<CYAN>'+text[0]
         for i in range(len(text)):
             x = text[i].find(':')
@@ -155,9 +155,9 @@ Accepted commands:
     /me action - Send action to the 
                  channel
 ----------------------------------------"""
-            txt = H.formatX(hstring)
+            txt = H.formatX(hstring,scwidth)
             for i in range(len(txt)):
-                txt[i] = txt[i].replace('_','<LARROW>') #FIXME: this a PETSCII workaround
+                txt[i] = txt[i].replace('_','<BACK>') #FIXME: this a PETSCII workaround
             printchat(txt)
         elif text.lower() == '/quit':
             running = False
@@ -169,8 +169,8 @@ Accepted commands:
             if len(pars)>1:
                 nickname = _dec(pars[1].translate({ord(i): None for i in '#?!@/()&$"'}))
                 c.nick(nickname)
-                conn.SendTML(f'<GREEN><LFILL row=22 code=64><WINDOW top=22 bottom=22><RVSON><CRSRR>{nickname}'
-                             f'<GREY3><WINDOW top=23 bottom=24><RVSOFF><AT x={curcolumn} y={curline}')
+                conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}><WINDOW top={scheight-3} bottom={scheight-3}><RVSON><CRSRR>{nickname}'
+                             f'{"<GREY3>" if "PET" in conn.mode else "<GREY>"}<WINDOW top={scheight-2} bottom={scheight-1}><RVSOFF><AT x={curcolumn} y={curline}')
             else:
                 printchat('Usage: NICK &lt;nick&gt;, change your nick<BR>')
         elif text.lower().startswith('/join'):
@@ -191,31 +191,38 @@ Accepted commands:
             pars = text.split(' ')
             if len(pars)>1:
                 connection.action(channel,_dec(' '.join(pars[1:])))
-                msg = H.formatX('* '+nickname+' '+_dec(' '.join(pars[1:])))
+                msg = H.formatX('* '+nickname+' '+_dec(' '.join(pars[1:])),scwidth)
                 msg[0] = '<YELLOW>'+msg[0]
                 printchat(msg)
             else:
-                printchat(H.formatX('Usage: ME <action> send action (written in 3rd person) to the channel'))
+                printchat(H.formatX('Usage: ME <action> send action (written in 3rd person) to the channel',scwidth))
 
     ####
+    scwidth,scheight = conn.encoder.txt_geo
+    if 'MSX' in conn.mode:
+        bcode = 0xDB
+        hcode = 0x17
+    else:
+        bcode = 0xA0
+        hcode = 0x40
     S.RenderMenuTitle(conn,'IRC')
-    conn.SendTML('<GREEN><LFILL row=22 code=64>')
+    conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}>')
     if conn.userclass > 0:
         nickname = conn.username[0:9]
     else:
-        conn.SendTML('<WINDOW top=23 bottom=24><YELLOW>Enter nick: <GREY3>')
+        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><YELLOW>Enter nick: {"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
         nickname = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 9)) #Get nick
     nickname = nickname.translate({ord(i): None for i in '#?!@/()&$"'})
-    conn.Sendall(TT.set_Window(0,24))
+    conn.Sendall(TT.set_Window(0,scheight))
     if nickname == '':
         time.sleep(0.5)
         return
-    conn.SendTML(f'<AT x=1 y=22><RVSON><GREEN>{nickname}<BR>'
-                 '<WINDOW top=23 bottom=24><CLR>')
+    conn.SendTML(f'<AT x=1 y={scheight-3}><RVSON><GREEN>{nickname}<BR>'
+                 f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
     if channel == '':
-        conn.SendTML('<YELLO>Enter channel: #<GREY3>')
+        conn.SendTML(f'<YELLO>Enter channel: #{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
         channel = '#'+(conn.ReceiveStr(bytes(keys,'ascii'),20)).translate({ord(i): None for i in '#@/"'}) #Get channel
-    conn.SendTML('<CLR><CBM-B><CRSRL><GREY3>')
+    conn.SendTML(f'<CLR><SPINNER><CRSRL>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer
     irc.client.ServerConnection.buffer_class.errors = "replace"
@@ -223,7 +230,7 @@ Accepted commands:
         c = reactor.server().connect(server, int(port), nickname)
     except irc.client.ServerConnectionError:
         printchat('<PINK>*** ERROR Connecting to server<BR>')
-        conn.Sendall(TT.set_Window(0,24))
+        conn.Sendall(TT.set_Window(0,scheight-1))
         _LOG(bcolors.FAIL+'Connection to IRC FAILED'+bcolors.ENDC,id=conn.id,v=1)
         time.sleep(2)
         return
@@ -250,7 +257,7 @@ Accepted commands:
         if time.process_time()-t0 > 60.0:       #Abandon if connection takes more than a minute
             printchat('<PINK>*** TIMEOUT Connecting to server<BR>')
             _LOG(bcolors.FAIL+'Connection to IRC FAILED - TIMEOUT'+bcolors.ENDC,id=conn.id,v=2)
-            conn.Sendall(TT.set_Window(0,24))
+            conn.Sendall(TT.set_Window(0,scheight-1))
             time.sleep(1)
             return
     conn.SendTML('<CLR>')
@@ -280,24 +287,24 @@ Accepted commands:
                         conn.SendTML('<CLR>')
                         curline = 0
                         curcolumn = 0
-                        msg = H.formatX(nickname+': '+_dec(message))
-                        msg[0] = '<YELLOW>'+msg[0][0:len(nickname)+1]+'<GREY2>'+msg[0][len(nickname)+1:]
+                        msg = H.formatX(nickname+': '+_dec(message),scwidth)
+                        msg[0] = '<YELLOW>'+msg[0][0:len(nickname)+1]+("<GREY2>" if "PET" in conn.mode else "<GREY>")+msg[0][len(nickname)+1:]
                         printchat(msg)
                         message =''
-                elif len(message)<79:
+                elif len(message)<(scwidth*2)-1:
                     if chr(i_char[0]) == conn.encoder.bs:
                         if message != '':
                             message = message[:-1]
                             conn.Sendallbin(i_char)
                             curcolumn -=1
                             if curcolumn < 0:
-                               curcolumn = 39
+                               curcolumn = scwidth-1
                                curline = 0
                     elif not (chr(i_char[0]) in kfilter):
                         message += chr(i_char[0])
                         conn.Sendallbin(i_char)
                         curcolumn +=1
-                        if curcolumn >= 40:
+                        if curcolumn >= scwidth:
                             curcolumn = 0
                             curline +=1
             except socket.error:
@@ -306,7 +313,7 @@ Accepted commands:
         else:
             time.sleep(0.1)
         reactor.process_once()
-    conn.Sendall(TT.set_Window(0,24))            
+    conn.Sendall(TT.set_Window(0,scheight-1))            
     _LOG('Leaving IRC',id=conn.id,v=4)
     conn.socket.setblocking(1)
     conn.socket.settimeout(60*5)

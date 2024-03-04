@@ -3,6 +3,7 @@ import re
 from common.classes import Encoder
 from common.imgcvt import gfxmodes
 import os
+import codecs
 
 #PETSCII constants
 
@@ -81,6 +82,29 @@ COMM_O = 0xB9
 COMM_J = 0xB5
 COMM_L = 0xB6
 CHECKMARK = 0xBA
+UL_CORNER = 0xB0     # Box corners
+UR_CORNER = 0xAE
+LL_CORNER = 0xAD
+LR_CORNER = 0xBD
+V_RIGHT = 0xAB       # Box borders
+V_LEFT  = 0xB3
+H_UP    = 0xB1
+H_DOWN  = 0xB2
+UL_QUAD = 0xBE       # Semigraphics
+UR_QUAD = 0xBC
+LL_QUAD = 0xBB
+LR_QUAD = 0xAC
+L_HALF  = 0xA1
+B_HALF  = 0xA2
+UL_LR_QUAD = COMM_B
+L_NARROW = 0xB5
+R_NARROW = 0xB6
+U_NARROW = 0xB8
+B_NARROW = 0xB9
+
+#-- Chars used by the BBS
+SPINNER = COMM_B    # Character to use while waiting
+BACK = LEFT_ARROW
 
 # Color code to palette index dictionary
 PALETTE = {BLACK:0,WHITE:1,RED:2,CYAN:3,PURPLE:4,GREEN:5,BLUE:6,YELLOW:7,ORANGE:8,BROWN:9,PINK:10,GREY1:11,GREY2:12,LT_GREEN:13,LT_BLUE:14,GREY3:15}
@@ -101,15 +125,32 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
             'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)}}
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
-            'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L)}}
+            'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L),
+            'UL-CORNER':chr(UL_CORNER),'UR-CORNER':chr(UR_CORNER),'LL-CORNER':chr(LL_CORNER),'LR-CORNER':chr(LR_CORNER),
+            'V-RIGHT':chr(V_RIGHT),'V-LEFT':chr(V_LEFT),'H-UP':chr(H_UP),'H-DOWN':chr(H_DOWN),
+            'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
+            'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
+            'SPINNER':chr(SPINNER),'BACK':chr(BACK)}}
 
 t_mono['PET264'].update(t_mono['PET64'])
 t_multi['PET264'] = t_multi['PET64']
 
 # Multiple replace
 # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
-Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"'}
-Urep = dict((re.escape(k), v) for k, v in Urep.items()) 
+Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*'}
+Urep = dict((re.escape(k), v) for k, v in Urep.items())
+
+######### Petscii ASCII codec error handler #########
+# Replace unknowns with a space
+def pethandler(e):
+    char = b''
+    if type(e) == UnicodeEncodeError:
+        if e.object[e.start] in '¿¡':
+            char = b' '
+    elif type(e) == UnicodeDecodeError:
+        ...
+    return (char,e.end)
+
 
 ######### Petscii encoder subclass #########
 class PETencoder(Encoder):
@@ -120,6 +161,7 @@ class PETencoder(Encoder):
         self.non_printable = NONPRINTABLE	#	List of non printable characters
         self.nl	= '\r'			#	New line string/character
         self.bs = chr(DELETE)	#	Backspace string/character
+        self.back = chr(BACK)
 
     def check_fit(self, filename):
         size = os.stat(filename).st_size-2
@@ -141,7 +183,7 @@ def toPETSCII(text:str,full=True):
     if full:
         pattern = re.compile("|".join(Urep.keys()))
         text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
-        text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
+        text = (unicodedata.normalize('NFKD',text).encode('ascii','spaces')).decode('ascii')
         text = text.replace('|', chr(VLINE))
         text = text.replace('_', chr(164))
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
@@ -159,6 +201,7 @@ def toASCII(text):
 # Register with the encoder module
 ###################################
 def _Register():
+    codecs.register_error('spaces',pethandler)  # Register encoder error handler. This might be more useful if global 
     e0 = PETencoder('PET64')
     e0.tml_mono  = t_mono['PET64']
     e0.tml_multi = t_multi['PET64']

@@ -73,11 +73,12 @@ class TMLParser(HTMLParser):
         self.t_mono = t_gen_mono.copy()
         ###
         self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])								# Update OUT command
-        self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(bytes(k,'latin1')),[('_R','_A'),('k','\r',False)])	# Update INKEYS command
+        self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k','\r',False)])	# Update INKEYS command
         self.t_mono['USER'] = (lambda: self.conn.username,[('_R','_S')])											# Update USER command
         if conn.QueryFeature(0xb7) >= 0x80:																			# Update INK command
             # if terminal doesnt support the ink command, try to replace it with a text color control code
             # if there isn't a matching color code then send NUL
+            # Note: this only works for single byte color codes
             tmp = conn.encoder.palette.items()
             self.t_mono['INK'] = (lambda c: chr([k for k,v in tmp if v == c][0] if len([k for k,v in tmp if v == c])>0 else 0),[('_R','_C'),('c',0)])
         ###

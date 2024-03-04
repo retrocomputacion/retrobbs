@@ -6,6 +6,7 @@ from datetime import datetime
 from common.connection import Connection
 from common.bbsdebug import _LOG
 from common.style import KeyLabel
+from common.style import bbsstyle
 
 wordlist = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]}
 
@@ -34,12 +35,21 @@ def setup():
 ###################################
 def plugFunction(conn:Connection):
 
+    ecolors = conn.encoder.colors
+    mcolors = bbsstyle(ecolors)
+    mcolors.OoddBack = ecolors['BLACK']
+    if 'MSX' in conn.mode:
+        mcolors.ToddColor = ecolors['DARK_RED']
+        mcolors.TevenColor = ecolors['BLUE']
+    mcolors.OevenBack = ecolors['BLACK']
+    mcolors.BgColor = ecolors['DARK_GREY']
     dbase = conn.bbs.database
     table = dbase.db
     dbQ = Query()
     today = datetime.today().timetuple().tm_yday
     dificulty = datetime.today().weekday()
     xwords = []
+    scwidth, scheight = conn.encoder.txt_geo
     for i in range(dificulty,7):
         xwords += wordlist[i]
     if table.get(dbQ.record == 'mindle') == None:
@@ -59,32 +69,38 @@ def plugFunction(conn:Connection):
 
     players = mdata.get('players',[])
 
-    if conn.mode == 'PET264':
-        scolor = 49
-    else:
-        scolor = 11
+    # if conn.mode == 'PET264':
+    # scolor = ecolors['DARK_GREY']
+    # else:
+    #     scolor = 11
 
-    conn.SendTML(f'<TEXT border={scolor} background={scolor}><CLR>')
-    conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><CHR c=172> <CHR c=172><LTGREEN><CHR c=172>     <CHR c=187><CHR c=187> <YELLOW><CHR c=162> <WHITE><BOTTOM-HASH n=11><BR>')
-    conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><CHR c=161><RVSOFF><CBM-B><RVSON><CHR c=187><RVSOFF><LTGREEN><CHR c=172> <RVSON><CHR c=172><RVSOFF><CBM-B><CHR c=172><RVSON><CHR c=162><RVSOFF><CHR c=161><CHR c=161><YELLOW><RVSON><CHR c=161><RVSOFF><CHR c=162><CHR c=161><GREY3><BOTTOM-HASH n=10><BR>')
-    conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><CHR c=161><CRSRR><CHR c=161><LTGREEN><CHR c=161><RVSOFF><CHR c=187><CHR c=161><RVSON><CHR c=161><RVSOFF><CHR c=188><CHR c=162><CHR c=161><RVSON><CHR c=188><RVSOFF><YELLOW><CHR c=188><CHR c=162><CHR c=187><GREY2><BOTTOM-HASH n=9><BR>')
+    conn.SendTML(f'<TEXT border={mcolors.BgColor} background={mcolors.BgColor}><CLR>')
+    if 'PET' in conn.mode:
+        conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
+        conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
+        conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
+    else:
+        conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
+        conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
+        conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
+    xc = scwidth//4
     while conn.connected:
-        keys = b'_BCD'
-        conn.SendTML('<AT x=10 y=8>')
+        keys = '_bcd'
+        conn.SendTML(f'<AT x={xc} y=8>')
         if (conn.userclass != 0) and (conn.userid not in players):
-            KeyLabel(conn,'a','Play daily Mindle',True)
-            keys += b'A'
-        conn.SendTML('<BR><CRSRR n=10>')
-        KeyLabel(conn,'b','Free play',False)
-        conn.SendTML('<BR><CRSRR n=10>')
-        KeyLabel(conn,'c','View High Scores',True)
-        conn.SendTML('<BR><CRSRR n=10>')
-        KeyLabel(conn,'d','How to play',False)
-        conn.SendTML('<BR><CRSRR n=10>')
-        KeyLabel(conn,'_','Exit',True)
+            KeyLabel(conn,'a','Play daily Mindle',True,mcolors)
+            keys += 'a'
+        conn.SendTML(f'<BR><CRSRR n={xc}>')
+        KeyLabel(conn,'b','Free play',False,mcolors)
+        conn.SendTML(f'<BR><CRSRR n={xc}>')
+        KeyLabel(conn,'c','View High Scores',True,mcolors)
+        conn.SendTML(f'<BR><CRSRR n={xc}>')
+        KeyLabel(conn,'d','How to play',False,mcolors)
+        conn.SendTML(f'<BR><CRSRR n={xc}>')
+        KeyLabel(conn,'_','Exit',True,mcolors)
         rec = conn.ReceiveKey(keys)
-        if rec == b'B':     ##### Free play
-            conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
+        if rec == 'b':     ##### Free play
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight-1}><CLR><WINDOW>')
             xwords = [] # Include _all_ words for free play
             for wl in wordlist:
                 xwords +=wordlist[wl]
@@ -93,22 +109,24 @@ def plugFunction(conn:Connection):
             with open(f"plugins/mindle_words/valid{str(len(xword))}.txt",'r') as wf:
                 xvalid = wf.read().splitlines()
                 xvalid += [word for word in xwords if len(word)== len(xword)]
-            mindle(conn, xword, xvalid)
-            conn.SendTML('<PAUSE n=5><WINDOW top=3 bottom=24><CLR><WINDOW>')
-        elif rec == b'C':   # High scores
+            score = mindle(conn, xword, xvalid)
+            if  score >= 0:
+                conn.SendTML('<PAUSE n=5>')
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+        elif rec == 'c':   # High scores
             if len(tops) > 0:
-                conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
-                conn.SendTML('<AT x=15 y=7><LTGREEN>Top Scores<GREY3><BR><BR>')
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+                conn.SendTML(f'<AT x={(scwidth-10)//2} y=7><LTGREEN>Top Scores<GREY3><BR><BR>')
                 ulist = dict(dbase.getUsers())
                 j = len(tops) if len(tops)<=10 else 10
                 for i in range(j):
                     uname = ulist[int(tops[i][0])]
                     conn.SendTML(f'<CRSRR n=10>{uname}<CRSRR n={17-len(uname)}>{tops[i][1]}<BR>')
-                conn.SendTML('<AT x=7 y=23><GREEN>Press any key to continue')
+                conn.SendTML(f'<AT x={(scwidth-25)//2} y={scheight-2}><GREEN>Press any key to continue')
                 conn.Receive(1)
-                conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
-        elif rec == b'D':
-            conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+        elif rec == 'd':
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
             conn.SendTML('<AT y=5><GREY3>Instructions: You have to guess the<BR> hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>')
             conn.SendTML('After each try the color of the<BR> characters will change color to show<BR> how close you are from guessing the<BR> correct word.<BR>')
             conn.SendTML('<BR><GREEN> * <GREY3>Green means the character exists in<BR>   the hidden word and is in the<BR>   correct position<BR>')
@@ -116,20 +134,20 @@ def plugFunction(conn:Connection):
             conn.SendTML("<BLACK> * <GREY3>Black means the character is not<BR>   present in the hidden word<BR>")
             conn.SendTML('<BR>       Press any key to continue')
             conn.Receive(1)
-            conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
-        elif rec == b'A':       ##### Daily Mindle
-            conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+        elif rec == 'a':       ##### Daily Mindle
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
             score = mindle(conn, mdata['daily'],valid)
             if score != -1:
                 players.append(conn.userid)
                 mdata['players'] = players
                 if score < 0:
                     score = 0
-            conn.SendTML(f'<AT x=16 y=20>{score} points<PAUSE n=5>')
+                conn.SendTML(f'<AT x=16 y=20>{score} points<PAUSE n=5>')
             mdata['scores'][str(conn.userid)] = mdata['scores'].get(str(conn.userid),0)+score
             table.update(mdata, where('record') == 'mindle')
             tops = sorted(mdata['scores'].items(), key=lambda x:x[1], reverse=True) # Re-Sorted list of top scores
-            conn.SendTML('<WINDOW top=3 bottom=24><CLR><WINDOW>')
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
         else:
             break
 
@@ -142,16 +160,18 @@ def mindle(conn:Connection, xword: str, valid):
     scores = [500,400,200,100,50,25,0]
     #_LOG('Mindle - word to guess: '+xword,id=conn.id, v=4)
 
+    scwidth, scheight = conn.encoder.txt_geo
+
     wlen = len(xword)  # Word lenght
-    offset = (38-(wlen+2))//2
+    offset = ((scwidth-2)-(wlen+2))//2
     if wlen == 6:
         offset -= 1 # Center playfield
 
     # Draw playfield
-    conn.SendTML(f'<AT x={offset} y=5><CURSOR enable=False><LTBLUE><CHR c=176>')   # <HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=174><BR>')
+    conn.SendTML(f'<AT x={offset} y=5><CURSOR enable=False><LTBLUE><UL-CORNER>')   # <HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=174><BR>')
     for j in range(wlen-1):
-        conn.SendTML('<HLINE><CHR c=178>')
-    conn.SendTML('<HLINE><CHR c=174><BR>')
+        conn.SendTML('<HLINE><H-DOWN>')
+    conn.SendTML('<HLINE><UR-CORNER><BR>')
     for i in range(6):
         conn.SendTML(f'<CRSRR n={offset}><VLINE>') # <VLINE> <VLINE> <VLINE> <VLINE> <VLINE><BR>')
         for j in range(wlen):
@@ -159,16 +179,17 @@ def mindle(conn:Connection, xword: str, valid):
         conn.SendTML('<BR>')
         if i == 5:
             break
-        conn.SendTML(f'<CRSRR n={offset}><CHR c=171>') # <HLINE><CROSS><HLINE><CROSS><HLINE><CROSS><HLINE><CROSS><HLINE><CHR c=179><BR>')
+        conn.SendTML(f'<CRSRR n={offset}><V-RIGHT>') # <HLINE><CROSS><HLINE><CROSS><HLINE><CROSS><HLINE><CROSS><HLINE><CHR c=179><BR>')
         for j in range(wlen-1):
             conn.SendTML('<HLINE><CROSS>')
-        conn.SendTML('<HLINE><CHR c=179><BR>')
-    conn.SendTML(f'<CRSRR n={offset}><CHR c=173>') # <HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=189>')
+        conn.SendTML('<HLINE><V-LEFT><BR>')
+    conn.SendTML(f'<CRSRR n={offset}><LL-CORNER>') # <HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=189>')
     for j in range(wlen-1):
-        conn.SendTML('<HLINE><CHR c=177>')
-    conn.SendTML('<HLINE><CHR c=189><BR>')
+        conn.SendTML('<HLINE><H-UP>')
+    conn.SendTML('<HLINE><LR-CORNER><BR>')
 
-    conn.SendTML(f'<AT x=7 y=23><GREY3>{string.ascii_uppercase}<BR><RVSON><LARROW>Exit<RVSOFF>')
+    abcoffset = (scwidth-len(string.ascii_uppercase))/2
+    conn.SendTML(f'<AT x={abcoffset} y={scheight-2}><GREY3>{string.ascii_uppercase}<BR><RVSON><BACK>Exit<RVSOFF>')
 
     bulls = []
     cows = []
@@ -181,40 +202,40 @@ def mindle(conn:Connection, xword: str, valid):
         guess = ''
         line = 6+(t*2)
         column = offset+1
-        conn.SendTML(f'<AT x={column} y={line}><GREY3>')
+        conn.SendTML(f'<AT x={column} y={line}>{"<GREY3>" if "PET" in conn.mode else "<PURPLE>"}')
         while conn.connected:   # Receive guess word
-            keys = bytes(conn.encoder.bs + conn.encoder.nl,'ascii')+b'_'
+            keys = conn.encoder.bs + conn.encoder.nl + conn.encoder.back
             if len(guess) < wlen:
-                keys += bytes(string.ascii_letters,'ascii')
+                keys += string.ascii_letters
             rec = conn.ReceiveKey(keys)
-            if rec == b'_': # Quit game
+            if rec == conn.encoder.back: # Quit game
                 return -1*(t+1)
-            if (len(guess) == wlen) and (rec == bytes(conn.encoder.nl,'ascii')):   # A 5 letter word has been received and return/enter pressed
+            if (len(guess) == wlen) and (rec == conn.encoder.nl):   # A word has been received and return/enter pressed
                 break
-            elif (len(guess) != 0) and (rec == bytes(conn.encoder.bs,'ascii')): # Backspace/delete
+            elif (len(guess) != 0) and (rec == conn.encoder.bs): # Backspace/delete
                 conn.SendTML('<CRSRL n=2> <CRSRL>')
                 guess = guess[:-1]
-            elif chr(rec[0]) in string.ascii_letters:
-                conn.SendTML(f'{chr(rec[0]).upper()}<CRSRR>')
-                guess += chr(rec[0])
+            elif rec in string.ascii_letters:
+                conn.SendTML(f'{rec.upper()}<CRSRR>')
+                guess += rec
         conn.SendTML('<BR>')
         guess = guess.lower()
         if guess not in valid:
-            conn.SendTML('<AT x=6 y=19><GREY2>NOT A VALID WORD, try again...<BR><PAUSE n=2>')
+            conn.SendTML(f'<AT x={(scwidth-30)//2} y=19><GREY2>NOT A VALID WORD, try again...<BR><PAUSE n=2>')
             conn.SendTML('<LFILL code=32 row=19>')
             conn.SendTML(f'<AT x={column} y={line}>') # <CRSRR> <CRSRR> <CRSRR> <CRSRR> ')
             for i in range(wlen):
                 conn.SendTML(' <CRSRR>')
             continue
         if guess == xword:
-            conn.SendTML(f'<AT x={column} y={line}><LTGREEN>')
+            conn.SendTML(f'<NULL><AT x={column} y={line}><LTGREEN>')
             for c in xword:
                 conn.SendTML(f'{c.upper()}<CRSRR>')
-            conn.SendTML(f'<AT x=11 y=19><WHITE><FLASHON>CONGRATULATIONS !!!<FLASHOFF>')
+            conn.SendTML(f'<AT x={(scwidth-19)//2} y=19><WHITE><FLASHON>CONGRATULATIONS !!!<FLASHOFF>')
             break
         else:
             out = ''
-            conn.SendTML(f'<AT x={column} y={line}>')
+            conn.SendTML(f'<NULL><AT x={column} y={line}>')
             # xtemp = xword
             chars = {}
             for g,x in zip(guess,xword):
@@ -262,15 +283,15 @@ def mindle(conn:Connection, xword: str, valid):
             bad.sort()
             conn.SendTML('<BLACK>')
             for c in bad:
-                conn.SendTML(f'<AT x={7+string.ascii_lowercase.index(c)} y=23>{c.upper()}')
+                conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
             conn.SendTML('<GREEN>')
             for c in bulls:
-                conn.SendTML(f'<AT x={7+string.ascii_lowercase.index(c)} y=23>{c.upper()}')
+                conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
             conn.SendTML('<YELLOW>')
             for c in cows:
-                conn.SendTML(f'<AT x={7+string.ascii_lowercase.index(c)} y=23>{c.upper()}')
+                conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
         t += 1
     if t == 6:
-        conn.SendTML('<AT x=6 y=19><GREY2>Better luck next time...<BR><PAUSE n=5>')
+        conn.SendTML(f'<AT x={(scwidth-24)//2} y=19><GREY2>Better luck next time...<BR>')
     conn.SendTML('<CURSOR>')
     return(scores[t])

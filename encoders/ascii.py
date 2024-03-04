@@ -50,7 +50,7 @@ def _Register():
     e0.encode = lambda t:t.encode('cp437').decode('latin1')	#	Function to encode from Unicode to CP437
     e0.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
     e0.non_printable = NONPRINTABLE	#	List of non printable characters
-    e0.nl	= '\r\n'			#	New line string/character
+    e0.nl	= '\r'			#	New line string/character
     e0.bs = chr(DELETE)	    #	Backspace string/character
     e0.tml_mono  = t_mono
     e0.tml_multi = t_multi

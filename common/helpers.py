@@ -28,7 +28,7 @@ font_big = ImageFont.truetype("common/karen2blackint.ttf", 24)
 font_text = ImageFont.truetype("common/BetterPixels.ttf",16)
 
 # Valid keys for menu entries
-valid_keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\*;/'
+valid_keys = 'abcdefghijklmnopqrstuvwxyz1234567890\\*;/'
 
 # Date format strings
 date_strings = [["%d/%m/%Y","dd/mm/yyyy"],["%m/%d/%Y","mm/dd/yyyy"],["%Y/%m/%d","yyyy/mm/dd"]]
@@ -55,7 +55,7 @@ def MenuBack(conn:Connection):
     conn.MenuParameters = {}
 
 #########################################################################
-#Format text to X columns with wordwrapping, PETSCII conversion optional
+# Format text to X columns with wordwrapping
 # Returns a list of text lines
 # New in v0.5:	No encoding conversion is ever performed
 #########################################################################
@@ -84,6 +84,7 @@ def More(conn:Connection, text, lines, colors=None):
         colors = conn.style
     conn.SendTML(f'<INK c={colors.TxtColor}>')
     ckeys = conn.encoder.ctrlkeys
+    scwidth,scheight = conn.encoder.txt_geo
     if isinstance(text, list):
         l = 0
         tcolor = colors.TxtColor
@@ -93,7 +94,7 @@ def More(conn:Connection, text, lines, colors=None):
             tcolor = conn.parser.color
             l+=1
             if l==(lines-1):
-                k= conn.SendTML(f'''<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN or <LARROW><INK c={colors.PbColor}>]
+                k= conn.SendTML(f'''<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN or <BACK><INK c={colors.PbColor}>]
 <INKEYS k="&#13;_" _R=_S><IF c="_S=='&#13;'"><DEL n=13><INK c={tcolor}></IF>''')
                 if conn.connected == False:
                     return(-1)
@@ -137,16 +138,16 @@ def More(conn:Connection, text, lines, colors=None):
                 rvs = '<RVSON>'
             elif char == chr(ckeys['RVSOFF']):
                 rvs = ''
-            elif char == chr(ckeys['LOWER']):
+            elif char == chr(ckeys.get('LOWER',0)):
                 prompt = 'RETURN'
-            elif char == chr(ckeys['UPPER']):
+            elif char == chr(ckeys.get('UPPER',0)):
                 prompt = 'return'
-            if cc == 40:
+            if cc == scwidth:
                 cc = 0
                 ll += 1
             elif cc < 0:
                 if ll!=lines*page:
-                    cc = 39
+                    cc = scheight-1
                     ll -= 1
                 else:
                     cc = 0
@@ -155,10 +156,10 @@ def More(conn:Connection, text, lines, colors=None):
             elif ll >= (lines*page)+(lines-1):
                 if cc !=0:
                     conn.Sendall('\r')
-                conn.SendTML(KeyPrompt(conn,prompt+' OR <LARROW>',TML=True))
+                conn.SendTML(KeyPrompt(conn,prompt+' OR <BACK>',TML=True))
                 k = conn.ReceiveKey(b'\r_')
                 if (conn.connected == False) or (k == b'_'):
-                    conn.Sendall(TT.set_Window(0,24))
+                    conn.Sendall(TT.set_Window(0,scheight-1))
                     return -1
                 conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}><AT x={cc} y={(22-lines)+ll-(lines*page)}>')
                 page += 1
@@ -224,7 +225,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     while conn.connected:
         k = conn.ReceiveKey(b'_'+keys+ekeys)
         if k == b'_':
-            ret = k.decode("ascii")
+            ret = k.decode("latin1")
             break
         elif (k[0] == ckeys['CRSRU']) and (tline > 0):	#Scroll up
             tline -= 1
@@ -241,7 +242,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 tcolor = lcols[bline-1]
             else:
                 tcolor = colors.TxtColor
-            conn.Sendall(TT.scroll(1))
+            conn.Sendall(TT.scroll(1)+chr(0))
             if ldir:
                 conn.SendTML(f'<AT x=0 y={lcount-1}><INK c={tcolor}>{text[bline]}')
                 lcols[bline] = conn.parser.color
@@ -270,8 +271,8 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
 #############################################################
 # Crop text to the desired length, adding ellipsis if needed
 #############################################################
-def crop(text, length):
-    return text[:length-3] + '...' if len(text) > length else text
+def crop(text, length, ellipsis='...'):
+    return text[:length-len(ellipsis)] + ellipsis if len(text) > length else text
 
 ##################################################################
 # Crop text to the desired pixel width, adding ellipsis if needed

@@ -120,7 +120,7 @@ def plugFunction(conn:connection.Connection,url):
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'
-    conn.SendTML('<PAUSE n=1><CBM-B><CRSRL>')
+    conn.SendTML('<PAUSE n=1><SPINNER><CRSRL>')
 
     #Streaming mode
     binario = b'\xFF\x83'
@@ -155,7 +155,7 @@ def plugFunction(conn:connection.Connection,url):
                         sURL = None
                     if sURL != None:
                         _LOG("WebAudio - Now streaming from "+source, id=conn.id,v=3)
-                        sTitle = formatX(source+' Stream')
+                        sTitle = formatX(source+' Stream',conn.encoder.txt_geo[0])
                         break
             except:
                 sURL = None
@@ -172,7 +172,7 @@ def plugFunction(conn:connection.Connection,url):
             sURL = url
             _LOG("WebAudio - Now streaming from Icecast/Shoutcast: "+req_data.getheader('icy-name'),id=conn.id,v=3)
             #logo = 'plugins/shoutlogo.png'
-            sTitle = formatX('Shoutcast Stream: '+req_data.getheader('icy-name'))
+            sTitle = formatX('Shoutcast Stream: '+req_data.getheader('icy-name'),conn.encoder.txt_geo[0])
         except:
             _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
             return
@@ -187,7 +187,7 @@ def plugFunction(conn:connection.Connection,url):
     if conn.ReceiveKey(b'\rX') == b'X':
         return
 
-    conn.SendTML('<CBM-B><CRSRL>')
+    conn.SendTML('<SPINNER><CRSRL>')
 
     #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
     pcm_stream = AA.PcmStream(sURL,conn.samplerate)

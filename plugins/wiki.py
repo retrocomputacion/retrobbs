@@ -12,6 +12,7 @@ import string
 from io import BytesIO
 from PIL import Image
 from bs4 import BeautifulSoup
+from unicodedata import normalize
 import requests
 import sys, os
 
@@ -29,122 +30,137 @@ def setup():
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
-        conn.SendTML('<WINDOW top=0 bottom=24><CLR><BLACK>Wikipedia, the free Enciclopedia<BR>')
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR><BLACK>Wikipedia, the free Enciclopedia<BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-            conn.SendTML('<GREY1><LFILL row=1 code=64>')
+            conn.SendTML(f'{TxTtag}<LFILL row=1 code={hcode}>')
         else:
-            conn.SendTML('<GREY1><HLINE n=40>')
-        conn.Sendall(TT.set_Window(2,24))	#Set Text Window
+            conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
+        conn.Sendall(TT.set_Window(2,scheight-1))	#Set Text Window
+
+    scwidth,scheight = conn.encoder.txt_geo
+    if 'MSX' in conn.mode:
+        hcode = 0x17
+        bcode = 0x20
+    else:
+        hcode = 0x40
+        bcode = 0xA0
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
     ecolors = conn.encoder.colors
     wcolors = bbsstyle(ecolors)
-    wcolors.TxtColor = ecolors['DARK_GREY']
+    wcolors.TxtColor = ecolors['DARK_GREY'] if 'PET' in conn.mode else ecolors['BLUE']
+    TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
     wcolors.PbColor = ecolors['BLACK']
     wcolors.PtColor = ecolors['BLUE']
     wikipedia.set_lang(conn.bbs.lang)
     wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
-    conn.Sendall(TT.to_Text(0,ecolors['LIGHT_GREY'],ecolors['LIGHT_GREY']))
+    sccolors = 'WHITE' if 'MSX' in conn.mode else 'LIGHT_GREY'
+    conn.Sendall(TT.to_Text(0,ecolors[sccolors],ecolors[sccolors]))
     loop = True
     while loop == True:
         WikiTitle(conn)
-        conn.SendTML('<BR>Search: <BR>(<LARROW> to exit)<CRSRU><CRSRL n=3>')
+        conn.SendTML('<BR>Search: <BR>(<BACK> to exit)<CRSRU><CRSRL n=3>')
         keys = string.ascii_letters + string.digits + ' +-_,.$%&'
+        if conn.encoder.back not in keys:
+            keys += conn.encoder.back
         termino = ''
         #Receive search term
         while termino == '':
             termino = conn.ReceiveStr(bytes(keys,'ascii'), 30, False)
             if conn.connected == False :
                 return()
-            if termino == '_':
-                conn.Sendall(TT.set_Window(0,25))
+            if termino == conn.encoder.back:
+                conn.Sendall(TT.set_Window(0,scheight))
                 return()
-        conn.SendTML('<CBM-B><CRSRL>')
-        results = wikipedia.search(termino, results = 15)
-        conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the COMM_B wait character
+        conn.SendTML('<SPINNER><CRSRL>')
+        results = wikipedia.search(termino, results = scheight-10)
+        conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the SPINNER wait character
         i = 0
         options = ''
         for r in results:
-            res = crop(r,36)
-            conn.SendTML(f'<BLACK>[<BLUE>{string.ascii_lowercase[i]}<BLACK>]<GREY1>{res}<BR>')
-            options += string.ascii_uppercase[i]
+            res = crop(r,scwidth-4,conn.encoder.ellipsis)
+            conn.SendTML(f'<BLACK>[<BLUE>{string.ascii_lowercase[i]}<BLACK>]{TxTtag}{res}<BR>')
+            options += string.ascii_lowercase[i]
             i += 1
-        conn.SendTML('<BLACK>[<BLUE><LARROW><BLACK>]<GREY1>Previous menu<BR><BR>Please select:')
-        options += '_\r'
-        sel = conn.ReceiveKey(bytes(options, 'ascii'))
-        if sel == b'_':
+        conn.SendTML(f'<BLACK>[<BLUE><BACK><BLACK>]{TxTtag}Previous menu<BR><BR>Please select:')
+        options += conn.encoder.back+conn.encoder.nl
+        sel = conn.ReceiveKey(options)
+        if sel == conn.encoder.back:
             loop = False
-        elif sel != b'\r':
-            conn.Sendallbin(sel)
-            conn.SendTML('<CBM-B><CRSRL>')
-            i = options.index(sel.decode())
+        elif sel != conn.encoder.nl:
+            conn.Sendall(sel)
+            conn.SendTML('<SPINNER><CRSRL>')
+            i = options.index(sel)
             page = wiki.page(results[i])#wikipedia.page(results[i])
             try:
                 resp = requests.get(page.fullurl)
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.content, "html.parser")
-                    try:
-                        im_p = soup.find(['table','td','div'],{'class':['infobox','infobox-image', 'infobox-full-data','sidebar-image','thumbinner']}).find('img')
-                        if im_p != None:
-                            src = im_p['src']
-                            if src.startswith('//'):
-                                src = 'https:'+src
-                            _LOG(f'Wikipedia: attempting to load image: {src}',id=conn.id, v=4)
-                            scrap_im = requests.get(src, allow_redirects=True, headers = hdrs)
-                            w_image = Image.open(BytesIO(scrap_im.content))
-                            if w_image.mode == 'P':	#Check if indexed mode with transparency
-                                if w_image.info.get("transparency",-1) != -1:
+                    if conn.QueryFeature(TT.PRADDR) < 0x80:
+                        try:
+                            im_p = soup.find(['table','td','div'],{'class':['infobox','infobox-image', 'infobox-full-data','sidebar-image','thumbinner']}).find('img')
+                            if im_p != None:
+                                src = im_p['src']
+                                if src.startswith('//'):
+                                    src = 'https:'+src
+                                _LOG(f'Wikipedia: attempting to load image: {src}',id=conn.id, v=4)
+                                scrap_im = requests.get(src, allow_redirects=True, headers = hdrs)
+                                w_image = Image.open(BytesIO(scrap_im.content))
+                                if w_image.mode == 'P':	#Check if indexed mode with transparency
+                                    if w_image.info.get("transparency",-1) != -1:
+                                        w_image = w_image.convert('RGBA')
+                                if w_image.mode == 'LA': #Grayscale + alpha
                                     w_image = w_image.convert('RGBA')
-                            if w_image.mode == 'LA': #Grayscale + alpha
-                                w_image = w_image.convert('RGBA')
-                            if w_image.mode == 'RGBA':	#Possible SVG/logo, fill white
-                                if (w_image.size[0]/w_image.size[1]) > (4/3):
-                                    timg = Image.new("RGBA", (w_image.size[0],w_image.size[0]*3//4),"WHITE")
-                                elif (w_image.size[0]/w_image.size[1]) < (4/3):
-                                    timg = Image.new("RGBA", (w_image.size[1]*4//3,w_image.size[1]),"WHITE")
-                                else:
-                                    timg = Image.new("RGBA", w_image.size, "WHITE")
-                                timg.paste(w_image,((timg.size[0]-w_image.size[0])//2,(timg.size[1]-w_image.size[1])//2),w_image)
-                                w_image = timg
-                            FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
-                            conn.ReceiveKey()
-                            conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["LIGHT_GREY"]} background={ecolors["LIGHT_GREY"]}>')
-                    except Exception as e:
-                        exc_type, exc_obj, exc_tb = sys.exc_info()
-                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                        _LOG(e,id=conn.id,v=1)
-                        _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
+                                if w_image.mode == 'RGBA':	#Possible SVG/logo, fill white
+                                    if (w_image.size[0]/w_image.size[1]) > (4/3):
+                                        timg = Image.new("RGBA", (w_image.size[0],w_image.size[0]*3//4),"WHITE")
+                                    elif (w_image.size[0]/w_image.size[1]) < (4/3):
+                                        timg = Image.new("RGBA", (w_image.size[1]*4//3,w_image.size[1]),"WHITE")
+                                    else:
+                                        timg = Image.new("RGBA", w_image.size, "WHITE")
+                                    timg.paste(w_image,((timg.size[0]-w_image.size[0])//2,(timg.size[1]-w_image.size[1])//2),w_image)
+                                    w_image = timg
+                                FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
+                                conn.ReceiveKey()
+                                conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors[sccolors]} background={ecolors[sccolors]}>')
+                        except Exception as e:
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                            _LOG(e,id=conn.id,v=1)
+                            _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
                     WikiTitle(conn)
-                tt = formatX(page.title)
+                tt = formatX(normalize('NFKC',page.title),scwidth)
                 tt[0] = '<CLR><BLACK>'+tt[0]
-                tt.append('<GREY1><HLINE n=40>')
-                tt += WikiParseParas(page.summary)	#<+
+                tt.append(f'{TxTtag}<HLINE n={scwidth}>')
+                tt += WikiParseParas(page.summary,scwidth,0,TxTtag)	#<+
                 tt.append('<BR>')
                 tt += WikiSection(conn, page.sections,0)
                 if conn.QueryFeature(TT.SCROLL) < 0x80:
-                    conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [crsr/F1/F3] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
+                    conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [crsr/F1/F3] scroll  [<BACK>] exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
                 else:
-                    conn.SendTML('<WINDOW top=24 bottom=25><RVSON><BLUE><LFILL row=24 code=160> [F1/F3] to scroll  [<LARROW>] to exit<RVSOFF><WINDOW top=2 bottom=23>')
-                text_displayer(conn,tt,22,wcolors)
+                    conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [F1/F3] to scroll  [<BACK>] to exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+                text_displayer(conn,tt,scheight-3,wcolors)
             except Exception as e:
                 conn.SendTML('<RED><BR>ERROR!<PAUSE n=2>')
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 _LOG(e,id=conn.id,v=1)
                 _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
-    conn.Sendall(TT.set_Window(0,24))	#Set Text Window
+    conn.Sendall(TT.set_Window(0,scheight-1))	#Set Text Window
 
 ##################################################################
 # Parse a wiki article sections
 ##################################################################
 def WikiSection(conn:Connection, sections, level = 0, lines = 0):
     tt = []
+    scwidth = conn.encoder.txt_geo[0]
+    TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
     for s in sections:
         title = ('-'*level)+WikiParseTitles(s.title)
-        ts = formatX(title)
+        ts = formatX(normalize('NFKC',title),scwidth)
         ts[0] = '<BLACK>'+ts[0]
         tt += ts
-        tt.append('<HLINE n=40><GREY1>')
-        tt += WikiParseParas(s.text)	#<+
+        tt.append(f'<HLINE n={scwidth}>{TxTtag}')
+        tt += WikiParseParas(s.text,scwidth,0,TxTtag)	#<+
         tt.append('<BR>')
         tt += WikiSection(conn, s.sections, level + 1, lines)
     return(tt) #lines
@@ -154,7 +170,7 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0):
 # replace <p> and <br>with new lines
 # based on: https://stackoverflow.com/questions/10491223/how-can-i-turn-br-and-p-into-line-breaks
 ##################################################################################################
-def WikiParseParas(text, level = 0):
+def WikiParseParas(text, width = 40, level = 0,TxTtag='<GREY1>'):
     def replace_with_newlines(element):
         text = ''
         for elem in element.recursiveChildGenerator():
@@ -163,8 +179,9 @@ def WikiParseParas(text, level = 0):
             elif elem.name == 'br':
                 text += '\n'
             elif elem.name == 'li':
-                text += '*'+elem.get_text()+'\n'
-        return formatX(text)
+                text += '\u2022'+elem.get_text()+'\n'
+        return formatX(normalize('NFKC',text),width)
+    
     if isinstance(text,str):
         soup = BeautifulSoup(text, "html.parser")
     else:
@@ -177,23 +194,42 @@ def WikiParseParas(text, level = 0):
         elif elem.name == 'ul':
             for item in elem.find_all('li',recursive=False):
                 key = next(item.stripped_strings,'')
-                k = formatX(key,38-level)
-                k[0] =f'<SPC n={level}><BLACK>* <GREY1>'+k[0]
+                k = formatX(normalize('NFKC',key),width-2-level)
+                k[0] =f'<SPC n={level}><BLACK>\u2022 {TxTtag}'+k[0]
+                for i in range(1,len(k)):
+                    k[i] = f'<SPC n={level+2}>'+k[i]
                 plain_text += k
                 nitem = item.find(['p','ul','ol'])
                 if nitem:
-                    plain_text += WikiParseParas(item,level=level+1)+['<BR>']
+                    plain_text += WikiParseParas(item,width,level+1,TxTtag)+['<BR>']
         elif elem.name == 'ol':
             for i,item in enumerate(elem.find_all('li',recursive=False)):
                 key = next(item.stripped_strings,'')
-                k = formatX(key,38-level-len(str(i)))
-                k[0] = f'<SPC n=level><BLACK>{i}. <GREY1>{k[0]}'
+                k = formatX(normalize('NFKC',key),width-2-level-len(str(i)))
+                k[0] = f'<SPC n=level><BLACK>{i}. {TxTtag}{k[0]}'
+                for i in range(1,len(k)):
+                    k[i] = f'<SPC n={level+2}>'+k[i]
                 plain_text += k
                 nitem = item.find(['p','ul','ol'])
                 if nitem:
-                    plain_text += WikiParseParas(item,level=level+1)+'\r'				
+                    plain_text += WikiParseParas(item,width,level+1,TxTtag)+'\r'		
+        elif elem.name == 'dl':
+            for item in elem.find_all('dd',recursive=False):
+                key = next(item.stripped_strings,'')
+                k = formatX(normalize('NFKC',key),width-level-1)
+                k[0] =f'<SPC n={level+1}>{TxTtag}'+k[0]
+                for i in range(1,len(k)):
+                    k[i] = f'<SPC n={level+1}>'+k[i]
+                plain_text += k
+                nitem = item.find(['p','ul','ol'])
+                if nitem:
+                    plain_text += WikiParseParas(item,width,level+1,TxTtag)+['<BR>']
+        elif elem.name == 'blockquote':
+            nitem = elem.find(['p','ul','ol'])
+            if nitem:
+                plain_text += ['<BR>']+WikiParseParas(elem,width,level+1,TxTtag)+['<BR>']
     if plain_text == []:
-        plain_text == formatX(soup.get_text())
+        plain_text == formatX(normalize('NFKC',soup.get_text()),width)
     return(plain_text)
 
 ############################
