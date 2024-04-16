@@ -10,11 +10,22 @@ import re
 from multiprocessing import Queue   #was from queue
 import threading
 import asyncio
+import requests
+import validators
+from PIL import Image, ImageDraw
+from io import BytesIO
+from html import unescape, escape
 
 from common.bbsdebug import _LOG,bcolors
 from common import connection
 from common.helpers import formatX
+from common import helpers as H
 from common import audio as AA
+from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
+from common.filetools import SendBitmap
+
+### User Agent string used for some stingy content sources
+hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
 
 
 # This class left unused until a blocking problem somewhere can be resolved
@@ -78,7 +89,7 @@ class AudioStreams:
                 # for id in S[url][1]:    #Iterate thru Queues
                 #     S[url][1][id].put(data, False)        #Push data into the Queue
             # await asyncio.gather(*tasks)
-            print('---')
+            # print('---')
 
         l = asyncio.new_event_loop()
 
@@ -109,14 +120,14 @@ AStreams = AudioStreams()
 def setup():
     global slsession
     fname = "WEBAUDIO" #UPPERCASE function name for config.ini
-    parpairs = [('url',"http://relay4.slayradio.org:8000/")] #config.ini Parameter pairs (name,defaultvalue)
+    parpairs = [('url',"http://relay4.slayradio.org:8000/"),('image','')] #config.ini Parameter pairs (name,defaultvalue)
     slsession = streamlink.Streamlink()
     return(fname,parpairs)
 
 ##################################################
 # Plugin function
 ##################################################
-def plugFunction(conn:connection.Connection,url):
+def plugFunction(conn:connection.Connection,url,image):
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'
@@ -177,12 +188,59 @@ def plugFunction(conn:connection.Connection,url):
             _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
             return
 
+    #try to open image if any
+    img = None
+    if image != '':
+        im = None
+        if validators.url(image):
+            try:
+                data = requests.get(image, allow_redirects=True, headers=hdrs)
+                im = Image.open(BytesIO(data.content))
+            except:
+                pass
+        else:
+            try:
+                im = Image.open(image)
+            except:
+                pass
+        if im != None:
+            im.thumbnail((128,128))
+            # im.show()
+            if conn.mode == "PET64":
+                gm = gfxmodes.C64HI
+            elif conn.mode == "PET264":
+                gm = gfxmodes.P4HI
+            else:
+                gm = conn.encoder.def_gfxmode
+            img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
     #Display info
-    conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR><YELLOW>')
-    for l in sTitle:
-        conn.SendTML(l)
-    conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>'
-                 f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
+    if img != None:
+        c_black = (0,0,0)
+        c_white = (0xff,0xff,0xff)
+        c_yellow = (0xff,0xff,0x55)
+        c_pink = (0xdd,0x66,0x66)
+        pwidth = img[0].size[0]
+        pheight = img[0].size[1]
+        draw = ImageDraw.Draw(img[0])
+        # Fill unused space with black
+        draw.rectangle([0,0,128,(pheight-128)//2],fill = c_black)
+        draw.rectangle([0,((pheight-128)//2)+128,128,pheight],fill = c_black)
+        draw.rectangle([128,0,pwidth,pheight],fill = c_black)
+        y = 2
+        for l in sTitle:
+            l = unescape(l.replace('<BR>',''))
+            draw.text((160,y),H.gfxcrop(l,pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
+            y += 16
+        draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
+        draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
+        draw.text((136,168),"or cancel",c_pink,font=H.font_text)
+        SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
+    else:
+        conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR><YELLOW>')
+        for l in sTitle:
+            conn.SendTML(l)
+        conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>'
+                    f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
 
     if conn.ReceiveKey(b'\rX') == b'X':
         return

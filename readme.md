@@ -225,23 +225,24 @@ Python version 3.7 or above
 Python modules:
 
   * audioread
-  * soundfile
+  * beautifulsoup4
+  * crc
+  * feedparser (For the RSS feeds plug-in)
+  * geopy (For the weather plugin)
+  * hitherdither (https://www.github.com/hbldh/hitherdither)
+  * irc (For IRC client plug-in)
+  * lhafile (For .YM and .VTX file support)
   * mutagen
   * numpy
   * opencv-python
   * ~~pafy (For the YouTube plug-in) (use this version: https://github.com/Cupcakus/pafy)~~
-  * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
-  * wikipedia and wikipedia-api (For the Wikipedia plug-in)
-  * hitherdither (https://www.github.com/hbldh/hitherdither)
-  * beautifulsoup4
-  * feedparser (For the RSS feeds plug-in)
-  * irc (For IRC client plug-in)
-  * tinydb
-  * geopy (For the weather plugin)
   * python_weather (For the weather plugin)
-  * crc
-  * lhafile (For .YM and .VTX file support)
+  * pyradios (For *Radio* plugin)
   * scikit-image
+  * soundfile
+  * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
+  * tinydb
+  * wikipedia and wikipedia-api (For the Wikipedia plug-in)
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
@@ -583,6 +584,10 @@ Retrieves the latest ten entries from the specified RSS feed, upon user selectio
 - Configuration file parameters: `entryZurl` = URL to the RSS feed
 - Configuration file \[PLUGINS\] options: NONE
 
+### Search Internet Radios (radio.py):
+By __Emanuele Laface__</br>
+Uses Radio-browser.info API to search for and listen to internet radios.
+
 ### Weather (weather.py) (new 0.25):
 Displays current weather and forecast for the next 2-3 days as a Hires image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
 
@@ -599,7 +604,13 @@ Displays current weather and forecast for the next 2-3 days as a Hires image. On
  *YouTube* or other sources).
 
 - Configuration file function: WEBAUDIO
-- Configuration file parameters: `entryZurl` = full URL to the audio stream
+- Configuration file parameters:
+
+| key | description
+|:---:|:---
+| `entryZurl` | full URL to the audio stream
+| `entryZimage` | Image to show before starting the stream, can be a local path or URL to an external file
+
 - Configuration file \[PLUGINS\] options: NONE
 
 ### Wikipedia (wiki.py):
@@ -1240,6 +1251,8 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Gabriel Garcia
   * Roberto Mandracchia
   * ChrisKewl - [twitter.com/chriskewltv](http://twitter.com/chriskewltv)
+
+Also many thanks to __Emanuele Laface__ for the *Radio* plugin.
 
 ## External software, support files
 

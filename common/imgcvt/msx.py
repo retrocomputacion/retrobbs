@@ -30,7 +30,7 @@ Palette_MSX1 = [{'color':'Transparent','RGBA':[0x00,0x00,0x00,0x00],'enabled':Fa
     {'color':'Magenta','RGBA':[0xaf,0x32,0x9a,0xff],'enabled':True,'index':13},{'color':'Gray','RGBA':[0xb2,0xb2,0xb2,0xff],'enabled':True,'index':14},
     {'color':'White','RGBA':[0xff,0xff,0xff,0xff],'enabled':True,'index':15}]
 
-MSXPalettes = [['Wratt',Palette_MSX0],['Gamma Corrected',Palette_MSX1]]
+MSXPalettes = [['Gamma Corrected',Palette_MSX1],['Wratt',Palette_MSX0]]
 
 Native_Ext = ['.SC2']
 
@@ -65,14 +65,15 @@ def bmpacksc2(column,row,cell,buffers):
 
 def attrpack(column,row,attr,buffers):
     offset = (column*8)+(row//8)*256+(row&7)
-    buffers[1][offset]=attr[0]+(attr[1]*16) #HIRES
+    buffers[2][offset]=attr[0]+(attr[1]*16) #HIRES
 
 
 # Returns a list of lists
 def get_buffers():
     buffers=[]
     buffers.append([0]*6144)    # [0] Bitmap
-    buffers.append([0]*6144)    # [1] Colors
+    buffers.append([i for i in range(256)]*3) # [1] Name Table
+    buffers.append([0]*6144)    # [2] Colors
     return buffers
 
 def buildfile(buffers):
@@ -84,7 +85,7 @@ def buildfile(buffers):
     #Sprites+unused space
     t_data+=bytes(1280)
     #Colors
-    t_data += bytes(buffers[1])
+    t_data += bytes(buffers[2])
     return(t_data)
 #############################
 
@@ -104,7 +105,7 @@ def buildfile(buffers):
 # save_output: a list of lists in the format ['name','extension',save_function]
 
 GFX_MODES=[{'name':'MSX1 Screen 2','bpp':1,'attr':(8,1),'global_colors':(False,False),'palettes':MSXPalettes,
-            'global_names':[],
+            'global_names':[], 'match':Palette.colordelta.CCIR,
             'in_size':(256,192),'out_size':(256,192),'get_attr':msx_get2closest,'bm_pack': bmpacksc2,'attr_pack':attrpack,
             'get_buffers':get_buffers,'save_output':[['Screen 2','.sc2',lambda buf,c: buildfile(buf)]]}]
 
@@ -125,6 +126,8 @@ def load_Image(filename:str):
                 data[0] = ifile.read(6144)
                 # Nametable data
                 data[1] = ifile.read(768)
+                # Sprites/Unused data
+                tmp = ifile.read(1280)
                 # Color data
                 data[2] = ifile.read(6144)
                 text = 'MSX Screen 2'
@@ -144,16 +147,17 @@ def load_Image(filename:str):
     nimg = np.empty((192,256),dtype=np.uint8)
     for c in range(768):
         nt = data[1][c]+(256*(c//256))  # Get pattern nr. from nametable
-        cell = np.unpackbits(np.array(list(data[0][nt*8:(nt*8)+1]),dtype=np.uint8), axis=0)
-        fgbg = {0:data[2][nt*8]&15,1:data[2][nt*8]>>4}
-        ncell = np.copy(cell)
-        for k,v in fgbg.items():
-            ncell[cell==k] = v
-        sr = int(c/32)*8
-        er = sr+8
-        sc = (c*8)%256
-        ec = sc+8
-        nimg[sr:er,sc:ec] = ncell.reshape(1,8)
+        for y in range(8):
+            cell = np.unpackbits(np.array(list(data[0][(nt*8)+y:(nt*8)+y+1]),dtype=np.uint8), axis=0)
+            fgbg = {0:data[2][(nt*8)+y]&15,1:data[2][(nt*8)+y]>>4}
+            ncell = np.copy(cell)
+            for k,v in fgbg.items():
+                ncell[cell==k] = v
+            sr = (int(c/32)*8)+y
+            er = sr+1
+            sc = (c*8)%256
+            ec = sc+8
+            nimg[sr:er,sc:ec] = ncell.reshape(1,8)
     tmpI = Image.fromarray(nimg,mode='P')
     tmpI.putpalette(fsPal)
 

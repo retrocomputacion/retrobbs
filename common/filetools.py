@@ -9,7 +9,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File, im_extensions
+from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File, im_extensions, GFX_MODES
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -37,12 +37,18 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
             tml +='''<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; for multicolor conversion<BR>
 <RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
             keys += 'hm'
+            out = 1
+        else:
+            out = 0
+    elif 'MSX' not in conn.mode:
+        out = 1
+    else:
+        out = 0
     if save:
         tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
         keys += 's'
     tml += '<RVSON> &lt; RETURN &gt; to view image<BR><CURSOR enable=False>'
     conn.SendTML(tml)
-    out = 1
     while conn.connected:
         k = conn.ReceiveKey(keys)
         if k == 'h' and out == 1:
@@ -71,6 +77,8 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 # preproc: Preprocess image before converting
 ######################################################################################################################################################################################################################################
 def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:PreProcess = None, cropmode:cropmodes = cropmodes.FILL, dither:dithertype = dithertype.BAYER8):
+
+    lines = lines if lines < conn.encoder.txt_geo[1] else conn.encoder.txt_geo[1]
 
     if conn.QueryFeature(TT.PRADDR) >= 0x80:
         return False
@@ -107,7 +115,6 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         extension = os.path.splitext(filename)[1].upper()
         if extension not in ['.GIF','.PNG','.JPG','JPEG']:
             pimg = open_Image(filename)
-            print(pimg[1])
             if pimg == None:	#Invalid file, exit
                 return False
             elif pimg[1] not in conn.encoder.gfxmodes:	#Image from another platform, convert
@@ -161,8 +168,17 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         mode = ImageDialog(conn,text,save=save)
 
 
-    tchars = 40*lines
-    tbytes = 320*lines
+    alines = lines*(8//GFX_MODES[gfxmode]['attr'][1])   # <<<< This assumes a text line is 8 pixels tall
+
+    # Screen mem byte count (C64) / Color data byte count (Plus4) / NameTable byte count (MSX)
+    tchars = (GFX_MODES[gfxmode]['out_size'][0]//(8//GFX_MODES[gfxmode]['bpp']))*lines
+    # ColorRAM byte count (C64) / Luminance byte count (Plus4) / ColorTable byte count (MSX)
+    tcolor = (GFX_MODES[gfxmode]['out_size'][0]//GFX_MODES[gfxmode]['attr'][0])*alines
+    # Bitmap byte count
+    tbytes = GFX_MODES[gfxmode]['out_size'][0]*GFX_MODES[gfxmode]['bpp']*lines    # <<<< This assumes a text line is 8 pixels tall
+
+    # tchars = 40*lines
+    # tbytes = 320*lines
 
     if mode & 0x80 == 0:	# Transfer to memory
         # Sync
@@ -174,8 +190,13 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         # Transfer bitmap block + Byte count (low, high)
         binaryout += b'\x82'
         binaryout += tbytes.to_bytes(2,'little')	#Block size
+
+        if display:
+            conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
+        conn.Sendallbin(binaryout)
+
         # Bitmap data
-        binaryout += data[0][0:tbytes] #Bitmap
+        binaryout = data[0][0:tbytes] #Bitmap
         # Set the transfer pointer + $00 (screen memory)
         binaryout += b'\x81\x00'
         # Transfer screen block + Byte count (low, high)
@@ -186,13 +207,16 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         if border == None:
             border = b'\x00' if bgcolor == None else bgcolor
         border = bytes([border]) if type(border) == int else border
-        if (gfxmode == gfxmulti) or (conn.mode == 'PET264' and data[2] != None):
+        if (gfxmode == gfxmulti) or (conn.mode != 'PET64' and data[2] != None):
             # Set the transfer pointer + $20 (color memory)
-            binaryout += b'\x81\x20'
+            if 'MSX' in conn.mode:
+                binaryout += b'\x81\x21'
+            else:
+                binaryout += b'\x81\x20'
             # Transfer color block + Byte count (low, high)
             binaryout += b'\x82'	# Color data
-            binaryout += tchars.to_bytes(2,'little')	#Block size
-            binaryout += data[2][0:tchars] #ColorRAM
+            binaryout += tcolor.to_bytes(2,'little')	#Block size
+            binaryout += data[2][0:tcolor] #ColorRAM
         if bgcolor == None:
             bgcolor = bytes([gcolors[1]]) if gcolors[1] != None else b'\x00'
         if display:
@@ -209,8 +233,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                 binaryout += border
         # Exit command mode
         binaryout += b'\xFE'
-        if display:
-            conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
+        # if display:
+        #     conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
         conn.Sendallbin(binaryout)
         return bgcolor
     else:

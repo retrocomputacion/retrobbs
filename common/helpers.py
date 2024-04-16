@@ -183,7 +183,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     lcols = [colors.TxtColor]*len(text)
     tcolor = lcols[0]
 
-    ekeys = bytes(ekeys,'ascii')
+    ekeys = bytes(conn.encoder.encode(ekeys,False),'latin1')
     #Problematic TML tags
     rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
     #This connection ctrl keys

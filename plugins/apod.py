@@ -93,7 +93,7 @@ def plugFunction(conn:Connection):
             tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
             texto += at+tdesc
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
-            tecla = text_displayer(conn,texto,scheight-4,ekeys='V')
+            tecla = text_displayer(conn,texto,scheight-4,ekeys='v')
             conn.SendTML('<WINDOW>')
             if conn.connected == False:
                 return()
@@ -109,12 +109,12 @@ def plugFunction(conn:Connection):
                     _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id,v=2)
                     conn.SendTML("<BR>ERROR, unable to receive image")
 
-                tecla = conn.ReceiveKey(b'\r_')
+                tecla = conn.ReceiveKey('\r_')
                 conn.Sendall(TT.enable_CRSR())
                 if conn.connected == False:
                     _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id,v=1)
                     return()
-                if tecla == b'_' or tecla == b'':
+                if tecla == '_' or tecla == '':
                     loop = False
         else:
             conn.SendTML("<BR>ERROR, unable to connect with NASA")

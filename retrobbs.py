@@ -343,7 +343,8 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     conn.Sendall(TT.to_Speech() + speech)
     #time.sleep(1)
     # Select screen output
-    conn.SendTML('<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
+    print(conn.style.BgColor)
+    conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
     RenderMenuTitle(conn,title)
     # Send menu options
     files = []	#all files
@@ -419,7 +420,7 @@ def SendMenu(conn:Connection):
     # Get screen dimensions
     scwidth = conn.encoder.txt_geo[0]
     scheight = conn.encoder.txt_geo[1]
-    conn.SendTML('<SETOUTPUT><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
+    conn.SendTML(f'<SETOUTPUT><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
     tmenu = conn.bbs.MenuList[conn.menu]	#Change to simply tmenu = conn.MenuDefs
     _LOG("Sending menu: "+tmenu['title'],id=conn.id,v=4)
     RenderMenuTitle(conn,tmenu['title'])
@@ -556,7 +557,7 @@ def WaitRETURN(conn:Connection,timeout = 60.0):
     conn.socket.settimeout(_tout)
     if conn.connected == False:
         try:
-            conn.socket.sendall(b'tIMEOUT - dESCONECTADO ')
+            conn.socket.sendall(b'TIMEOUT - DISCONNECTED ')
         except socket.error:
             pass
     _LOG(bcolors.OKBLUE+str(tecla)+bcolors.ENDC,id=conn.id,v=4)
@@ -572,7 +573,7 @@ def WaitKey(conn:Connection):
     if tecla == b'':
         conn.connected = False
         try:
-            conn.socket.sendall(b'tIMEOUT - dESCONECTADO ')
+            conn.socket.sendall(b'TIMEOUT - DISCONNECTED ')
         except socket.error:
             pass
     conn.socket.settimeout(_tout)
@@ -637,7 +638,7 @@ def GetKeybindings(conn:Connection,id):
 ############################
 def Stats(conn:Connection):
     _LOG("Displaying stats",v=4,id=conn.id)
-    conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
+    conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
     RenderMenuTitle(conn,"BBS Stats")
     scwidth,scheight = conn.encoder.txt_geo
     conn.Sendall(TT.set_Window(3,scheight-1))
@@ -836,7 +837,7 @@ def EditUser(conn:Connection):
     scwidth = conn.encoder.txt_geo[0]
     if conn.userid == 0:
         return
-    conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
+    conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
     done = False
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
@@ -999,7 +1000,7 @@ def EditUser(conn:Connection):
 # Edit user preferences
 ###############################
 def EditPrefs(conn:Connection):
-    conn.Sendall(TT.split_Screen(0,False,0,0)) # Cancel any split screen/window
+    conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
     done = False
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
@@ -1029,7 +1030,6 @@ def EditPrefs(conn:Connection):
                     opdic[valid_keys[x]] = (ppf, i)
                     x += 1
                     st = not st
-                print(p)
 
         KeyLabel(conn,conn.encoder.back,'Exit',True)
         conn.SendTML('<BR><BR>')
@@ -1074,7 +1074,7 @@ def EditPrefs(conn:Connection):
                     options += valid_keys[x]
                 k = conn.ReceiveKey(options)
                 conn.bbs.database.updateUserPrefs(uentry.doc_id,{option['name']:ans[k]})
-                print(option['name'],ans[k])
+                # print(option['name'],ans[k])
             else:
                 #TODO: Implement string and integer preferences
                 ...
@@ -1097,7 +1097,7 @@ def UserList(conn:Connection):
                 conn.encoder.nl: (UserList,(conn,),"",0,False)
               }	
     # Select screen output
-    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="User list">')
+    conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t="User list">')
     users = conn.bbs.database.getUsers()
     digits = len(str(max(users[:])[0]))
     tml = '<WHITE> ID         Username<BR><BR><LTGREEN>'
@@ -1235,10 +1235,10 @@ RUNNING UNDER:<BR>
                         splash = 'splash.sc2'
                     bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
                     _LOG('Spliting Screen',id=conn.id,v=4)
-                    conn.Sendall(TT.split_Screen(12,False,ord(bg),0))
+                    conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
                 time.sleep(1)
                 Done = False
-                tml = '<NUL n=2><SPLIT><CLR>'
+                tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CLR>'
                 while True:
                     r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
                     if not conn.connected:
@@ -1288,7 +1288,8 @@ RUNNING UNDER:<BR>
                             if isinstance(res,dict):
                                 conn.MenuDefs = res
                             elif data!=conn.encoder.nl:
-                                if wait:
+                                # Only wait for RETURN if the function suceeded <<< ATTENTION: if the function returns 0 on success this check will fail
+                                if wait and (res != False):
                                     WaitRETURN(conn,60.0*5)
                                     conn.Sendall((chr(0)*2)+TT.enable_CRSR())	#Enable cursor blink just in case
                                 Function = conn.MenuDefs[conn.encoder.nl][0]

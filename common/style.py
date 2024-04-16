@@ -86,7 +86,13 @@ def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=No
 # Render 'file' dialog background
 #####################################################
 def RenderDialog(conn:Connection,height,title=None):
-    conn.SendTML('<CLR><GREY3><RVSON>')
+    if 'MSX' in conn.mode:
+        grey1 = '<GREY>'
+        grey3 = '<WHITE>'
+    else:
+        grey1 = '<GREY1>'
+        grey3 = '<GREY3>'
+    conn.SendTML(f'<CLR>{grey3}<RVSON>')
     scwidth = conn.encoder.txt_geo[0]
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
         if 'MSX' in conn.mode:
@@ -95,16 +101,19 @@ def RenderDialog(conn:Connection,height,title=None):
             cfill = 192
         conn.SendTML(f'<LFILL row=0 code={cfill}>')
         conn.Sendall(chr(TT.CMDON))
+        if 'MSX' in conn.mode:
+            cfill = 0x20
+        else:
+            cfill = 160
         for y in range(1,height):
-            conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(160))
+            conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(cfill))
         conn.Sendall(chr(TT.CMDOFF))
         if 'MSX' in conn.mode:
-            cfill = 0xdf
+            conn.SendTML(f'{grey1}<LFILL row={height} code={0xdc}>{grey3}')
         else:
-            cfill = 226
-        conn.SendTML(f'<GREY1><LFILL row={height} code={cfill}><GREY3>')
+            conn.SendTML(f'{grey1}<LFILL row={height} code={226}>{grey3}')        
     else:
-        conn.SendTML(f'<HLINE n={scwidth}><SPC n={scwidth*height-1}><GREY1><B-HALF n={scwidth}><HOME><GREY3>')
+        conn.SendTML(f'<HLINE n={scwidth}><SPC n={scwidth*height-1}>{grey1}<B-HALF n={scwidth}><HOME>{grey3}')
     if title != None:
         ctt = H.crop(title,scwidth-2,conn.encoder.ellipsis)
         conn.SendTML(f'<AT x={1+((scwidth-2)-len(ctt))/2} y=0>{ctt}<BR>')

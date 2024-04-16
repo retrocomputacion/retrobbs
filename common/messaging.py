@@ -217,7 +217,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             help_k = [ckeys['F1'],'F1']
             line_k = [ckeys['F5'],'F5']
             quit_k = [ckeys['F10'],'F10']
-        conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT><MTITLE t="Message Editor"><YELLOW>'
+        conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="Message Editor"><YELLOW>'
                      f'{f"<LFILL row={scheight-3} code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
                      f'<AT x=1 y={scheight-3}><RVSON>{help_k[1]} for help<RVSOFF>')
         dispMsg()
@@ -421,7 +421,7 @@ def inbox(conn:Connection, board):
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     ckeys = conn.encoder.ctrlkeys
     db:DBase = conn.bbs.database
-    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT>')
+    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
     query = {'msg_board':board,'msg_parent':0}
     q2 = query.copy()
     if board == 0:

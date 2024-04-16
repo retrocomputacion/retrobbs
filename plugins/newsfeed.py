@@ -41,7 +41,7 @@ def plugFunction(conn:Connection,url):
                 conn.encoder.nl: (plugFunction,(conn,url),"",0,False)
               }
     # Text mode
-    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t=Newsfeed><SPINNER><CRSRL>')
+    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER><CRSRL>')
     nfeed = feedparser.parse(url)
     try:
         lines = 5
@@ -210,9 +210,9 @@ def webarticle(conn:Connection,url, feedname):
                     a_img = a_body.find('img')
             if a_img != None:
                 conn.Sendall(TT.disable_CRSR())
-                FT.SendBitmap(conn,getImg(top_url,a_img),gfxmode=gfxmodes.C64MULTI)
+                FT.SendBitmap(conn,getImg(top_url,a_img))
                 conn.ReceiveKey()
-                conn.SendTML('<CLR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CURSOR>')
+                conn.SendTML('<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
         conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
         conn.Sendall(TT.set_Window(3,scheight-2))

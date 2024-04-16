@@ -211,4 +211,4 @@ def _Register():
                    'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,'F9':F9,'F10':F10,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF}
 
-    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return PET128.
+    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return MSX2.

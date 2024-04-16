@@ -29,7 +29,7 @@ mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64
 cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
 
 #Native format filename extensions
-im_extensions = c64.Native_Ext + p4.Native_Ext
+im_extensions = c64.Native_Ext + p4.Native_Ext + msx.Native_Ext
 
 ######## Image preprocess class ########
 class PreProcess:
@@ -159,11 +159,19 @@ def imageProcess(o_img:Image.Image, parameters:PreProcess):
 ################################################################################################################################################################################################
 # Convert image
 ################################################################################################################################################################################################
-def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmodes=gfxmodes.C64MULTI, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=3, bg_color=None):
+def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmodes=gfxmodes.C64MULTI, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=None, bg_color=None):
     Matchmodes = {1: Palette.colordelta.EUCLIDEAN,2: Palette.colordelta.CCIR,3: Palette.colordelta.LAB}
+
+
     if bg_color == None:
         bg_color = [-1]
     Mode = GFX_MODES[gfxmode]
+
+    if cmatch == None:
+        cmatch = Mode.get('match',Palette.colordelta.EUCLIDEAN)
+    else:
+        cmatch = Matchmodes[cmatch]
+
     pixelcount = Mode['out_size'][0]*Mode['out_size'][1]
 
     # Callbacks
@@ -204,9 +212,9 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
     y_PaletteH = Palette.Palette(y_in)  #hitherdither.palette.Palette(y_in)     #Luminance palette to dither/quantize against
 
     # Set color compare method
-    in_PaletteH.colordelta = Matchmodes[cmatch]
-    out_PaletteH.colordelta = Matchmodes[cmatch]
-    y_PaletteH.colordelta = Matchmodes[cmatch]
+    in_PaletteH.colordelta = cmatch
+    out_PaletteH.colordelta = cmatch
+    y_PaletteH.colordelta = cmatch
     c_count = len(rgb_in)   # Number of colors to quantize to
     o_img = Source
     if Mode['in_size']!=Mode['out_size']:
@@ -355,7 +363,7 @@ def Image_convert(Source:Image.Image, in_pal:list, out_pal:list, gfxmode:gfxmode
 ###############################################################################################################################################################################################################################
 # Convert image to specified graphic mode
 ###############################################################################################################################################################################################################################
-def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:PreProcess=None, cropmode:cropmodes=cropmodes.FILL, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=1, g_colors=None ):
+def convert_To(Source:Image.Image, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:PreProcess=None, cropmode:cropmodes=cropmodes.FILL, dither:DT.dithertype=DT.dithertype.BAYER8, threshold:int=4 , cmatch:int=None, g_colors=None ):
     if g_colors == None:
         g_colors = [-1]*len(GFX_MODES[gfxmode]['global_colors'])
     t_img = Source.convert('RGB')
@@ -380,6 +388,8 @@ def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
         if c['enabled']:
             rgb = CC.RGB24(c['RGBA'])
             hd_p.append(rgb)
+        else:
+            hd_p.append(0xFF00FF)   # Add pure purple for unused palette entries
     inPal = Palette.Palette(hd_p)
     return inPal.create_PIL_png_from_closest_colour(cc), inPal
 

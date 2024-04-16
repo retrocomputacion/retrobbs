@@ -7,7 +7,7 @@ from io import BytesIO
 from PIL import Image
 from common.connection import Connection
 from common.bbsdebug import _LOG
-from common.imgcvt import gfxmodes, PreProcess, dithertype
+from common.imgcvt import gfxmodes, PreProcess, dithertype, GFX_MODES
 from common import filetools as FT
 from common import turbo56k as TT
 from geopy.geocoders import Photon, Nominatim
@@ -60,6 +60,7 @@ def lat2res(lat_deg, zoom):
 ###################################
 def plugFunction(conn:Connection):
     _dec = conn.encoder.decode
+    rows = conn.encoder.txt_geo[1]
     api_key = conn.bbs.PlugOptions.get('stadiakey','DEMO_KEY')
     if api_key == 'DEMO_KEY':
         _LOG("MAPS: Missing Stadia Maps API key - Exiting", id=conn.id,v=2)
@@ -83,7 +84,7 @@ def plugFunction(conn:Connection):
         smurl = r"https://tiles.stadiamaps.com/tiles/stamen_toner/{0}/{1}/{2}.png?api_key={3}"   #r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
         tnum = 2**zoom #Number of tiles per row/column
         Cluster = Image.new('RGB',((width)*256,(height)*256))
-        conn.SendTML('<GREY1><CLR>Loading .........<CRSRL n=9>')
+        conn.SendTML('<YELLOW><CLR>Loading .........<CRSRL n=9>')
         for xtile in range((xmin-int(width/2)), (xmin+1+int(width/2))):
             for ytile in range(ymin-int(height/2),  ymin+1+int(height/2)):
                 try:
@@ -91,7 +92,7 @@ def plugFunction(conn:Connection):
                     imgstr = requests.get(imgurl,allow_redirects=True, headers={'User-Agent':'RetroBBS-Maps'})
                     tile = Image.open(BytesIO(imgstr.content))
                     Cluster.paste(tile, box=((xtile-(xmin-int(width/2)))*256 ,  (ytile-(ymin-int(height/2)))*256))
-                    conn.SendTML('<GREEN><CHECKMARK>')
+                    conn.SendTML('<GREEN><TRI-LEFT>' if 'MSX' in conn.mode else '<GREEN><CHECKMARK>')
                 except:
                     conn.SendTML('<RED>X')
                     Cluster.paste(dragons, box=((xtile-(xmin-int(width/2)))*256 ,  (ytile-(ymin-int(height/2)))*256))
@@ -104,11 +105,17 @@ def plugFunction(conn:Connection):
         geoLoc = Photon(user_agent="RetroBBS-Maps")
     else:
         geoLoc = Nominatim(user_agent="RetroBBS-Maps")
-    FT.SendBitmap(conn,'plugins/maps_intro.png', gfxmode = gfxmodes.C64HI, preproc=PreProcess(), display=False, dither=dithertype.NONE)
-    conn.SendTML('<SPLIT row=24><YELLOW><CLR>Location:')
+
+    gmode = gfxmodes.C64HI if 'PET64' in conn.mode else conn.encoder.def_gfxmode
+    if 'MSX' in conn.mode:
+        introfile = 'plugins/maps_intro_256.png'
+    else:
+        introfile = 'plugins/maps_intro.png'
+    FT.SendBitmap(conn,introfile, gfxmode = gmode, preproc=PreProcess(), display=False, dither=dithertype.NONE)
+    conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><YELLOW><CLR>Location:')
     locqry = _dec(conn.ReceiveStr(bytes(keys,'ascii'),30))
     if locqry == '_':
-        conn.SendTML('<SPLIT><CURSOR>')
+        conn.SendTML(f'<SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR>')
         return
     conn.SendTML('<SPINNER><CRSRL>')
     tloc = do_geocode(locqry)
@@ -122,8 +129,8 @@ def plugFunction(conn:Connection):
     else:
         loc = (tloc.latitude,tloc.longitude)
     zoom = 16
-    sw = 320    #Screen width
-    sh = 200    #Screen height
+    sw = GFX_MODES[gmode]['out_size'][0] #320    #Screen width
+    sh = GFX_MODES[gmode]['out_size'][1] #200    #Screen height
     #Minimum number of tiles centered at map coordinates needed to fill screen
     xtiles = math.ceil(sw/256)
     if (xtiles*256)-sw < 256:
@@ -151,13 +158,13 @@ def plugFunction(conn:Connection):
             tnum = 2**zoom #Number of tiles per row/column
             ttotal = tnum**2 #Total number of tiles
             if retrieve:
-                conn.Sendall(TT.split_Screen(24,False,0,1))
+                conn.Sendall(TT.split_Screen(rows-1,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode))
                 tiles = getImageCluster(ctilex,ctiley,xtiles,ytiles,zoom)
-                conn.Sendall(TT.split_Screen(0,False,0,0)+TT.to_Hires(0,1))
+                conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)+TT.to_Hires(0,1))
                 retrieve = False
             mwindow = tiles.crop((xmin,ymin,xmax,ymax))
             mwindow = mwindow.point(lambda p: 255 if p>218 else 0)
-            FT.SendBitmap(conn,mwindow.convert('1'),gfxmode=gfxmodes.C64HI,preproc=PreProcess())
+            FT.SendBitmap(conn,mwindow.convert('1'),gfxmode=gmode,preproc=PreProcess())
             display = False
         k = conn.ReceiveKey(b'_+-\r'+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]))
         if (k == b'-') and (zoom > 3):
@@ -242,10 +249,10 @@ def plugFunction(conn:Connection):
             conn.Sendall(TT.enable_CRSR())
             break
         elif (k == b'\r'):  #New Location
-            conn.SendTML('<SPLIT row=24 bgbottom=0><CURSOR><CLR><YELLOW>Location:')
+            conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
             locqry = _dec(conn.ReceiveStr(bytes(keys,'ascii'),30))
             if locqry == '_':
-                conn.Sendall(TT.split_Screen(0,False,0,0)+TT.enable_CRSR())
+                conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'])+TT.enable_CRSR())
                 break
             conn.SendTML('<SPINNER><CRSRL>')
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
