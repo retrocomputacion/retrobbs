@@ -20,3 +20,5 @@ Wikipedia_API
 crc
 lhafile
 scikit-image
+pyradios
+validators
