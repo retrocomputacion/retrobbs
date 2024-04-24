@@ -1281,7 +1281,7 @@ RUNNING UNDER:<BR>
                     data = conn.encoder.decode(data.decode('latin1'))
                     if data in conn.MenuDefs:
                         if conn.userclass >= conn.MenuDefs[data][3]:
-                            prompt = crop(conn.MenuDefs[data][2], 20,conn.encoder.ellipsis)
+                            prompt = crop(conn.MenuDefs[data][2], conn.encoder.txt_geo[0]//2,conn.encoder.ellipsis)
                             conn.SendTML(f'{prompt}<PAUSE n=1>')
                             wait = conn.MenuDefs[data][4]
                             Function = conn.MenuDefs[data][0]
