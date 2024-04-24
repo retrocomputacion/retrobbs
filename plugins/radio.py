@@ -6,16 +6,10 @@
 # ############################################################################
 
 from common import turbo56k as TT
-from common.style import bbsstyle
-from common import filetools as FT
-from common.helpers import formatX, crop, text_displayer
+from common.helpers import crop
 from common.connection import Connection
-from common.bbsdebug import _LOG
-from common.imgcvt import cropmodes, PreProcess
 
 import string
-import requests
-import sys, os
 from pyradios import RadioBrowser
 
 rb = RadioBrowser()
@@ -61,7 +55,7 @@ def plugFunction(conn:Connection):
             if termino == '_':
                 conn.Sendall(TT.set_Window(0,lines))
                 return()
-        conn.SendTML(' <BR><BR>Results:<BR><BR>')
+        conn.SendTML('<BR><BR>Searching...<SPINNER><CRSRL>')
         searchRes = searchRadio(termino)
         if searchRes == False:
             conn.SendTML('<ORANGE>Service unavailable...<PAUSE n=2>')
@@ -77,8 +71,8 @@ def plugFunction(conn:Connection):
         else:
             grey = '<GREY1>'
         while True:
-            RadioTitle(conn)
-            conn.SendTML(' <BR><BR>Results:<BR><BR>')
+            #RadioTitle(conn)
+            conn.SendTML('<CLR><BR>Results:<BR><BR>')
             for i in range(pcount*page, min(pcount*(page+1),nradios)):
                 if i > 9:
                     pos = str(i)
@@ -97,9 +91,9 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<KPROMPT t=RETURN>{grey}Search Again<BR>')
             conn.SendTML('<BR>Select:')
             sel = conn.ReceiveStr(bytes(keys,'ascii'), 10, False)
-            if sel == 'P':
+            if sel.upper() == 'P':
                 page = max(0,page-1)
-            if sel == 'N':
+            if sel.upper() == 'N':
                 page = min(nradios//pcount, page+1)
             if sel == '':
                 conn.Sendall(TT.set_Window(0,lines))
@@ -112,6 +106,7 @@ def plugFunction(conn:Connection):
                 image = searchRes[int(sel)]['favicon'] if len(searchRes[int(sel)]['favicon']) > 0 else None
                 conn.SendTML(f'<WEBAUDIO url={url} image="{image}">')
                 conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
+                RadioTitle(conn)
 
     conn.Sendall(TT.set_Window(0,lines))	#Set Text Window
 

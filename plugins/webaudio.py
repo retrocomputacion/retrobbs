@@ -194,7 +194,7 @@ def plugFunction(conn:connection.Connection,url,image):
         im = None
         if validators.url(image):
             try:
-                data = requests.get(image, allow_redirects=True, headers=hdrs)
+                data = requests.get(image, allow_redirects=True, headers=hdrs, timeout=10)
                 im = Image.open(BytesIO(data.content))
             except:
                 pass
@@ -218,7 +218,6 @@ def plugFunction(conn:connection.Connection,url,image):
         c_black = (0,0,0)
         c_white = (0xff,0xff,0xff)
         c_yellow = (0xff,0xff,0x55)
-        c_pink = (0xdd,0x66,0x66)
         pwidth = img[0].size[0]
         pheight = img[0].size[1]
         draw = ImageDraw.Draw(img[0])
@@ -229,11 +228,11 @@ def plugFunction(conn:connection.Connection,url,image):
         y = 2
         for l in sTitle:
             l = unescape(l.replace('<BR>',''))
-            draw.text((160,y),H.gfxcrop(l,pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
+            draw.text((pwidth//2,y),H.gfxcrop(l,pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
             y += 16
-        draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
-        draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
-        draw.text((136,168),"or cancel",c_pink,font=H.font_text)
+        draw.text((pwidth//2,160),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
+        draw.text((pwidth//2,172),"Press <X> and wait to stop or cancel",c_yellow,font=H.font_text,anchor='mt')
+        #draw.text((136,168),"or cancel",c_yellow,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
         conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR><YELLOW>')
@@ -242,7 +241,7 @@ def plugFunction(conn:connection.Connection,url,image):
         conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>'
                     f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
 
-    if conn.ReceiveKey(b'\rX') == b'X':
+    if conn.ReceiveKey('\rx') == 'x':
         return
 
     conn.SendTML('<SPINNER><CRSRL>')

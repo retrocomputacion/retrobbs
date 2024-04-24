@@ -220,7 +220,7 @@ def webarticle(conn:Connection,url, feedname):
         title[0] = '<WHITE>'+title[0]
         title.append(f'<YELLOW><HLINE n={scwidth}>')
         if a_author != None:
-            title.append(f'<INK c={conn.style.TxtColor}>by: <YELLOW>{a_author}<BR>')
+            title.append(f'<INK c={conn.style.TxtColor}>by: <YELLOW>{H.crop(a_author,scwidth-3,conn.encoder.ellipsis)}<BR>')
             title.append('<BR>')
         body[0] = '<GREY2>'+body[0]
         text = title + body
@@ -238,7 +238,7 @@ def webarticle(conn:Connection,url, feedname):
 def getImg(url,img_t):
     src = img_t['src']
     src = urljoin(url, src)
-    scrap_im = requests.get(src, allow_redirects=True, headers=hdrs)
+    scrap_im = requests.get(src, allow_redirects=True, headers=hdrs, timeout=10)
     try:
         img = Image.open(BytesIO(scrap_im.content))
     except:

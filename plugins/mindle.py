@@ -247,21 +247,31 @@ def mindle(conn:Connection, xword: str, valid):
                     chars[x] = 1
             for g,x in zip(guess,xword):
                 if g == x:
-                    out += '<GREEN>'
+                    if 'PET' in conn.mode:
+                        out += '<GREEN>'
+                    else:
+                        out += f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>'
                     if g in cows:
                         cows.remove(g)
                     if g not in bulls:
                         bulls.append(g)
                 elif (g in xword) and (g in chars) and (chars[g] >= 0):
-                    out += '<YELLOW>'
+                    if 'PET' in conn.mode:
+                        out += '<YELLOW>'
+                    else:
+                        out += f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>'
                     if (g not in bulls) and (g not in cows):
                         cows.append(g)
                     chars[g] -= 1
                 else:
+                    if 'PET' not in conn.mode:
+                        out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
                     out += '<BLACK>'
                     if g not in bad:
                         bad.append(g)
                 out += g.upper()+'<CRSRR>'
+            if 'PET' not in conn.mode:
+                out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
 
             # for i,c in enumerate(guess):
             #     if xtemp[i] == c:

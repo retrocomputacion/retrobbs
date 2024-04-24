@@ -449,14 +449,14 @@ def inbox(conn:Connection, board):
                 tt = f' <GREY1><UR-QUAD>{"<LTBLUE>" if i["msg_from"] == conn.userid else "<GREEN>"} '
             else:
                 tt = f' <GREEN><UR-QUAD>{"<CYAN>" if i["msg_to"] == conn.userid else "<LTGREEN>"} '
-            to = crop(i['msg_topic'],24,ellipsis)
+            to = crop(i['msg_topic'],scwidth-16,ellipsis)
             tl = table.get(doc_id=i['msg_prev'])
             if type(tl['msg_from'])==int:
                 user = utable.get(doc_id = tl['msg_from'])['uname']
             else:
                 user = tl['msg_from']
             tu = crop(user,11,ellipsis)
-            tt += f'{to}<YELLOW><CRSRR n={24-len(to)}<VLINE><WHITE>{tu}'
+            tt += f'{to}<YELLOW><CRSRR n={(scwidth-16)-len(to)}<VLINE><WHITE>{tu}'
             ts = tl['msg_sent']    # Get timestamp of last message in thread
             threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
         # sort by sent timestamp, newest thread first
@@ -478,8 +478,9 @@ def inbox(conn:Connection, board):
                          f'<WINDOW top=3 bottom={scheight-4}>')
             refresh = False
         conn.SendTML('<CLR>')
-        last = len(threads) if len(threads) < (19*(page+1)) else 19*(page+1)
-        for i in range(19*page,last):
+        tpp = scheight-6    # threads per page
+        last = len(threads) if len(threads) < (tpp*(page+1)) else tpp*(page+1)
+        for i in range(tpp*page,last):
             conn.SendTML(threads[i][0])
             if i < last-1:
                 conn.SendTML('<BR>')
@@ -493,11 +494,11 @@ def inbox(conn:Connection, board):
             k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]) + bytes('FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
             if len(threads) > 0:
                 if ord(k) == ckeys['CRSRD']:
-                    if pos+1 < (len(threads)-(19*page)):    # move down
+                    if pos+1 < (len(threads)-(tpp*page)):    # move down
                         if pos < 18:
                             pos += 1
                             conn.SendTML('<CRSRL> ')
-                        elif len(threads)>(19*(page+1)):
+                        elif len(threads)>(tpp*(page+1)):
                             page +=1
                             break
                 elif ord(k) == ckeys['CRSRU']:                   # move up
@@ -508,7 +509,7 @@ def inbox(conn:Connection, board):
                         page -= 1
                         break
                 elif ord(k) == ckeys['CRSRR']:                 # next page
-                    if len(threads)>(19*(page+1)):
+                    if len(threads)>(tpp*(page+1)):
                         page +=1
                         break
                 elif ord(k) == ckeys['CRSRL']:                # previous page
@@ -517,19 +518,19 @@ def inbox(conn:Connection, board):
                         break
                 elif k == b'F':                  # First message
                     conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
-                    readMessage(conn,threads[pos+(19*page)][1])
+                    readMessage(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
                 elif k == b'L':                  # Last message
-                    m = table.get(doc_id=threads[pos+(19*page)][1])
+                    m = table.get(doc_id=threads[pos+(tpp*page)][1])
                     conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
                     readMessage(conn,m['msg_prev'])
                     refresh = True
                     break
                 elif k == b'U':                  # First unread message
-                    if threads[pos+(19*page)][2] != None:
+                    if threads[pos+(tpp*page)][2] != None:
                         conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
-                        readMessage(conn,threads[pos+(19*page)][2].doc_id)
+                        readMessage(conn,threads[pos+(tpp*page)][2].doc_id)
                         refresh = True
                         break
                 elif k == b'D':                 # Delete thread
@@ -540,7 +541,7 @@ def inbox(conn:Connection, board):
                         tml += f'<RED><AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
                     conn.SendTML(tml+'<WINDOW top=11 bottom=13><CLR><CRSRD><WHITE>           Delete thread?(Y/N)')
                     if conn.ReceiveKey(b'YN') == b'Y':
-                        deleteThread(conn,threads[pos+(19*page)][1])
+                        deleteThread(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
             if k == b'N':              # new thread

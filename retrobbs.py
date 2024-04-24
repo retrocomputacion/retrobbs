@@ -839,6 +839,7 @@ def EditUser(conn:Connection):
         return
     conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
     done = False
+    line = 64 if 'PET' in conn.mode else 23
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
         prefs = uentry.get('preferences',{'datef':conn.bbs.dateformat})
@@ -863,7 +864,7 @@ def EditUser(conn:Connection):
         KeyLabel(conn,conn.encoder.back,'Exit',True)
         conn.SendTML('<BR><BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-            conn.Sendall(TT.Fill_Line(13,64))
+            conn.Sendall(TT.Fill_Line(13,line))
         else:
             conn.SendTML(f'<CRSRU><HLINE n={scwidth}>')
         conn.SendTML('Press option')
@@ -1150,7 +1151,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
-    elif b"RETROTERM-P4" in conn.TermString:
+    elif (b"RETROTERM-P4" in conn.TermString) or (b"RETROTERM-M1" in conn.TermString):
         _LOG('Plus/4 mode, audio streaming at 3840Hz',id=conn.id,v=3)
         conn.samplerate = 3840
     if conn.mode == 'MSX1':
