@@ -82,7 +82,7 @@ def plugFunction(conn:Connection):
                 countryCode = searchRes[i]['countrycode']
                 conn.SendTML(f' <BLUE>{pos} {grey}{radioName} [{countryCode}]<BR>')
             if nradios < pcount:
-                conn.SendTML(f'<BR><RED><LARROW>{grey}Exit<BR>')
+                conn.SendTML(f'<BR><RED><BACK>{grey}Exit<BR>')
                 conn.SendTML(f'<RED><KPROMPT t=RETURN>{grey}Search Again<BR>')
             else:
                 conn.SendTML(f'<BR><RED>P{grey}rev Page,')

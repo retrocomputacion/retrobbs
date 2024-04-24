@@ -186,19 +186,27 @@ def _AudioDialog(conn:Connection, data):
         draw.rectangle([0,0,128,(pheight-128)//2],fill = c_black)
         draw.rectangle([0,((pheight-128)//2)+128,128,pheight],fill = c_black)
         draw.rectangle([128,0,pwidth,pheight],fill = c_black)
-        draw.text((160,2),H.gfxcrop(data['title'],pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
+        draw.text((pwidth//2,2),H.gfxcrop(data['title'],pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
         if data['album'] != '':
             draw.text((136,20),'Album:',c_white,font=H.font_bold)
-            draw.text((136+40,22),H.gfxcrop(data['album'],pwidth-176),c_white,font=H.font_text)
+            draw.text((136,32),H.gfxcrop(data['album'],pwidth-136),c_white,font=H.font_text)
         if data['artist'] != '':
-            draw.text((136,36),'Artist:',c_white,font=H.font_bold)
-            draw.text((136+40,38),H.gfxcrop(data['artist'],pwidth-176),c_white,font=H.font_text)			
-        draw.text((136,52),'Length:',c_white,font=H.font_bold)
-        draw.text((136+40,54),data['length'],c_white,font=H.font_text)			
-        draw.text((136,68),f"From {data['sr']} to {conn.samplerate}Hz",c_white,font=H.font_text)
-        draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
-        draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
-        draw.text((136,168),u"Press <\u2190> to cancel",c_pink,font=H.font_text)
+            draw.text((136,48),'Artist:',c_white,font=H.font_bold)
+            draw.text((136,60),H.gfxcrop(data['artist'],pwidth-136),c_white,font=H.font_text)			
+        draw.text((136,72),'Length:',c_white,font=H.font_bold)
+        draw.text((136,84),data['length'],c_white,font=H.font_text)			
+        draw.text((136,108),f"From {data['sr']}",c_white,font=H.font_text)
+        draw.text((136,120),f"To {conn.samplerate}Hz",c_white,font=H.font_text)
+        draw.text((pwidth//2,160),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
+        if 'MSX' in conn.mode:
+            draw.text((pwidth//2,172),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,184),"Press <_> to cancel",c_yellow,font=H.font_text,anchor='mt')
+        else:
+            draw.text((pwidth//2,172),"Press <X> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,184),"Press <\u2190> to cancel",c_yellow,font=H.font_text,anchor='mt')
+        # draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
+        # draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
+        # draw.text((136,168),u"Press <\u2190> to cancel",c_pink,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
         S.RenderDialog(conn, 15, data['title'])
@@ -209,8 +217,12 @@ def _AudioDialog(conn:Connection, data):
             tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
         tml += f'''<RVSON> Length: {data['length']}<BR><BR>
 <RVSON> From {data['sr']} to {conn.samplerate}Hz
-<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
-<RVSON> Press &lt;x&gt; and wait to stop<BR>
+<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>'''
+        if 'MSX' in conn.mode:
+            tml+='''<RVSON> Press &lt;STOP&gt; and wait to stop<BR>
+<RVSON> Press &lt;<BACK>&gt; to cancel'''
+        else:
+            tml+='''<RVSON> Press &lt;x&gt; and wait to stop<BR>
 <RVSON> Press &lt;<BACK>&gt; to cancel'''
         conn.SendTML(tml)
     if conn.ReceiveKey(conn.encoder.nl+conn.encoder.back) == conn.encoder.back:

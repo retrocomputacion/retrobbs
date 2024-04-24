@@ -231,15 +231,22 @@ def plugFunction(conn:connection.Connection,url,image):
             draw.text((pwidth//2,y),H.gfxcrop(l,pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
             y += 16
         draw.text((pwidth//2,160),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
-        draw.text((pwidth//2,172),"Press <X> and wait to stop or cancel",c_yellow,font=H.font_text,anchor='mt')
+        if 'MSX' in conn.mode:
+            draw.text((pwidth//2,172),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,184),"Press <X> to cancel",c_yellow,font=H.font_text,anchor='mt')
+        else:
+            draw.text((pwidth//2,172),"Press <X> and wait to stop or cancel",c_yellow,font=H.font_text,anchor='mt')
         #draw.text((136,168),"or cancel",c_yellow,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
         conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR><YELLOW>')
         for l in sTitle:
             conn.SendTML(l)
-        conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>'
-                    f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
+        conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')
+        if 'MSX' in conn.mode:
+            conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
+        else:
+            conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
 
     if conn.ReceiveKey('\rx') == 'x':
         return
