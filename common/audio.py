@@ -197,13 +197,13 @@ def _AudioDialog(conn:Connection, data):
         draw.text((136,84),data['length'],c_white,font=H.font_text)			
         draw.text((136,108),f"From {data['sr']}",c_white,font=H.font_text)
         draw.text((136,120),f"To {conn.samplerate}Hz",c_white,font=H.font_text)
-        draw.text((pwidth//2,160),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
+        draw.text((pwidth//2,pheight-32),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
         if 'MSX' in conn.mode:
-            draw.text((pwidth//2,172),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
-            draw.text((pwidth//2,184),"Press <_> to cancel",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-20),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-8),"Press <_> to cancel",c_yellow,font=H.font_text,anchor='mt')
         else:
-            draw.text((pwidth//2,172),"Press <X> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
-            draw.text((pwidth//2,184),"Press <\u2190> to cancel",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-20),"Press <X> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-8),"Press <\u2190> to cancel",c_yellow,font=H.font_text,anchor='mt')
         # draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
         # draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
         # draw.text((136,168),u"Press <\u2190> to cancel",c_pink,font=H.font_text)

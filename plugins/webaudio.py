@@ -230,12 +230,12 @@ def plugFunction(conn:connection.Connection,url,image):
             l = unescape(l.replace('<BR>',''))
             draw.text((pwidth//2,y),H.gfxcrop(l,pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
             y += 16
-        draw.text((pwidth//2,160),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
+        draw.text((pwidth//2,pheight-32),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
         if 'MSX' in conn.mode:
-            draw.text((pwidth//2,172),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
-            draw.text((pwidth//2,184),"Press <X> to cancel",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-20),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-8),"Press <X> to cancel",c_yellow,font=H.font_text,anchor='mt')
         else:
-            draw.text((pwidth//2,172),"Press <X> and wait to stop or cancel",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-20),"Press <X> and wait to stop or cancel",c_yellow,font=H.font_text,anchor='mt')
         #draw.text((136,168),"or cancel",c_yellow,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
