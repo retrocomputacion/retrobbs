@@ -227,8 +227,10 @@ Parameter:
 
 ---
 #### **&lt;LEN&gt;**
-Assign the length of the string in **_S** to **_I**
+Assign the length of the input parameter to **_I**<br>
+Parameter:
 
+`x`: String or register, default `_S`
 ---
 </br>
 

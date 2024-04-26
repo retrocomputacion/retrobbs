@@ -73,7 +73,7 @@ class TMLParser(HTMLParser):
         self.t_mono = t_gen_mono.copy()
         ###
         self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])								# Update OUT command
-        self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k','\r',False)])	# Update INKEYS command
+        self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k','\r',False)])	                # Update INKEYS command
         self.t_mono['USER'] = (lambda: self.conn.username,[('_R','_S')])											# Update USER command
         if conn.QueryFeature(0xb7) >= 0x80:																			# Update INK command
             # if terminal doesnt support the ink command, try to replace it with a text color control code
@@ -82,7 +82,7 @@ class TMLParser(HTMLParser):
             tmp = conn.encoder.palette.items()
             self.t_mono['INK'] = (lambda c: chr([k for k,v in tmp if v == c][0] if len([k for k,v in tmp if v == c])>0 else 0),[('_R','_C'),('c',0)])
         ###
-        self.t_mono.update(EX.t_mono)			# Plugins and Extensions functions
+        self.t_mono.update(EX.t_mono)			    # Plugins and Extensions functions
         self.t_mono.update(conn.encoder.tml_mono)	# Encoder definitions
         #self.t_mono.update(TT.t_mono)			# Turbo56K functions
         self.t_mono =  {k.lower(): v for k, v in self.t_mono.items()}
