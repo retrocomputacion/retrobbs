@@ -289,7 +289,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 conn.ReceiveKey()
             return
         # Text files
-        elif ext in ['.SEQ','.TXT']:
+        elif ext in ['.SEQ','.MSEQ','.TXT']:
             if dialog:
                 res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Sequential/Text File', 'view', save = save)
             else:
@@ -623,5 +623,5 @@ def SendPETPetscii(conn:Connection,filename):
 ###########
 # TML tags
 ###########
-t_mono = {	'SENDRAW':(lambda c,file:SendRAWFile(c,file,False),[('c','_C'),('file','')]),
+t_mono = {	'SENDRAW':(lambda c,file:SendRAWFile(c,file,True),[('c','_C'),('file','')]),
             'SENDFILE':(lambda c,file,dialog,save:SendFile(c,file,dialog,save),[('c','_C'),('file',''),('dialog',False),('save',False)])}
