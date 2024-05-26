@@ -42,6 +42,7 @@ def plugFunction(conn:Connection,url, crop):
     # 	#return()
     # 	video = None
     video = None
+    tmsecs = None
     if video == None:
         slsession = streamlink.Streamlink()
         try:
@@ -53,28 +54,27 @@ def plugFunction(conn:Connection,url, crop):
             crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
             try:
                 plug = stl[1](slsession,url)	#Create plugin object
-                pa = plug.streams()	#slsession.streams(url)
+                pa = plug.streams()
                 for k in ['240p','360p','480p','720p','1080p','144p']:
                     s = pa.get(k,None)
-                    #s = pa[k]
                     if s != None:
                         if type(s) == streamlink.stream.MuxedStream:
                             best = s.substreams[0].url #Index 0 seems to always be the video stream
                             break
+                        elif type(s) == streamlink.stream.HLSStream:
+                            best = s.url_master
+                            break
                         else:
                             best = s.url
                             break
-                    # try:
-                    # 	best = s.url
-                    # except:
-                    # 	best = None
-                    # if best != None:
-                    # 	break
                 tmsecs = None
             except Exception as e:
                 _LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
                 conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
                 return
+        else:
+            conn.SendTML('<BR>ERROR: No stream found<PAUSE n=1>')
+            return
     conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR>'
                  f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> for a new image<BR>'
                  f'<BR>Press <KPROMPT t=_><YELLOW> to exit<BR>')
