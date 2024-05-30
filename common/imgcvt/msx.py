@@ -76,7 +76,7 @@ def get_buffers():
     buffers.append([0]*6144)    # [2] Colors
     return buffers
 
-def buildfile(buffers):
+def buildfile(buffers,filename):
     t_data = b'\xFE\x00\x00\xFF\x37\x00\x00' #Header
     #Bitmap
     t_data += bytes(buffers[0])
@@ -86,7 +86,7 @@ def buildfile(buffers):
     t_data+=bytes(1280)
     #Colors
     t_data += bytes(buffers[2])
-    return(t_data)
+    return(t_data,os.path.splitext(filename)[0][:8].replace(' ','_')+'sc2')
 #############################
 
 #####################################################################################################################
@@ -107,7 +107,7 @@ def buildfile(buffers):
 GFX_MODES=[{'name':'MSX1 Screen 2','bpp':1,'attr':(8,1),'global_colors':(False,False),'palettes':MSXPalettes,
             'global_names':[], 'match':Palette.colordelta.CCIR,
             'in_size':(256,192),'out_size':(256,192),'get_attr':msx_get2closest,'bm_pack': bmpacksc2,'attr_pack':attrpack,
-            'get_buffers':get_buffers,'save_output':[['Screen 2','.sc2',lambda buf,c: buildfile(buf)]]}]
+            'get_buffers':get_buffers,'save_output':['Screen 2',lambda buf,c,fn: buildfile(buf,fn)]}]
 
 ##############################
 # Load native image format
