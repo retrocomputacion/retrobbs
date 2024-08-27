@@ -234,14 +234,17 @@ def _AudioDialog(conn:Connection, data):
 # Get audio length for PCM file in seconds
 ###########################################
 def _GetPCMLength(filename):
-    if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
-        #Load metadata
-        audio = mutagen.File(filename, easy = True)
-        tsecs = int(audio.info.length)
-    else:
-        #Load and compute audio playtime
-        with audioread.audio_open(filename) as f:
-            tsecs = int(f.duration)
+    try:
+        if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
+            #Load metadata
+            audio = mutagen.File(filename, easy = True)
+            tsecs = int(audio.info.length)
+        else:
+            #Load and compute audio playtime
+            with audioread.audio_open(filename) as f:
+                tsecs = int(f.duration)
+    except:
+        tsecs = 0
     return tsecs
 
 ######################################################################
@@ -345,7 +348,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             conn.socket.setblocking(1)
             binario = b''
         c_samples += a_len
-        if c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
+        if t_samples > 0 and c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
             streaming = False
 
         ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
@@ -549,7 +552,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     elif not isinstance(ptime,list):
         ptime = [ptime]
     try:
-        if ext.lower() in ['.sid','.mus']:	# SID music
+        if (ext.lower() in ['.sid','.mus']) and 'PET64' in conn.mode:	# SID music
             with open(filename, "rb") as fh:
                 content = fh.read()
                 if ext.lower() == '.sid':
@@ -592,11 +595,13 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                 #         conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
                 #         conn.Sendall(chr(TT.CMDOFF))
                 player = 'x'    # <<<< Delete this line when player ID is properly implemented
-        else:	# YM music
+        elif (ext.lower() in ['.ym','.vtx','.vgz']):	# YM music
             data = ym.YMOpen(filename)
             if data != None:
                 info= ym.YMGetMeta(data)
             player = 'x'
+        else:
+            subtune = -1
 
         while subtune > 0:
             if dialog == True:
@@ -604,9 +609,9 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
             conn.SendTML('<SPINNER><CRSRL>')
             if player != "" and subtune > 0:
                 _LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
-                if ext.lower() == '.sid':
+                if ext.lower() == '.sid' and 'PET64' in conn.mode:
                     data = sd.SIDParser(filename,ptime[subtune-1]*info['speed'], order, subtune)
-                elif ext.lower() == '.mus':
+                elif ext.lower() == '.mus' and 'PET64' in conn.mode:
                     # Build a temporal .sid file
                     with open(filename, "rb") as fh:
                         with open(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',"wb") as oh:
@@ -629,7 +634,10 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                             #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
                     data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
                 elif ext.lower() in ['.ym','.vtx','.vgz']:
-                    data = sd.AYtoSID(filename)
+                    if 'MSX' in conn.mode:
+                        data = ym.YMParser(filename)
+                    else:
+                        data = sd.AYtoSID(filename)
                 else:
                     data = []
                 conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))

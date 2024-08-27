@@ -120,14 +120,14 @@ AStreams = AudioStreams()
 def setup():
     global slsession
     fname = "WEBAUDIO" #UPPERCASE function name for config.ini
-    parpairs = [('url',"http://relay4.slayradio.org:8000/"),('image','')] #config.ini Parameter pairs (name,defaultvalue)
+    parpairs = [('url',"http://relay4.slayradio.org:8000/"),('image',''),('title','')] #config.ini Parameter pairs (name,defaultvalue)
     slsession = streamlink.Streamlink()
     return(fname,parpairs)
 
 ##################################################
 # Plugin function
 ##################################################
-def plugFunction(conn:connection.Connection,url,image):
+def plugFunction(conn:connection.Connection,url,image,title):
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'
@@ -136,6 +136,11 @@ def plugFunction(conn:connection.Connection,url,image):
     #Streaming mode
     binario = b'\xFF\x83'
 
+    if (title != ''):
+        sTitle = formatX(title)
+        sURL = url
+    else:
+        sURL = None
     # PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
     # try:
     #     pa = pafy.new(url)
@@ -146,7 +151,6 @@ def plugFunction(conn:connection.Connection,url,image):
     #     sTitle = formatX('YouTube Stream: '+pa.title)
     # except:
     #     sURL = None
-    sURL = None
     # Pafy failed, try with streamlink
     # streamlink lacks metadata functionality
     if sURL == None:
