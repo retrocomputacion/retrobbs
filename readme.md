@@ -588,6 +588,10 @@ Retrieves the latest ten entries from the specified RSS feed, upon user selectio
 By __Emanuele Laface__</br>
 Uses Radio-browser.info API to search for and listen to internet radios.
 
+### Search Podcasts (podcast.py):
+By __Emanuele Laface__</br>
+Search for and listen to podcasts.
+
 ### Weather (weather.py) (new 0.25):
 Displays current weather and forecast for the next 2-3 days as a Hires image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
 
@@ -1252,7 +1256,7 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Roberto Mandracchia
   * ChrisKewl - [twitter.com/chriskewltv](http://twitter.com/chriskewltv)
 
-Also many thanks to __Emanuele Laface__ for the *Radio* plugin.
+Also many thanks to __Emanuele Laface__ for the *Radio* and *Podcast* plugins.
 
 ## External software, support files
 
