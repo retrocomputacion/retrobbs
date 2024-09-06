@@ -20,7 +20,8 @@ from common import turbo56k as TT
 from common.style import KeyPrompt
 from html import unescape, escape
 from PIL import ImageFont
-
+from urllib.parse import urlparse
+from os.path import exists
 
 # Bitmap Fonts
 font_bold = ImageFont.truetype("common/karen2blackint.ttf", 16)
@@ -314,6 +315,16 @@ def catalog(path, dirs=False, full=True):
         for i in range(len(files)):
             files[i] = os.path.join(path,files[i])
     return files
+
+##########################################
+# Check if a file is local or an URL
+##########################################
+
+def is_local(url):
+    url_parsed = urlparse(url)
+    if url_parsed.scheme in ('file', ''): # Possibly a local file
+        return exists(url_parsed.path)
+    return False
 
 ###########
 # TML tags

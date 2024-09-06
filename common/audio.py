@@ -680,3 +680,9 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         _LOG(f'SIDStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
+
+
+###########
+# TML tags
+###########
+t_mono = {	'PCMPLAY':(lambda c,file:PlayAudio(c,file,None),[('c','_C'),('file','')])}
