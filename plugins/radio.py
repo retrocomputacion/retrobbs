@@ -3,7 +3,7 @@
 #                                                                            #
 # This plugin requires pyradios to work and it is a Python implementaiton of #
 # https://api.radio-browser.info/ free API (It uses GPL 3).                  #
-# ############################################################################
+##############################################################################
 
 from common import turbo56k as TT
 from common.helpers import crop

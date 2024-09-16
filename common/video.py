@@ -19,9 +19,14 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 
     conn.SendTML('<YELLOW><SPINNER><CRSRL>')
     if length == None:
-        process = subprocess.run(['ffprobe', path, '-v', 'quiet', '-show_entries' ,'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1'], 
-                         stdout=subprocess.PIPE, 
-                         universal_newlines=True)
+        try:
+            process = subprocess.run(['ffprobe', path, '-v', 'quiet', '-show_entries' ,'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1'], 
+                            stdout=subprocess.PIPE, 
+                            universal_newlines=True)
+        except:
+            _LOG(bcolors.WARNING+"Error grabbing video frame"+bcolors.ENDC,id=conn.id,v=1)
+            conn.SendTML('...ERROR<CURSOR>') #Enable cursor
+            return
         try:
             length = int(float(process.stdout)*1000)
         except:

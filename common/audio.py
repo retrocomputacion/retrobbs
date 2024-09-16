@@ -253,7 +253,7 @@ def _GetPCMLength(filename):
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     if conn.QueryFeature(TT.STREAM) >= 0x80:	#Exit if terminal doesn't support PCM streaming
         return
-    bnoise = b'\x10\x01'
+    bnoise = b'\x10\x01\x01\x10'
     CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
     if length == None:
         length = _GetPCMLength(filename)
@@ -324,7 +324,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
                 hnibble = 0
             binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
-            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
+            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,3)].to_bytes(1,'little'), binario))
             streaming = conn.connected
             sys.stderr.flush()
             #Check for terminal cancelation
@@ -437,7 +437,11 @@ def _DisplayCHIPInfo(conn:Connection, info):
 <RVSON> Playtime: {minutes:0>2}:{seconds:0>2}<BR>'''
         if info['subsongs'] > 1:    #Subtune
             tml += f'<RVSON><CRSRD> Subtune: <GREY2>&lt;<WHITE><RVSOFF>{subtune:0>2}<RVSON><GREY2>&gt;<GREY3><BR>'
-        tml += '<RVSON><CRSRD> Press <BACK> to exit<BR><RVSON> RETURN to play<BR><RVSON> Any key to stop<RVSOFF><CURSOR enable=False>'
+        tml += '<RVSON><CRSRD> Press <BACK> to exit<BR><RVSON> RETURN to play<BR><RVSON>'
+        if 'MSX' in conn.mode:
+            tml += 'STOP to stop<RVSOFF><CURSOR enable=False>'
+        else:
+            tml += 'Any key to stop<RVSOFF><CURSOR enable=False>'
         conn.SendTML(tml)
         while True and conn.connected:
             k = conn.ReceiveKey('<>'+conn.encoder.back+conn.encoder.nl)

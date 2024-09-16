@@ -3,6 +3,7 @@ import urllib
 import time
 #import pafy
 import streamlink
+import yt_dlp
 
 import sys
 import random
@@ -112,7 +113,7 @@ class AudioStreams:
 
 
 slsession = None
-AStreams = AudioStreams()
+# AStreams = AudioStreams()
 
 ###############
 # Plugin setup
@@ -136,11 +137,10 @@ def plugFunction(conn:connection.Connection,url,image,title):
     #Streaming mode
     binario = b'\xFF\x83'
 
-    if (title != ''):
-        sTitle = formatX(title)
-        sURL = url
-    else:
-        sURL = None
+    if title != '':
+        title += '\n'
+    sURL = None
+    sTitle = None
     # PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
     # try:
     #     pa = pafy.new(url)
@@ -153,6 +153,28 @@ def plugFunction(conn:connection.Connection,url,image,title):
     #     sURL = None
     # Pafy failed, try with streamlink
     # streamlink lacks metadata functionality
+
+    if sURL == None:
+        try:
+            req = urllib.request.Request(url)
+            req.add_header('Icy-MetaData', '1')
+            req.add_header('User-Agent', 'WinAmp/5.565')
+            req.timeout = 15
+            req_data = urllib.request.urlopen(req)
+            if req_data.msg != 'OK':
+                _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
+                return
+            sURL = url
+            _LOG("WebAudio - Now streaming from Icecast/Shoutcast: "+req_data.getheader('icy-name'),id=conn.id,v=3)
+            #logo = 'plugins/shoutlogo.png'
+            sTitle = formatX(title+'Shoutcast Stream: '+req_data.getheader('icy-name'),conn.encoder.txt_geo[0])
+        except:
+            sURL = None
+    if sURL == None and '.m3u' not in url:
+        try:
+            sURL,sTitle = ytdlp_resolve(conn,url,title)
+        except:
+            sURL = None
     if sURL == None:
         try:
             stl = slsession.resolve_url(url)
@@ -170,28 +192,17 @@ def plugFunction(conn:connection.Connection,url,image,title):
                         sURL = None
                     if sURL != None:
                         _LOG("WebAudio - Now streaming from "+source, id=conn.id,v=3)
-                        sTitle = formatX(source+' Stream',conn.encoder.txt_geo[0])
+                        sTitle = formatX(title+source+' Stream ',conn.encoder.txt_geo[0])
                         break
             except:
-                sURL = None
-    #streamlink failed try icecast/shoutcast
-    if sURL == None:
-        try:
-            req = urllib.request.Request(url)
-            req.add_header('Icy-MetaData', '1')
-            req.add_header('User-Agent', 'WinAmp/5.565')
-            req_data = urllib.request.urlopen(req)
-            if req_data.msg != 'OK':
                 _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
                 return
-            sURL = url
-            _LOG("WebAudio - Now streaming from Icecast/Shoutcast: "+req_data.getheader('icy-name'),id=conn.id,v=3)
-            #logo = 'plugins/shoutlogo.png'
-            sTitle = formatX('Shoutcast Stream: '+req_data.getheader('icy-name'),conn.encoder.txt_geo[0])
-        except:
+        else:
             _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
             return
-
+    if sURL == None:
+        _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
+        return
     #try to open image if any
     img = None
     if image != '':
@@ -272,6 +283,8 @@ def plugFunction(conn:connection.Connection,url,image,title):
         if t2 > 15:
             streaming = False
         a_len = len(audio)
+        if a_len == 0:
+            streaming = False
         for b in range(0,a_len,2):
             lnibble = int(audio[b])
             if b+1 <= a_len:
@@ -302,6 +315,8 @@ def plugFunction(conn:connection.Connection,url,image,title):
                 pass
             conn.socket.setblocking(1)
             binario = b''
+        ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
+        time.sleep(ts if ts>=0 else 0)
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
     pcm_stream.stop()
@@ -311,3 +326,19 @@ def plugFunction(conn:connection.Connection,url,image,title):
     time.sleep(1)
     conn.socket.settimeout(conn.bbs.TOut)
 
+def ytdlp_resolve(conn,url,title):
+    sURL = None
+    sTitle = None
+    ydl_opts = {'quiet':False, 'socket_timeout':15}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        sTitle = formatX(title+info['webpage_url_domain']+': '+info['title'],conn.encoder.txt_geo[0])
+        formats = info['formats']
+        for f in formats:
+            if f['resolution'] == 'audio only':
+                sURL = f['url']
+                break
+            elif f.get('acodec',None) != 'none':
+                sURL = f['url']
+                break
+    return sURL,sTitle

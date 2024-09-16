@@ -6,6 +6,8 @@
 import lhafile
 import gzip
 from io import BytesIO
+import os
+import sys
 from common.bbsdebug import _LOG
 
 #YM formats magic strings
@@ -199,7 +201,7 @@ def YMGetMeta(data):
         return None
 
 #########################################################################
-# Parse YM file, return list of frames with register values and Metadata
+# Dump YM file, return list of frames with register values and Metadata
 #########################################################################
 def YMDump(data):
     meta = YMGetMeta(data)
@@ -330,3 +332,83 @@ def YMDump(data):
         return frames, meta
     else:
         return None, None
+    
+#####################################################################
+# Parse a YM file register dump into a Retroterm compatible stream
+# t_freq: target PSG frequency
+#####################################################################
+def YMParser(filename, t_freq=1789773):
+    dump = None
+    try:
+        data = YMOpen(filename)
+        if data != None:
+            frames,meta = YMDump(data)
+            ymfreq = meta['clock']
+            # print(ymfreq)
+            if frames != None:
+                dump = []
+                p_regs = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                rcount = 16 # 14 registers + 2 bytes from the bitmap
+                rbitmap = 0b0011111111111111
+                psg_regs = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'          #Init PSG
+                # print(f'Frame #\trcount\t BM\t Regs')
+                # print(f'0\t16\t{rbitmap}\t{psg_regs}')
+                dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(2,'big'),psg_regs])
+                for fn,frame in enumerate(frames):
+                    rbitmap = 0
+                    rcount = 2
+                    psg_regs = b''
+                    if t_freq != ymfreq:
+                        v1f = (frame[0] + (frame[1]*256))
+                        if v1f > 0:
+                            v1f = t_freq/(ymfreq/v1f)
+                        v2f = (frame[2] + (frame[3]*256))
+                        if v2f > 0:
+                            v2f = t_freq/(ymfreq/v2f)
+                        v3f = (frame[4] + (frame[5]*256))
+                        if v3f > 0:
+                            v3f = t_freq/(ymfreq/v3f)
+                        if frame[6] > 0:
+                            nof = t_freq/(ymfreq/frame[6])
+                        else:
+                            nof = 0
+                        enf = (frame[11] + (frame[12]*256))
+                        if enf > 0:
+                            enf = t_freq/(ymfreq/enf)
+                        v1f = int(v1f if v1f <= 4095 else 4095)
+                        v2f = int(v2f if v2f <= 4095 else 4095)
+                        v3f = int(v3f if v3f <= 4095 else 4095)
+                        nof = int(nof if nof <= 31 else 31)
+                        enf = int(enf if enf <= 65535 else 65535)
+                        frame[0] = v1f & 0xff
+                        frame[1] = v1f >> 8
+                        frame[2] = v2f & 0xff
+                        frame[3] = v2f >> 8
+                        frame[4] = v3f & 0xff
+                        frame[5] = v3f >> 8
+                        frame[6] = nof
+                        frame[11] = enf & 0xff
+                        frame[12] = enf >> 8
+                    for rn in range(14):
+                        if rn == 13 and frame[rn]!=0xff:
+                            rbitmap |= 1<<rn
+                            psg_regs += frame[rn].to_bytes(1,'little')
+                            rcount +=1
+                        elif p_regs[rn] != frame[rn]:
+                            rbitmap |= 1<<rn
+                            tmp = frame[rn]
+                            if rn == 7:
+                                tmp = (tmp & 0x3F)|0x80
+                            psg_regs += tmp.to_bytes(1,'little')    #frame[rn].to_bytes(1,'little')
+                            rcount +=1
+                    dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(2,'big'),psg_regs])
+                    p_regs = frame
+                    # print(f'{fn}\t{rcount}\t{rbitmap}\t{psg_regs}')
+
+        else:
+            _LOG('YMParser: Error opening file')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        _LOG(f'YMParser error:{exc_type} on {fname} line {exc_tb.tb_lineno}')
+    return(dump)

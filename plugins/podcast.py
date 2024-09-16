@@ -8,7 +8,7 @@
 from common import turbo56k as TT
 from common import filetools as FT
 from common import audio as AA
-from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
+from common.imgcvt import cropmodes, PreProcess, gfxmodes, dithertype
 from common.helpers import crop
 from common.connection import Connection
 
