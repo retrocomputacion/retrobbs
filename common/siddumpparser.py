@@ -9,7 +9,7 @@ import os
 import sys
 from common import cpu65 as c65
 from common.bbsdebug import _LOG
-from common import ymparse as YM
+# from common import ymparse as YM      # Moved to the end of the file to bypass 'circular' imports
 
 # compute's sidplayer driver, taken from sidplay2/w
 mus_driver = \
@@ -465,7 +465,7 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
                     tt = bytes.fromhex(frame[19].decode("utf-8"))
                     if oldff[1] != tt[1]:
                         rbitmap |= 2**rbit
-                        sidregs += bytes([tt[1]]) # Low Nibble
+                        sidregs += bytes([tt[1]>>5]) # Low Nibble (fixed missing shift right)
                         rcount += 1
                     if oldff[0] != tt[0]:
                         rbitmap |= 2**(rbit+1)
@@ -775,3 +775,6 @@ def AYtoSID(filename):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         _LOG(f'AYtoSID error:{exc_type} on {fname} line {exc_tb.tb_lineno}')
     return dump
+
+# Moved here to bypass 'circular' imports
+from common import ymparse as YM

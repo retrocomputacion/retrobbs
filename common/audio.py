@@ -439,9 +439,9 @@ def _DisplayCHIPInfo(conn:Connection, info):
             tml += f'<RVSON><CRSRD> Subtune: <GREY2>&lt;<WHITE><RVSOFF>{subtune:0>2}<RVSON><GREY2>&gt;<GREY3><BR>'
         tml += '<RVSON><CRSRD> Press <BACK> to exit<BR><RVSON> RETURN to play<BR><RVSON>'
         if 'MSX' in conn.mode:
-            tml += 'STOP to stop<RVSOFF><CURSOR enable=False>'
+            tml += ' STOP to stop<RVSOFF><CURSOR enable=False>'
         else:
-            tml += 'Any key to stop<RVSOFF><CURSOR enable=False>'
+            tml += ' Any key to stop<RVSOFF><CURSOR enable=False>'
         conn.SendTML(tml)
         while True and conn.connected:
             k = conn.ReceiveKey('<>'+conn.encoder.back+conn.encoder.nl)
@@ -556,7 +556,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     elif not isinstance(ptime,list):
         ptime = [ptime]
     try:
-        if (ext.lower() in ['.sid','.mus']) and 'PET64' in conn.mode:	# SID music
+        if (ext.lower() in ['.sid','.mus']):	# SID music
             with open(filename, "rb") as fh:
                 content = fh.read()
                 if ext.lower() == '.sid':
@@ -613,9 +613,12 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
             conn.SendTML('<SPINNER><CRSRL>')
             if player != "" and subtune > 0:
                 _LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
-                if ext.lower() == '.sid' and 'PET64' in conn.mode:
-                    data = sd.SIDParser(filename,ptime[subtune-1]*info['speed'], order, subtune)
-                elif ext.lower() == '.mus' and 'PET64' in conn.mode:
+                if ext.lower() == '.sid':
+                    if 'PET64' in conn.mode:
+                        data = sd.SIDParser(filename,ptime[subtune-1]*info['speed'], order, subtune)
+                    elif 'MSX' in conn.mode:
+                        data = ym.SIDtoYM(filename,ptime[subtune-1]*info['speed'], order, subtune)
+                elif ext.lower() == '.mus':
                     # Build a temporal .sid file
                     with open(filename, "rb") as fh:
                         with open(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',"wb") as oh:
@@ -635,8 +638,11 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                             oh.write(sd.mus_driver[2:])
                             #oh.write(mus_driver[2:0xc6e+2]) #Player
                             #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
-                            #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
-                    data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
+                            #oh.write(mus_driver[0xc6e+4:]) #Player-cont
+                    if 'PET64' in conn.mode:
+                        data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
+                    elif 'MSX' in conn.mode:
+                        data = ym.SIDtoYM(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
                 elif ext.lower() in ['.ym','.vtx','.vgz']:
                     if 'MSX' in conn.mode:
                         data = ym.YMParser(filename)
@@ -644,36 +650,37 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                         data = sd.AYtoSID(filename)
                 else:
                     data = []
-                conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
-                count = 0
-                #tt0 = time.time()
-                for frame in data:
-                    conn.Sendallbin(frame[0]) #Register count
-                    conn.Sendallbin(frame[1]) #Register bitmap
-                    conn.Sendallbin(frame[2]) #Register data
-                    conn.Sendallbin(b'\xff')	 #Sync byte
-                    count += 1
+                if data != []:
+                    conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
+                    count = 0
+                    #tt0 = time.time()
+                    for frame in data:
+                        conn.Sendallbin(frame[0]) #Register count
+                        conn.Sendallbin(frame[1]) #Register bitmap
+                        conn.Sendallbin(frame[2]) #Register data
+                        conn.Sendallbin(b'\xff')	 #Sync byte
+                        count += 1
 
-                    if count%100 == 0:
-                        ack = b''
-                        ack = conn.Receive(1)
-                        count = 0
-                        if (b'\xff' in ack) or not conn.connected:
-                            #Abort stream
-                            conn.Flush(1)   # Flush receive buffer for 1 second
-                            # conn.socket.setblocking(0)	# Change socket to non-blocking
-                            # t0 = time.time()
-                            # while time.time()-t0 < 1:   # Flush receive buffer for 1 second
-                            #     try:
-                            #         conn.socket.recv(10)
-                            #     except:
-                            #         pass
-                            # conn.socket.setblocking(1)	# Change socket to blocking
-                            # conn.socket.settimeout(conn.bbs.TOut)
-                            break
-                    
-                conn.Sendall(chr(0))	#End stream
-                #conn.Receive(1)	#Receive last frame ack character
+                        if count%100 == 0:
+                            ack = b''
+                            ack = conn.Receive(1)
+                            count = 0
+                            if (b'\xff' in ack) or not conn.connected:
+                                #Abort stream
+                                conn.Flush(1)   # Flush receive buffer for 1 second
+                                # conn.socket.setblocking(0)	# Change socket to non-blocking
+                                # t0 = time.time()
+                                # while time.time()-t0 < 1:   # Flush receive buffer for 1 second
+                                #     try:
+                                #         conn.socket.recv(10)
+                                #     except:
+                                #         pass
+                                # conn.socket.setblocking(1)	# Change socket to blocking
+                                # conn.socket.settimeout(conn.bbs.TOut)
+                                break
+                        
+                    conn.Sendall(chr(0))	#End stream
+                    #conn.Receive(1)	#Receive last frame ack character
             if isinstance(info,bytes):
                 subtune = -1
             elif info['subsongs'] == 1 or dialog == False:
@@ -683,7 +690,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        _LOG(f'SIDStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
+        _LOG(f'ChipStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
 
 
 ###########

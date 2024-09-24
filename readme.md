@@ -5,9 +5,9 @@
 
 # RetroBBS
 
-VERSION 0.50 dev
+VERSION 0.60 dev
 
-(c)2020-2023 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+(c)2020-2024 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
 
 
@@ -40,7 +40,7 @@ VERSION 0.50 dev
 
 # 1 Introduction
 
-*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol-capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
+*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol-capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64, Commodore Plus/4 or MSX computers.
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
@@ -156,6 +156,18 @@ __Changes/Bug fixes__:
  - *Sendfile* checks if executable file fits in the client's available memory size and range and disables transfer to memory if the file is too large or resides outside the valid memory range.
  - Added `←` glyph to BetterPixels font
 
+### **v0.60**:
+__New features__:
+ - MSX support
+ - *Radio* and *Podcast* plugins by __Emanuele Laface__
+ - SID to AY music conversion.
+
+__Changes/Bug fixes__:
+ - Fixed filter cutoff low nibble in SID chiptune streaming
+ - Fixed PCMPLAY support for non-local files
+ - Webaudio plugin now supports non-live sources
+ - Send the correct number of delete characters for the LogOff confirmation message
+ 
 ---
 # 1.2 The *Turbo56K* protocol
 
@@ -197,7 +209,11 @@ Current built-in functions:
 
 - SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDumpHR* or *SIDDump* executables in the system path, if neither is found a slower Python implementation will be used instead.
 
-- YM2149/AY-3-8910 music conversion and streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of SID register writes. Cyclic envelope simulation is limited. Samples and some other special effects are not supported. 
+- YM2149/AY-3-8910 music streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of register writes. Samples and some other special effects are not supported.
+
+- Conversion of AY-3-8910 register streams into SID streams for C64 clients, cyclic envelope simulation is limited.
+
+- Conversion of SID register streams into AY-3-8910 streams for MSX clients, all SID waveforms are played as either pulse or noise. Filter attenuation is not simulated.
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
@@ -1242,7 +1258,7 @@ temp = /mnt/ramdisk/
 ## Development team
 
   * Jorge Castillo (Pastbytes) - Original idea, creator and developer of *Turbo56K*, *Retroterm* and *RetroBBS*
-  * Pablo Roldán (Durandal) - Developer of *RetroBBS*, extension of *Turbo56K* protocol
+  * Pablo Roldán (Durandal) - Developer of *RetroBBS* and *Retroterm*, extension of *Turbo56K* protocol
 
 ## Thanks
 
@@ -1265,5 +1281,9 @@ Also many thanks to __Emanuele Laface__ for the *Radio* and *Podcast* plugins.
   * Betterpixels font by AmericanHamster
   * karen2blackint font by PaulSpades
   * Map tiles by [Stamen Design](http://stamen.com), under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0). Data by [OpenStreetMap](http://openstreetmap.org), under [ODbL](http://www.openstreetmap.org/copyright).
+
+## Contains code from:
+
+  * sid2psg.py by simondotm under MIT license (https://github.com/simondotm/ym2149f/tree/master)
 
 ---
