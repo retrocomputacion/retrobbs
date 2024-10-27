@@ -173,6 +173,16 @@ class PETencoder(Encoder):
         elif la + size > self.tbuffer:
             return False
         return True
+    
+    def get_exec(self, filename):
+        la = 0
+        bin = None
+        if self.check_fit(filename):
+            with open(filename,'rb') as f:
+                la = f.read(2)
+                la = la[0]|(la[1]<<8)
+                bin = f.read(-1)
+        return (la,bin)
 
 ####################################################
 # Convert ASCII/unicode text to PETSCII

@@ -158,15 +158,40 @@ class MSXencoder(Encoder):
         return self.palette.get(code,-1)
 
     def check_fit(self, filename):
-        # size = os.stat(filename).st_size-2
-        # with open(filename,'rb') as f:
-        #     la = f.read(2)
-        #     la = la[0]|(la[1]<<8)
-        # if la < self.bbuffer or la > self.tbuffer:
-        #     return False
-        # elif la + size > self.tbuffer:
-        #     return False
-        return True
+        size = os.stat(filename).st_size
+        if size <= 32768:
+            with open(filename,'rb') as f:
+                header = f.read(16)
+            print(header)
+            if header[0:2] == b'AB':
+                return True            # Correct ID
+        return False
+
+    def get_exec(self, filename):
+        size = os.stat(filename).st_size
+        la = 0
+        bin = None
+        if size <= 32768:
+            with open(filename,'rb') as f:
+                bin = f.read(-1)
+                if bin[0:2] == b'AB':
+                    init = bin[2]+(bin[3]*256)
+                    statement = bin[4]+(bin[5]*256)
+                    device = bin[6]+(bin[7]*256)
+                    text = bin[8]+(bin[9]*256)
+                    if init == 0:
+                        if text != 0:
+                            init = text
+                        else:
+                            return False
+                    if size == 32768:
+                        la = 0x4000
+                    else:
+                        if init > 0x8000:
+                            la = 0x8000
+                        else:
+                            la = 0x4000
+        return (la,bin)
 
 ####################################################
 # Convert ASCII/unicode text to MSX

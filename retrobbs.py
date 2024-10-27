@@ -80,7 +80,7 @@ import re
 import platform
 import subprocess
 from os import walk
-from os.path import splitext, getmtime
+from os.path import splitext, getmtime, exists
 import datetime
 import signal
 import string
@@ -600,6 +600,11 @@ def LogOff(conn:Connection, confirmation=True):
             _LOG('Disconnecting...\r',id=conn.id,v=3)
             conn.Sendall(data)
             conn.SendTML(f'<PAUSE n=1><WHITE><BR><BR>{"".join(formatX(conn.bbs.GBMess,conn.encoder.txt_geo[0]))}<BR><PAUSE n=1><LTBLUE><BR>{l_str[2]}<BR><WHITE><PAUSE n=1>')
+            # Execute session logoff TML
+            if exists(conn.bbs.Paths['bbsfiles']+'logoff.tml'):
+                with open(conn.bbs.Paths['bbsfiles']+'logoff.tml','r') as slide:
+                    tml = slide.read()
+                    conn.SendTML(tml)
             conn.connected = False	#break
             return True
         else:
@@ -1009,6 +1014,7 @@ def EditUser(conn:Connection):
 def EditPrefs(conn:Connection):
     conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
     done = False
+    line = 64 if 'PET' in conn.mode else 23
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
         options = 'ab_'
@@ -1041,7 +1047,7 @@ def EditPrefs(conn:Connection):
         KeyLabel(conn,conn.encoder.back,'Exit',True)
         conn.SendTML('<BR><BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-            conn.Sendall(TT.Fill_Line(6+x,64))  # TODO: paginate preferences
+            conn.Sendall(TT.Fill_Line(6+x,line))  # TODO: paginate preferences
         else:
             conn.SendTML(f'<CRSRU><HLINE n={conn.encoder.txt_geo[0]}>')
         conn.SendTML('Press option')
@@ -1273,9 +1279,14 @@ RUNNING UNDER:<BR>
                 _LOG('Old terminal detected - Terminating',id=conn.id)
                 conn.SendTML('Please user RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
                 conn.connected = False
-            #Increment visit counters
+            # Increment visit counters
             conn.bbs.visits += 1            #Session counter
             conn.bbs.database.newVisit(conn.username)    #Total counter
+            # Execute session startup TML
+            if exists(conn.bbs.Paths['bbsfiles']+'newsession.tml'):
+                with open(conn.bbs.Paths['bbsfiles']+'newsession.tml','r') as slide:
+                    tml = slide.read()
+                    conn.SendTML(tml)
             # Display the main menu
             conn.menu = 0		# Starting at the main menu
             conn.MenuDefs = GetKeybindings(conn,0)

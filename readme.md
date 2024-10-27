@@ -694,7 +694,7 @@ Stream a SID file to **\<conn\>**
 - **\<ptime\>**: Playtime in seconds
 - **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
-check the [SID streaming](docs/sid_streaming.md) protocol
+check the [Chiptune streaming](docs/chiptune_streaming.md) protocol
 
 
 ### class PCMStream(fn, sr) :

@@ -82,6 +82,11 @@ class Encoder:
         stats = os.stat(filename)
         return stats.st_size <= (self.tbuffer-self.bbuffer)
     
+    # Returns the load address, binary data from an executable file
+    # Strip headers/metadata if needed for direct transfer into memory
+    def get_exec(self, filename):
+        return (0,None)
+    
 SCOLOR = Enum('style_colors',
           [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
             'OoddColor','ToddColor','OevenColor','TevenColor',

@@ -263,7 +263,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
     if os.path.exists(filename):
         ext = os.path.splitext(filename)[1].upper()
         # Executables
-        if ext == '.PRG' and 'PET' in conn.mode:
+        if ext == '.PRG' and 'PET' in conn.mode:    # Commodore PRG
             if conn.encoder.check_fit(filename):
                 if dialog:
                     res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program', save = save)
@@ -273,7 +273,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 if dialog:
                     res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Commodore Program','Download to disk', save = False)*2
                 else:
-                    res = save
+                    res = 2
             else:
                 res = 0
             if res == 1:
@@ -281,6 +281,31 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
             elif res == 2:
                 savename = os.path.splitext(os.path.basename(filename))[0].upper()
                 savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                if TransferFile(conn,filename, savename[:16]):
+                    conn.SendTML(fok)
+                else:
+                    conn.SendTML(fabort)
+                conn.SendTML('<KPROMPT t=RETURN>')
+                conn.ReceiveKey()
+            return
+        elif ext == '.ROM' and 'MSX' in conn.mode:  # MSX ROM
+            if conn.encoder.check_fit(filename):
+                if dialog:
+                    res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'MSX ROM', save = save)
+                else:
+                    res = 1+(1*save)
+            elif save:
+                if dialog:
+                    res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'MSX ROM','save to disk', save = False)*2
+                else:
+                    res = 2
+            else:
+                res = 0
+            if res == 1:
+                SendProgram(conn,filename)
+            elif res == 2:
+                savename = os.path.splitext(os.path.basename(filename))[0].upper()
+                savename = savename.translate({ord(i): None for i in '"*+,/:;<=>?\[]|'})	#Remove MSX-DOS reserved characters
                 if TransferFile(conn,filename, savename[:16]):
                     conn.SendTML(fok)
                 else:
@@ -359,46 +384,59 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 def SendProgram(conn:Connection,filename):
     # Verify .prg extension
     ext = os.path.splitext(filename)[1].upper()
-    if ext == '.PRG' and conn.encoder.check_fit(filename):
+    # if ext == '.PRG' and conn.encoder.check_fit(filename):
+    if conn.encoder.check_fit(filename):
         _LOG('Memory transfer, filename: '+filename, id=conn.id,v=3)
         # Open file
-        archivo=open(filename,"rb")
+        # archivo=open(filename,"rb")
         # Read load address
-        binario=archivo.read(2)
-        staddr = binario[0]+(binario[1]*256)
+        # binario=archivo.read(2)
+        # staddr = binario[0]+(binario[1]*256)
+        staddr,bin = conn.encoder.get_exec(filename)
+        if bin == None:
+            return
         # Sync
         binaryout = b'\x00'
         # Enter command mode
         binaryout += b'\xFF'
 
-        # Set the transfer pointer + load address (low:high)
-        filesize = os.path.getsize(filename) - 2
+        # Set the transfer pointer to load address (low:high)
+        filesize = len(bin)     #os.path.getsize(filename) - 2
         endaddr = staddr + filesize
         binaryout += b'\x80'
-        if isinstance(binario[0],str) == False:
-            binaryout += binario[0].to_bytes(1,'big')
-            binaryout += binario[1].to_bytes(1,'big')
-        else:
-            binaryout += binario[0]
-            binaryout += binario[1]
-        # Set the transfer pointer + program size (low:high)
+        binaryout += staddr.to_bytes(2,'little')
+        # if isinstance(binario[0],str) == False:
+        #     binaryout += binario[0].to_bytes(1,'big')
+        #     binaryout += binario[1].to_bytes(1,'big')
+        # else:
+        #     binaryout += binario[0]
+        #     binaryout += binario[1]
+        # Setup transfer pointer + program size (low:high)
         binaryout += b'\x82'
         binaryout += filesize.to_bytes(2,'little')
-        _LOG('Load Address: '+bcolors.OKGREEN+str(binario[1]*256+binario[0])+bcolors.ENDC, '/ Bytes: '+bcolors.OKGREEN+str(filesize)+bcolors.ENDC,id=conn.id,v=4)
+        _LOG('Load Address: '+bcolors.OKGREEN+str(staddr)+bcolors.ENDC, '/ Bytes: '+bcolors.OKGREEN+str(filesize)+bcolors.ENDC,id=conn.id,v=4)
         # Program data
-        binaryout += archivo.read(filesize)
+        binaryout += bin    #archivo.read(filesize)
 
         # Exit command mode
         binaryout += b'\xFE'
         # Close file
-        archivo.close()
+        # archivo.close()
         # Send the data
         conn.Sendallbin(binaryout)
-        conn.SendTML(   f'<CLR><RVSOFF><ORANGE>Program file transferred to ${staddr:0{4}x}-${endaddr:0{4}x}<BR>'
-                        f'To execute this program, <YELLOW><RVSON>L<RVSOFF><ORANGE>og off from<BR>'
-                        f'this BBS, and exit Retroterm with <BR>RUN/STOP.<BR>'
-                        f'Then use RUN or the correct SYS.<BR>'
-                        f'Or <YELLOW><RVSON>C<RVSOFF><ORANGE>ontinue your session')
+        if 'PET' in conn.mode:
+            conn.SendTML(   f'<CLR><RVSOFF><ORANGE>Program file transferred to ${staddr:0{4}x}-${endaddr:0{4}x}<BR>'
+                            f'To execute this program, <YELLOW><RVSON>L<RVSOFF><ORANGE>og off from<BR>'
+                            f'this BBS, and exit Retroterm with <BR>RUN/STOP.<BR>'
+                            f'Then use RUN or the correct SYS.<BR>'
+                            f'Or <YELLOW><RVSON>C<RVSOFF><ORANGE>ontinue your session')
+        elif 'MSX' in conn.mode:
+            conn.SendTML(   f'<CLR><RVSOFF><PINK>Program file transferred to<BR>'
+                            f'${staddr:0{4}x}-${endaddr:0{4}x}<BR>'
+                            f'To execute this program, <YELLOW><RVSON>L<RVSOFF><PINK>og off'
+                            f'from this BBS, and exit<BR>Retroterm with CTRL-U.<BR>'
+                            f'Or <YELLOW><RVSON>C<RVSOFF><PINK>ontinue your session')
+
         if conn.ReceiveKey('cl') == 'l':
             conn.connected = False
 

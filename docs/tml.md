@@ -182,10 +182,19 @@ Parameter:
 
 `n`: number of repeats, default `1` 
 
+---
 #### **&lt;INK&gt;**
 Change the text color to the value passed as parameter. Actual color is platform dependent.</br>
 
 `c`: Index in the palette of the desired color. Default `0`.
+
+---
+#### **&lt;SPINNER&gt;**
+Send the _spinner_ character, which 'animates' depicting a waiting state when the blinking cursor is placed over it.</br>The actual character sent is platform dependent.
+
+---
+#### **&lt;BACK&gt;**
+Send the character used to go back a menu/screen. `←` for Commodore platforms, `_` for MSX1.
 
 ---
 </br>
@@ -357,7 +366,7 @@ Parameter:
 Switch the client's screen to a graphic mode. And select the screen colors.</br>
 Parameters:
 
-`mode`: Graphic mode, True for multicolor, False for hires. Default `False`</br>
+`mode`: Graphic mode, True for multicolor, False for hires. Default `False`. Unused on MSX1</br>
 `page`: Text page number, currently unused. Default `0`</br>
 `border`: Screen border color. Default `0`</br>
 `background`: Screen background color. Default `0`
@@ -368,7 +377,7 @@ Fill a screen row with the given character code.</br>
 Parameters:
 
 `row`: Screen row to fill. Default `0`<br>
-`code`: Character code to use. Default `0`. For C64 this is a screen code, not PETSCII`
+`code`: Character code to use. Default `0`. For C64 this is a screen code, not PETSCII`. For MSX extended graphic characters use the position in the character ROM. ie: character 336 (0x150) should use code = 16 (0x10) 
 
 ---
 #### **&lt;RESET&gt;**
