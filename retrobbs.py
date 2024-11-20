@@ -726,12 +726,12 @@ def SignIn(conn:Connection):
     conn.SendTML('<CLR><CYAN>Username:')
     Done = False
     while not Done:
-        name = conn.ReceiveStr(bytes(keys,'ascii'), 16, False)
+        name = conn.ReceiveStr(keys, 16, False)
         if not conn.connected:
             return
         while len(name) > 0 and len(name) < 6:
             conn.SendTML('<BR>Username must be 6 to 16 characters<BR>long, try again:')
-            name = conn.ReceiveStr(bytes(keys,'ascii'), 16, False)
+            name = conn.ReceiveStr(keys, 16, False)
             if not conn.connected:
                 return
         if len(name) > 0 and _dec(name) != '_guest_':
@@ -744,7 +744,7 @@ def SignIn(conn:Connection):
                     conn.SendTML('<BR>User already logged in<BR>>')
                 while (not Done) and (retries > 0):
                     conn.SendTML('<BR>Password:')
-                    if conn.bbs.database.chkPW(uentry, _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))):
+                    if conn.bbs.database.chkPW(uentry, _dec(conn.ReceiveStr(keys, 16, True))):
                         conn.SendTML('<LTGREEN><BR>Login successful<BELL><CHECKMARK><PAUSE n=1>')
                         conn.username = _dec(name)
                         conn.userid = uentry.doc_id
@@ -781,24 +781,24 @@ def SignIn(conn:Connection):
                         lines = conn.encoder.txt_geo[1]
                     FT.SendText(conn,conn.bbs.Paths['bbsfiles']+'terms/rules.txt','',lines)
                     conn.SendTML(f'<BR>Registering user {_dec(name)}<BR>Insert your password:')
-                    pw = conn.ReceiveStr(bytes(keys,'ascii'), 16, True)
+                    pw = conn.ReceiveStr(keys, 16, True)
                     if not conn.connected:
                         return
                     while len(pw) < 6:
                         conn.SendTML('<BR>Password must be 6 to 16 characters long<BR>Insert your password:')
-                        pw = conn.ReceiveStr(bytes(keys,'ascii'), 16, True)
+                        pw = conn.ReceiveStr(keys, 16, True)
                         if not conn.connected:
                             return
                     conn.SendTML('<BR>First name:')
-                    fname = conn.ReceiveStr(bytes(keys,'ascii'), 16)
+                    fname = conn.ReceiveStr(keys, 16)
                     if not conn.connected:
                         return
                     conn.SendTML('<BR>Last name:')
-                    lname = conn.ReceiveStr(bytes(keys,'ascii'), 16)
+                    lname = conn.ReceiveStr(keys, 16)
                     if not conn.connected:
                         return
                     conn.SendTML('<BR>Country:')
-                    country = conn.ReceiveStr(bytes(keys,'ascii'), 16)
+                    country = conn.ReceiveStr(keys, 16)
                     if not conn.connected:
                         return
                     bday = conn.ReceiveDate('<BR>bIRTHDATE: ',datetime.date(1900,1,1),datetime.date.today(),datetime.date(1970,1,1))
@@ -891,7 +891,7 @@ def EditUser(conn:Connection):
                 else:
                     conn.SendTML(f'<AT x=0 y=14><SPC n={scwidth}><CRSRU>')
                 conn.SendTML('<YELLOW>New username:')
-                name = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16, False))
+                name = _dec(conn.ReceiveStr(keys, 16, False))
                 if not conn.connected:
                     return
                 if len(name) < 6:
@@ -927,7 +927,7 @@ def EditUser(conn:Connection):
             else:
                 conn.SendTML(f'<AT x=0 y=14><SPC n={scwidth}><CRSRU>')
             conn.SendTML('First name:')
-            fname = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16))
+            fname = _dec(conn.ReceiveStr(keys, 16))
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,fname,None,None,None,None)
@@ -938,7 +938,7 @@ def EditUser(conn:Connection):
             else:
                 conn.SendTML(f'<AT x=0 y=14><SPC n={scwidth}><CRSRU>')
             conn.SendTML('Last name:')
-            lname = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16))
+            lname = _dec(conn.ReceiveStr(keys, 16))
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,None,lname,None,None,None)
@@ -959,7 +959,7 @@ def EditUser(conn:Connection):
             else:
                 conn.SendTML(f'<AT x=0 y=14><SPC n={scwidth}><CRSRU>')
             conn.SendTML('Country:')
-            country = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16))
+            country = _dec(conn.ReceiveStr(keys, 16))
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,None,None,None,country,None)
@@ -972,7 +972,7 @@ def EditUser(conn:Connection):
                 else:
                     conn.SendTML(f'<AT x=0 y=14><SPC n={scwidth}><CRSRU>')
                 conn.SendTML('Old password:')
-                pw = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))
+                pw = _dec(conn.ReceiveStr(keys, 16, True))
                 if not conn.connected:
                     return
                 if conn.bbs.database.chkPW(uentry,pw,False):
@@ -984,7 +984,7 @@ def EditUser(conn:Connection):
                         else:
                             conn.SendTML(f'<AT x=0 y=14><SPC n={scwidth}><CRSRU>')                      
                         conn.SendTML('New password:')
-                        pw = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 16, True))
+                        pw = _dec(conn.ReceiveStr(keys, 16, True))
                         if not conn.connected:
                             return
                         if len(pw) < 6:

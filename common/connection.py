@@ -247,6 +247,8 @@ class Connection:
     #maxlen = max number of characters to receive
     #pw = True for password entry
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
+        if type(keys) == str:
+            keys  = bytes(self.encoder.encode(keys,False),'latin1')
         cr = bytes(self.encoder.nl,'latin1')
         bs = bytes(self.encoder.bs,'latin1')
         if cr not in keys:

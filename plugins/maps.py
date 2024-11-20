@@ -113,7 +113,7 @@ def plugFunction(conn:Connection):
         introfile = 'plugins/maps_intro.png'
     FT.SendBitmap(conn,introfile, gfxmode = gmode, preproc=PreProcess(), display=False, dither=dithertype.NONE)
     conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><YELLOW><CLR>Location:')
-    locqry = _dec(conn.ReceiveStr(bytes(keys,'ascii'),30))
+    locqry = _dec(conn.ReceiveStr(keys,30))
     if locqry == '_':
         conn.SendTML(f'<SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR>')
         return
@@ -250,7 +250,7 @@ def plugFunction(conn:Connection):
             break
         elif (k == b'\r'):  #New Location
             conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
-            locqry = _dec(conn.ReceiveStr(bytes(keys,'ascii'),30))
+            locqry = _dec(conn.ReceiveStr(keys,30))
             if locqry == '_':
                 conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'])+TT.enable_CRSR())
                 break

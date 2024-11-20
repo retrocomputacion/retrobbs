@@ -65,12 +65,13 @@ def plugFunction(conn:Connection):
         termino = ''
         #Receive search term
         while termino == '':
-            termino = conn.ReceiveStr(bytes(keys,'ascii'), 30, False)
+            termino = conn.ReceiveStr(keys, 30, False)
             if conn.connected == False :
                 return()
             if termino == conn.encoder.back:
                 conn.Sendall(TT.set_Window(0,scheight))
                 return()
+        termino = conn.encoder.decode(termino)
         conn.SendTML('<SPINNER><CRSRL>')
         results = wikipedia.search(termino, results = scheight-10)
         conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the SPINNER wait character

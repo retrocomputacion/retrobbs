@@ -61,10 +61,10 @@ def plugFunction(conn:Connection):
             nick = conn.username
         else:
             conn.SendTML('<GREEN>Nick: <WHITE>')
-            nick = _dec(conn.ReceiveStr(bytes(keys,'ascii'),20))
+            nick = _dec(conn.ReceiveStr(keys,20))
         if nick != '':
             conn.SendTML('<CLR><GREEN>Message:<BR><WHITE>')
-            line = _dec(conn.ReceiveStr(bytes(keys,'ascii'), scwidth-1))
+            line = _dec(conn.ReceiveStr(keys, scwidth-1))
             if line != '':
                 try:    # Refresh oneliners in case another user posted in the meanwhile
                     olf = open('plugins/oneliners.json','r')

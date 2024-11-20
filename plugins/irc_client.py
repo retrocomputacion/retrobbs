@@ -211,7 +211,7 @@ Accepted commands:
         nickname = conn.username[0:9]
     else:
         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><YELLOW>Enter nick: {"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
-        nickname = _dec(conn.ReceiveStr(bytes(keys,'ascii'), 9)) #Get nick
+        nickname = _dec(conn.ReceiveStr(keys, 9)) #Get nick
     nickname = nickname.translate({ord(i): None for i in '#?!@/()&$"'})
     conn.Sendall(TT.set_Window(0,scheight))
     if nickname == '':
@@ -221,7 +221,7 @@ Accepted commands:
                  f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
     if channel == '':
         conn.SendTML(f'<YELLO>Enter channel: #{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
-        channel = '#'+(conn.ReceiveStr(bytes(keys,'ascii'),20)).translate({ord(i): None for i in '#@/"'}) #Get channel
+        channel = '#'+_dec(conn.ReceiveStr(keys,20)).translate({ord(i): None for i in '#@/"'}) #Get channel
     conn.SendTML(f'<CLR><SPINNER><CRSRL>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer

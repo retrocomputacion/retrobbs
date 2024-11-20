@@ -28,6 +28,7 @@ def setup():
 def plugFunction(conn:Connection):
 
     columns,lines = conn.encoder.txt_geo
+    _dec = conn.encoder.decode
 
     def RadioTitle(conn:Connection):
         conn.SendTML(f'<WINDOW top=0 bottom={lines-1}><CLR><YELLOW>Search internet radios<BR>')
@@ -49,7 +50,7 @@ def plugFunction(conn:Connection):
         termino = ''
         #Receive search term
         while termino == '':
-            termino = conn.ReceiveStr(bytes(keys,'ascii'), columns-10, False)
+            termino = _dec(conn.ReceiveStr(keys, columns-10, False))
             if conn.connected == False :
                 return()
             if termino == '_':
@@ -90,7 +91,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<RED><BACK>{grey}Exit<BR>')
                 conn.SendTML(f'<KPROMPT t=RETURN>{grey}Search Again<BR>')
             conn.SendTML('<BR>Select:')
-            sel = conn.ReceiveStr(bytes(keys,'ascii'), 10, False)
+            sel = _dec(conn.ReceiveStr(keys, 10, False))
             if sel.upper() == 'P':
                 page = max(0,page-1)
             if sel.upper() == 'N':

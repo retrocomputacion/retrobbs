@@ -69,11 +69,9 @@ def formatX(text, columns = 40, convert = True):
         else:
             output.extend([''])
     for i in range(len(output)):
+        output[i] = escape(output[i])
         if len(output[i])<columns:
-            output[i] = escape(output[i])
             output[i] += '<BR>'
-        else:
-            output[i] = escape(output[i])
     return(output)
 
 #####################################################
@@ -263,7 +261,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             _page(tline,lcount)
             ldir = True
         elif k in ekeys:
-            ret = k.decode("utf-8")
+            ret = conn.encoder.decode(k.decode('latin1'))
             break
     # else:
     #     conn.ReceiveKey(b'_')

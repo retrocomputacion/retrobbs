@@ -112,7 +112,7 @@ def plugFunction(conn:Connection):
             done = True
         else:
             conn.SendTML('Location:')
-            locqry = conn.encoder.decode(conn.ReceiveStr(bytes(keys,'ascii'),30))
+            locqry = conn.encoder.decode(conn.ReceiveStr(keys,30))
             try:
                 tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
             except:
@@ -299,7 +299,6 @@ async def getweather(conn:Connection,locquery,geoLoc):
                     draw.text((xx+24,76+(ix)),str(hourly.temperature)+'°',c_white,font=font_text)
                 ih += 1
             ix += 32
-            print(ix)
     except Exception as e:
         _LOG('Error getting location data',id=conn.id, v=1)
         conn.SendTML('ERROR!')

@@ -32,6 +32,7 @@ def setup():
 ###################################
 def plugFunction(conn:Connection):
 
+    _dec = conn.encoder.decode
     columns,lines = conn.encoder.txt_geo
     tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CLR>'
 
@@ -55,7 +56,7 @@ def plugFunction(conn:Connection):
         termino = ''
         #Receive search term
         while termino == '':
-            termino = conn.ReceiveStr(bytes(keys,'ascii'), columns-10, False)
+            termino = _dec(conn.ReceiveStr(keys, columns-10, False))
             if conn.connected == False :
                 return()
             if termino == '_':
@@ -94,7 +95,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<RED><BACK>{grey}Exit<BR>')
                 conn.SendTML(f'<KPROMPT t=RETURN>{grey}Search Again<BR>')
             conn.SendTML('<BR>Select:')
-            sel = conn.ReceiveStr(bytes(keys,'ascii'), 10, False)
+            sel = _dec(conn.ReceiveStr(keys, 10, False))
             if sel.upper() == 'P':
                 page = max(0,page-1)
             if sel.upper() == 'N':
@@ -155,7 +156,7 @@ def plugFunction(conn:Connection):
                         conn.SendTML(f'<RED><BACK>{grey}Exit<BR>')
                         conn.SendTML(f'<KPROMPT t=RETURN>{grey}Back to Podcasts<BR>')
                     conn.SendTML('<BR>Select:')
-                    epsel = conn.ReceiveStr(bytes(keys,'ascii'), 10, False)
+                    epsel = _dec(conn.ReceiveStr(keys, 10, False))
                     if epsel.upper() == 'P':
                         eppage = max(0,eppage-1)
                     if epsel.upper() == 'N':
