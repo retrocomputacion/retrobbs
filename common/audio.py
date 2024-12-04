@@ -9,6 +9,7 @@ import subprocess
 import signal
 import math
 import asyncio
+import platform
 from PIL import Image, ImageDraw
 from io import BytesIO
 
@@ -370,8 +371,13 @@ class PcmStream:
     def __init__(self, fn, sr):
         # self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
         #                 stdout=subprocess.PIPE, preexec_fn=os.setsid)
-        self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
-                        stdout=subprocess.PIPE, preexec_fn=os.setsid)
+
+        if "Linux" in platform.system():
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
+                            stdout=subprocess.PIPE, preexec_fn=os.setsid)
+        else:
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
+                            stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
     async def read(self, size):
         try:
@@ -386,8 +392,12 @@ class PcmStream:
     
     def stop(self):
         self.pcm_stream.stdout.flush()
-        self.pcm_stream.send_signal(signal.SIGINT)
-        self.pcm_stream.terminate()
+        if "Linux" in platform.system():
+            self.pcm_stream.send_signal(signal.SIGINT)
+            self.pcm_stream.terminate()
+        else:
+            self.pcm_stream.send_signal(signal.CTRL_BREAK_EVENT)
+            self.pcm_stream.kill()
         #os.killpg(self.pcm_stream.pid, signal.SIGKILL)
 
 ###################################################
