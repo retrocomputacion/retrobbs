@@ -334,6 +334,9 @@ Example:
 
 </br>
 
+#### **&lt;END&gt;**
+Complete the execution, exit the script.
+
 #### **&lt;PAUSE&gt;**
 Pause the execution.</br>
 Parameter:

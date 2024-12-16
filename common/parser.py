@@ -46,7 +46,7 @@ from random import randrange
 t_registers = ['_a','_c','_b','_r','_s','_i']
 
 # Tokens
-t_statements = {'mode':[('m','PET64')],'switch':[('r','_A')],'case':[('c',False)],'while':[('c',False)],'if':[('c',False)]}
+t_statements = {'mode':[('m','PET64')],'switch':[('r','_A')],'case':[('c',False)],'while':[('c',False)],'if':[('c',False)],'end':[]}
 
 t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
                   'RND':(lambda s,e:randrange(s,e) if s<e else s,[('_R','_I'),('s',0),('e',10)]),
@@ -392,9 +392,15 @@ class TMLParser(HTMLParser):
                 if condition != False:
                     condition = condition.replace('\r','\\r').replace('\n','\\n')
                 if self._evalParameter(condition,False):
+                    _LOG("IF TRUE")
                     self.stack.appendleft((tag,[],(spos,epos)))
                 else:
+                    _LOG("IF FALSE")
                     self.skip += 1
+            # Handle END
+            elif tag == 'end':
+                _LOG("END TAG")
+                self.skip += 9999
         elif self.skip == 0: 
             if tag in self.t_mono:
                 if isinstance(self.t_mono[tag],str):
