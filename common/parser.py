@@ -309,7 +309,7 @@ class TMLParser(HTMLParser):
         self._R = None
         ###############
         super().feed(data)
-        super().close()
+        self.close()
         super().reset()
         return {'_A':self._A,'_S':self._S,'_I':self._I,'_R':self._R}
 
@@ -359,11 +359,13 @@ class TMLParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         parms = []
         attr =  dict(attrs)
+        # print(tag, self.skip)
         if tag in t_statements:
             epos = self.getpos()[1]
             spos = self.rawdata[:epos].rfind('<')
             if self.skip != 0:	# Handle nested blocks
-                self.skip += 1
+                if tag != 'end':    #END is not a block statement
+                    self.skip += 1
             # Handle MODE
             elif tag == 'mode':
                 if attr.get('m','PET64') != self.mode:
@@ -392,14 +394,14 @@ class TMLParser(HTMLParser):
                 if condition != False:
                     condition = condition.replace('\r','\\r').replace('\n','\\n')
                 if self._evalParameter(condition,False):
-                    _LOG("IF TRUE")
+                    # _LOG("IF TRUE")
                     self.stack.appendleft((tag,[],(spos,epos)))
                 else:
-                    _LOG("IF FALSE")
+                    # _LOG("IF FALSE")
                     self.skip += 1
             # Handle END
             elif tag == 'end':
-                _LOG("END TAG")
+                # _LOG("END TAG")
                 self.skip += 9999
         elif self.skip == 0: 
             if tag in self.t_mono:
@@ -445,6 +447,7 @@ class TMLParser(HTMLParser):
 
     def handle_endtag(self, tag):
         i = j = None
+        # print('/',tag, self.skip)
         if tag in t_statements:
             if self.skip > 0:
                 self.skip -= 1
