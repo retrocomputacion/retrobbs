@@ -16,7 +16,7 @@ requests>=2.26.0
 streamlink
 tinydb
 wikipedia
-Wikipedia_API
+Wikipedia_API<=0.6.0
 crc
 lhafile
 scikit-image

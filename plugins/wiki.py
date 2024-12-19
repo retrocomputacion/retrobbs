@@ -52,7 +52,12 @@ def plugFunction(conn:Connection):
     wcolors.PbColor = ecolors['BLACK']
     wcolors.PtColor = ecolors['BLUE']
     wikipedia.set_lang(conn.bbs.lang)
-    wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
+    if wikipediaapi.__version__[1]<6:
+        wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
+    else:
+        _LOG('version 0.6.0')
+        wiki = wikipediaapi.Wikipedia(user_agent='RetroBBS/0.60',language=conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
+
     sccolors = 'WHITE' if 'MSX' in conn.mode else 'LIGHT_GREY'
     conn.Sendall(TT.to_Text(0,ecolors[sccolors],ecolors[sccolors]))
     loop = True
