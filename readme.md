@@ -161,12 +161,14 @@ __New features__:
  - MSX support
  - *Radio* and *Podcast* plugins by __Emanuele Laface__
  - SID to AY music conversion.
+ - New &lt;END&gt; TML statement 
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming
  - Fixed PCMPLAY support for non-local files
  - Webaudio plugin now supports non-live sources
  - Send the correct number of delete characters for the LogOff confirmation message
+ - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
  
 ---
 # 1.2 The *Turbo56K* protocol
@@ -258,13 +260,13 @@ Python modules:
   * soundfile
   * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
   * tinydb
-  * wikipedia and wikipedia-api (For the Wikipedia plug-in)
+  * wikipedia and wikipedia-api (For the Wikipedia plug-in)**
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
     pip install -r requirements.txt
 
-
+  ** Note: Wikipedia-API version is currently restricted to a version up to 0.6.0. If you're experiencing problems with the _Wikipedia_ plugin try either upgrading to the latest version, or downgrade to 0.5.8
 
 ### External software:
 
