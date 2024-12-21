@@ -59,11 +59,17 @@ t_gen_mono = {	'PAUSE':(lambda n:time.sleep(n),[('n',0)]),
                 'INK':(lambda c:'\xff\xb7'+chr(c),[('_R','_C'),('c',0)])}
 t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
+t_gen_block = {}
+
+
 class TMLParser(HTMLParser):
     conn = None
     mode = 'PET64'
     # Conversion function for plain text
     t_conv = P.toPETSCII
+    b_buffer = ''   # Text buffer for block functions
+    block = 0   # Block function flag
+    b_stack = ''    # Buffer stack
 
     def __init__(self, conn):
         self.mode = conn.mode
@@ -90,9 +96,13 @@ class TMLParser(HTMLParser):
         #self.t_multi.update(t_multi[mode])
         self.t_multi.update(conn.encoder.tml_multi)
         self.t_multi =  {k.lower(): v for k, v in self.t_multi.items()}
+        self.t_block = t_gen_block.copy()
+        self.t_block.update(EX.t_block)
+        self.t_block =  {k.lower(): v for k, v in self.t_block.items()}
         self.buffer = []
         self.skip = 0	# > 0 if skipping a section
         self.stack = deque('')	# Tag stack push and pop from left - Stack entry format: ('TAG',[parameters],(position))
+        self.b_stack = deque('')
         ##### Registers
         self._A = None
         self._S = ''
@@ -104,6 +114,8 @@ class TMLParser(HTMLParser):
 
     def close(self) -> None:
         self.buffer = []
+        self.b_buffer = ''
+        self.block = 0
         return super().close()
 
     #############################################################
@@ -411,7 +423,11 @@ class TMLParser(HTMLParser):
                     i = self.conn.encoder.color_index(c)	#Check if last tag was a color control code
                     if i >= 0:
                         self.color = i
-                    self.conn.Sendall(c)
+                    if self.block == 0:
+                        self.conn.Sendall(c)
+                    else:
+                        if '\xff' not in c: # Dont let Turbo56K commands get thru
+                            self.b_buffer = self.b_buffer+c
                 else:
                     func = self.t_mono[tag][0]
                     ret = None
@@ -423,7 +439,6 @@ class TMLParser(HTMLParser):
                             if (p[2] if len(p)>2 else True):
                                 val = self._evalParameter(val,p[1])
                             parms.append(val)
-                        ...
                     self._R = func(*parms)
                     if ret == '_A':
                         self.set_A(self._R)
@@ -432,8 +447,11 @@ class TMLParser(HTMLParser):
                     elif ret == '_S':
                         self.set_S(self._R)
                     elif ret == '_C':
-                        self.conn.Sendall(self._R)
-                    elif ret == '_B':
+                        if self.block == 0:
+                            self.conn.Sendall(self._R)
+                        elif'\xff' not in self._R: # Dont let Turbo56K commands get thru
+                            self.b_buffer = self.b_buffer + self._R
+                    elif ret == '_B' and self.block == 0:
                         self.conn.Sendallbin(self._R)
                     if tag == 'ink':	#Handle ink color change
                         self.color = parms[0]
@@ -441,7 +459,15 @@ class TMLParser(HTMLParser):
                 n = self._evalParameter(attr.get('n','1'),1)
                 c= self.t_multi[tag]
                 for i in range(n):
-                    self.conn.Sendall(c)
+                    if self.block == 0:
+                        self.conn.Sendall(c)
+                    else:
+                        self.b_buffer = self.b_buffer + c
+            elif tag in self.t_block:
+                self.block += 1
+                if self.block > 1:
+                    self.b_stack.appendleft(self.b_buffer)  # save the previous buffer
+                    self.b_buffer = ''
             else:
                 _LOG('TML Parser: Invalid tag: '+tag.upper(), id=self.conn.id,v=2)
 
@@ -456,6 +482,16 @@ class TMLParser(HTMLParser):
                 i,j = pos[2][0],pos[2][1]
             elif tag in ['switch','case','if']:	# SWITCH/CASE/IF
                 pos = self._popLatest(tag)
+        elif tag in self.t_block and self.skip == 0:
+            self.block -= 1
+            func = self.t_block[tag][0]
+            self._R = func(self.conn,text=self.b_buffer)
+            if self.block > 0:
+                self.b_buffer = self.b_stack.popleft() + self._R
+            else:
+                self.conn.Sendall(self._R)
+                self.b_buffer = ''
+            ...
         return (i, j)
 
     def handle_data(self, data):
@@ -463,7 +499,10 @@ class TMLParser(HTMLParser):
             if len(self.stack) > 0:
                 if self.stack[0][0] == 'switch':	# Dont parse orphan data in-between switch and case tags
                     return
-            self.conn.Sendall(self.t_conv(data.translate({ord(i): None for i in '\t\r\n'})))
+            if self.block == 0:
+                self.conn.Sendall(self.t_conv(data.translate({ord(i): None for i in '\t\r\n'})))
+            else:
+                self.b_buffer = self.b_buffer+self.t_conv(data.translate({ord(i): None for i in '\t\r\n'}))
 
     def handle_comment(self, data):
         # print("Comment  :", data)

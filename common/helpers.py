@@ -74,6 +74,13 @@ def formatX(text, columns = 40, convert = True):
             output[i] += '<BR>'
     return(output)
 
+###############################################
+# Wordwrap to the connection screen width
+# preserving control codes
+###############################################
+def wordwrap(conn:Connection, text:str):
+    return conn.encoder.wordwrap(text)
+
 #####################################################
 # Text pagination
 #####################################################
@@ -328,3 +335,5 @@ def is_local(url):
 # TML tags
 ###########
 t_mono = {'CAT':(catalog,[('_R','_A'),('path','.'),('d',False),('f',True)])}
+
+t_block = {'FORMAT':(lambda c,text:wordwrap(c,text),[('c','_C'),('text','_A')])}

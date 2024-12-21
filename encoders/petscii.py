@@ -163,6 +163,79 @@ class PETencoder(Encoder):
         self.bs = chr(DELETE)	#	Backspace string/character
         self.back = chr(BACK)
 
+    ### Wordwrap text preserving control codes
+    def wordwrap(self,text):
+        codes = '\x05\x11\x12\x13\x14\x1c\x1d\x1e\x1f\x81\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f'
+        out = ''
+
+        lines = text.split('\r')
+        for line in lines:
+            if len(line)!=0:
+                space = 40  # Space left in line
+                line = re.sub(r'(['+codes+r'])',r'\n\1\n', line)
+                line = line if line[0]!='\n' else line[1:]
+                words = re.split('\n+| ',line) # words = line.split(' ')
+                pword = False
+                last = ''
+                print(words)
+                for word in words:
+                    print(word,space)
+                    if len(word) == 0:
+                        # if pword or len(last) == 0:
+                        #     space -= 1
+                        out = out + ' ' # Add space if last item was a word or a space 
+                        pword= False
+                        space -=1
+                        #     # if space == 0:
+                        #     #     space = 40
+                    elif (32 <= ord(word[0]) <= 127) or (160 <= ord(word[0]) <= 253):   #Printable
+                        if pword:
+                            pword = False
+                            space -= 1
+                            out = out + ' ' # Add space if last word was a _word_
+                            if space == 0:
+                                space = 40
+                        if space - len(word) < 0:
+                            out = out + '\r' + word
+                            space = 40 - len(word)
+                        else:
+                            out = out + word
+                            space -= len(word)
+                        #Add space
+                        if space != 0:
+                            # out = out +' '
+                            pword = True
+                            # space -= 1
+                        # if space == 0:
+                        #     space = 40
+                    elif word[0] in '\x05\x1c\x1e\x1f\x81\x90\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f\x11\x91\x94\x12\x92': #Colors, crsr up/down, INSERT, RVSON/OFF
+                        #just add the code
+                        out = out + word
+                        pword = False
+                    elif word[0] in '\x13\x93': #HOME CLR
+                        out = out + word
+                        space = 40
+                        pword = False
+                    elif word[0] in '\x14\x9d': #DELETE crsr left
+                        out = out + word
+                        space = space+1 if space+1 <= 40 else 1 # <- take into account going around to the previous line (being already at home not taken into account)
+                        pword = False
+                    elif word[0] == '\x1d': #crsr right
+                        pword = False
+                        space -= 1
+                        # if space == 0:
+                        #     space = 40
+                    else:
+                        pword = False
+                    if space == 0:
+                        space = 40
+                    last = word
+                if space != 0:
+                    out = out + '\r'
+            else:
+                out = out + '\r'
+        return out
+
     def check_fit(self, filename):
         size = os.stat(filename).st_size-2
         with open(filename,'rb') as f:

@@ -13,7 +13,8 @@ import os
 import encoders
 import plugins
 
-t_mono ={}
+t_mono = {}
+t_block = {}
 
 #######################################
 # Register TML tags for common modules
@@ -24,9 +25,16 @@ def RegisterTMLtags():
         if module in ['__init__.py','parser.py','extensions.py','petscii.py'] or module[-3:] != '.py':
             continue
         m = importlib.import_module('common.'+module[:-3])
+        tags = False
         if 't_mono' in dir(m):
             t_mono.update(m.t_mono)
+            tags = True
+        if 't_block' in dir(m):
+            t_block.update(m.t_block)
+            tags = True
+        if tags:
             _LOG(f'TML tags added for: {module[:-3].upper()}',v=4)
+
         del(m)
 
 #######################

@@ -7,6 +7,7 @@ from common.dbase import DBase
 import time
 from enum import Enum
 import os
+import textwrap
 
 ########### BBS Class ###########
 class BBS:
@@ -86,6 +87,16 @@ class Encoder:
     # Strip headers/metadata if needed for direct transfer into memory
     def get_exec(self, filename):
         return (0,None)
+    
+    # Wordwrap to the encoder/connection screen width
+    # preserving control codes
+    # text input must be already encoded
+    def wordwrap(self, text):
+        sentences = text.split('\n')
+        out = ''
+        for sentence in sentences:
+            out = out +textwrap.fill(sentence,width=self.txt_geo[0])+'\n'
+        return(text)
     
 SCOLOR = Enum('style_colors',
           [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
