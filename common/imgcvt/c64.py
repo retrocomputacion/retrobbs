@@ -31,7 +31,7 @@ Palette_PeptoNTSC = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':Tru
 
 C64Palettes = [['Colodore',Palette_Colodore],['Pepto (NTSC,Sony)',Palette_PeptoNTSC]]
 
-Native_Ext = ['.KOA','.KLA','.ART','.OCP','.DD','.DDL']
+Native_Ext = ['.KOA','.KLA','.ART','.OCP','.DD','.DDL','.GG']
 
 ##############################################
 # Get 2 closest colors
@@ -277,7 +277,37 @@ def load_Image(filename:str):
                 multi = 1
                 text = 'Koala Paint'
             else:
-                return None    
+                return None
+    elif (extension == '.GG'):  #RLE encoded KoalaPainter
+        with open(filename,'rb') as ifile:
+            if ifile.read(2) == b'\x00\x60':
+                c_buffer = ifile.read()
+                d_buffer = b''
+                run = 0
+                d_index = 0
+                repeat = 0
+                for v in c_buffer:
+                    if run == 0:  #Literal or escape
+                        if v == 254:    # escape
+                            run = 1
+                            continue
+                        d_buffer = d_buffer + v.to_bytes(1,'big')   #literal
+                    elif run == 1:  # repeat byte
+                        run = 2
+                        repeat = v
+                    else:
+                        for i in range(v):  #repeat count
+                            d_buffer = d_buffer + repeat.to_bytes(1,'big')
+                        run = 0
+                data[0] = d_buffer[:8000]
+                data[1] = d_buffer[8000:9000]
+                data[2] = d_buffer[9000:10000]
+                gcolors[1] = d_buffer[10000]
+                gcolors[0] = gcolors[1]
+                multi = 1
+                text = 'Koala Paint (RLE)'
+            else:
+                return None
     else:
         return None
     #Render image
