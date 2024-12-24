@@ -177,9 +177,7 @@ class PETencoder(Encoder):
                 words = re.split('\n+| ',line) # words = line.split(' ')
                 pword = False
                 last = ''
-                print(words)
                 for word in words:
-                    print(word,space)
                     if len(word) == 0:
                         # if pword or len(last) == 0:
                         #     space -= 1
@@ -221,6 +219,7 @@ class PETencoder(Encoder):
                         space = space+1 if space+1 <= 40 else 1 # <- take into account going around to the previous line (being already at home not taken into account)
                         pword = False
                     elif word[0] == '\x1d': #crsr right
+                        out = out + word
                         pword = False
                         space -= 1
                         # if space == 0:

@@ -157,12 +157,102 @@ class MSXencoder(Encoder):
                 code = ord(code[1])
         return self.palette.get(code,-1)
 
+    ### Wordwrap text preserving control codes
+    def wordwrap(self,text):
+        codes = ''.join(chr(i) for i in range(1,16))+''.join(chr(i) for i in range(17,32))  #'\x01\x07\x08\x0b\x12\x19\x1a\x1c\x1d\x1e\x1f\x7f'
+        out = ''
+
+        text = text.replace('\x01\x0a','\x01\xff')  # Try to catch YELLOW color code before splitting by lines
+                                                    # (this will fail if a BLACK color code is followed by a new line)
+        lines = text.split('\r')
+        extend = False
+        for line in lines:
+            line = line.replace('\x01\xff','\x01\x0a')  # replace back the YELLOW color code
+            if len(line)!=0:
+                space = 32  # Space left in line
+                line = re.sub(r'(['+codes+r'])',r'\020\1\020', line)
+                line = line if line[0]!='\x10' else line[1:]
+                words = re.split(r'\020+| ',line) # words = line.split(' ')
+                pword = False
+                last = ''
+                for word in words:
+                    if len(word) == 0:
+                        out = out + ' ' # Add space if last item was a word or a space 
+                        pword= False
+                        space -=1
+                    elif not extend:
+                        if  (32 <= ord(word[0]) <= 126) or (128 <= ord(word[0]) <= 253):   # Normal Printable
+                            if pword:
+                                pword = False
+                                space -= 1
+                                out = out + ' ' # Add space if last word was a _word_
+                                if space == 0:
+                                    space = 32
+                            if space - len(word) < 0:
+                                out = out + '\r' + word
+                                space = 32 - len(word)
+                            else:
+                                out = out + word
+                                space -= len(word)
+                            #Add space
+                            if space != 0:
+                                pword = True
+                        elif word[0] == '\x01': #GRAPH
+                            extend = True
+                        elif word[0] in '\x1e\x1f\x19\x1a\x7f\x12': #crsr up/down, RVSON/OFF, INSERT, DEL
+                            #just add the code
+                            out = out + word
+                            pword = False
+                        elif word[0] in '\x0b\x0c': #HOME CLR
+                            out = out + word
+                            space = 32
+                            pword = False
+                        elif word[0] in '\x08\x1d': #BS, crsr left
+                            out = out + word
+                            space = space+1 if space+1 <= 32 else 1 # <- take into account going around to the previous line (being already at home not taken into account)
+                            pword = False
+                        elif word[0] == '\x1c': #crsr right
+                            out = out + word
+                            space -= 1
+                        else:
+                            pword = False
+                    else:
+                        if 64 <= ord(word[0]) <= 97:    #Extended gfx
+                            if pword:
+                                pword = False
+                                space -= 1
+                                out = out + ' ' # Add space if last word was a _word_
+                                if space == 0:
+                                    space = 32
+                            if space - len(word) < 0:
+                                out = out + '\r' + '\x01'+ word
+                                space = 32 - len(word)
+                            else:
+                                out = out + '\x01' + word
+                                space -= len(word)
+                            #Add space
+                            if space != 0:
+                                pword = True
+                            extend = False
+                        elif (1 <= ord(word[0]) <= 15) or (17 <= ord(word[0]) <= 31):   #colors
+                            #just add the code
+                            out = out + '\x01' + word
+                            pword = False
+                            extend = False
+                    if space == 0:
+                        space = 32
+                    last = word
+                if space != 0:
+                    out = out + '\r'
+            else:
+                out = out + '\r'
+        return out
+
     def check_fit(self, filename):
         size = os.stat(filename).st_size
         if size <= 32768:
             with open(filename,'rb') as f:
                 header = f.read(16)
-            print(header)
             if header[0:2] == b'AB':
                 return True            # Correct ID
         return False
