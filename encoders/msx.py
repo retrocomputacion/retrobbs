@@ -162,8 +162,21 @@ class MSXencoder(Encoder):
         codes = ''.join(chr(i) for i in range(1,16))+''.join(chr(i) for i in range(17,32))  #'\x01\x07\x08\x0b\x12\x19\x1a\x1c\x1d\x1e\x1f\x7f'
         out = ''
 
-        text = text.replace('\x01\x0a','\x01\xff')  # Try to catch YELLOW color code before splitting by lines
-                                                    # (this will fail if a BLACK color code is followed by a new line)
+        extend = False
+        # Replace Yellow color code before splitting by lines
+        for c in text:
+            if extend == False:
+                if ord(c) == 1:
+                   extend = True
+                out = out + c
+            else:
+                if c == '\r':
+                    out = out  + '\xff'
+                else:
+                    out = out + c
+                extend = False
+        text = out
+        out = ''
         lines = text.split('\r')
         extend = False
         for line in lines:
