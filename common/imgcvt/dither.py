@@ -32,7 +32,7 @@ def custom_dithering(image, palette:Palette, thresholds, type:dithertype=dithert
     """
     dMatrix = np.asarray([
         [[4,1],[2,3]],  #Bayer 2x2
-        [[1,13,4,16],[9,5,12,7],[3,15,2,14],[11,8,10,8]],   #Bayer 4x4
+        [[1,13,4,16],[9,5,12,8],[3,15,2,14],[11,7,10,6]],   #Bayer 4x4
         [[1,2,3,4],[9,10,11,12],[5,6,7,8],[13,14,15,16]],   #Bayer 4x4 Odd
         [[1,9,4,12],[5,13,6,14],[3,11,2,10],[7,15,8,16]],   #Bayer 4x4 Even
         [[10,1,12,6],[4,9,3,15],[14,2,13,7],[8,11,5,16]],   #Bayer 4x4 Spotty
