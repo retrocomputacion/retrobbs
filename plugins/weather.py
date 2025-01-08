@@ -66,7 +66,7 @@ def setup():
 # user
 #
 # Pass all connection, param & value to
-# set the parameter for this user
+# set the parameter for this client
 #########################################
 def plugPrefs(conn:Connection = None, param = None, value = None):
     if conn == None: # Get parameter list
@@ -83,6 +83,17 @@ def plugPrefs(conn:Connection = None, param = None, value = None):
 # Plugin function
 ###################################
 def plugFunction(conn:Connection):
+
+    # Avoid Geocode timeout/Unavailable errors
+    # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
+    def do_geocode(location, attempt=1, max_attempts=5):
+        try:
+            return geoLoc.geocode(location,language=conn.bbs.lang)
+        except:
+            if attempt <= max_attempts:
+                return do_geocode(location, attempt=attempt+1)
+            return None
+
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     #First get location from the connection IP
     response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
@@ -114,7 +125,7 @@ def plugFunction(conn:Connection):
             conn.SendTML('Location:')
             locqry = conn.encoder.decode(conn.ReceiveStr(keys,30))
             try:
-                tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
+                tloc = do_geocode(locqry) #geoLoc.geocode(locqry,language=conn.bbs.lang)
             except:
                 _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
                 conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
@@ -134,6 +145,17 @@ cellx = lambda width,percent:int((width*percent)//8)*8
 # Get weather data and render image
 #######################################################
 async def getweather(conn:Connection,locquery,geoLoc):
+
+    # Avoid Geocode timeout/Unavailable errors
+    # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
+    def do_reverse(location, attempt=1, max_attempts=5):
+        try:
+            return geoLoc.reverse(location,language=conn.bbs.lang)
+        except:
+            if attempt <= max_attempts:
+                return do_reverse(location, attempt=attempt+1)
+            return None
+
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
     units = python_weather.METRIC if conn.bbs.database.getUserPrefs(conn.userid, {'wxunits':conn.bbs.PlugOptions.get('wxunits','C')})['wxunits']=='C' else python_weather.IMPERIAL
     if python_weather.__version__[0]=='0':
@@ -178,7 +200,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
         draw.line(((2+(int(j*i)),0),(-13+(int(j*i)),15)),fill=c_dgrey)
     # Get full location from returned coordinates
     try:
-        floc = geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
+        floc = do_reverse(str(weather.location[0])+','+str(weather.location[1])) #geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
         address = floc.raw.get('address',floc.raw.get('properties',{})) #'address' in nominatim, 'properties in photon
         #City
         city = address.get('village',address.get('town',address.get('city',address.get('municipality','Unknown'))))
