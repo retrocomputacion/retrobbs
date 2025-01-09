@@ -518,9 +518,9 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
                 conn.Sendallbin(binary)
         elif ext in text_e:
             w = FT.SendText(conn,path+p,title)
-        elif ext in pet_e[0:2]:
+        elif ext == pet_e[0]:
             w = FT.SendCPetscii(conn,path+p,(0 if waitkey else delay))
-        elif ext in pet_e[2:4]:
+        elif ext == pet_e[1]:
             w = FT.SendPETPetscii(conn,path+p)
         elif (ext in aud_e) and (conn.QueryFeature(TT.STREAM) < 0x80):
             AA.PlayAudio(conn,path+p,None)
