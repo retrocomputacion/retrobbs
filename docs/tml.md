@@ -51,7 +51,7 @@ _Tags_ are the functions or statements in this language, a basic statement can o
 ```html
 <CLR><CHECKMARK>
 ```
-Almost all tags have optional parameters, this take the format `parameter=value`, if a parameter is not passed the default value will be used. Parameter names are always **lowercase**, with a few exceptions.
+Most tags have optional parameters, this take the format `parameter=value`, if a parameter is not passed the default value will be used. Parameter names are always **lowercase**, with a few exceptions.
 
 ##### Example: Output 20 white Pi characters, wait 2 seconds, output a newline and 5 yellow Pound characters
 ```html
@@ -284,9 +284,15 @@ Parameter:
 
 `m`: Encoding for this code block, default `'PET64'`
 
+
+#### **&lt;FORMAT&&gt;**
+All text inside the block is formatted to fit inside the client's screen width, wordwrapping where necessary.</br>
+All code and text inside the block is parsed once and send to the client once the end of the block is reached, functions/statements that return *Turbo56K* commands are ignored, do not use &lt;PAUSE&gt; and functions that require user input like &lt;INKEYS&gt; inside the block.
+
+
 ---
 #### **&lt;SWITCH&gt;**...**&lt;CASE&gt;**
-Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.<br>
+Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.</br>
 _&lt;SWITCH&gt;_ parameter:
 
 `r`: expression to test, default `_A`
@@ -482,6 +488,20 @@ Parameters:
 `file`: Path to the file to be sent. Default `''`</br>
 `dialog`: Boolean, set to `True` to display the file dialog prompting user action. Default `False`</br>
 `save`: Set to `True` if you want the (option for the) file to be saved to disk, as long as the file type and the client's terminal supports it. Default `False`
+
+---
+#### **&lt;SENDBITMAP&gt;**
+Send a bitmap to the client. Conversion to native format will be performed if necessary.</br>
+Parameters:
+
+`file`: Path to the file to be sent. Default `''`</br>
+
+---
+#### **&lt;PCMPLAY&gt;**
+Start a PCM audio stream.</br>
+Parameters:
+
+`file`: Path to the audio to be streamed. Default `''`</br>
 
 ---
 #### **&lt;GRABFRAME&gt;**

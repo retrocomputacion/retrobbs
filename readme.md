@@ -28,7 +28,7 @@ VERSION 0.60 dev
 4. [Common modules](#4-common-modules)
 5. [Encoders](#5-encoders)
 6. [Installation/Usage](#6-installationusage)
-   1. [The intro/login sequence](#61-the-intrologin-sequence)
+   1. [The intro/login/logout sequences](#61-the-introloginlogout-sequences)
    2. [SID SongLength](#62-sid-songlength)
    3. [User accounts / Database management](#63-user-accounts--database-management)
    4. [Messaging system](#64-messaging-system)
@@ -161,14 +161,25 @@ __New features__:
  - MSX support
  - *Radio* and *Podcast* plugins by __Emanuele Laface__
  - SID to AY music conversion.
- - New &lt;END&gt; TML statement 
+ - New &lt;END&gt; TML statement
+ - New &lt;FORMAT&gt; TML block instruction
+ - Support for RLE compressed Koala Paint images
+ - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
+ - Added, optional TML scripts for session start and logout.
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming
  - Fixed PCMPLAY support for non-local files
- - Webaudio plugin now supports non-live sources
+ - *Webaudio* plugin now supports non-live sources
  - Send the correct number of delete characters for the LogOff confirmation message
  - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
+ - Fixed *Slideshow* handling of .C and .PET PETSCII files
+ - *Weather* plugin now has more robust handling of geocoder timeouts
+ - Fixed image converter Bayer 4x4 dithering matrix
+ - Added user-agent when using wikipediaapi >= 0.6.0
+ - Fixed audio streaming now works when the BBS is running under Windows
+ - Messaging system reworked, it now supports different screen dimensions and longer messages
+
  
 ---
 # 1.2 The *Turbo56K* protocol
@@ -843,7 +854,7 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **ReceiveStr(keys, maxlen = 20, pw = False)**: Interactive reception with echo. The call is completed on reception of a carriage return.
 
-- **\<keys\>** is a binary string with the accepted input characters
+- **\<keys\>** is a binary or normal string with the accepted input characters. Use binary string for characters in the native encoding. Normal string for unencoded characters.
 - **\<maxlen\>** is the maximum input string length
 
 Set **\<pw\>** to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
@@ -1131,13 +1142,18 @@ Optional arguments:
  - `c [file name]` sets the configuration file to be used, defaults to `config.ini`
 
 ---
-# 6.1 The intro/login sequence
+# 6.1 The intro/login/logout sequences
 Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
 
 After a successful login or directly after choosing guest access, the supported files in the subdirectory `[bbsfiles]/intro` will be shown/played in alphabetical order.
 
 Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged-in user and show the amount of unread public and private messages if any.
+
+From v0.60 additional TML scripts can be placed in the `[bbsfiles]` directory:
+
+ - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Usefull if you want to trigger certain actions at login time, such as display news, or the oneliner plugin.
+ - `logoff.tml` will run when the client closes the connection the proper way, can be used to display connection statistics or display a goodbye image/text. 
 
 ---
 # 6.2 SID SongLength
