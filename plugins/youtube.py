@@ -46,6 +46,9 @@ def plugFunction(conn:Connection,url, crop):
     tmsecs = None
     slsession = streamlink.Streamlink()
     ydl_opts = {'quiet':True, 'socket_timeout':15}
+    cookies = conn.bbs.PlugOptions.get('wxdefault','')
+    if cookies != '':
+        ydl_opts['cookiefile'] = cookies
     try:
         # stl = slsession.resolve_url(url)
         # source = stl[0]

@@ -8,7 +8,7 @@ mutagen
 numpy
 opencv_python
 geopy
-youtube-dl
+# youtube-dl
 # pafy @ git+https://github.com/Cupcakus/pafy
 Pillow>=8.0.0
 python_weather

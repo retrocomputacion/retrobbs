@@ -330,6 +330,9 @@ def ytdlp_resolve(conn,url,title):
     sURL = None
     sTitle = None
     ydl_opts = {'quiet':False, 'socket_timeout':15}
+    cookies = conn.bbs.PlugOptions.get('wxdefault','')
+    if cookies != '':
+        ydl_opts['cookiefile'] = cookies
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         sTitle = formatX(title+info['webpage_url_domain']+': '+info['title'],conn.encoder.txt_geo[0])

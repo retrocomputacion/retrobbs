@@ -271,7 +271,9 @@ Python modules:
   * soundfile
   * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
   * tinydb
+  * validators
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)**
+  * yt_dlp
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
@@ -644,7 +646,9 @@ Displays current weather and forecast for the next 2-3 days as a Hires image. On
 | `entryZurl` | full URL to the audio stream
 | `entryZimage` | Image to show before starting the stream, can be a local path or URL to an external file
 
-- Configuration file \[PLUGINS\] options: NONE
+- Configuration file \[PLUGINS\] options: 
+
+  - `ytcookies` = Path to your optional _cookies.txt_ file, see the [YouTube](#youtube-snapshot-%28youtube.py%29:) plugin for instructions
 
 ### Wikipedia (wiki.py):
 Search and display *Wikipedia* articles, displays relevant article image if found.
@@ -664,8 +668,9 @@ Display a frame from the specified *YouTube* video. It will grab the latest fram
 | `entryZurl` | full URL to the *YouTube* video
 | `entryZcrop` | comma-separated list of image coordinates for cropping the video frame
 
-- Configuration file \[PLUGINS\] options: NONE
+- Configuration file \[PLUGINS\] options:
 
+  - `ytcookies` = Path to your optional _cookies.txt_ file. Set this option if you're getting errors with yt_dlp asking for cookies to be provided. Read [here](https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies) and [here](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) on how to generate the cookies.txt file. 
 
 ---
 # 3.2 More Plug-ins
@@ -1152,7 +1157,7 @@ Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles
 
 From v0.60 additional TML scripts can be placed in the `[bbsfiles]` directory:
 
- - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Usefull if you want to trigger certain actions at login time, such as display news, or the oneliner plugin.
+ - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the oneliner plugin.
  - `logoff.tml` will run when the client closes the connection the proper way, can be used to display connection statistics or display a goodbye image/text. 
 
 ---
