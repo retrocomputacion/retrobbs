@@ -648,7 +648,7 @@ Displays current weather and forecast for the next 2-3 days as a Hires image. On
 
 - Configuration file \[PLUGINS\] options: 
 
-  - `ytcookies` = Path to your optional _cookies.txt_ file, see the [YouTube](#youtube-snapshot-%28youtube.py%29:) plugin for instructions
+  - `ytcookies` = Path to your optional _cookies.txt_ file, see the [YouTube](#youtube-snapshot-youtubepy) plugin for instructions
 
 ### Wikipedia (wiki.py):
 Search and display *Wikipedia* articles, displays relevant article image if found.
