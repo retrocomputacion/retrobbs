@@ -11,7 +11,7 @@ geopy
 # youtube-dl
 # pafy @ git+https://github.com/Cupcakus/pafy
 Pillow>=8.0.0
-python_weather
+python_weather>=2.0.0
 requests>=2.26.0
 streamlink
 tinydb
