@@ -1241,7 +1241,7 @@ RUNNING UNDER:<BR>
                 if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
                     _LOG('Sending intro pic',id=conn.id,v=4)
                     if conn.mode == 'PET264':
-                        splash = 'splash-p4.boti'
+                        splash = 'splash.boti'
                     elif conn.mode == 'PET64':
                         splash = 'splash.art'
                     else:

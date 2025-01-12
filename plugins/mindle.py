@@ -126,15 +126,15 @@ def plugFunction(conn:Connection):
                 conn.Receive(1)
                 conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
         elif rec == 'd':
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
-            conn.SendTML('<AT y=5><GREY3>Instructions: You have to guess the<BR> hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>')
-            conn.SendTML('After each try the color of the<BR> characters will change color to show<BR> how close you are from guessing the<BR> correct word.<BR>')
-            conn.SendTML('<BR><GREEN> * <GREY3>Green means the character exists in<BR>   the hidden word and is in the<BR>   correct position<BR>')
-            conn.SendTML('<YELLOW> * <GREY3>Yellow means the character exists in<BR>   the hidden word but is in the wrong<BR>   position<BR>')
-            conn.SendTML("<BLACK> * <GREY3>Black means the character is not<BR>   present in the hidden word<BR>")
-            conn.SendTML('<BR>       Press any key to continue')
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR>')
+            conn.SendTML('''<FORMAT><CRSRD><GREY3>Instructions: You have to guess the hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>
+After each try the color of the characters will change color to show how close you are from guessing the correct word.<BR>
+'<BR><GREEN> * <GREY3>Green means the character exists in the hidden word and is in the correct position<BR>
+<YELLOW> * <GREY3>Yellow means the character exists in the hidden word but is in the wrong position<BR>
+<BLACK> * <GREY3>Black means the character is not present in the hidden word<BR>
+<BR>Press any key to continue</FORMAT>''')
             conn.Receive(1)
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            conn.SendTML('<CLR><WINDOW>')
         elif rec == 'a':       ##### Daily Mindle
             conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
             score = mindle(conn, mdata['daily'],valid)
