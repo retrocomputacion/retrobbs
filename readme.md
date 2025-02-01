@@ -5,9 +5,9 @@
 
 # RetroBBS
 
-VERSION 0.50 dev
+VERSION 0.60 dev
 
-(c)2020-2023 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+(c)2020-2024 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
 
 
@@ -28,7 +28,7 @@ VERSION 0.50 dev
 4. [Common modules](#4-common-modules)
 5. [Encoders](#5-encoders)
 6. [Installation/Usage](#6-installationusage)
-   1. [The intro/login sequence](#61-the-intrologin-sequence)
+   1. [The intro/login/logout sequences](#61-the-introloginlogout-sequences)
    2. [SID SongLength](#62-sid-songlength)
    3. [User accounts / Database management](#63-user-accounts--database-management)
    4. [Messaging system](#64-messaging-system)
@@ -40,7 +40,7 @@ VERSION 0.50 dev
 
 # 1 Introduction
 
-*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol-capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64.
+*RetroBBS* is a bulletin board system specifically developed to work in conjunction with *[Turbo56k](docs/turbo56k.md)* protocol-capable terminals, such as *[Retroterm](https://github.com/retrocomputacion/retroterm)* for the Commodore 64, Commodore Plus/4 or MSX computers.
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
@@ -156,6 +156,31 @@ __Changes/Bug fixes__:
  - *Sendfile* checks if executable file fits in the client's available memory size and range and disables transfer to memory if the file is too large or resides outside the valid memory range.
  - Added `←` glyph to BetterPixels font
 
+### **v0.60**:
+__New features__:
+ - MSX support
+ - *Radio* and *Podcast* plugins by __Emanuele Laface__
+ - SID to AY music conversion.
+ - New &lt;END&gt; TML statement
+ - New &lt;FORMAT&gt; TML block instruction
+ - Support for RLE compressed Koala Paint images
+ - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
+ - Added, optional TML scripts for session start and logout.
+
+__Changes/Bug fixes__:
+ - Fixed filter cutoff low nibble in SID chiptune streaming
+ - Fixed PCMPLAY support for non-local files
+ - *Webaudio* plugin now supports non-live sources
+ - Send the correct number of delete characters for the LogOff confirmation message
+ - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
+ - Fixed *Slideshow* handling of .C and .PET PETSCII files
+ - *Weather* plugin now has more robust handling of geocoder timeouts
+ - Fixed image converter Bayer 4x4 dithering matrix
+ - Added user-agent when using wikipediaapi >= 0.6.0
+ - Fixed audio streaming now works when the BBS is running under Windows
+ - Messaging system reworked, it now supports different screen dimensions and longer messages
+
+ 
 ---
 # 1.2 The *Turbo56K* protocol
 
@@ -197,7 +222,11 @@ Current built-in functions:
 
 - SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDumpHR* or *SIDDump* executables in the system path, if neither is found a slower Python implementation will be used instead.
 
-- YM2149/AY-3-8910 music conversion and streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of SID register writes. Cyclic envelope simulation is limited. Samples and some other special effects are not supported. 
+- YM2149/AY-3-8910 music streaming: .AY, .VTX and .VGZ files are decoded and converted to a stream of register writes. Samples and some other special effects are not supported.
+
+- Conversion of AY-3-8910 register streams into SID streams for C64 clients, cyclic envelope simulation is limited.
+
+- Conversion of SID register streams into AY-3-8910 streams for MSX clients, all SID waveforms are played as either pulse or noise. Filter attenuation is not simulated.
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
@@ -225,29 +254,32 @@ Python version 3.7 or above
 Python modules:
 
   * audioread
-  * soundfile
+  * beautifulsoup4
+  * crc
+  * feedparser (For the RSS feeds plug-in)
+  * geopy (For the weather plugin)
+  * hitherdither (https://www.github.com/hbldh/hitherdither)
+  * irc (For IRC client plug-in)
+  * lhafile (For .YM and .VTX file support)
   * mutagen
   * numpy
   * opencv-python
   * ~~pafy (For the YouTube plug-in) (use this version: https://github.com/Cupcakus/pafy)~~
-  * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
-  * wikipedia and wikipedia-api (For the Wikipedia plug-in)
-  * hitherdither (https://www.github.com/hbldh/hitherdither)
-  * beautifulsoup4
-  * feedparser (For the RSS feeds plug-in)
-  * irc (For IRC client plug-in)
-  * tinydb
-  * geopy (For the weather plugin)
   * python_weather (For the weather plugin)
-  * crc
-  * lhafile (For .YM and .VTX file support)
+  * pyradios (For *Radio* plugin)
   * scikit-image
+  * soundfile
+  * streamlink (Replaces pafy for *YouTube* links, it also supports other stream services such as *Twitch*)
+  * tinydb
+  * validators
+  * wikipedia and wikipedia-api (For the Wikipedia plug-in)**
+  * yt_dlp
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   
     pip install -r requirements.txt
 
-
+  ** Note: Wikipedia-API version is currently restricted to a version up to 0.6.0. If you're experiencing problems with the _Wikipedia_ plugin try either upgrading to the latest version, or downgrade to 0.5.8
 
 ### External software:
 
@@ -583,6 +615,14 @@ Retrieves the latest ten entries from the specified RSS feed, upon user selectio
 - Configuration file parameters: `entryZurl` = URL to the RSS feed
 - Configuration file \[PLUGINS\] options: NONE
 
+### Search Internet Radios (radio.py):
+By __Emanuele Laface__</br>
+Uses Radio-browser.info API to search for and listen to internet radios.
+
+### Search Podcasts (podcast.py):
+By __Emanuele Laface__</br>
+Search for and listen to podcasts.
+
 ### Weather (weather.py) (new 0.25):
 Displays current weather and forecast for the next 2-3 days as a Hires image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
 
@@ -599,8 +639,16 @@ Displays current weather and forecast for the next 2-3 days as a Hires image. On
  *YouTube* or other sources).
 
 - Configuration file function: WEBAUDIO
-- Configuration file parameters: `entryZurl` = full URL to the audio stream
-- Configuration file \[PLUGINS\] options: NONE
+- Configuration file parameters:
+
+| key | description
+|:---:|:---
+| `entryZurl` | full URL to the audio stream
+| `entryZimage` | Image to show before starting the stream, can be a local path or URL to an external file
+
+- Configuration file \[PLUGINS\] options: 
+
+  - `ytcookies` = Path to your optional _cookies.txt_ file, see the [YouTube](#youtube-snapshot-youtubepy) plugin for instructions
 
 ### Wikipedia (wiki.py):
 Search and display *Wikipedia* articles, displays relevant article image if found.
@@ -620,8 +668,9 @@ Display a frame from the specified *YouTube* video. It will grab the latest fram
 | `entryZurl` | full URL to the *YouTube* video
 | `entryZcrop` | comma-separated list of image coordinates for cropping the video frame
 
-- Configuration file \[PLUGINS\] options: NONE
+- Configuration file \[PLUGINS\] options:
 
+  - `ytcookies` = Path to your optional _cookies.txt_ file. Set this option if you're getting errors with yt_dlp asking for cookies to be provided. Read [here](https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies) and [here](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) on how to generate the cookies.txt file. 
 
 ---
 # 3.2 More Plug-ins
@@ -663,7 +712,7 @@ Stream a SID file to **\<conn\>**
 - **\<ptime\>**: Playtime in seconds
 - **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
-check the [SID streaming](docs/sid_streaming.md) protocol
+check the [Chiptune streaming](docs/chiptune_streaming.md) protocol
 
 
 ### class PCMStream(fn, sr) :
@@ -810,7 +859,7 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **ReceiveStr(keys, maxlen = 20, pw = False)**: Interactive reception with echo. The call is completed on reception of a carriage return.
 
-- **\<keys\>** is a binary string with the accepted input characters
+- **\<keys\>** is a binary or normal string with the accepted input characters. Use binary string for characters in the native encoding. Normal string for unencoded characters.
 - **\<maxlen\>** is the maximum input string length
 
 Set **\<pw\>** to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
@@ -1067,12 +1116,20 @@ Grab's a frame from the specified video file/stream.
 
 ---
 # 5 Encoders
-Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation. This means reducing to the minimum instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
+Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation. This means reducing to a minimum instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
 
 For this purpose a new `Encoder` class has been created.</br>
 This class provides platform specific encoding/decoding of strings, as well as defining the basic control codes and color palette.
 
-Currently, only the `PET64` and `PET264` encoders are implemented, corresponding to the _Commodore 64_ and _Commodore Plus/4_ PETSCII encodings respectively.
+Currently, the `PET64`, `PET264` and `MSX1` encoders are implemented, corresponding to the _Commodore 64_, _Commodore Plus/4_ PETSCII and _MSX1_ encodings respectively.
+
+Encoders implement the following functionality:
+- Encoding/Decoding to and from a client's native text format.
+- List of graphic modes
+- Color palette information
+- Native word wrapping, maintaining control codes
+- Check if a file fits in the client's available RAM for memory transfer
+- Get a file's load/start address 
 
 ---
 # 6 Installation/Usage
@@ -1080,6 +1137,8 @@ After ensuring you have installed all the required python modules and extra soft
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
   **NOTICE**: Starting at v0.20, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
+
+  **NOTICE**: If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and viceversa)
 
 
 You can run this script from a command line by navigating to the Installation
@@ -1095,16 +1154,26 @@ depending on your python install.
 
 Optional arguments:
  - `-v[1-4]` sets the verbosity of the log messages, a value of 1 will only output error messages, while a value of 4 will output every log line.
- - `c [file name]` sets the configuration file to be used, defaults to `config.ini`
+ - `-c [file name]` sets the configuration file to be used, defaults to `config.ini`
 
 ---
-# 6.1 The intro/login sequence
-Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash.art` bitmap file found in the `bbsfiles` path preset.
+# 6.1 The intro/login/logout sequences
+Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash`* bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
+
+* The actual `splash` file depends on the detected client:
+ - `splash.art` for Commodore 64 clients
+ - `splash.boti` for Plus/4 clients
+ - `splash.sc2` for MSX1 clients
 
 After a successful login or directly after choosing guest access, the supported files in the subdirectory `[bbsfiles]/intro` will be shown/played in alphabetical order.
 
 Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged-in user and show the amount of unread public and private messages if any.
+
+From v0.60 additional TML scripts can be placed in the `[bbsfiles]` directory:
+
+ - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the oneliner plugin.
+ - `logoff.tml` will run when the client closes the connection the proper way, can be used to display connection statistics or display a goodbye image/text. 
 
 ---
 # 6.2 SID SongLength
@@ -1113,7 +1182,7 @@ The `.ssl` format is used by the songlength files part of the *High Voltage SID 
 
 ---
 # 6.3 User accounts / Database management
-*RetroBBS* now supports the creation of user accounts, this allows for the restriction of BBS areas according to user classes and the incorporation of the messaging system.
+*RetroBBS* supports the creation of user accounts, this allows for the restriction of BBS areas according to user classes and the incorporation of the messaging system.
 
 *TinyDB* is used as the database backend. The database is a *JSON* file located in the `bbsfiles` directory.
 
@@ -1153,10 +1222,10 @@ The script will also do a quick integrity check on the database file.
 # 6.4 Messaging system
 The messaging system permits unlimited public or semipublic boards plus a personal messages board for each registered user.
 
-At the time of writing, this early implementation supports messages of up to 720 characters in length, organized in 18 rows of 40 columns each.
-The message editor works on a per-line basis, completing a by pressing `RETURN`, passing the 40 characters limit, or selecting another line to edit (by pressing `F3`).
+Messages can be up to 3000 characters in length.
+The message editor works on a per-line basis, completing a line by pressing `RETURN`, passing the client screen width limit, or selecting another line to edit (by pressing `F7`/`F3`/`F5` on C64/Plus4/MSX respectively).
 On entering the editor, if the user is starting a new message thread, they will be asked first to enter a topic for the thread.
-Once done with the editing, the user should press `F8` and will be prompted if they want to continue editing, send the message, or cancel the message.
+Once done with the editing, the user should press `F8`/`Esc`/`F10` and will be prompted if they want to continue editing, send the message, or cancel the message.
 
 A user with admin/sysop user class (10) can delete threads or individual messages (deleting the first message in a thread will delete the whole thread).
 
@@ -1211,7 +1280,6 @@ temp = /mnt/ramdisk/
  * More code cleanup, move more functions out of the main script and into their corresponding modules.
  * Work towards user style customization
  * Localization
- * Custom logout sequence, similar to the login one
  * Figure out a way to remove hard-coded filetype handling.
 
 ---
@@ -1227,7 +1295,7 @@ temp = /mnt/ramdisk/
 ## Development team
 
   * Jorge Castillo (Pastbytes) - Original idea, creator and developer of *Turbo56K*, *Retroterm* and *RetroBBS*
-  * Pablo Roldán (Durandal) - Developer of *RetroBBS*, extension of *Turbo56K* protocol
+  * Pablo Roldán (Durandal) - Developer of *RetroBBS* and *Retroterm*, extension of *Turbo56K* protocol
 
 ## Thanks
 
@@ -1241,6 +1309,8 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Roberto Mandracchia
   * ChrisKewl - [twitter.com/chriskewltv](http://twitter.com/chriskewltv)
 
+Also many thanks to __Emanuele Laface__ for the *Radio* and *Podcast* plugins.
+
 ## External software, support files
 
   * SIDdump by Lasse Öörni (cadaver)
@@ -1248,5 +1318,9 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * Betterpixels font by AmericanHamster
   * karen2blackint font by PaulSpades
   * Map tiles by [Stamen Design](http://stamen.com), under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0). Data by [OpenStreetMap](http://openstreetmap.org), under [ODbL](http://www.openstreetmap.org/copyright).
+
+## Contains code from:
+
+  * sid2psg.py by simondotm under MIT license (https://github.com/simondotm/ym2149f/tree/master)
 
 ---

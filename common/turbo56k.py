@@ -140,7 +140,7 @@ def split_Screen(line, multi, bgtop, bgbottom, mctop = 0, bin = False, mode:str=
     if line != 0 and multi == True:
         line += 128
     if line != 0: 
-        if mode == 'PET64':
+        if mode != 'PET264':
             par2 = bgtop+(16*bgbottom)
         else:
             line += 32
@@ -149,12 +149,12 @@ def split_Screen(line, multi, bgtop, bgbottom, mctop = 0, bin = False, mode:str=
         par2 = 0
     if bin == True:
         ret = bytes([CMDON,SPLIT_SCR,line,par2])
-        if line != 0 and mode != 'PET64':
+        if line != 0 and mode == 'PET264':
             ret += bytes([bgbottom,mctop])
         ret += bytes([CMDOFF])
     else:
         ret = chr(CMDON)+chr(SPLIT_SCR)+chr(line)+chr(par2)
-        if line !=0 and mode != 'PET64':
+        if line !=0 and mode == 'PET264':
             ret += chr(bgbottom)+chr(mctop)
         ret += chr(CMDOFF)
     return ret
@@ -174,9 +174,9 @@ def scroll(rows,bin = False):
     
 def set_ink(color, bin= False):
     if bin:
-        return(bytes([CMDON,SCROLL,color]))
+        return(bytes([CMDON,INK,color]))
     else:
-        return(chr(CMDON)+chr(SCROLL)+chr(color))
+        return(chr(CMDON)+chr(INK)+chr(color))
     
 ###########
 # TML tags

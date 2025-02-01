@@ -34,20 +34,20 @@ def plugFunction(conn:Connection):
     apod_lang = {'en':['Connecting with NASA',f"<CLR><BR><LTGREEN>Converting...<BR>press <INK c={conn.style.PbColor}>"	\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
-                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><CBM-B><CRSRL>"],
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER><CRSRL>"],
                 'es':['Conectando con la NASA',f"<CLR><BR><LTGREEN>Convirtiendo...<BR>presione <INK c={conn.style.PbColor}>"	\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> para mostrar otra imagen al azar<BR>O "	\
-                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><LARROW>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><CBM-B><CRSRL>"]}
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER><CRSRL>"]}
     loop = True
     rdate = datetime.today()
     while loop == True:
         # Text mode
         conn.Sendall((chr(0)*2)+TT.to_Text(0,conn.style.BoColor,conn.style.BgColor)+TT.enable_CRSR())
         RenderMenuTitle(conn,'APOD')
-        conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<CBM-B><CRSRL>')
+        conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<SPINNER><CRSRL>')
         i = 0
         idata = None
         _LOG("Receiving APOD info",id=conn.id,v=4)
@@ -60,7 +60,14 @@ def plugFunction(conn:Connection):
             conn.Sendall(".")
         conn.SendTML(f'<BELL><DEL n={23+i}>')
         if idata != None:
-            conn.SendTML('<CYAN><LFILL row=24 code=160><AT x=1 y=24><RVSON><CBM-L><LTBLUE>F1/F3/crsr:move<CYAN><CBM-J><CBM-L><GREEN>v:view<CYAN><CBM-J><CRSRR n=5><CBM-L><YELLOW><LARROW>:exit<CYAN><CBM-J><RVSOFF>')
+            scwidth,scheight = conn.encoder.txt_geo
+            if 'MSX' in conn.mode:
+                bcode = 0xDB
+                rcrsr = ''
+            else:
+                bcode = 0xA0
+                rcrsr = '<CRSRR n=7><R-NARROW>'
+            conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=0 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
             date = idata["date"]
             _LOG("Showing APOD info for "+date,id=conn.id,v=4)
             imurl = idata["url"]
@@ -70,27 +77,27 @@ def plugFunction(conn:Connection):
                 autor = idata["copyright"]
             else:
                 autor = ''
-            texto = formatX(title)
+            texto = formatX(title,scwidth)
             #Date
-            tdate = formatX('\n'+date+'\n\n')
+            tdate = formatX('\n'+date+'\n\n',scwidth)
             tdate[0] = '<LTBLUE>'+tdate[0]
             texto += tdate
             #Author
             if autor != '':
-                at = formatX(autor)
+                at = formatX(autor,scwidth)
                 at[0] = '<ORANGE>'+at[0]
             else:
                 at = ['<BR>']
             #Description
-            tdesc = formatX(desc)
+            tdesc = formatX(desc,scwidth)
             tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
             texto += at+tdesc
-            conn.SendTML('<WINDOW top=3 bottom=23>')
-            tecla = text_displayer(conn,texto,21,ekeys='V')
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
+            tecla = text_displayer(conn,texto,scheight-4,ekeys='v')
             conn.SendTML('<WINDOW>')
             if conn.connected == False:
                 return()
-            if tecla == b'_' or tecla == b'':
+            if tecla == '_' or tecla == '':
                 loop = False
             if loop == True:
                 conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[1])
@@ -102,12 +109,12 @@ def plugFunction(conn:Connection):
                     _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id,v=2)
                     conn.SendTML("<BR>ERROR, unable to receive image")
 
-                tecla = conn.ReceiveKey(b'\r_')
+                tecla = conn.ReceiveKey('\r_')
                 conn.Sendall(TT.enable_CRSR())
                 if conn.connected == False:
                     _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id,v=1)
                     return()
-                if tecla == b'_' or tecla == b'':
+                if tecla == '_' or tecla == '':
                     loop = False
         else:
             conn.SendTML("<BR>ERROR, unable to connect with NASA")

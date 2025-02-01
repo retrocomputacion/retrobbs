@@ -8,15 +8,18 @@ mutagen
 numpy
 opencv_python
 geopy
-youtube-dl
+# youtube-dl
 # pafy @ git+https://github.com/Cupcakus/pafy
 Pillow>=8.0.0
-python_weather
+python_weather>=2.0.0
 requests>=2.26.0
 streamlink
 tinydb
 wikipedia
-Wikipedia_API
+Wikipedia_API<=0.6.0
 crc
 lhafile
 scikit-image
+pyradios
+validators
+yt_dlp

@@ -51,7 +51,7 @@ _Tags_ are the functions or statements in this language, a basic statement can o
 ```html
 <CLR><CHECKMARK>
 ```
-Almost all tags have optional parameters, this take the format `parameter=value`, if a parameter is not passed the default value will be used. Parameter names are always **lowercase**, with a few exceptions.
+Most tags have optional parameters, this take the format `parameter=value`, if a parameter is not passed the default value will be used. Parameter names are always **lowercase**, with a few exceptions.
 
 ##### Example: Output 20 white Pi characters, wait 2 seconds, output a newline and 5 yellow Pound characters
 ```html
@@ -182,10 +182,19 @@ Parameter:
 
 `n`: number of repeats, default `1` 
 
+---
 #### **&lt;INK&gt;**
 Change the text color to the value passed as parameter. Actual color is platform dependent.</br>
 
 `c`: Index in the palette of the desired color. Default `0`.
+
+---
+#### **&lt;SPINNER&gt;**
+Send the _spinner_ character, which 'animates' depicting a waiting state when the blinking cursor is placed over it.</br>The actual character sent is platform dependent.
+
+---
+#### **&lt;BACK&gt;**
+Send the character used to go back a menu/screen. `←` for Commodore platforms, `_` for MSX1.
 
 ---
 </br>
@@ -227,8 +236,10 @@ Parameter:
 
 ---
 #### **&lt;LEN&gt;**
-Assign the length of the string in **_S** to **_I**
+Assign the length of the input parameter to **_I**<br>
+Parameter:
 
+`x`: String or register, default `_S`
 ---
 </br>
 
@@ -273,9 +284,15 @@ Parameter:
 
 `m`: Encoding for this code block, default `'PET64'`
 
+
+#### **&lt;FORMAT&&gt;**
+All text inside the block is formatted to fit inside the client's screen width, wordwrapping where necessary.</br>
+All code and text inside the block is parsed once and send to the client once the end of the block is reached, functions/statements that return *Turbo56K* commands are ignored, do not use &lt;PAUSE&gt; and functions that require user input like &lt;INKEYS&gt; inside the block.
+
+
 ---
 #### **&lt;SWITCH&gt;**...**&lt;CASE&gt;**
-Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.<br>
+Test the expression passed as parameter for _&lt;SWITCH&gt;_ and execute the _&lt;CASE&gt;_ block matching the result.</br>
 _&lt;SWITCH&gt;_ parameter:
 
 `r`: expression to test, default `_A`
@@ -323,6 +340,9 @@ Example:
 
 </br>
 
+#### **&lt;END&gt;**
+Complete the execution, exit the script.
+
 #### **&lt;PAUSE&gt;**
 Pause the execution.</br>
 Parameter:
@@ -355,7 +375,7 @@ Parameter:
 Switch the client's screen to a graphic mode. And select the screen colors.</br>
 Parameters:
 
-`mode`: Graphic mode, True for multicolor, False for hires. Default `False`</br>
+`mode`: Graphic mode, True for multicolor, False for hires. Default `False`. Unused on MSX1</br>
 `page`: Text page number, currently unused. Default `0`</br>
 `border`: Screen border color. Default `0`</br>
 `background`: Screen background color. Default `0`
@@ -366,7 +386,7 @@ Fill a screen row with the given character code.</br>
 Parameters:
 
 `row`: Screen row to fill. Default `0`<br>
-`code`: Character code to use. Default `0`. For C64 this is a screen code, not PETSCII`
+`code`: Character code to use. Default `0`. For C64 this is a screen code, not PETSCII`. For MSX extended graphic characters use the position in the character ROM. ie: character 336 (0x150) should use code = 16 (0x10) 
 
 ---
 #### **&lt;RESET&gt;**
@@ -468,6 +488,20 @@ Parameters:
 `file`: Path to the file to be sent. Default `''`</br>
 `dialog`: Boolean, set to `True` to display the file dialog prompting user action. Default `False`</br>
 `save`: Set to `True` if you want the (option for the) file to be saved to disk, as long as the file type and the client's terminal supports it. Default `False`
+
+---
+#### **&lt;SENDBITMAP&gt;**
+Send a bitmap to the client. Conversion to native format will be performed if necessary.</br>
+Parameters:
+
+`file`: Path to the file to be sent. Default `''`</br>
+
+---
+#### **&lt;PCMPLAY&gt;**
+Start a PCM audio stream.</br>
+Parameters:
+
+`file`: Path to the audio to be streamed. Default `''`</br>
 
 ---
 #### **&lt;GRABFRAME&gt;**
@@ -638,3 +672,31 @@ Engage character flash mode. Mode is automatically disengaged when a carriage re
 Disengage character flash mode.
 
 ---
+</br>
+
+### **MSX**:
+
+#### **Color control codes**
+Changes the text ink color to the specified color
+ - **&lt;BLACK&gt;**
+ - **&lt;WHITE&gt;**
+ - **&lt;RED&gt;**
+ - **&lt;CYAN&gt;**
+ - **&lt;PURPLE&gt;**
+ - **&lt;GREEN&gt;**
+ - **&lt;BLUE&gt;**
+ - **&lt;YELLOW&gt;**
+ - **&lt;PINK&gt;**
+ - **&lt;GREY&gt;**
+ - **&lt;LTGREEN&gt;**
+ - **&lt;LTBLUE&gt;**
+ - **&lt;DRED&gt;**
+ - **&lt;DGREEN&gt;**
+ - **&lt;LTYELLOW&gt;**
+
+ ---
+#### **&lt;PAPER&gt;**
+Changes the text paper color to the expecified color. Paper color applies only for text printed after this tag</br>
+Parameters:
+
+`c`: Palette color number, default `1` (black)</br>

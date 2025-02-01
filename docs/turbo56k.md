@@ -48,7 +48,7 @@ For example the following byte sequence enters command mode, sets the screen to 
 | `$81` | `129` | Selects preset address for the next transfer <br>**Parameters**<br>- Preset Number : 1 byte
 | `$82` | `130` | Start a memory transfer<br>**Parameters**<br>- Transfer Size : 2 bytes : low \| high
 | `$83` | `131` | Starts audio streaming until receiving a `$00` character
-| `$84` | `132` | Starts SID streaming until receiving a data block with size `0`, or interrupted by the user
+| `$84` | `132` | Starts chiptune streaming until receiving a data block with size `0`, or interrupted by the user
 | `$85` | `133` | `New v0.6`<br><br>Sets the stream and write order of the registers for SID streaming<br>**Parameters**<br> - Stream : 25 bytes
 | `$86` | `134` | `New v0.7`<br><br>Starts a file transfer (to be saved on a storage device client side)
 
@@ -93,14 +93,21 @@ For example the following byte sequence enters command mode, sets the screen to 
 
 *For command `$81`*
 
+#### Commodore 64 & Plus/4
 | Hex | Dec | Description
 |:---:|:---:|:------------
 | `$00` | `0` | Text page `0`
 | `$10` | `16` | Bitmap page `0`
-  | `$20` | `32` | Color RAM
+| `$20` | `32` | Color RAM
 
+*The current versions of **Retroterm** supports only a single text / bitmap page.*<br>*Values other than `0` for bits `0 - 3` will be ignored.*
 <br>
+#### MSX1
 
-*The current version of **Retroterm** supports only a single text / bitmap page.*<br>*Values other than `0` for bits `0 - 3` will be ignored.*
+| Hex | Dec | Description
+|:---:|:---:|:------------
+| `$00` | `0` | Text/name table page `0`
+| `$10` | `16` | Pattern table page `0`
+| `$20` | `32` | Color table
 
-
+*Any other value will set the address to $4000 (RAM Page 1) -Subject to changes-*

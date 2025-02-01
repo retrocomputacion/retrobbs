@@ -7,6 +7,7 @@ from common.dbase import DBase
 import time
 from enum import Enum
 import os
+import textwrap
 
 ########### BBS Class ###########
 class BBS:
@@ -62,6 +63,9 @@ class Encoder:
         self.non_printable = []	#	List of non printable characters
         self.nl	= '\n'			#	New line string/character
         self.bs = '\x08'		#	Backspace string/character
+        self.back = '_'         #   Caracter used to go back in the BBS
+        self.ellipsis = '...'   #   Ellipsis representation
+        self.txt_geo = (40,25)  #   Text screen dimensions
         self.def_gfxmode = None	#	Default graphic mode (gfxmodes enum)
         self.gfxmodes = ()		#	List of valid graphic modes
         self.ctrlkeys = {}		#	Named control keys (cursors, function keys, etc)
@@ -78,6 +82,21 @@ class Encoder:
     def check_fit(self, filename):
         stats = os.stat(filename)
         return stats.st_size <= (self.tbuffer-self.bbuffer)
+    
+    # Returns the load address, binary data from an executable file
+    # Strip headers/metadata if needed for direct transfer into memory
+    def get_exec(self, filename):
+        return (0,None)
+    
+    # Wordwrap to the encoder/connection screen width
+    # preserving control codes
+    # text input must be already encoded
+    def wordwrap(self, text):
+        sentences = text.split('\n')
+        out = ''
+        for sentence in sentences:
+            out = out +textwrap.fill(sentence,width=self.txt_geo[0])+'\n'
+        return(text)
     
 SCOLOR = Enum('style_colors',
           [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
@@ -97,13 +116,15 @@ class bbsstyle:
             self.RvsColor		= colors['LIGHT_GREEN']	#Reverse text color
             ### Menu specific colors ###
             self.OoddColor		= colors['LIGHT_BLUE']	#Odd option key color
+            self.OoddBack       = self.BgColor          #Odd option key bg color if applicable
             self.ToddColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Odd option text color
             self.OevenColor		= colors['CYAN']		#Even option key color
+            self.OevenBack      = self.BgColor          #Even option key bg color if applicable
             self.TevenColor		= colors['YELLOW']		#Even option text color
             self.MenuTColor1	= colors['CYAN']		#Menu title border color 1
             self.MenuTColor2	= colors['LIGHT_GREEN']	#Menu title border color 2
             self.SBorderColor1	= colors['LIGHT_GREEN']	#Section border color 1
-            self.SBorderColor2	= colors['GREEN']		#Section border color 1
+            self.SBorderColor2	= colors['GREEN']		#Section border color 2
             ### [Prompt] ###
             self.PbColor		= colors['YELLOW']		#Key prompt brackets color
             self.PtColor		= colors.get('LIGHT_BLUE',colors.get('CYAN'))	#Key prompt text color

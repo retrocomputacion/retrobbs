@@ -1,0 +1,5 @@
+<MODE m='MSX1'>
+    <SENDBITMAP file='images/apollo.jpg'>
+</MODE>
+<PCMPLAY file='bbsfiles/onesmallstep.mp3'>
+<TEXT>

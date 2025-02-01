@@ -10,6 +10,7 @@ from common import turbo56k as TT
 from common.connection import Connection
 from common import video as VV
 import streamlink
+import yt_dlp
 
 ###############
 # Plugin setup
@@ -24,8 +25,9 @@ def setup():
 #############################################
 def plugFunction(conn:Connection,url, crop):
 
-    conn.SendTML('<YELLOW><CBM-B><CRSRL>')
-    best = ''
+    conn.SendTML('<YELLOW><SPINNER><CRSRL>')
+    best = None
+    title = ''
     if crop != None:
         crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 
@@ -41,41 +43,60 @@ def plugFunction(conn:Connection,url, crop):
     # 	#conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
     # 	#return()
     # 	video = None
-    video = None
-    if video == None:
-        slsession = streamlink.Streamlink()
+    tmsecs = None
+    slsession = streamlink.Streamlink()
+    ydl_opts = {'quiet':True, 'socket_timeout':15}
+    cookies = conn.bbs.PlugOptions.get('wxdefault','')
+    if cookies != '':
+        ydl_opts['cookiefile'] = cookies
+    try:
+        # stl = slsession.resolve_url(url)
+        # source = stl[0]
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            formats = info.get('formats',None)
+            if formats != None:
+                crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
+                try:
+                    res = 320*200   # Hardcoded pixel count
+                    for f in formats:
+                        if f['resolution'] not in ['none','audio only']:
+                            if eval(f['resolution'].replace('x','*')) >= res:
+                                best = f['url']
+                                break
+                    tmsecs = None
+                except Exception as e:
+                    best = None
+    except:
+        best = None
+    if best == None:
         try:
             stl = slsession.resolve_url(url)
             source = stl[0]
-        except:
-            source = ""
-        if source != "":
-            crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
-            try:
+            if source != "":
+                crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
+                tmsecs = None
                 plug = stl[1](slsession,url)	#Create plugin object
-                pa = plug.streams()	#slsession.streams(url)
+                pa = plug.streams()
                 for k in ['240p','360p','480p','720p','1080p','144p']:
                     s = pa.get(k,None)
-                    #s = pa[k]
                     if s != None:
                         if type(s) == streamlink.stream.MuxedStream:
                             best = s.substreams[0].url #Index 0 seems to always be the video stream
                             break
+                        elif type(s) == streamlink.stream.HLSStream:
+                            best = s.url_master
+                            break
                         else:
                             best = s.url
                             break
-                    # try:
-                    # 	best = s.url
-                    # except:
-                    # 	best = None
-                    # if best != None:
-                    # 	break
-                tmsecs = None
-            except Exception as e:
-                _LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
-                conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
-                return
-    conn.SendTML(f'<CLR><TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}>'
+        except Exception as e:
+            pass
+    if best in [None,'']:
+        _LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
+        conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
+        return
+    conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR>'
                  f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> for a new image<BR>'
                  f'<BR>Press <KPROMPT t=_><YELLOW> to exit<BR>')
     if conn.ReceiveKey(b'\r_') == b'_':

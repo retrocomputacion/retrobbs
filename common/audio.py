@@ -9,6 +9,7 @@ import subprocess
 import signal
 import math
 import asyncio
+import platform
 from PIL import Image, ImageDraw
 from io import BytesIO
 
@@ -47,10 +48,12 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
 
+    fcount = conn.encoder.txt_geo[1]-5
+    scwidth = conn.encoder.txt_geo[0]
     # Start with barebones MenuDic
     MenuDic = { 
-                b'_': (H.MenuBack,(conn,),"Previous Menu",0,False),
-                b'\r': (AudioList,(conn,title,speech,logtext,path),title,0,False)
+                conn.encoder.back: (H.MenuBack,(conn,),"Previous Menu",0,False),
+                conn.encoder.nl: (AudioList,(conn,title,speech,logtext,path),title,0,False)
             }
 
     _LOG(logtext,id=conn.id,v=4)
@@ -96,10 +99,10 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     length = [0.0]*len(audios)	#Audio length list
 
     #Calc pages
-    pages = int((len(audios)-1) / 20) + 1
+    pages = int((len(audios)-1) / fcount) + 1
     count = len(audios)
-    start = conn.MenuParameters['current'] * 20
-    end = start + 19
+    start = conn.MenuParameters['current'] * fcount
+    end = start + fcount -1
     if end >= count:
         end = count - 1
 
@@ -109,19 +112,19 @@ def AudioList(conn:Connection,title,speech,logtext,path):
             page = pages-1
         else:
             page = conn.MenuParameters['current']-1
-        MenuDic[b'<'] = (H.SetPage,(conn,page),'Previous Page',0,False)
+        MenuDic['<'] = (H.SetPage,(conn,page),'Previous Page',0,False)
         if conn.MenuParameters['current'] == pages-1:
             page = 0
         else:
             page = conn.MenuParameters['current']+1
-        MenuDic[b'>'] = (H.SetPage,(conn,page),'Next Page',0,False)
+        MenuDic['>'] = (H.SetPage,(conn,page),'Next Page',0,False)
 
     row = 3
     for x in range(start, end + 1, 1):
         afunc = PlayAudio
         bname = os.path.splitext(os.path.basename(audios[x]))[0]
-        KeyLabel(conn, H.valid_keys[x-start],(bname)[:30]+' ', x % 2)
-        tml = f'<AT x=34 y={row}><CBM-B><CRSRL>'
+        KeyLabel(conn, H.valid_keys[x-start],H.crop(bname,scwidth-10,conn.encoder.ellipsis)+' ', x % 2)
+        tml = f'<AT x={scwidth-6} y={row}><SPINNER><CRSRL>'
         if (wavs == True) and (audios[x].lower().endswith(wext)):   #PCM file
             conn.SendTML(tml)
             tsecs = _GetPCMLength(path+audios[x])
@@ -139,15 +142,18 @@ def AudioList(conn:Connection,title,speech,logtext,path):
         conn.SendTML(f'<WHITE>{tmins:0>2}:{tsecs:0>2}<BR>')
         row += 1
         #Add keybinding to MenuDic
-        MenuDic[H.valid_keys[x-start].encode('ascii','ignore')] = (afunc,(conn,path+audios[x],length[x],True),H.valid_keys[x-start],0,False)
+        MenuDic[H.valid_keys[x-start]] = (afunc,(conn,path+audios[x],length[x],True),H.valid_keys[x-start],0,False)
     else:
         lineasimpresas = end - start + 1
-        if lineasimpresas < 20:
-            for x in range(20 - lineasimpresas):
-                conn.Sendall('\r')
+        if lineasimpresas < fcount:
+            for x in range(fcount - lineasimpresas):
+                conn.Sendall(conn.encoder.nl)
 
-    conn.SendTML(f' <GREY3><RVSON><LARROW> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
-                f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
+    if 'PET' in conn.mode:
+        conn.SendTML(f' <GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
+    else:
+        conn.SendTML(f' <GREY><RVSON> <BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
+    conn.SendTML(f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
     # Selects screen output
     conn.SendTML('<PAUSE n=1><SETOUTPUT>')
@@ -181,19 +187,27 @@ def _AudioDialog(conn:Connection, data):
         draw.rectangle([0,0,128,(pheight-128)//2],fill = c_black)
         draw.rectangle([0,((pheight-128)//2)+128,128,pheight],fill = c_black)
         draw.rectangle([128,0,pwidth,pheight],fill = c_black)
-        draw.text((160,2),H.gfxcrop(data['title'],pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
+        draw.text((pwidth//2,2),H.gfxcrop(data['title'],pwidth,H.font_bold),c_white,font=H.font_bold,anchor='mt')
         if data['album'] != '':
             draw.text((136,20),'Album:',c_white,font=H.font_bold)
-            draw.text((136+40,22),H.gfxcrop(data['album'],pwidth-176),c_white,font=H.font_text)
+            draw.text((136,32),H.gfxcrop(data['album'],pwidth-136),c_white,font=H.font_text)
         if data['artist'] != '':
-            draw.text((136,36),'Artist:',c_white,font=H.font_bold)
-            draw.text((136+40,38),H.gfxcrop(data['artist'],pwidth-176),c_white,font=H.font_text)			
-        draw.text((136,52),'Length:',c_white,font=H.font_bold)
-        draw.text((136+40,54),data['length'],c_white,font=H.font_text)			
-        draw.text((136,68),f"From {data['sr']} to {conn.samplerate}Hz",c_white,font=H.font_text)
-        draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
-        draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
-        draw.text((136,168),u"Press <\u2190> to cancel",c_pink,font=H.font_text)
+            draw.text((136,48),'Artist:',c_white,font=H.font_bold)
+            draw.text((136,60),H.gfxcrop(data['artist'],pwidth-136),c_white,font=H.font_text)			
+        draw.text((136,72),'Length:',c_white,font=H.font_bold)
+        draw.text((136,84),data['length'],c_white,font=H.font_text)			
+        draw.text((136,108),f"From {data['sr']}",c_white,font=H.font_text)
+        draw.text((136,120),f"To {conn.samplerate}Hz",c_white,font=H.font_text)
+        draw.text((pwidth//2,pheight-32),"Press <RETURN> to play",c_white,font=H.font_text,anchor='mt')
+        if 'MSX' in conn.mode:
+            draw.text((pwidth//2,pheight-20),"Press <STOP> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-8),"Press <_> to cancel",c_yellow,font=H.font_text,anchor='mt')
+        else:
+            draw.text((pwidth//2,pheight-20),"Press <X> and wait to stop",c_yellow,font=H.font_text,anchor='mt')
+            draw.text((pwidth//2,pheight-8),"Press <\u2190> to cancel",c_yellow,font=H.font_text,anchor='mt')
+        # draw.text((136,136),"Press <RETURN> to play",c_white,font=H.font_text)
+        # draw.text((136,152),"Press <X> and wait to stop",c_yellow,font=H.font_text)
+        # draw.text((136,168),u"Press <\u2190> to cancel",c_pink,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
         S.RenderDialog(conn, 15, data['title'])
@@ -204,12 +218,16 @@ def _AudioDialog(conn:Connection, data):
             tml += f'<RVSON> Artist:<BR><RVSON> {data["artist"]}<BR><BR>'
         tml += f'''<RVSON> Length: {data['length']}<BR><BR>
 <RVSON> From {data['sr']} to {conn.samplerate}Hz
-<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>
-<RVSON> Press &lt;x&gt; and wait to stop<BR>
-<RVSON> Press &lt;<LARROW>&gt; to cancel'''
+<AT x=0 y=12> Press &lt;RETURN&gt; to play<BR>'''
+        if 'MSX' in conn.mode:
+            tml+='''<RVSON> Press &lt;STOP&gt; and wait to stop<BR>
+<RVSON> Press &lt;<BACK>&gt; to cancel'''
+        else:
+            tml+='''<RVSON> Press &lt;x&gt; and wait to stop<BR>
+<RVSON> Press &lt;<BACK>&gt; to cancel'''
         conn.SendTML(tml)
-    if conn.ReceiveKey(b'\r_') == b'_':
-        conn.SendTML('<CURSOR><CBM-B><CRSRL>')
+    if conn.ReceiveKey(conn.encoder.nl+conn.encoder.back) == conn.encoder.back:
+        conn.SendTML('<CURSOR><SPINNER><CRSRL>')
         return False
     return True
 
@@ -217,14 +235,17 @@ def _AudioDialog(conn:Connection, data):
 # Get audio length for PCM file in seconds
 ###########################################
 def _GetPCMLength(filename):
-    if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
-        #Load metadata
-        audio = mutagen.File(filename, easy = True)
-        tsecs = int(audio.info.length)
-    else:
-        #Load and compute audio playtime
-        with audioread.audio_open(filename) as f:
-            tsecs = int(f.duration)
+    try:
+        if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
+            #Load metadata
+            audio = mutagen.File(filename, easy = True)
+            tsecs = int(audio.info.length)
+        else:
+            #Load and compute audio playtime
+            with audioread.audio_open(filename) as f:
+                tsecs = int(f.duration)
+    except:
+        tsecs = 0
     return tsecs
 
 ######################################################################
@@ -233,7 +254,7 @@ def _GetPCMLength(filename):
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     if conn.QueryFeature(TT.STREAM) >= 0x80:	#Exit if terminal doesn't support PCM streaming
         return
-    bnoise = b'\x10\x01'
+    bnoise = b'\x10\x01\x01\x10'
     CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
     if length == None:
         length = _GetPCMLength(filename)
@@ -274,7 +295,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             return()
         if not conn.connected:
             return()
-        conn.SendTML('<CBM-B><CRSRL><NUL><NUL>')
+        conn.SendTML('<SPINNER><CRSRL><NUL><NUL>')
     #Streaming mode
     binario = b'\xFF\x83'
     pcm_stream = PcmStream(filename,conn.samplerate)
@@ -304,7 +325,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
                 hnibble = 0
             binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
 
-            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,1)].to_bytes(1,'little'), binario))
+            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,3)].to_bytes(1,'little'), binario))
             streaming = conn.connected
             sys.stderr.flush()
             #Check for terminal cancelation
@@ -328,7 +349,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             conn.socket.setblocking(1)
             binario = b''
         c_samples += a_len
-        if c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
+        if t_samples > 0 and c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
             streaming = False
 
         ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
@@ -350,8 +371,13 @@ class PcmStream:
     def __init__(self, fn, sr):
         # self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
         #                 stdout=subprocess.PIPE, preexec_fn=os.setsid)
-        self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
-                        stdout=subprocess.PIPE, preexec_fn=os.setsid)
+
+        if "Linux" in platform.system():
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
+                            stdout=subprocess.PIPE, preexec_fn=os.setsid)
+        else:
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
+                            stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
     async def read(self, size):
         try:
@@ -366,8 +392,12 @@ class PcmStream:
     
     def stop(self):
         self.pcm_stream.stdout.flush()
-        self.pcm_stream.send_signal(signal.SIGINT)
-        self.pcm_stream.terminate()
+        if "Linux" in platform.system():
+            self.pcm_stream.send_signal(signal.SIGINT)
+            self.pcm_stream.terminate()
+        else:
+            self.pcm_stream.send_signal(signal.CTRL_BREAK_EVENT)
+            self.pcm_stream.kill()
         #os.killpg(self.pcm_stream.pid, signal.SIGKILL)
 
 ###################################################
@@ -405,30 +435,36 @@ def _DisplayCHIPInfo(conn:Connection, info):
         m = int(info['songlength'][subtune-1]/60)
         return m,info['songlength'][subtune-1]- (m*60)
 
+
+    scwidth = conn.encoder.txt_geo[0]
     if isinstance(info,dict):   #.SID file
         subtune = info['startsong']
         minutes, seconds = calctime()
         S.RenderDialog(conn,12,info['type'])
-        tml = f'''<RVSON> Title: {H.crop(info['title'],30)}<BR>
-<RVSON> Artist: {H.crop(info['artist'],29)}<BR>
-<RVSON> Copyright: {H.crop(info['copyright'],27)}<BR>
+        tml = f'''<RVSON> Title: {H.crop(info['title'],scwidth-10)}<BR>
+<RVSON> Artist: {H.crop(info['artist'],scwidth-11)}<BR>
+<RVSON> Copyright: {H.crop(info['copyright'],scwidth-13)}<BR>
 <RVSON> Playtime: {minutes:0>2}:{seconds:0>2}<BR>'''
         if info['subsongs'] > 1:    #Subtune
             tml += f'<RVSON><CRSRD> Subtune: <GREY2>&lt;<WHITE><RVSOFF>{subtune:0>2}<RVSON><GREY2>&gt;<GREY3><BR>'
-        tml += '<RVSON><CRSRD> Press <LARROW> to exit<BR><RVSON> RETURN to play<BR><RVSON> Any key to stop<RVSOFF><CURSOR enable=False>'
+        tml += '<RVSON><CRSRD> Press <BACK> to exit<BR><RVSON> RETURN to play<BR><RVSON>'
+        if 'MSX' in conn.mode:
+            tml += ' STOP to stop<RVSOFF><CURSOR enable=False>'
+        else:
+            tml += ' Any key to stop<RVSOFF><CURSOR enable=False>'
         conn.SendTML(tml)
         while True and conn.connected:
-            k = conn.ReceiveKey(b'<>_\r')
-            if k == b'_':
+            k = conn.ReceiveKey('<>'+conn.encoder.back+conn.encoder.nl)
+            if k == conn.encoder.back:
                 subtune = -1
                 break
-            elif k == b'\r':
+            elif k == conn.encoder.nl:
                 break
-            elif k == b'<' and subtune > 1:
+            elif k == '<' and subtune > 1:
                 subtune -= 1
                 minutes, seconds = calctime()
                 conn.SendTML(f'<RVSOFF><AT x=11 y=6><WHITE>{subtune:0>2}<RVSON><AT x=11 y=4><GREY3>{minutes:0>2}:{seconds:0>2}')
-            elif k == b'>' and subtune < info['subsongs']:
+            elif k == '>' and subtune < info['subsongs']:
                 subtune += 1
                 minutes, seconds = calctime()
                 conn.SendTML(f'<RVSOFF><AT x=11 y=6><WHITE>{subtune:0>2}<RVSON><AT x=11 y=4><GREY3>{minutes:0>2}:{seconds:0>2}')
@@ -436,8 +472,8 @@ def _DisplayCHIPInfo(conn:Connection, info):
         subtune = 1
         conn.SendTML('<CLR><CBMSHIFT-E><UPPER>')
         conn.Sendallbin(info)
-        conn.SendTML('<YELLOW><BR>press return to play<BR><LARROW> to exit<BR>any key to stop<CURSOR enable=False>')
-        if conn.ReceiveKey(b'_\r') == b'_':
+        conn.SendTML('<YELLOW><BR>press return to play<BR><BACK> to exit<BR>any key to stop<CURSOR enable=False>')
+        if conn.ReceiveKey(conn.encoder.back+conn.encoder.nl) == conn.encoder.back:
             subtune = -1
     conn.SendTML('<CURSOR enable=True>')
     return subtune
@@ -530,7 +566,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     elif not isinstance(ptime,list):
         ptime = [ptime]
     try:
-        if ext.lower() in ['.sid','.mus']:	# SID music
+        if (ext.lower() in ['.sid','.mus']):	# SID music
             with open(filename, "rb") as fh:
                 content = fh.read()
                 if ext.lower() == '.sid':
@@ -573,20 +609,25 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                 #         conn.Sendall(V1f+V1p+V1c+V1e + V2f+V2p+V2c+V2e + V3f+V3p+V3c+V3e + Fco+Frs+Vol)
                 #         conn.Sendall(chr(TT.CMDOFF))
                 player = 'x'    # <<<< Delete this line when player ID is properly implemented
-        else:	# YM music
+        elif (ext.lower() in ['.ym','.vtx','.vgz']):	# YM music
             data = ym.YMOpen(filename)
             if data != None:
                 info= ym.YMGetMeta(data)
             player = 'x'
+        else:
+            subtune = -1
 
         while subtune > 0:
             if dialog == True:
                 subtune = _DisplayCHIPInfo(conn, info)
-            conn.SendTML('<CBM-B><CRSRL>')
+            conn.SendTML('<SPINNER><CRSRL>')
             if player != "" and subtune > 0:
                 _LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
                 if ext.lower() == '.sid':
-                    data = sd.SIDParser(filename,ptime[subtune-1]*info['speed'], order, subtune)
+                    if 'PET64' in conn.mode:
+                        data = sd.SIDParser(filename,ptime[subtune-1]*info['speed'], order, subtune)
+                    elif 'MSX' in conn.mode:
+                        data = ym.SIDtoYM(filename,ptime[subtune-1]*info['speed'], order, subtune)
                 elif ext.lower() == '.mus':
                     # Build a temporal .sid file
                     with open(filename, "rb") as fh:
@@ -607,42 +648,49 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                             oh.write(sd.mus_driver[2:])
                             #oh.write(mus_driver[2:0xc6e+2]) #Player
                             #oh.write((0xa000).to_bytes(2,'little'))  #Music data address
-                            #oh.write(mus_driver[0xc6e+4:]) #Player-cont     
-                    data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
+                            #oh.write(mus_driver[0xc6e+4:]) #Player-cont
+                    if 'PET64' in conn.mode:
+                        data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
+                    elif 'MSX' in conn.mode:
+                        data = ym.SIDtoYM(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
                 elif ext.lower() in ['.ym','.vtx','.vgz']:
-                    data = sd.AYtoSID(filename)
+                    if 'MSX' in conn.mode:
+                        data = ym.YMParser(filename)
+                    else:
+                        data = sd.AYtoSID(filename)
                 else:
                     data = []
-                conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
-                count = 0
-                #tt0 = time.time()
-                for frame in data:
-                    conn.Sendallbin(frame[0]) #Register count
-                    conn.Sendallbin(frame[1]) #Register bitmap
-                    conn.Sendallbin(frame[2]) #Register data
-                    conn.Sendallbin(b'\xff')	 #Sync byte
-                    count += 1
+                if data != []:
+                    conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
+                    count = 0
+                    #tt0 = time.time()
+                    for frame in data:
+                        conn.Sendallbin(frame[0]) #Register count
+                        conn.Sendallbin(frame[1]) #Register bitmap
+                        conn.Sendallbin(frame[2]) #Register data
+                        conn.Sendallbin(b'\xff')	 #Sync byte
+                        count += 1
 
-                    if count%100 == 0:
-                        ack = b''
-                        ack = conn.Receive(1)
-                        count = 0
-                        if (b'\xff' in ack) or not conn.connected:
-                            #Abort stream
-                            conn.Flush(1)   # Flush receive buffer for 1 second
-                            # conn.socket.setblocking(0)	# Change socket to non-blocking
-                            # t0 = time.time()
-                            # while time.time()-t0 < 1:   # Flush receive buffer for 1 second
-                            #     try:
-                            #         conn.socket.recv(10)
-                            #     except:
-                            #         pass
-                            # conn.socket.setblocking(1)	# Change socket to blocking
-                            # conn.socket.settimeout(conn.bbs.TOut)
-                            break
-                    
-                conn.Sendall(chr(0))	#End stream
-                #conn.Receive(1)	#Receive last frame ack character
+                        if count%100 == 0:
+                            ack = b''
+                            ack = conn.Receive(1)
+                            count = 0
+                            if (b'\xff' in ack) or not conn.connected:
+                                #Abort stream
+                                conn.Flush(1)   # Flush receive buffer for 1 second
+                                # conn.socket.setblocking(0)	# Change socket to non-blocking
+                                # t0 = time.time()
+                                # while time.time()-t0 < 1:   # Flush receive buffer for 1 second
+                                #     try:
+                                #         conn.socket.recv(10)
+                                #     except:
+                                #         pass
+                                # conn.socket.setblocking(1)	# Change socket to blocking
+                                # conn.socket.settimeout(conn.bbs.TOut)
+                                break
+                        
+                    conn.Sendall(chr(0))	#End stream
+                    #conn.Receive(1)	#Receive last frame ack character
             if isinstance(info,bytes):
                 subtune = -1
             elif info['subsongs'] == 1 or dialog == False:
@@ -652,4 +700,10 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        _LOG(f'SIDStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
+        _LOG(f'ChipStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
+
+
+###########
+# TML tags
+###########
+t_mono = {	'PCMPLAY':(lambda c,file:PlayAudio(c,file,None),[('c','_C'),('file','')])}

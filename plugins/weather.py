@@ -3,6 +3,7 @@ import asyncio
 import requests
 import string
 import json
+
 from geopy.geocoders import Photon, Nominatim
 
 from PIL import Image
@@ -11,12 +12,10 @@ from PIL import ImageDraw
 import numpy as NP
 
 from common.connection import Connection
-from common.imgcvt import gfxmodes, get_IndexedImg, PreProcess, colordelta, dithertype, get_ColorIndex
+from common.imgcvt import gfxmodes, get_IndexedImg, PreProcess, colordelta, dithertype, get_ColorIndex, GFX_MODES
 from common.bbsdebug import _LOG
 from common import filetools as FT
 from common import turbo56k as TT
-
-
 from common.helpers import font_bold as font_title
 from common.helpers import font_big as font_temp
 from common.helpers import font_text
@@ -66,7 +65,7 @@ def setup():
 # user
 #
 # Pass all connection, param & value to
-# set the parameter for this user
+# set the parameter for this client
 #########################################
 def plugPrefs(conn:Connection = None, param = None, value = None):
     if conn == None: # Get parameter list
@@ -83,6 +82,17 @@ def plugPrefs(conn:Connection = None, param = None, value = None):
 # Plugin function
 ###################################
 def plugFunction(conn:Connection):
+
+    # Avoid Geocode timeout/Unavailable errors
+    # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
+    def do_geocode(location, attempt=1, max_attempts=5):
+        try:
+            return geoLoc.geocode(location,language=conn.bbs.lang)
+        except:
+            if attempt <= max_attempts:
+                return do_geocode(location, attempt=attempt+1)
+            return None
+
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     #First get location from the connection IP
     response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
@@ -99,22 +109,22 @@ def plugFunction(conn:Connection):
     else:
         geoLoc = Nominatim(user_agent="RetroBBS-Weather")
     while conn.connected and not done:
-        conn.SendTML('<CBM-B><CRSRL>')
+        conn.SendTML('<SPINNER><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
             gmod = gfxmodes.P4HI if conn.mode == 'PET264' else gfxmodes.C64HI
-            FT.SendBitmap(conn,img,gfxmode=gmod,preproc=PreProcess(),lines=23,display=False,dither=dithertype.NONE)
-            conn.Sendall(TT.split_Screen(23,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLUE'], mode=conn.mode))
+            FT.SendBitmap(conn,img,gfxmode=gmod,preproc=PreProcess(),lines=conn.encoder.txt_geo[1]-2,display=False,dither=dithertype.NONE)
+            conn.Sendall(TT.split_Screen(conn.encoder.txt_geo[1]-2,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLUE'], mode=conn.mode))
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2>')
-        conn.SendTML('<CURSOR><CLR><YELLOW>[N]ew location or <LARROW> to exit<BR>')
-        if conn.ReceiveKey(b'N_') == b'_':
+        conn.SendTML('<CURSOR><CLR><YELLOW>[N]ew location or <BACK> to exit<BR>')
+        if conn.ReceiveKey('n_') == '_':
             done = True
         else:
             conn.SendTML('Location:')
-            locqry = conn.encoder.decode(conn.ReceiveStr(bytes(keys,'ascii'),30))
+            locqry = conn.encoder.decode(conn.ReceiveStr(keys,30))
             try:
-                tloc = geoLoc.geocode(locqry,language=conn.bbs.lang)
+                tloc = do_geocode(locqry) #geoLoc.geocode(locqry,language=conn.bbs.lang)
             except:
                 _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
                 conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
@@ -123,13 +133,28 @@ def plugFunction(conn:Connection):
                 #Default to config setting, or Meyrin otherwise
                 locqry = conn.bbs.PlugOptions.get('wxdefault','Meyrin')
     loop.close()
-    conn.SendTML('<NUL n=2><SPLIT>')
+    conn.SendTML(f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode">')
     return
+
+# Get closest cell x-coord
+cellx = lambda width,percent:int((width*percent)//8)*8
+
 
 #######################################################
 # Get weather data and render image
 #######################################################
 async def getweather(conn:Connection,locquery,geoLoc):
+
+    # Avoid Geocode timeout/Unavailable errors
+    # https://gis.stackexchange.com/questions/173569/avoid-time-out-error-nominatim-geopy-openstreetmap
+    def do_reverse(location, attempt=1, max_attempts=5):
+        try:
+            return geoLoc.reverse(location,language=conn.bbs.lang)
+        except:
+            if attempt <= max_attempts:
+                return do_reverse(location, attempt=attempt+1)
+            return None
+
     # declare the client. format defaults to the metric system (celcius, km/h, etc.)
     units = python_weather.METRIC if conn.bbs.database.getUserPrefs(conn.userid, {'wxunits':conn.bbs.PlugOptions.get('wxunits','C')})['wxunits']=='C' else python_weather.IMPERIAL
     if python_weather.__version__[0]=='0':
@@ -140,6 +165,8 @@ async def getweather(conn:Connection,locquery,geoLoc):
         gm = gfxmodes.C64HI
     else:
         gm = conn.encoder.def_gfxmode
+
+    xdim = GFX_MODES[gm]['out_size']
 
     c_black = (0,0,0)
     c_red = (0x99,0x33,0x33)
@@ -159,20 +186,20 @@ async def getweather(conn:Connection,locquery,geoLoc):
     # fetch a weather forecast from a city
     try:
         weather = await asyncio.wait_for(client.get(locquery),15) # Wait for up to 15seconds.
-        if weather.location == None:    #Invalid location
+        if weather.coordinates == None:    #Invalid location
             await client.close()
             return None
     except Exception as e:
         _LOG('Weather: TIMEOUT',id=conn.id,v=1)
         await client.close()
         return None
-    draw.rectangle([0,0,319,15],c_lgrey)
+    draw.rectangle([0,0,xdim[0]-1,15],c_lgrey)
     j = 3
     for i in range(0,7):
         draw.line(((2+(int(j*i)),0),(-13+(int(j*i)),15)),fill=c_dgrey)
     # Get full location from returned coordinates
     try:
-        floc = geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
+        floc = do_reverse(str(weather.coordinates[0])+','+str(weather.coordinates[1])) #geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
         address = floc.raw.get('address',floc.raw.get('properties',{})) #'address' in nominatim, 'properties in photon
         #City
         city = address.get('village',address.get('town',address.get('city',address.get('municipality','Unknown'))))
@@ -180,119 +207,119 @@ async def getweather(conn:Connection,locquery,geoLoc):
         region = address.get('state',address.get('region',address.get('county','')))
         #Country
         country = address.get('country',address.get('country_code',address.get('continent','')))
-        locdisplay = city+('-'+region if region != '' else '')+('-'+country if country != '' else '')
-        l,t,r,b = draw.textbbox((160,2),locdisplay,font=font_title,anchor='mt')
-        draw.rectangle([l-1,t-1,r+1,b+1],c_lgrey)
-        draw.text((160,2),locdisplay.replace('|','-'),c_dgrey,font=font_title,anchor='mt')
-        draw.line(((0,16),(319,16)),fill=c_dgrey)
-        for i in range(0,320,2):
-            draw.point((i,17),fill=c_dgrey)
-            draw.point((i+1,18),fill=c_dgrey)
-            draw.point((i,54),fill=c_blue)
-            draw.point((i+1,53),fill=c_blue)
-        #Current temperature
-        ctemp = weather.current.temperature
-        if units == python_weather.IMPERIAL:
-            if ctemp < 32:
-                tco = c_purple  #4
-            elif ctemp < 41:
-                tco = c_lblue   #14
-            elif ctemp < 59:
-                tco = c_cyan    #3
-            elif ctemp < 77:
-                tco = c_yellow  #7
-            elif ctemp < 86:
-                tco = c_orange  #8
-            else:
-                tco = c_red     #2
-        else:
-            if ctemp < 0:
-                tco = c_purple  #4
-            elif ctemp < 5:
-                tco = c_lblue   #14
-            elif ctemp < 15:
-                tco = c_cyan    #3
-            elif ctemp < 25:
-                tco = c_yellow  #7
-            elif ctemp < 30:
-                tco = c_orange  #8
-            else:
-                tco = c_red     #2
-        draw.text((40, 24),str(ctemp)+'°'+('C' if units==python_weather.METRIC else 'F'),tco,font=font_temp)
-        #Current weather type
-        if python_weather.__version__[0] == 0:
-            wt = weather.current.type.value
-        else:
-            wt = weather.current.kind.value
-        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(wt,8)]))
-        img.paste(tmp,(8,24))
-        #Current wind conditions
-        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
-        img.paste(tmp,(104,24))
-        draw.text((136,28),str(weather.current.wind_speed)+('km/h' if units == python_weather.METRIC else 'mph'),c_white,font=font_title)
-        if python_weather.__version__[0] == 0:
-            wd = weather.current.wind_direction
-        else:
-            wd = weather.current.wind_direction.value
-        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[wd]]))
-        img.paste(tmp,(184,32))
-        #Pressure
-        tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
-        img.paste(tmp,(224,24))
-        draw.text((256,28),str(weather.current.pressure)+('hPa' if units == python_weather.METRIC else 'Hg'),c_white,font=font_title)
-        draw.line(((0,55),(319,55)),fill=c_blue)
-        # get the weather forecast for a few days
-        draw.text((54,58),'Morning',c_white,font=font_text,anchor='mt')
-        draw.text((126,58),'Noon',c_white,font=font_text,anchor='mt')
-        draw.text((198,58),'Evening',c_white,font=font_text,anchor='mt')
-        draw.text((268,58),'Night',c_white,font=font_text,anchor='mt')
-        ix = 0
-        for forecast in weather.forecasts:
-            draw.text((0,76+(ix*32)),forecast.date.strftime('%a'),c_white,font=font_text)
-            ih = 0
-            for hourly in forecast.hourly:
-                if python_weather.__version__[0] == 0:
-                    wt = hourly.type.value
-                else:
-                    wt = hourly.kind.value
-                if ih == 3: # Morning
-                    try:
-                        icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
-                    except:
-                        icon = Image.fromarray(wgfx24[8])
-                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
-                    img.paste(tmp,(32,72+(ix*32)))
-                    draw.text((56,76+(ix*32)),str(hourly.temperature)+'°',c_white,font=font_text)
-                elif ih == 4: #Noon
-                    try:
-                        icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
-                    except:
-                        icon = Image.fromarray(wgfx24[8])
-                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
-                    img.paste(tmp,(104,72+(ix*32)))
-                    draw.text((128,76+(ix*32)),str(hourly.temperature)+'°',c_white,font=font_text)
-                elif ih == 6: #Evening
-                    try:
-                        icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
-                    except:
-                        icon = Image.fromarray(wgfx24[8])
-                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
-                    img.paste(tmp,(176,72+(ix*32)))
-                    draw.text((200,76+(ix*32)),str(hourly.temperature)+'°',c_white,font=font_text)
-                elif ih == 7: #Night
-                    try:
-                        icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
-                    except:
-                        icon = Image.fromarray(wgfx24[8])
-                    tmp = inPal.create_PIL_png_from_rgb_array(icon)
-                    img.paste(tmp,(248,72+(ix*32)))
-                    draw.text((272,76+(ix*32)),str(hourly.temperature)+'°',c_white,font=font_text)
-                ih += 1
-            ix += 1
     except Exception as e:
-        _LOG('Error getting location data',id=conn.id, v=1)
-        conn.SendTML('ERROR!')
-        img = None
+        _LOG('Error getting location data, using user query instead',id=conn.id, v=1)
+        city = locquery
+        region = ''
+        country = ''
+    # Generate image
+    locdisplay = city+('-'+region if region != '' else '')+('-'+country if country != '' else '')
+    l,t,r,b = draw.textbbox((xdim[0]//2,2),locdisplay,font=font_title,anchor='mt')
+    draw.rectangle([l-1,t-1,r+1,b+1],c_lgrey)
+    draw.text((xdim[0]//2,2),locdisplay.replace('|','-'),c_dgrey,font=font_title,anchor='mt')
+    draw.line(((0,16),(xdim[0]-1,16)),fill=c_dgrey)
+    for i in range(0,xdim[0],2):
+        draw.point((i,17),fill=c_dgrey)
+        draw.point((i+1,18),fill=c_dgrey)
+        draw.point((i,54),fill=c_blue)
+        draw.point((i+1,53),fill=c_blue)
+    #Current temperature
+    ctemp = weather.temperature
+    if units == python_weather.IMPERIAL:
+        if ctemp < 32:
+            tco = c_purple  #4
+        elif ctemp < 41:
+            tco = c_lblue   #14
+        elif ctemp < 59:
+            tco = c_cyan    #3
+        elif ctemp < 77:
+            tco = c_yellow  #7
+        elif ctemp < 86:
+            tco = c_orange  #8
+        else:
+            tco = c_red     #2
+    else:
+        if ctemp < 0:
+            tco = c_purple  #4
+        elif ctemp < 5:
+            tco = c_lblue   #14
+        elif ctemp < 15:
+            tco = c_cyan    #3
+        elif ctemp < 25:
+            tco = c_yellow  #7
+        elif ctemp < 30:
+            tco = c_orange  #8
+        else:
+            tco = c_red     #2
+    draw.text((40, 24),str(ctemp)+'°'+('C' if units==python_weather.METRIC else 'F'),tco,font=font_temp)
+    #Current weather type
+    wt = weather.kind.value
+    tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(wt,8)]))
+    img.paste(tmp,(8,24))
+    #Current wind conditions
+    tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
+    img.paste(tmp,(cellx(xdim[0],.325),24)) #32.5%
+    draw.text((cellx(xdim[0],.425),28),str(weather.wind_speed)+('km/h' if units == python_weather.METRIC else 'mph'),c_white,font=font_title)   #42.5%
+    wd = weather.wind_direction.value
+    tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[wd]]))
+    img.paste(tmp,(cellx(xdim[0],.575),32)) #57.5%
+    #Pressure
+    tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
+    img.paste(tmp,(cellx(xdim[0],.7),24)) #70%
+    draw.text((cellx(xdim[0],.8),28),str(weather.pressure)+('hPa' if units == python_weather.METRIC else 'Hg'),c_white,font=font_title)   #80%
+    draw.line(((0,55),(xdim[0]-1,55)),fill=c_blue)
+    # get the weather forecast for a few days
+    draw.text((cellx(xdim[0],.17),58),'Morning',c_white,font=font_text,anchor='mt')     #17%
+    draw.text((cellx(xdim[0],.394),58),'Noon',c_white,font=font_text,anchor='mt')       #39.37%
+    draw.text((cellx(xdim[0],.62),58),'Evening',c_white,font=font_text,anchor='mt')    #62%
+    draw.text((cellx(xdim[0],.837),58),'Night',c_white,font=font_text,anchor='mt')      #83.75%
+    ix = 0
+    for daily in weather:
+        draw.text((0,76+(ix)),daily.date.strftime('%a'),c_white,font=font_text)
+        ih = 0
+        for hourly in daily:
+            if python_weather.__version__[0] == 0:
+                wt = hourly.type.value
+            else:
+                wt = hourly.kind.value
+            if ih == 3: # Morning
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = inPal.create_PIL_png_from_rgb_array(icon)
+                xx = cellx(xdim[0],.10)
+                img.paste(tmp,(xx,72+(ix)))
+                draw.text((xx+24,76+(ix)),str(hourly.temperature)+'°',c_white,font=font_text)
+            elif ih == 4: #Noon
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = inPal.create_PIL_png_from_rgb_array(icon)
+                xx = cellx(xdim[0],.325)
+                img.paste(tmp,(xx,72+(ix)))
+                draw.text((xx+24,76+(ix)),str(hourly.temperature)+'°',c_white,font=font_text)
+            elif ih == 6: #Evening
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = inPal.create_PIL_png_from_rgb_array(icon)
+                xx = cellx(xdim[0],.55)
+                img.paste(tmp,(xx,72+(ix)))
+                draw.text((xx+24,76+(ix)),str(hourly.temperature)+'°',c_white,font=font_text)
+            elif ih == 7: #Night
+                try:
+                    icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
+                except:
+                    icon = Image.fromarray(wgfx24[8])
+                tmp = inPal.create_PIL_png_from_rgb_array(icon)
+                xx = cellx(xdim[0],.775)
+                img.paste(tmp,(xx,72+(ix)))
+                draw.text((xx+24,76+(ix)),str(hourly.temperature)+'°',c_white,font=font_text)
+            ih += 1
+        ix += 32
     # close the wrapper once done
     await client.close()
     return(img)

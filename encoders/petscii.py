@@ -3,6 +3,7 @@ import re
 from common.classes import Encoder
 from common.imgcvt import gfxmodes
 import os
+import codecs
 
 #PETSCII constants
 
@@ -81,6 +82,29 @@ COMM_O = 0xB9
 COMM_J = 0xB5
 COMM_L = 0xB6
 CHECKMARK = 0xBA
+UL_CORNER = 0xB0     # Box corners
+UR_CORNER = 0xAE
+LL_CORNER = 0xAD
+LR_CORNER = 0xBD
+V_RIGHT = 0xAB       # Box borders
+V_LEFT  = 0xB3
+H_UP    = 0xB1
+H_DOWN  = 0xB2
+UL_QUAD = 0xBE       # Semigraphics
+UR_QUAD = 0xBC
+LL_QUAD = 0xBB
+LR_QUAD = 0xAC
+L_HALF  = 0xA1
+B_HALF  = 0xA2
+UL_LR_QUAD = COMM_B
+L_NARROW = 0xB5
+R_NARROW = 0xB6
+U_NARROW = 0xB8
+B_NARROW = 0xB9
+
+#-- Chars used by the BBS
+SPINNER = COMM_B    # Character to use while waiting
+BACK = LEFT_ARROW
 
 # Color code to palette index dictionary
 PALETTE = {BLACK:0,WHITE:1,RED:2,CYAN:3,PURPLE:4,GREEN:5,BLUE:6,YELLOW:7,ORANGE:8,BROWN:9,PINK:10,GREY1:11,GREY2:12,LT_GREEN:13,LT_BLUE:14,GREY3:15}
@@ -101,15 +125,32 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
             'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)}}
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
-            'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L)}}
+            'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L),
+            'UL-CORNER':chr(UL_CORNER),'UR-CORNER':chr(UR_CORNER),'LL-CORNER':chr(LL_CORNER),'LR-CORNER':chr(LR_CORNER),
+            'V-RIGHT':chr(V_RIGHT),'V-LEFT':chr(V_LEFT),'H-UP':chr(H_UP),'H-DOWN':chr(H_DOWN),
+            'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
+            'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
+            'SPINNER':chr(SPINNER),'BACK':chr(BACK)}}
 
 t_mono['PET264'].update(t_mono['PET64'])
 t_multi['PET264'] = t_multi['PET64']
 
 # Multiple replace
 # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
-Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"'}
-Urep = dict((re.escape(k), v) for k, v in Urep.items()) 
+Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*'}
+Urep = dict((re.escape(k), v) for k, v in Urep.items())
+
+######### Petscii ASCII codec error handler #########
+# Replace unknowns with a space
+def pethandler(e):
+    char = b''
+    if type(e) == UnicodeEncodeError:
+        if e.object[e.start] in '¿¡':
+            char = b' '
+    elif type(e) == UnicodeDecodeError:
+        ...
+    return (char,e.end)
+
 
 ######### Petscii encoder subclass #########
 class PETencoder(Encoder):
@@ -120,6 +161,79 @@ class PETencoder(Encoder):
         self.non_printable = NONPRINTABLE	#	List of non printable characters
         self.nl	= '\r'			#	New line string/character
         self.bs = chr(DELETE)	#	Backspace string/character
+        self.back = chr(BACK)
+
+    ### Wordwrap text preserving control codes
+    def wordwrap(self,text):
+        codes = '\x05\x11\x12\x13\x14\x1c\x1d\x1e\x1f\x81\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f'
+        out = ''
+
+        lines = text.split('\r')
+        for line in lines:
+            if len(line)!=0:
+                space = 40  # Space left in line
+                line = re.sub(r'(['+codes+r'])',r'\n\1\n', line)
+                line = line if line[0]!='\n' else line[1:]
+                words = re.split('\n+| ',line) # words = line.split(' ')
+                pword = False
+                last = ''
+                for word in words:
+                    if len(word) == 0:
+                        # if pword or len(last) == 0:
+                        #     space -= 1
+                        out = out + ' ' # Add space if last item was a word or a space 
+                        pword= False
+                        space -=1
+                        #     # if space == 0:
+                        #     #     space = 40
+                    elif (32 <= ord(word[0]) <= 127) or (160 <= ord(word[0]) <= 253):   #Printable
+                        if pword:
+                            pword = False
+                            space -= 1
+                            out = out + ' ' # Add space if last word was a _word_
+                            if space == 0:
+                                space = 40
+                        if space - len(word) < 0:
+                            out = out + '\r' + word
+                            space = 40 - len(word)
+                        else:
+                            out = out + word
+                            space -= len(word)
+                        #Add space
+                        if space != 0:
+                            # out = out +' '
+                            pword = True
+                            # space -= 1
+                        # if space == 0:
+                        #     space = 40
+                    elif word[0] in '\x05\x1c\x1e\x1f\x81\x90\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f\x11\x91\x94\x12\x92': #Colors, crsr up/down, INSERT, RVSON/OFF
+                        #just add the code
+                        out = out + word
+                        pword = False
+                    elif word[0] in '\x13\x93': #HOME CLR
+                        out = out + word
+                        space = 40
+                        pword = False
+                    elif word[0] in '\x14\x9d': #DELETE crsr left
+                        out = out + word
+                        space = space+1 if space+1 <= 40 else 1 # <- take into account going around to the previous line (being already at home not taken into account)
+                        pword = False
+                    elif word[0] == '\x1d': #crsr right
+                        out = out + word
+                        pword = False
+                        space -= 1
+                        # if space == 0:
+                        #     space = 40
+                    else:
+                        pword = False
+                    if space == 0:
+                        space = 40
+                    last = word
+                if space != 0:
+                    out = out + '\r'
+            else:
+                out = out + '\r'
+        return out
 
     def check_fit(self, filename):
         size = os.stat(filename).st_size-2
@@ -131,6 +245,16 @@ class PETencoder(Encoder):
         elif la + size > self.tbuffer:
             return False
         return True
+    
+    def get_exec(self, filename):
+        la = 0
+        bin = None
+        if self.check_fit(filename):
+            with open(filename,'rb') as f:
+                la = f.read(2)
+                la = la[0]|(la[1]<<8)
+                bin = f.read(-1)
+        return (la,bin)
 
 ####################################################
 # Convert ASCII/unicode text to PETSCII
@@ -141,7 +265,7 @@ def toPETSCII(text:str,full=True):
     if full:
         pattern = re.compile("|".join(Urep.keys()))
         text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
-        text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
+        text = (unicodedata.normalize('NFKD',text).encode('ascii','spaces')).decode('ascii')
         text = text.replace('|', chr(VLINE))
         text = text.replace('_', chr(164))
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
@@ -159,6 +283,7 @@ def toASCII(text):
 # Register with the encoder module
 ###################################
 def _Register():
+    codecs.register_error('spaces',pethandler)  # Register encoder error handler. This might be more useful if global 
     e0 = PETencoder('PET64')
     e0.tml_mono  = t_mono['PET64']
     e0.tml_multi = t_multi['PET64']
