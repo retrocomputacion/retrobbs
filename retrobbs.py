@@ -340,10 +340,10 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
               }	
     _LOG(logtext,id=conn.id, v=4)
     # Send speech message
-    conn.Sendall(TT.to_Speech() + speech)
+    if conn.T56KVer > 0:
+        conn.Sendall(TT.to_Speech() + speech)
     #time.sleep(1)
     # Select screen output
-    print(conn.style.BgColor)
     conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
     RenderMenuTitle(conn,title)
     # Send menu options
@@ -406,9 +406,10 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     else:
         conn.SendTML(f'<GREY> <RVSON><BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
     conn.SendTML(f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
-    conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
-    # Select screen output
-    conn.Sendall(TT.to_Screen())
+    if conn.T56KVer > 0:
+        conn.Sendall(TT.to_Speech() + 'seleksioneunaopsion,')
+        # Select screen output
+        conn.Sendall(TT.to_Screen())
     return MenuDic
 
 ######################################
@@ -504,6 +505,8 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
             slides.append(f)
     slides.sort()	#Sort list
 
+    turbo = conn.T56KVer > 0
+
     #Iterate through files
     for p in slides:
         w = 0
@@ -512,15 +515,15 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         ext = splitext(p)[1].upper()
         if ext in pics_e and (conn.QueryFeature(TT.PRADDR) < 0x80):
             FT.SendBitmap(conn, path+p)
-        elif ext in bin_e:
+        elif ext in bin_e and turbo:
             with open(path+p,'rb') as slide:
                 binary = slide.read()
                 conn.Sendallbin(binary)
         elif ext in text_e:
             w = FT.SendText(conn,path+p,title)
-        elif ext == pet_e[0]:
+        elif ext == pet_e[0] and turbo:
             w = FT.SendCPetscii(conn,path+p,(0 if waitkey else delay))
-        elif ext == pet_e[1]:
+        elif ext == pet_e[1] and turbo:
             w = FT.SendPETPetscii(conn,path+p)
         elif (ext in aud_e) and (conn.QueryFeature(TT.STREAM) < 0x80):
             AA.PlayAudio(conn,path+p,None)
@@ -540,8 +543,8 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
             WaitRETURN(conn,60.0*5)
         else:
             time.sleep(delay)
-        conn.Sendall(TT.to_Text(0,conn.style.BoColor,conn.style.BgColor))
-    conn.Sendall(TT.enable_CRSR())
+        conn.SendTML(f'<TEXT page=0 border={conn.style.BoColor} backgroud={conn.style.BgColor}>')
+    conn.SendTML('<CURSOR>')
 
 ################################################
 # Wait for user to press RETURN
@@ -649,10 +652,10 @@ def GetKeybindings(conn:Connection,id):
 ############################
 def Stats(conn:Connection):
     _LOG("Displaying stats",v=4,id=conn.id)
-    conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
+    conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} bgtop={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>') # Cancel any split screen/window
     RenderMenuTitle(conn,"BBS Stats")
     scwidth,scheight = conn.encoder.txt_geo
-    conn.Sendall(TT.set_Window(3,scheight-1))
+    conn.SendTML(f'<WINDOW top=3 bottom={scheight-1}>')
     bstats = conn.bbs.database.bbsStats()
     if bstats != None:
         utime = bstats.get('uptime',0)
@@ -714,7 +717,7 @@ def Stats(conn:Connection):
         else:
             text += [f'<CYAN>Total Upload/Download: <WHITE>{tup}<YELLOW>/<WHITE>{tdwn}<BR>']
     More(conn,text,scheight-3)
-    conn.Sendall(TT.set_Window(0,scheight-1))
+    conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
 
 #############################
 # SignIn/SignUp
@@ -848,7 +851,7 @@ def EditUser(conn:Connection):
     scwidth = conn.encoder.txt_geo[0]
     if conn.userid == 0:
         return
-    conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
+    conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>') # Cancel any split screen/window
     done = False
     line = 64 if 'PET' in conn.mode else 23
     while (not done) and conn.connected:
@@ -1012,7 +1015,7 @@ def EditUser(conn:Connection):
 # Edit user preferences
 ###############################
 def EditPrefs(conn:Connection):
-    conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)) # Cancel any split screen/window
+    conn.SendTML(f'<SPLIT row=0 multi=False btop=f{conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')    # Cancel any split screen/window
     done = False
     line = 64 if 'PET' in conn.mode else 23
     while (not done) and conn.connected:
@@ -1145,12 +1148,13 @@ def UserList(conn:Connection):
         if lineasimpresas < 18:
             for x in range(18 - lineasimpresas):
                 conn.SendTML('<BR>')
-    conn.SendTML(f' <GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
+    conn.SendTML(f' <GREY3><RVSON><BACK> <LTGREEN>Back <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>'
                 f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
-    conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
-    time.sleep(1)
-    # Select screen output
-    conn.Sendall(TT.to_Screen())
+    if conn.T56KVer > 0:
+        conn.Sendall(TT.to_Speech() + 'seleksioneunaopsion,')
+        time.sleep(1)
+        # Select screen output
+        conn.Sendall(TT.to_Screen())
     return MenuDic
 
 ##########################################################
@@ -1164,7 +1168,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
     elif (b"RETROTERM-P4" in conn.TermString) or (b"RETROTERM-M1" in conn.TermString):
-        _LOG('Plus/4 mode, audio streaming at 3840Hz',id=conn.id,v=3)
+        _LOG('Plus/4 / MSX mode, audio streaming at 3840Hz',id=conn.id,v=3)
         conn.samplerate = 3840
     if conn.mode == 'MSX1':
         grey = '<GREY>'
@@ -1237,6 +1241,101 @@ RUNNING UNDER:<BR>
             t56kver = ord(dato1)+((ord(dato2))/10)
             if t56kver > 0.4:
                 conn.SetMode(datos,t56kver)
+                # GetTerminalFeatures(conn)
+                # if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
+                #     _LOG('Sending intro pic',id=conn.id,v=4)
+                #     if conn.mode == 'PET264':
+                #         splash = 'splash.boti'
+                #     elif conn.mode == 'PET64':
+                #         splash = 'splash.art'
+                #     else:
+                #         splash = 'splash.sc2'
+                #     bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
+                #     _LOG('Spliting Screen',id=conn.id,v=4)
+                #     conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
+                # time.sleep(1)
+                # Done = False
+                # tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CLR>'
+                # while True:
+                #     r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
+                #     if not conn.connected:
+                #         return()
+                #     t = r['_A']
+                #     if t == 'l':
+                #         SignIn(conn)
+                #         if conn.username != '_guest_':
+                #             conn.SendTML(tml)
+                #             uentry = conn.bbs.database.chkUser(conn.username)
+                #             prefs = uentry.get('preferences',{'intro':True})
+                #             if prefs['intro']:
+                #                 SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
+                #             conn.SendTML('<CURSOR>')
+                #             break   #Done = True
+                #     elif t == 'g':
+                #         conn.SendTML(tml)
+                #         SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
+                #         conn.SendTML('<CURSOR>')
+                #         break   #Done = True
+                #     else:
+                #         conn.SendTML(tml)
+                #         break   #Done = True
+            else:
+                _LOG('Old terminal detected - Terminating',id=conn.id)
+                conn.SendTML('Please use RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
+                conn.connected = False
+        else:
+            conn.SendTML(   '<BR>FOR THE BEST EXPERIENCE,<BR>THIS BBS REQUIRES A TERMINAL<BR>COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
+                            'FOR THE LASTEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR>')
+            time.sleep(1)
+            conn.SendTML('TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR>')
+
+            time.sleep(1)
+            datos = b""
+            # conn.socket.settimeout(5.0)
+            conn.socket.setblocking(False)
+            tmp = time.time()
+            while ((time.time()-tmp) < 10) and (len(datos) < 1):
+                try:
+                    datos = conn.socket.recv(1) 
+                except socket.error as e:
+                    err = e.args[0]
+                    if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                        time.sleep(0.5)
+                        continue
+                    else:
+                        pass
+            conn.socket.setblocking(True)
+            conn.socket.settimeout(_tout)
+            if len(datos) == 0:
+                datos = b'\x00'
+            encoders = []
+            for encoder in conn.bbs.encoders:       # Get encoders which use the same backspace character
+                if conn.bbs.encoders[encoder].bs == chr(datos[0]) and conn.bbs.encoders[encoder].minT56Kver == 0:
+                    encoders.append(conn.bbs.encoders[encoder])
+            if encoders != []:
+                conn.SetMode(b'temp-'+next(iter(encoders[0].clients.keys())),0)  # Temporarily set the first valid encoder
+                conn.SendTML("SELECT THE PLATFORM THAT MORE CLOSELY MATCH YOURS:<BR><BR>")
+                count = 0
+                clist = []
+                for encoder in encoders:
+                    for client in encoder.clients:
+                        conn.SendTML(f'{count+1}:{encoder.clients[client].upper()}<BR>')
+                        count += 1
+                        clist.append([encoder.name,client])
+                conn.SendTML('<BR>YOUR CHOICE:')
+                mode = b'Standard-'+clist[conn.ReceiveInt(1,len(clist),1)-1][1]
+                conn.SendTML('<BR>')
+                conn.SetMode(mode,0)
+                conn.SendTML(f'<CLR><YELLOW>BBS mode set to:<WHITE> {conn.mode}<BR><BR><PAUSE n=2>')
+            else:
+                conn.SendTML('SORRY, UNKNOWN CLIENT TYPE, DISCONNECTED...<BR>')
+                conn.connected = False
+            # _LOG('Not a compatible terminal, disconnecting...',id=conn.id,v=2)
+            # # Clean up the connection
+            # conn.socket.close()
+        if conn.connected:
+            # Get Turbo56K terminal features and send splash screen if possible
+            if conn.T56KVer > 0.4:
                 GetTerminalFeatures(conn)
                 if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
                     _LOG('Sending intro pic',id=conn.id,v=4)
@@ -1250,35 +1349,33 @@ RUNNING UNDER:<BR>
                     _LOG('Spliting Screen',id=conn.id,v=4)
                     conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
                 time.sleep(1)
-                Done = False
-                tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CLR>'
-                while True:
-                    r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
-                    if not conn.connected:
-                        return()
-                    t = r['_A']
-                    if t == 'l':
-                        SignIn(conn)
-                        if conn.username != '_guest_':
-                            conn.SendTML(tml)
-                            uentry = conn.bbs.database.chkUser(conn.username)
-                            prefs = uentry.get('preferences',{'intro':True})
-                            if prefs['intro']:
-                                SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
-                            conn.Sendall(TT.enable_CRSR())
-                            break   #Done = True
-                    elif t == 'g':
+            Done = False
+            tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CLR>'
+            # Login and intro slideshow
+            while True:
+                r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
+                if not conn.connected:
+                    return()
+                t = r['_A']
+                if t == 'l':
+                    SignIn(conn)
+                    if conn.username != '_guest_':
                         conn.SendTML(tml)
-                        SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
-                        conn.Sendall(TT.enable_CRSR())
+                        uentry = conn.bbs.database.chkUser(conn.username)
+                        prefs = uentry.get('preferences',{'intro':True})
+                        if prefs['intro']:
+                            SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
+                        conn.SendTML('<CURSOR>')
                         break   #Done = True
-                    else:
-                        conn.SendTML(tml)
-                        break   #Done = True
-            else:
-                _LOG('Old terminal detected - Terminating',id=conn.id)
-                conn.SendTML('Please user RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
-                conn.connected = False
+                elif t == 'g':
+                    conn.SendTML(tml)
+                    SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
+                    conn.SendTML('<CURSOR>')
+                    break   #Done = True
+                else:
+                    conn.SendTML(tml)
+                    break   #Done = True
+
             # Increment visit counters
             conn.bbs.visits += 1            #Session counter
             conn.bbs.database.newVisit(conn.username)    #Total counter
@@ -1309,7 +1406,8 @@ RUNNING UNDER:<BR>
                                 # Only wait for RETURN if the function suceeded <<< ATTENTION: if the function returns 0 on success this check will fail
                                 if wait and (res != False):
                                     WaitRETURN(conn,60.0*5)
-                                    conn.Sendall((chr(0)*2)+TT.enable_CRSR())	#Enable cursor blink just in case
+                                    if conn.T56KVer > 0:
+                                        conn.SendTML('<NUL n=2><CURSOR>')   #Enable cursor blink just in case
                                 Function = conn.MenuDefs[conn.encoder.nl][0]
                                 res = Function(*conn.MenuDefs[conn.encoder.nl][1])
                                 if isinstance(res,dict):
@@ -1322,13 +1420,8 @@ RUNNING UNDER:<BR>
                 else:
                     _LOG('no more data from', conn.addr, id=conn.id)
                     break
-        else:
-            conn.SendTML(   '<CYAN><BR>This BBS requires a terminal<BR>compatible with TURBO56K 0.3 or newer.<BR>'
-                            'For the lastest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><LTBLUE>Disconnected...')
-            time.sleep(1)
-            _LOG('Not a compatible terminal, disconnecting...',id=conn.id,v=2)
-            # Clean up the connection
-            conn.socket.close()
+
+
     finally:
         # Clean up the connection
         conn.socket.close()
@@ -1413,6 +1506,10 @@ print('\n\nRetroBBS v%.2f (c)2021-2025\nby Pablo Roldán(durandal) and\nJorge Ca
 bbs_instance.plugins = EX.RegisterPlugins()
 # Init encoders
 bbs_instance.encoders = EX.RegisterEncoders()
+# Init Client ID -> encoder dictionary
+for encoder in bbs_instance.encoders:
+    for client in bbs_instance.encoders[encoder].clients:
+        bbs_instance.clients[client] = encoder
 # Register TML tags
 EX.RegisterTMLtags()
 

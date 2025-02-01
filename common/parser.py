@@ -14,6 +14,7 @@ from common.bbsdebug import _LOG
 #from common.connection import Connection
 import time
 from random import randrange
+from common.turbo56k import turbo_tags
 
 # Internal registers:
 #
@@ -86,9 +87,11 @@ class TMLParser(HTMLParser):
             # if there isn't a matching color code then send NUL
             # Note: this only works for single byte color codes
             tmp = conn.encoder.palette.items()
-            self.t_mono['INK'] = (lambda c: chr([k for k,v in tmp if v == c][0] if len([k for k,v in tmp if v == c])>0 else 0),[('_R','_C'),('c',0)])
+            self.t_mono['INK'] = (lambda c: [k for k,v in tmp if v == c][0] if len([k for k,v in tmp if v == c])>0 else '',[('_R','_C'),('c',0)])
         ###
         self.t_mono.update(EX.t_mono)			    # Plugins and Extensions functions
+        if conn.T56KVer > 0:                        # Add Turbo56K tags only if the terminal supports them
+            self.t_mono.update(turbo_tags)
         self.t_mono.update(conn.encoder.tml_mono)	# Encoder definitions
         #self.t_mono.update(TT.t_mono)			# Turbo56K functions
         self.t_mono =  {k.lower(): v for k, v in self.t_mono.items()}
@@ -469,7 +472,7 @@ class TMLParser(HTMLParser):
                     self.b_stack.appendleft(self.b_buffer)  # save the previous buffer
                     self.b_buffer = ''
             else:
-                _LOG('TML Parser: Invalid tag: '+tag.upper(), id=self.conn.id,v=2)
+                _LOG('TML Parser: Invalid tag: '+tag.upper(), id=self.conn.id,v=4)
 
     def handle_endtag(self, tag):
         i = j = None

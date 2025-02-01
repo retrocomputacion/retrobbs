@@ -114,7 +114,7 @@ def plugFunction(conn:Connection):
         if img != None:
             gmod = gfxmodes.P4HI if conn.mode == 'PET264' else gfxmodes.C64HI
             FT.SendBitmap(conn,img,gfxmode=gmod,preproc=PreProcess(),lines=conn.encoder.txt_geo[1]-2,display=False,dither=dithertype.NONE)
-            conn.Sendall(TT.split_Screen(conn.encoder.txt_geo[1]-2,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLUE'], mode=conn.mode))
+            conn.SendTML(f'<SPLIT row={conn.encoder.txt_geo[1]-2} multi=False bgtop={conn.encoder.colors["BLACK"]} bgbottom={conn.encoder.colors["BLACK"]} mode={conn.mode}>')
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2>')
         conn.SendTML('<CURSOR><CLR><YELLOW>[N]ew location or <BACK> to exit<BR>')

@@ -7,6 +7,7 @@ from common.connection import Connection
 from common.bbsdebug import _LOG
 from common.style import KeyLabel
 from common.style import bbsstyle
+import common.turbo56k as TT
 
 wordlist = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]}
 
@@ -35,6 +36,22 @@ def setup():
 ###################################
 def plugFunction(conn:Connection):
 
+    #Render title
+    def header():
+        if 'PET' in conn.mode and not 'PET20' in conn.mode:
+            conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
+            conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
+            conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
+        elif 'MSX' in conn.mode:
+            conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
+            conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
+            conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
+
+    window_s = conn.QueryFeature(TT.SET_WIN) < 0x80
+
+    if conn.encoder.colors == {}:
+        conn.SendTML("<FORMAT>You need a color terminal to play Mindle...</FORMAT><BR><PAUSE n=3>")
+        return
     ecolors = conn.encoder.colors
     mcolors = bbsstyle(ecolors)
     mcolors.OoddBack = ecolors['BLACK']
@@ -75,14 +92,16 @@ def plugFunction(conn:Connection):
     #     scolor = 11
 
     conn.SendTML(f'<TEXT border={mcolors.BgColor} background={mcolors.BgColor}><CLR>')
-    if 'PET' in conn.mode:
-        conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
-        conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
-        conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
-    else:
-        conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
-        conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
-        conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
+
+    header()
+    # if 'PET' in conn.mode:
+    #     conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
+    #     conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
+    #     conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
+    # elif 'MSX' in conn.mode:
+    #     conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
+    #     conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
+    #     conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
     xc = scwidth//4
     while conn.connected:
         keys = '_bcd'
@@ -100,7 +119,11 @@ def plugFunction(conn:Connection):
         KeyLabel(conn,'_','Exit',True,mcolors)
         rec = conn.ReceiveKey(keys)
         if rec == 'b':     ##### Free play
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight-1}><CLR><WINDOW>')
+            if window_s:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight-1}><CLR><WINDOW>')
+            else:
+                conn.SendTML('<CLR>')
+                header()
             xwords = [] # Include _all_ words for free play
             for wl in wordlist:
                 xwords +=wordlist[wl]
@@ -112,10 +135,18 @@ def plugFunction(conn:Connection):
             score = mindle(conn, xword, xvalid)
             if  score >= 0:
                 conn.SendTML('<PAUSE n=5>')
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            if window_s:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            else:
+                conn.SendTML('<CLR>')
+                header()
         elif rec == 'c':   # High scores
             if len(tops) > 0:
-                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+                if window_s:
+                    conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+                else:
+                    conn.SendTML('<CLR>')
+                    header()
                 conn.SendTML(f'<AT x={(scwidth-10)//2} y=7><LTGREEN>Top Scores<GREY3><BR><BR>')
                 ulist = dict(dbase.getUsers())
                 j = len(tops) if len(tops)<=10 else 10
@@ -124,9 +155,17 @@ def plugFunction(conn:Connection):
                     conn.SendTML(f'<CRSRR n=10>{uname}<CRSRR n={17-len(uname)}>{tops[i][1]}<BR>')
                 conn.SendTML(f'<AT x={(scwidth-25)//2} y={scheight-2}><GREEN>Press any key to continue')
                 conn.Receive(1)
-                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+                if window_s:
+                    conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+                else:
+                    conn.SendTML('<CLR>')
+                    header()
         elif rec == 'd':
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR>')
+            if window_s:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR>')
+            else:
+                conn.SendTML('<CLR>')
+                header()
             conn.SendTML('''<FORMAT><CRSRD><GREY3>Instructions: You have to guess the hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>
 After each try the color of the characters will change color to show how close you are from guessing the correct word.<BR>
 '<BR><GREEN> * <GREY3>Green means the character exists in the hidden word and is in the correct position<BR>
@@ -135,8 +174,14 @@ After each try the color of the characters will change color to show how close y
 <BR>Press any key to continue</FORMAT>''')
             conn.Receive(1)
             conn.SendTML('<CLR><WINDOW>')
+            if not window_s:
+                header()
         elif rec == 'a':       ##### Daily Mindle
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            if window_s:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            else:
+                conn.SendTML('<CLR>')
+                header()
             score = mindle(conn, mdata['daily'],valid)
             if score != -1:
                 players.append(conn.userid)
@@ -147,7 +192,11 @@ After each try the color of the characters will change color to show how close y
             mdata['scores'][str(conn.userid)] = mdata['scores'].get(str(conn.userid),0)+score
             table.update(mdata, where('record') == 'mindle')
             tops = sorted(mdata['scores'].items(), key=lambda x:x[1], reverse=True) # Re-Sorted list of top scores
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            if window_s:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight}><CLR><WINDOW>')
+            else:
+                conn.SendTML('<CLR>')
+                header()
         else:
             break
 

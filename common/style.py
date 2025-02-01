@@ -42,17 +42,20 @@ def KeyPrompt(conn:Connection, text, style=default_style, TML=False):
     if style != None:
         style = conn.style
     pal = conn.encoder.palette
-    if TML:
-        return(f'<INK c={style.PbColor}>[<INK c={style.PtColor}>{text}<INK c={style.PbColor}>]')
-    else:
-        if conn.QueryFeature(0xb7) >= 0x80:																			# Update INK command
-            tmp = pal.items()
-            bc = chr([k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else 0)
-            tc = chr([k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else 0)
+    if pal != {}:
+        if TML:
+            return(f'<INK c={style.PbColor}>[<INK c={style.PtColor}>{text}<INK c={style.PbColor}>]')
         else:
-            bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
-            tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
-        return(bc+'['+tc+conn.encoder.encode(text,False)+bc+']')
+            if conn.QueryFeature(TT.INK) >= 0x80:																			# Update INK command
+                tmp = pal.items()
+                bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else 0
+                tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else 0
+            else:
+                bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
+                tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
+            return(bc+'['+tc+conn.encoder.encode(text,False)+bc+']')
+    else:
+        return(f'[{text}]')
 
 # Renders a menu option in the selected style  
 def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=None):

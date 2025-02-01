@@ -29,28 +29,41 @@ COMM_J = 0xDD
 COMM_L = 0xDE
 CHECKMARK = 0xFB
 
+UL_CORNER = 0xDA     # Box corners
+UR_CORNER = 0xBF
+LL_CORNER = 0xC0
+LR_CORNER = 0xD9
+L_HALF  = 0xDD      # Semigraphics
+R_HALF  = 0xDE
+B_HALF  = 0xDF
+T_HALF  = 0xDC
+
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]+[127]
 
 ###########
 # TML tags
 ###########
-t_mono = 	{'BR':'\r\n'}
+t_mono = 	{'BR':'\r\n','AT':''}
 t_multi =	{'DEL':chr(DELETE),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': chr(CHECKMARK),
             'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L)}
 
-
+def toASCII(text:str, full=True):
+    return text.encode('cp437').decode('latin1')
 
 ###################################
 # Register with the encoder module
 ###################################
 def _Register():
     e0 = Encoder('ASCII')
-    e0.encode = lambda t:t.encode('cp437').decode('latin1')	#	Function to encode from Unicode to CP437
+    e0.minT56Kver = 0
+    e0.clients = {b'ASC':'Extended ASCII'}
+    e0.encode = toASCII #lambda t,f:t.encode('cp437').decode('latin1')	#	Function to encode from Unicode to CP437
     e0.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
     e0.non_printable = NONPRINTABLE	#	List of non printable characters
     e0.nl	= '\r'			#	New line string/character
+    e0.nl_out = '\r\n'
     e0.bs = chr(DELETE)	    #	Backspace string/character
     e0.tml_mono  = t_mono
     e0.tml_multi = t_multi
@@ -63,5 +76,11 @@ def _Register():
     e0.def_gfxmode = None
     e0.gfxmodes = None
     e0.ctrlkeys = {'DELETE':DELETE}
-
+    e0.features = { 'color':       False,  # Encoder supports color
+                    'charsets':    1,      # Number if character sets supported
+                    'reverse':     False,  # Encoder supports reverse video
+                    'blink':       False,  # Encoder supports blink/flash text
+                    'underline':   False,  # Encoder supports underlined text
+                    'cursor':      False   # Encoder supports cursor movement/set. Including home position and screen clear
+                    }
     return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return PET128.

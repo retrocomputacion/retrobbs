@@ -21,29 +21,43 @@ def setup():
 ###################################
 def plugFunction(conn:Connection):
 
-    _dec = conn.encoder.decode
-    keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
-    try:
-        if 'PET' in conn.mode:
-            f = open('plugins/oneliner.seq','rb')
-            title = f.read()
+    def header():
+        if title != None:
             conn.Sendallbin(title)
         else:
-            raise ValueError('Not PET')
-    except:
-        S.RenderMenuTitle(conn,'Oneliner')
-        conn.SendTML('<PURPLE>')
-    scwidth,scheight = conn.encoder.txt_geo
-    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        if 'MSX' in conn.mode:
-            conn.SendTML(f'<CURSOR n=0><PAPER c=13><INK c=15><LFILL row=3 code=23><LFILL row={scheight-3} code=23><PAPER c={conn.style.BgColor}>')
+            S.RenderMenuTitle(conn,'Oneliner')
+        if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+            if 'MSX' in conn.mode:
+                conn.SendTML(f'<CURSOR enable=False><PAPER c=13><WHITE><LFILL row=3 code=23><LFILL row={scheight-3} code=23><PAPER c={conn.style.BgColor}><CURSOR>')
+            else:
+                conn.SendTML(f'<PURPLE><LFILL row=3 code=192><LFILL row={scheight-3} code=192>') # Window borders
         else:
-            conn.Sendall(TT.Fill_Line(3,192)+TT.Fill_Line(scheight-3,192)) # Window borders
-    else:
-        conn.SendTML(f'<AT x=0 y=3><RVSON><HLINE n={scwidth}><AT x=0 y={scheight-3}><HLINE n={scwidth}><RVSOFF>')
+            conn.SendTML(f'<PURPLE><AT x=0 y=3><RVSON><HLINE n={scwidth}>')
+            if conn.T56KVer > 0:
+                conn.Sendall(f'<AT x=0 y={scheight-3}><HLINE n={scwidth}><RVSOFF>')
+            else:
+                conn.Sendall('<RVSOFF>')
+        
+
+    _dec = conn.encoder.decode
+    keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
+    title = None
+    try:
+        if 'PET' in conn.mode and not 'PET20' in conn.mode:
+            fname = 'plugins/oneliner.seq'
+        elif 'MSX' in conn.mode:
+            fname = 'plugins/oneliner.mseq'
+        with open(fname,'rb') as f:
+            title = f.read()
+    except:
+        pass
+    scwidth,scheight = conn.encoder.txt_geo
+    if conn.T56KVer > 0:
+        header()
     refr = True
     while conn.connected:
-        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR><KPROMPT t=RETURN><GREEN>new message {S.KeyPrompt(conn,"<BACK>",TML=True)}<GREEN>exit')
+        if conn.T56KVer == 0 and refr:
+            header()
         if refr == True:
             try:
                 olf = open('plugins/oneliners.json','r')
@@ -53,17 +67,29 @@ def plugFunction(conn:Connection):
                 onelines = []
             sendOneliners(conn, onelines)
             refr = False
+        if conn.T56KVer > 0:
+            conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
+        else:
+            conn.SendTML('<BR>')
+        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message {S.KeyPrompt(conn,"<BACK>",TML=True)}<GREEN>exit')
         comm = conn.ReceiveKey(conn.encoder.back+conn.encoder.nl)
         if comm == conn.encoder.back:
             break
-        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
+        if conn.T56KVer > 0:
+            conn.SendTML('<CLR>')
+        else:
+            conn.SendTML('<BR>')
         if conn.userclass > 0:
             nick = conn.username
         else:
             conn.SendTML('<GREEN>Nick: <WHITE>')
             nick = _dec(conn.ReceiveStr(keys,20))
         if nick != '':
-            conn.SendTML('<CLR><GREEN>Message:<BR><WHITE>')
+            if conn.T56KVer > 0:
+                conn.SendTML('<CLR>')
+            else:
+                conn.SendTML('<BR>')
+            conn.SendTML('<GREEN>Message:<BR><WHITE>')
             line = _dec(conn.ReceiveStr(keys, scwidth-1))
             if line != '':
                 try:    # Refresh oneliners in case another user posted in the meanwhile
@@ -79,14 +105,16 @@ def plugFunction(conn:Connection):
                 json.dump(onelines,olf)
                 olf.close()
                 refr = True
-    conn.Sendall(TT.set_Window(0,24))
+    conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
 
 ##########################################
 # Send oneliners to connection
 ##########################################
 def sendOneliners(conn:Connection,lines):
     # count = ceil(conn.encoder.txt_geo[0]/3)-1
-    conn.SendTML(f'<WINDOW top=4 bottom={conn.encoder.txt_geo[1]-4}><CLR>')
+    conn.SendTML(f'<WINDOW top=4 bottom={conn.encoder.txt_geo[1]-4}>')
+    if conn.T56KVer > 0:
+        conn.SendTML('<CLR>')
     for i,l in enumerate(lines):
         if 'MSX' in conn.mode:
             txtc = '<GREY>'

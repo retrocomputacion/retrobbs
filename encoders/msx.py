@@ -10,7 +10,6 @@ import os
 GRAPH = 0x01
 STOP = 0x03
 RETURN = 0x0D
-RUN = 0x83
 SELECT = 0x18
 RVS_ON = 0x19
 RVS_OFF = 0x1A
@@ -19,7 +18,7 @@ ESC = 0x1B
 #--Special chars
 POUND = 0x9C
 YEN = 0x9D
-PI = 0xE4
+PI = 0xE3
 
 #--Editor
 TAB = 0x09
@@ -114,7 +113,9 @@ SPINNER = 0xD2  # Character to use while waiting
 BACK = 0x5F     # Character to go back/exit ('_')  
 
 # Color code to palette index dictionary
-PALETTE = {BLACK:0,BLACK:1,GREEN:2,LT_GREEN:3,BLUE:4,LT_BLUE:5,DARK_RED:6,CYAN:7,RED:8,PINK:9,YELLOW:10,LT_YELLOW:11,DARK_GREEN:12,PURPLE:13,GREY:14,WHITE:15}
+PALETTE = {chr(1)+chr(BLACK):1,chr(1)+chr(GREEN):2,chr(1)+chr(LT_GREEN):3,chr(1)+chr(BLUE):4,chr(1)+chr(LT_BLUE):5,chr(1)+chr(DARK_RED):6,chr(1)+chr(CYAN):7,
+           chr(1)+chr(RED):8,chr(1)+chr(PINK):9,chr(1)+chr(YELLOW):10,chr(1)+chr(LT_YELLOW):11,chr(1)+chr(DARK_GREEN):12,chr(1)+chr(PURPLE):13,chr(1)+chr(GREY):14,
+           chr(1)+chr(WHITE):15}
 
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,13)]+[chr(i) for i in range(14,32)]+[chr(127)]+[chr(1)+chr(i) for i in range(1,16)]
@@ -127,7 +128,8 @@ t_mono = 	{'MSX1':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF
             'GREEN':chr(1)+chr(GREEN),'BLUE':chr(1)+chr(BLUE),'YELLOW':chr(1)+chr(YELLOW),'PINK':chr(1)+chr(PINK),'GREY':chr(1)+chr(GREY),
             'LTGREEN':chr(1)+chr(LT_GREEN),'LTBLUE':chr(1)+chr(LT_BLUE),'DRED':chr(1)+chr(DARK_RED),'DGREEN':chr(1)+chr(DARK_GREEN),
             'LTYELLOW':chr(1)+chr(LT_YELLOW),
-            'PAPER':(lambda c:'\x01'+chr(c+0x10),[('_R','_C'),('c',1)])}}
+            'PAPER':(lambda c:'\x01'+chr(c+0x10),[('_R','_C'),('c',1)])},
+            'MSXSTD':{'CLR':chr(CLEAR),'HOME':chr(HOME),'BR':'\r\n','AT':(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])}}
 t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(1)+chr(HLINE),'VLINE':chr(1)+chr(VLINE),'CROSS':chr(1)+chr(CROSS),'UARROW':'^',
             'UL-CORNER':chr(1)+chr(UL_CORNER),'UR-CORNER':chr(1)+chr(UR_CORNER),'LL-CORNER':chr(1)+chr(LL_CORNER),'LR-CORNER':chr(1)+chr(LR_CORNER),
@@ -146,10 +148,18 @@ class MSXencoder(Encoder):
         self.decode = toASCII	#	Function to decode to ASCII/Unicode
         self.non_printable = NONPRINTABLE	#	List of non printable characters
         self.nl	= '\r'			#	New line string/character
+        self.nl_out = '\r'      #   New line string/character (out)
         self.bs = chr(DELETE)	#	Backspace string/character
         self.txt_geo = (32,24)  #   Text screen dimensions
         self.ellipsis = '\u00bb'   # Ellipsis representation
         self.back = chr(BACK)
+        self.features = {'color':       False,  # Encoder supports color
+                         'charsets':    1,      # Number if character sets supported
+                         'reverse':     False,  # Encoder supports reverse video
+                         'blink':       False,  # Encoder supports blink/flash text
+                         'underline':   False,  # Encoder supports underlined text
+                         'cursor':      True    # Encoder supports cursor movement/set. Including home position and screen clear
+                         }
 
     def color_index(self, code):
         if type(code) == str:
@@ -158,11 +168,12 @@ class MSXencoder(Encoder):
         return self.palette.get(code,-1)
 
     ### Wordwrap text preserving control codes
-    def wordwrap(self,text):
+    def wordwrap(self,text,split=False):
         codes = ''.join(chr(i) for i in range(1,16))+''.join(chr(i) for i in range(17,32))  #'\x01\x07\x08\x0b\x12\x19\x1a\x1c\x1d\x1e\x1f\x7f'
-        out = ''
 
+        out = ''
         extend = False
+
         # Replace Yellow color code before splitting by lines
         for c in text:
             if extend == False:
@@ -176,21 +187,26 @@ class MSXencoder(Encoder):
                     out = out + c
                 extend = False
         text = out
-        out = ''
+
+        if split:
+            out = []
+        else:
+            out = ''
+
         lines = text.split('\r')
         extend = False
         for line in lines:
             line = line.replace('\x01\xff','\x01\x0a')  # replace back the YELLOW color code
+            t_line = ''
             if len(line)!=0:
                 space = 32  # Space left in line
                 line = re.sub(r'(['+codes+r'])',r'\020\1\020', line)
                 line = line if line[0]!='\x10' else line[1:]
                 words = re.split(r'\020+| ',line) # words = line.split(' ')
                 pword = False
-                last = ''
                 for word in words:
                     if len(word) == 0:
-                        out = out + ' ' # Add space if last item was a word or a space 
+                        t_line = t_line + ' '   # out = out + ' ' # Add space if last item was a word or a space 
                         pword= False
                         space -=1
                     elif not extend:
@@ -198,14 +214,19 @@ class MSXencoder(Encoder):
                             if pword:
                                 pword = False
                                 space -= 1
-                                out = out + ' ' # Add space if last word was a _word_
+                                t_line = t_line + ' '   # out = out + ' ' # Add space if last word was a _word_
                                 if space == 0:
                                     space = 32
                             if space - len(word) < 0:
-                                out = out + '\r' + word
+                                t_line = t_line + '\r'  # out = out + '\r' + word
+                                if split:
+                                    out.append(t_line)
+                                else:
+                                    out = out + t_line
+                                t_line = word
                                 space = 32 - len(word)
                             else:
-                                out = out + word
+                                t_line = t_line + word  # out = out + word
                                 space -= len(word)
                             #Add space
                             if space != 0:
@@ -214,18 +235,18 @@ class MSXencoder(Encoder):
                             extend = True
                         elif word[0] in '\x1e\x1f\x19\x1a\x7f\x12': #crsr up/down, RVSON/OFF, INSERT, DEL
                             #just add the code
-                            out = out + word
+                            t_line = t_line + word  # out = out + word
                             pword = False
                         elif word[0] in '\x0b\x0c': #HOME CLR
-                            out = out + word
+                            t_line = t_line + word  # out = out + word
                             space = 32
                             pword = False
                         elif word[0] in '\x08\x1d': #BS, crsr left
-                            out = out + word
+                            t_line = t_line + word  # out = out + word
                             space = space+1 if space+1 <= 32 else 1 # <- take into account going around to the previous line (being already at home not taken into account)
                             pword = False
                         elif word[0] == '\x1c': #crsr right
-                            out = out + word
+                            t_line = t_line + word# out = out + word
                             space -= 1
                         else:
                             pword = False
@@ -234,14 +255,19 @@ class MSXencoder(Encoder):
                             if pword:
                                 pword = False
                                 space -= 1
-                                out = out + ' ' # Add space if last word was a _word_
+                                t_line = t_line + ' '   # out = out + ' ' # Add space if last word was a _word_
                                 if space == 0:
                                     space = 32
                             if space - len(word) < 0:
-                                out = out + '\r' + '\x01'+ word
+                                t_line = t_line + '\r'  # out = out + '\r' + '\x01'+ word
+                                if split:
+                                    out.append(t_line)
+                                else:
+                                    out = out + t_line
+                                t_line = '\x01' + word
                                 space = 32 - len(word)
                             else:
-                                out = out + '\x01' + word
+                                t_line = t_line + '\x01' + word # out = out + '\x01' + word
                                 space -= len(word)
                             #Add space
                             if space != 0:
@@ -249,16 +275,20 @@ class MSXencoder(Encoder):
                             extend = False
                         elif (1 <= ord(word[0]) <= 15) or (17 <= ord(word[0]) <= 31):   #colors
                             #just add the code
-                            out = out + '\x01' + word
+                            t_line = t_line + '\x01' + word # out = out + '\x01' + word
                             pword = False
                             extend = False
                     if space == 0:
                         space = 32
                     last = word
                 if space != 0:
-                    out = out + '\r'
+                    t_line = t_line + '\r'  # out = out + '\r'
             else:
-                out = out + '\r'
+                t_line = t_line + '\r'  # out = out + '\r'
+            if split:
+                out.append(t_line)
+            else:
+                out = out + t_line
         return out
 
     def check_fit(self, filename):
@@ -304,14 +334,9 @@ Urep = dict((re.escape(k), v) for k, v in Urep.items())
 
 
 def toMSX(text:str,full=True):
-    # if full:
     pattern = re.compile("|".join(Urep.keys()))
     text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
     text = (unicodedata.normalize('NFKC',text).encode('cp437','ignore')).decode('latin1')
-    #     text = (unicodedata.normalize('NFKD',text).encode('ascii','ignore')).decode('ascii')
-    #     text = text.replace('|', chr(VLINE))
-    #     text = text.replace('_', chr(164))
-    # text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
     return(text)
 
 ###########################
@@ -325,18 +350,40 @@ def toASCII(text):
 ###################################
 def _Register():
     e0 = MSXencoder('MSX1')
+    e0.clients = {b'M1':'Retroterm MSX1'}
     e0.tml_mono  = t_mono['MSX1']
     e0.tml_multi = t_multi['MSX1']
     e0.bbuffer = 0x02ed #Bottom of the buffer
     e0.tbuffer = 0xbfff #Top of the buffer
     e0.palette = PALETTE
-    e0.colors = {'BLACK':1, 'WHITE':15,  'RED':8,    'CYAN':7,   'PURPLE':13,   'GREEN':2,   'BLUE':4,   'YELLOW':10,
-                 'ORANGE':9,'BROWN':6,  'PINK':9,  'GREY1':14, 'GREY2':14,'LIGHT_GREEN':3, 'LIGHT_BLUE':5, 'GREY3':14,
-                 'LIGHT_GREY':14,'DARK_GREY':14, 'MEDIUM_GREY':14, 'GREY':14, 'DARK_RED':6, 'LIGHT_YELLOW':11, 'DARK_GREEN':12}
+    e0.colors = {'BLACK':1,'GREEN':2,'LT_GREEN':3,'BLUE':4,'LT_BLUE':5,'DARK_RED':6,'CYAN':7,'RED':8,'PINK':9,'YELLOW':10,
+                 'LT_YELLOW':11,'DARK_GREEN':12,'PURPLE':13,'GREY':14,'WHITE':15,'LIGHT_GREY':14,'DARK_GREY':14,'GREY1':14,
+                 'GREY2':14,'MEDIUM_GREY':14,'ORANGE':9,'BROWN':6, 'GREY3':14,'LIGHT_BLUE':5,'LIGHT_GREEN':3}
     e0.def_gfxmode = gfxmodes.MSXSC2
     e0.gfxmodes = (gfxmodes.MSXSC2,)
     e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
                    'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,'F9':F9,'F10':F10,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF}
+    e0.features['color']  = True
+    e0.features['revers'] = True
 
-    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return MSX2.
+    # Non-Turbo56K encoders
+    e1 = MSXencoder('MSX32std')
+    e1.minT56Kver = 0
+    e1.nl_out = '\r'
+    e1.clients = {b'M32':'MSX 32 columns'}
+    e1.tml_mono  = t_mono['MSXSTD']
+    e1.tml_multi = t_multi['MSX1']
+    e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
+                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT}
+
+    e2 = MSXencoder('MSX40std')
+    e2.minT56Kver = 0
+    e2.nl_out = '\r'
+    e2.clients = {b'M40':'MSX 40 columns'}
+    e2.tml_mono  = t_mono['MSXSTD']
+    e2.tml_multi = t_multi['MSX1']
+    e2.txt_geo = (40,24)
+    e2.ctrlkeys = e1.ctrlkeys
+
+    return [e0,e1,e2]  #Each encoder module can return more than one encoder object. For example here it could also return MSX2.

@@ -192,7 +192,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         binaryout += tbytes.to_bytes(2,'little')	#Block size
 
         if display:
-            conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
+            conn.SendTML('<CURSOR enable=False>')	#Disable cursor blink
         conn.Sendallbin(binaryout)
 
         # Bitmap data
@@ -566,7 +566,7 @@ def SendText(conn:Connection, filename, title='', lines=25):
     if title != '':
         S.RenderMenuTitle(conn, title)
         l = conn.encoder.txt_geo[1]-3
-        conn.Sendall(TT.set_Window(3,l+2))
+        conn.SendTML(f'<WINDOW top=3 bottom={l+2}>')
     else:
         l = lines
         conn.SendTML('<CLR>')
@@ -584,7 +584,7 @@ def SendText(conn:Connection, filename, title='', lines=25):
     H.More(conn,text,l)
 
     if lines == 25:
-        conn.Sendall(TT.set_Window(0,24))
+        conn.SendTML('<WINDOW top=0 bottom=24>')
     return -1
 
 ####################################################
@@ -632,7 +632,7 @@ def SendCPetscii(conn:Connection,filename,pause=0):
             time.sleep(pause)
         else:
             conn.ReceiveKey()
-    conn.Sendall(TT.enable_CRSR())
+    conn.SendTML('<CURSOR>')
     return -1
 
 ##############################################

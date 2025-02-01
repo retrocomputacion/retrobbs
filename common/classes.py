@@ -35,6 +35,7 @@ class BBS:
         self.cfgmts = 0			#Config file modification timestamp
         self.plugins = {}		#Plugins
         self.encoders = {}		#Encoders
+        self.clients = {}       #Client ID-> Encoder pairs
 
     def start(self):
         if self.database != None:
@@ -54,6 +55,8 @@ class BBS:
 class Encoder:
     def __init__(self, name:str) -> None:
         self.name = name
+        self.minT56Kver = 0.5   #   Minimum Turbo56K version this encoder requires. Use 0 for non-Turbo56K encoders
+        self.clients = {}       #   Pair of client IDs:Platforms supported by this encoder
         self.tml_mono = {}		#	TML Tags for single characters/control codes
         self.tml_multi = {}		#	TML Tags for characters that can be printed multiple times
         self.encode = None		#	Function to encode from ASCII/Unicode
@@ -61,7 +64,8 @@ class Encoder:
         self.palette = {}		#	Dictionary of palette control codes -> color index
         self.colors = {}		#	Dictionary of named colors -> color index
         self.non_printable = []	#	List of non printable characters
-        self.nl	= '\n'			#	New line string/character
+        self.nl	= '\n'			#	New line string/character (In)
+        self.nl_out = '\n'      #   New line string/character (Out)
         self.bs = '\x08'		#	Backspace string/character
         self.back = '_'         #   Caracter used to go back in the BBS
         self.ellipsis = '...'   #   Ellipsis representation
@@ -71,12 +75,35 @@ class Encoder:
         self.ctrlkeys = {}		#	Named control keys (cursors, function keys, etc)
         self.bbuffer = 0x0000	#	Bottom address of the client's buffer
         self.tbuffer = 0x0000	#	Top address/size of the client's buffer
+        self.features = {'color':       False,  # Encoder supports color
+                         'charsets':    1,      # Number if character sets supported
+                         'reverse':     False,  # Encoder supports reverse video
+                         'blink':       False,  # Encoder supports blink/flash text
+                         'underline':   False,  # Encoder supports underlined text
+                         'cursor':      False   # Encoder supports cursor movement/set. Including home position and screen clear
+                         }
 
+    # Given a color control code, returns it's index in the color palette
+    # or -1 if not found
     def color_index(self, code):
         if type(code) == str:
             if len(code) == 1:
                 code = ord(code)
         return self.palette.get(code,-1)
+
+    # Given a palette index or color name, return the corresponding
+    # control code string or an empty string
+    def color_code(self, color):
+        code = ''
+        if self.colors != {} or self.palette != {}:
+            if type(color) == str:
+                code = self.colors.get(color,' ')
+            if type(color) == int:
+                v = self.palette.values()
+                k = self.palette.keys()
+                if color in v:
+                    code = k[v.index(color)]
+        return code
 
     # Function to check if a file will fit into the client's buffer 
     def check_fit(self, filename):
@@ -91,13 +118,36 @@ class Encoder:
     # Wordwrap to the encoder/connection screen width
     # preserving control codes
     # text input must be already encoded
-    def wordwrap(self, text):
-        sentences = text.split('\n')
-        out = ''
-        for sentence in sentences:
-            out = out +textwrap.fill(sentence,width=self.txt_geo[0])+'\n'
-        return(text)
-    
+    # split: True to return a list of lines instead of
+    # a string
+    def wordwrap(self, text, split = False):
+        lines = text.split('\n')
+        if split:
+            out = []
+        else:
+            out = ''
+        for line in lines:
+            if not split:
+                out = out +textwrap.fill(line,width=self.txt_geo[0])+'\n'
+            else:
+                wlines = textwrap.wrap(line,width=self.txt_geo[0])
+                for l in wlines:
+                    if len(l)<self.txt_geo[0]:
+                        out.append(l+self.nl)
+                    else:
+                        out.append(l)
+                if len(wlines)==0:
+                    out.append(self.nl)
+        return(out)
+
+    ### Encoder setup routine
+    # Setup the required parameters for the given client id
+    # Either automatically or by enquiring the user
+    # Return None if no setup is necessary, or a customized
+    # copy of the encoder object
+    def setup(self, conn, id):
+        return None
+
 SCOLOR = Enum('style_colors',
           [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
             'OoddColor','ToddColor','OevenColor','TevenColor',
@@ -109,25 +159,27 @@ class bbsstyle:
     def __init__(self, colors:dict=None):
         if colors != None:
             # Default colors (in palette index)
-            self.BgColor		= colors['BLACK']		#Background color
-            self.BoColor		= colors['BLACK']		#Border color
-            self.TxtColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Main text color
-            self.HlColor		= colors['WHITE']		#Highlight text color
-            self.RvsColor		= colors['LIGHT_GREEN']	#Reverse text color
+            self.BgColor		= colors.get('BLACK',0)		#Background color
+            self.BoColor		= colors.get('BLACK',0)		#Border color
+            self.TxtColor		= colors.get('LIGHT_GREY',colors.get('GREY',colors.get('WHITE',0)))	#Main text color
+            self.HlColor		= colors.get('WHITE',0)		#Highlight text color
+            if (self.TxtColor == self.HlColor) and 'YELLOW' in colors:
+                self.HlColor = colors['YELLOW']
+            self.RvsColor		= colors.get('LIGHT_GREEN',0)	#Reverse text color
             ### Menu specific colors ###
-            self.OoddColor		= colors['LIGHT_BLUE']	#Odd option key color
+            self.OoddColor		= colors.get('LIGHT_BLUE',0)	#Odd option key color
             self.OoddBack       = self.BgColor          #Odd option key bg color if applicable
-            self.ToddColor		= colors.get('LIGHT_GREY',colors.get('GREY'))	#Odd option text color
-            self.OevenColor		= colors['CYAN']		#Even option key color
-            self.OevenBack      = self.BgColor          #Even option key bg color if applicable
-            self.TevenColor		= colors['YELLOW']		#Even option text color
-            self.MenuTColor1	= colors['CYAN']		#Menu title border color 1
-            self.MenuTColor2	= colors['LIGHT_GREEN']	#Menu title border color 2
-            self.SBorderColor1	= colors['LIGHT_GREEN']	#Section border color 1
-            self.SBorderColor2	= colors['GREEN']		#Section border color 2
+            self.ToddColor		= colors.get('LIGHT_GREY',colors.get('GREY',colors.get('WHITE',0)))	#Odd option text color
+            self.OevenColor		= colors.get('CYAN',0)		#Even option key color
+            self.OevenBack      = self.BgColor              #Even option key bg color if applicable
+            self.TevenColor		= colors.get('YELLOW',0)    #Even option text color
+            self.MenuTColor1	= colors.get('CYAN',0)		#Menu title border color 1
+            self.MenuTColor2	= colors.get('LIGHT_GREEN',0)	#Menu title border color 2
+            self.SBorderColor1	= colors.get('LIGHT_GREEN',0)	#Section border color 1
+            self.SBorderColor2	= colors.get('GREEN',0)		#Section border color 2
             ### [Prompt] ###
-            self.PbColor		= colors['YELLOW']		#Key prompt brackets color
-            self.PtColor		= colors.get('LIGHT_BLUE',colors.get('CYAN'))	#Key prompt text color
+            self.PbColor		= colors.get('YELLOW',0)		#Key prompt brackets color
+            self.PtColor		= colors.get('LIGHT_BLUE',colors.get('CYAN',0))	#Key prompt text color
 
     # Set an style color, a section or the whole style
     # color : SCOLOR and index != None to set a single style color

@@ -80,10 +80,13 @@ class Connection:
     def SetMode(self, idstring, t56kver):
         self.TermString = idstring
         self.T56KVer = t56kver
-        mode = 'PET64' if b'-' not in idstring else clients.get(idstring.decode('UTF-8').split(' ')[0].split('-')[1],'PET64')
+        mode = 'PET64' if b'-' not in idstring else self.bbs.clients.get(idstring.split(b' ')[0].split(b'-')[1],'PET64')
         if not self.p_running:		# Only change the mode if the TML parser object is not running
             self.mode = mode							#Connection mode -> type of client
             self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+            tmp = self.encoder.setup(self,idstring.split(b' ')[0].split(b'-')[1])
+            if tmp != None:
+                self.encoder = tmp
             # Reinit Terminal features
             self.TermFt[0xb7] = None	# Maybe reinit the whole dictionary in the future?
             del(self.parser)
@@ -98,7 +101,7 @@ class Connection:
     # Query if the client terminal supports a feature
     def QueryFeature(self, cmd:int):
         #return 0x80		# Uncomment this when testing commands
-        if (cmd < 128) or (cmd > 253):
+        if (self.T56KVer == 0) or (cmd < 128) or (cmd > 253):
             return 0x80
         if self.T56KVer > 0.5:
             if self.TermFt[cmd] == None:
@@ -289,10 +292,13 @@ class Connection:
     def ReceiveInt(self, minv, maxv, defv, auto = False):
         cr = bytes(self.encoder.nl,'ascii')
         bs = bytes(self.encoder.bs,'ascii')
+        ins = self.encoder.ctrlkeys.get('INSERT',None)
+        if ins != None:
+            ins = ins.to_bytes(1,'big')
         if minv < 0:
             minv = -minv
         if maxv < 0:
-            maxv = -minv
+            maxv = -maxv
         if maxv < minv:
             maxv = minv+1
         if not(minv <= defv <= maxv):
@@ -330,12 +336,15 @@ class Connection:
                     return(defv)
             if temp != cr:
                 self.Sendallbin(temp)
-            if temp != bs:
-                tval[d] = temp.decode('utf-8')
-                d += 1
+                if temp != bs:
+                    tval[d] = temp.decode('utf-8')
+                    d += 1
+                else:
+                    d -= 1
+                    if ins != None:
+                        self.Sendallbin(ins) #Insert
             else:
-                d -= 1
-                self.Sendallbin(b'\x94') #Insert **TODO: replace with adecuate encoder character
+                break
             # Calculate next digit range
             if d == 0:
                 minr = int(mins[0])
@@ -351,6 +360,7 @@ class Connection:
                     maxr = 10
             if d == vall and auto:
                 break
+        print(tval)
         return(int(''.join(tval)))
 
     # Receive a date, format taken from bbs instance
@@ -457,3 +467,61 @@ class Connection:
             ret = self.parser.process(data,registers)
             self.p_running = False
         return ret
+
+# Dummy Connection object
+# Doesnt actually sends or receives anything,
+# just decodes/buffers all input data until
+# getOutput() is called
+# Dummy connection objects have negative IDs
+class DummyConn(Connection):
+    
+    def __init__(self, conn:Connection):
+        _output = ''
+        super().__init__(None,0,conn.bbs,-conn.id)
+        self.mode = conn.mode
+        self.encoder = conn.encoder
+        self.TermString = conn.TermString
+        self.T56KVer = conn.T56KVer
+        self.TermFt[0xb7] = None	# Maybe reinit the whole dictionary in the future?
+        del(self.parser)
+        self.parser = TMLParser(self)
+        del(self.style)
+        self.style = bbsstyle(self.encoder.colors)
+
+
+    def getOutput(self):
+        _tmp = self._output
+        self._output = ''
+        return _tmp
+
+    # Query if the client terminal supports a feature
+    def QueryFeature(self, cmd:int):
+        return 0x80		# Dummy connection doesn't support any command
+    
+    def Sendall(self,cadena):
+        _output = _output + cadena
+    
+    def Sendallbin(self, cadena=b''):
+        self.Sendall(cadena.decode('latin1'))
+    
+    def Flush(self, ftime):
+        return
+    
+    def Receive(self, count):
+        return ''
+
+    def ReceiveKey(self, lista=b''):
+        return ''
+    
+    def ReceiveKeyQuiet(self, lista=b''):
+        return ''
+    
+    def ReceiveStr(self, keys, maxlen=20, pw=False):
+        return ''
+    
+    def ReceiveInt(self, minv, maxv, defv, auto=False):
+        return defv
+
+    def ReceiveDate(self, prompt, mindate, maxdate, defdate):
+        return defdate
+

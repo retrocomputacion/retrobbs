@@ -15,7 +15,7 @@ import itertools
 import os
 import re
 
-from common.connection import Connection
+from common.connection import Connection, DummyConn
 from common import turbo56k as TT
 from common.style import KeyPrompt
 from html import unescape, escape
@@ -69,23 +69,41 @@ def formatX(text, columns = 40, convert = True):
         else:
             output.extend([''])
     for i in range(len(output)):
+        ll = len(output[i])
         output[i] = escape(output[i])
-        if len(output[i])<columns:
+        if ll<columns:
             output[i] += '<BR>'
     return(output)
 
-###############################################
-# Wordwrap to the connection screen width
+#################################################
+# Wordwrap to the client's screen width
 # preserving control codes
-###############################################
-def wordwrap(conn:Connection, text:str):
-    return conn.encoder.wordwrap(text)
+# split: False = return a string
+#        True = return a list of lines
+# encode: False = input text is already encoded
+#         True = input text is ASCII/UNICODE
+#                and may contain TML tags
+#################################################
+# >>>>>>>>>>>>>>>  UNFINISHED  <<<<<<<<<<<<<<<<<
+# >>>>>>>>>>> UNTESTED, DO NOT USE! <<<<<<<<<<<<
+def wordwrap(conn:Connection, text:str, split = False, encode = False):
+    if not encode:
+        return conn.encoder.wordwrap(text, split)
+    else:
+        dummy = DummyConn(None,0, conn.bbs, conn.id)
+        # dummy.SetMode(conn.TermString, conn.T56KVer)
+        dummy.SendTML(text)
+        _text = dummy.getOutput()
+        del(dummy)
+        return conn.encoder.wordwrap(_text, split)
 
 #####################################################
 # Text pagination
 #####################################################
 def More(conn:Connection, text, lines, colors=None):
 
+    if conn.QueryFeature(TT.SPLIT_SCR) >= 0x80:
+        lines = conn.encoder.txt_geo[1]
     if colors == None:
         colors = conn.style
     conn.SendTML(f'<INK c={colors.TxtColor}>')
@@ -122,27 +140,27 @@ def More(conn:Connection, text, lines, colors=None):
             #Keep track of cursor position
             if ord(char) in itertools.chain(range(32,128),range(160,256)): #Printable chars
                 cc += 1
-            elif char == chr(ckeys['CRSRR']):
+            elif char == chr(ckeys.get('CRSRR',0)):
                 cc += 1
-            elif ord(char) in [ckeys['CRSRL'], ckeys['DELETE']]:
+            elif ord(char) in [ckeys.get('CRSRL',0), ckeys.get('DELETE',0)]:
                 cc -= 1
-            elif char == chr(ckeys['CRSRU']):
+            elif char == chr(ckeys.get('CRSRU',0)):
                 ll -= 1
-            elif char == chr(ckeys['CRSRD']):
+            elif char == chr(ckeys.get('CRSRD',0)):
                 ll += 1
             elif char == conn.encoder.nl:
                 ll += 1
                 cc = 0
                 rvs = ''
-            elif ord(char) == [ckeys['HOME'], ckeys['CLEAR']]:
+            elif ord(char) == [ckeys.get('HOME',0), ckeys.get('CLEAR',0)]:
                 ll = 0
                 page = 0
                 cc = 0
-            elif ord(char) in conn.encoder.palette:
-                color = conn.encoder.palette[ord(char)]	#char
-            elif char == chr(ckeys['RVSON']):
+            elif char in conn.encoder.palette:
+                color = conn.encoder.palette[char]	#char
+            elif char == chr(ckeys.get('RVSON',0)):
                 rvs = '<RVSON>'
-            elif char == chr(ckeys['RVSOFF']):
+            elif char == chr(ckeys.get('RVSOFF',0)):
                 rvs = ''
             elif char == chr(ckeys.get('LOWER',0)):
                 prompt = 'RETURN'
@@ -165,9 +183,9 @@ def More(conn:Connection, text, lines, colors=None):
                 conn.SendTML(KeyPrompt(conn,prompt+' OR <BACK>',TML=True))
                 k = conn.ReceiveKey(b'\r_')
                 if (conn.connected == False) or (k == b'_'):
-                    conn.Sendall(TT.set_Window(0,scheight-1))
+                    conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
                     return -1
-                conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}><AT x={cc} y={(22-lines)+ll-(lines*page)}>')
+                conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}>') #<AT x={cc} y={(22-lines)+ll-(lines*page)}>')
                 page += 1
                 pp = True
         if cc !=0:
@@ -195,11 +213,21 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     #This connection ctrl keys
     ckeys = conn.encoder.ctrlkeys
 
+    CursorUp = ckeys.get('CRSRU',ord('a'))
+    CursorDown = ckeys.get('CRSRD',ord('z'))
+    PageUp = ckeys.get('F1',ord('-'))
+    PageDown = ckeys.get('F3',ord('+'))
+
+    firstrun = True
+
     #Display a whole text page
     def _page(start,l):
-        nonlocal tcolor, lcols
+        nonlocal tcolor, lcols, firstrun
 
-        conn.SendTML('<CLR>')
+        if not firstrun:
+            conn.SendTML('<CLR>')
+        else:
+            firstrun = False
         tcolor = colors.TxtColor if start == 0 else lcols[start-1]
         for i in range(start, start+min(lcount,len(text[start:]))):
             t = f'<INK c={tcolor}>' + text[i]
@@ -210,9 +238,9 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     rep = dict((re.escape(k), v) for k, v in rep.items())
     pattern = re.compile("|".join(rep.keys()))
     if conn.QueryFeature(TT.SCROLL)< 0x80:
-        keys = bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['F1'],ckeys['F3']])
+        keys = bytes([CursorDown,CursorUp,PageUp,PageDown])
     else:
-        keys = bytes([ckeys['F1'],ckeys['F3']])
+        keys = bytes([PageUp,PageDown])
     #eliminate problematic control codes
     for i,t in enumerate(text):
         text[i] = pattern.sub(lambda m: rep[re.escape(m.group(0))], t)
@@ -224,6 +252,8 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     tcolor = colors.TxtColor
     conn.SendTML(f'<INK c={tcolor}>')
     i = _page(0,lines)
+    if conn.QueryFeature(TT.SET_WIN) >= 0x80:   # If no window control, following pages render the whole screen height
+        lcount = conn.encoder.txt_geo[1]-1
     tline = 0
     bline = i+1
     #scroll loop
@@ -233,7 +263,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
         if k == b'_':
             ret = k.decode("latin1")
             break
-        elif (k[0] == ckeys['CRSRU']) and (tline > 0):	#Scroll up
+        elif (k[0] == CursorUp) and (tline > 0):	#Scroll up
             tline -= 1
             bline -= 1
             if tline > 0:
@@ -242,7 +272,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 tcolor = colors.TxtColor
             conn.SendTML(f'<SCROLL rows=-1><HOME><INK c={tcolor}>{text[tline]}')
             ldir = False
-        elif (k[0] == ckeys['CRSRD']) and (bline < len(text)):	#Scroll down
+        elif (k[0] == CursorDown) and (bline < len(text)):	#Scroll down
             tline += 1
             if bline > 0:
                 tcolor = lcols[bline-1]
@@ -254,13 +284,13 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 lcols[bline] = conn.parser.color
             bline += 1
             ldir = True
-        elif (k[0] == ckeys['F1']) and (tline > 0):	#Page up
+        elif (k[0] == PageUp) and (tline > 0):	#Page up
             tline -= lcount
             if tline < 0:
                 tline = 0
             bline = _page(tline,lcount)+1
             ldir = True
-        elif (k[0] == ckeys['F3']) and (bline < len(text)):	#Page down
+        elif (k[0] == PageDown) and (bline < len(text)):	#Page down
             bline += lcount
             if bline > len(text):
                 bline = len(text)

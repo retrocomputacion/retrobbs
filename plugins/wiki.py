@@ -35,7 +35,7 @@ def plugFunction(conn:Connection):
             conn.SendTML(f'{TxTtag}<LFILL row=1 code={hcode}>')
         else:
             conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
-        conn.Sendall(TT.set_Window(2,scheight-1))	#Set Text Window
+        conn.SendTML(f'<WINDOW top=2 bottom={scheight-1}>')	#Set Text Window
 
     scwidth,scheight = conn.encoder.txt_geo
     if 'MSX' in conn.mode:
@@ -59,7 +59,7 @@ def plugFunction(conn:Connection):
         wiki = wikipediaapi.Wikipedia(user_agent='RetroBBS/0.60',language=conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
 
     sccolors = 'WHITE' if 'MSX' in conn.mode else 'LIGHT_GREY'
-    conn.Sendall(TT.to_Text(0,ecolors[sccolors],ecolors[sccolors]))
+    conn.SendTML(f'<TEXT page=0 border={ecolors[sccolors]} background={ecolors[sccolors]}>')
     loop = True
     while loop == True:
         WikiTitle(conn)
@@ -74,7 +74,7 @@ def plugFunction(conn:Connection):
             if conn.connected == False :
                 return()
             if termino == conn.encoder.back:
-                conn.Sendall(TT.set_Window(0,scheight))
+                conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 return()
         termino = conn.encoder.decode(termino)
         conn.SendTML('<SPINNER><CRSRL>')
@@ -151,7 +151,7 @@ def plugFunction(conn:Connection):
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 _LOG(e,id=conn.id,v=1)
                 _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
-    conn.Sendall(TT.set_Window(0,scheight-1))	#Set Text Window
+    conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')	#Set Text Window
 
 ##################################################################
 # Parse a wiki article sections

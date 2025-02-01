@@ -102,7 +102,7 @@ def readMessage(conn:Connection, msg_id:int):
                 if len(l)<scwidth:
                     msg[i] = msg[i]+'<BR>'
 
-            conn.Sendall(TT.disable_CRSR())
+            conn.SendTML('<CURSOR enable=False>')
             # mark it as read if needed
             if conn.userid != 0:
                 if conn.userid not in dmsg['msg_read']:
@@ -136,7 +136,7 @@ def readMessage(conn:Connection, msg_id:int):
                         dest = utable.get(doc_id=uid)['uname']
                     else:
                         dest = dmsg['msg_board']
-                    conn.Sendall(TT.enable_CRSR())
+                    conn.SendTML(f'<CURSOR>')
                     r_id = writeMessage(conn, destination = dest, thread = (dmsg['msg_parent'] if dmsg['msg_parent']!=0 else msg_id))
                     if r_id != 0:
                         msg_id = r_id
@@ -178,7 +178,7 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
     
         def dialog1(): # Send or cancel message
             nonlocal message
-            conn.Sendall(TT.set_Window(scheight-2,scheight-1))
+            conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}>')
             ond = True
             while ond:
                 conn.SendTML('<CLR>Send/Edit/Quit(S/E/Q)?')
@@ -230,7 +230,7 @@ Press {conn.encoder.back} to continue...'''
                             if conn.QueryFeature(TT.LINE_FILL):
                                 conn.Sendall(TT.Fill_Line(y+3,32))
                             else:
-                                conn.Sendall(TT.set_CRSR(0,y+3))(' '*scwidth*32)
+                                conn.SendTML(f'<AT x=0 y={y+3}><SPC n=32>')
                             tmp = tfmessage[i].replace('\n','')
                             conn.SendTML(f'<AT x=0 y={y}>'+tmp)
                             if len(tmp)<scwidth:
@@ -240,7 +240,7 @@ Press {conn.encoder.back} to continue...'''
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(y+3,32))
                         else:
-                            conn.Sendall(TT.set_CRSR(0,i+3))(' '*scwidth*32)
+                            conn.SendTML(f'<AT x=0 y={i+3}><SPC n=32>')
                 elif i < len(tfmessage):    # Edited message has more lines than before
                     tmp = tfmessage[i].replace('\n','')
                     conn.SendTML(f'<AT x=0 y={y}>'+tmp)
@@ -293,6 +293,10 @@ Press {conn.encoder.back} to continue...'''
             help_k = [ckeys['HELP'],'HELP']
             line_k = [ckeys['F3'],'F3']
             quit_k = [ckeys['ESC'],'ESC']
+        elif conn.mode in ['PET64std','PET20std']:
+            help_k = [chr(8),'^H']
+            line_k = [chr(12),'^L']
+            quit_k = [chr(24),'^X']
         else: #MSX
             help_k = [ckeys['F1'],'F1']
             line_k = [ckeys['F5'],'F5']
@@ -379,7 +383,7 @@ Press {conn.encoder.back} to continue...'''
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.Sendall(TT.Fill_Line(line+3,32))
                         else:
-                            conn.Sendall(TT.set_CRSR(0,line+3)+(' '*scwidth))
+                            conn.SendTML(f'<AT  x=0 y={line+3}><SPC n={scwidth}')
                         conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>{fmessage[line+ydisp]}') # Clear line in display window, print newly edited line
                         option = dialog1()
                         if option == 's':      # Send message
@@ -470,7 +474,7 @@ Press {conn.encoder.back} to continue...'''
                 fmessage = None
                 message = None
                 conn.connected = False
-        conn.Sendall(TT.set_Window(0,scheight))
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
         return(topic,message)
     #check user is logged in
     if conn.username == '_guest_':
@@ -586,9 +590,9 @@ def inbox(conn:Connection, board):
             threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
         # sort by sent timestamp, newest thread first
         threads.sort(key=lambda threads: threads[3],reverse=True)
-        conn.Sendall(TT.enable_CRSR())
+        conn.SendTML('<CURSOR>')
         if refresh:
-            conn.Sendall(TT.set_Window(0,scheight))
+            conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
             RenderMenuTitle(conn,title)
             if int(conn.bbs.BoardOptions.get('board'+str(board)+'post',1)) <= conn.userclass:
                 tt = f'<RVSON>n<RVSOFF>ew {"thread" if board != 0 else "message"}{"<BR>" if conn.userclass < 10 else "-<RVSON>d<RVSOFF>elete"}'
@@ -614,7 +618,8 @@ def inbox(conn:Connection, board):
         o_pos = 1
         while conn.connected:
             if pos != o_pos:
-                conn.Sendall(TT.set_CRSR(0,pos)+'>')
+                conn.SendTML(f'<AT x=0 y={pos}>&gt;')
+                # conn.Sendall(TT.set_CRSR(0,pos)+'>')
                 o_pos = pos
             # k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]) + bytes('FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
             k = conn.ReceiveKey(chr(ckeys['CRSRD']) + chr(ckeys['CRSRU']) + chr(ckeys['CRSRL']) + chr(ckeys['CRSRR']) + 'flu_' + ('n'if tt!='' else '') + ('d'if conn.userclass == 10 else ''))
@@ -643,19 +648,19 @@ def inbox(conn:Connection, board):
                         page -= 1
                         break
                 elif k == 'f':                  # First message
-                    conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
+                    conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                     readMessage(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
                 elif k == 'l':                  # Last message
                     m = table.get(doc_id=threads[pos+(tpp*page)][1])
-                    conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
+                    conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                     readMessage(conn,m['msg_prev'])
                     refresh = True
                     break
                 elif k == 'u':                  # First unread message
                     if threads[pos+(tpp*page)][2] != None:
-                        conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
+                        conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                         readMessage(conn,threads[pos+(tpp*page)][2].doc_id)
                         refresh = True
                         break
@@ -671,7 +676,7 @@ def inbox(conn:Connection, board):
                     refresh = True
                     break
             if k == 'n':              # new thread
-                conn.Sendall(TT.enable_CRSR())
+                conn.SendTML('<CURSOR>')
                 if board == 0:
                     # get destination username
                     tml = ''
@@ -708,13 +713,13 @@ def inbox(conn:Connection, board):
                             break
                 else:
                     dest = board
-                conn.Sendall(TT.set_Window(0,scheight))
+                conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 if dest != '':
                     writeMessage(conn, destination=dest)
                 refresh = True
                 break
             if k == '_':
-                conn.Sendall(TT.enable_CRSR()+TT.set_Window(0,scheight))
+                conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                 done = True
                 break
 

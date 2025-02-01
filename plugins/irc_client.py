@@ -213,7 +213,7 @@ Accepted commands:
         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><YELLOW>Enter nick: {"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
         nickname = _dec(conn.ReceiveStr(keys, 9)) #Get nick
     nickname = nickname.translate({ord(i): None for i in '#?!@/()&$"'})
-    conn.Sendall(TT.set_Window(0,scheight))
+    conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
     if nickname == '':
         time.sleep(0.5)
         return
@@ -230,7 +230,7 @@ Accepted commands:
         c = reactor.server().connect(server, int(port), nickname)
     except irc.client.ServerConnectionError:
         printchat('<PINK>*** ERROR Connecting to server<BR>')
-        conn.Sendall(TT.set_Window(0,scheight-1))
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
         _LOG(bcolors.FAIL+'Connection to IRC FAILED'+bcolors.ENDC,id=conn.id,v=1)
         time.sleep(2)
         return
@@ -257,7 +257,7 @@ Accepted commands:
         if time.process_time()-t0 > 60.0:       #Abandon if connection takes more than a minute
             printchat('<PINK>*** TIMEOUT Connecting to server<BR>')
             _LOG(bcolors.FAIL+'Connection to IRC FAILED - TIMEOUT'+bcolors.ENDC,id=conn.id,v=2)
-            conn.Sendall(TT.set_Window(0,scheight-1))
+            conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
             time.sleep(1)
             return
     conn.SendTML('<CLR>')
@@ -313,7 +313,7 @@ Accepted commands:
         else:
             time.sleep(0.1)
         reactor.process_once()
-    conn.Sendall(TT.set_Window(0,scheight-1))            
+    conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
     _LOG('Leaving IRC',id=conn.id,v=4)
     conn.socket.setblocking(1)
     conn.socket.settimeout(60*5)

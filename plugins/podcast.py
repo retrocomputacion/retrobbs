@@ -44,10 +44,10 @@ def plugFunction(conn:Connection):
             else:
                 conn.SendTML('<GREEN><LFILL row=1 code=64>')
         else:
-            conn.SendTML('<GREEN><HLINE n=40>')
-        conn.Sendall(TT.set_Window(2,lines-1))	#Set Text Window
+            conn.SendTML(f'<GREEN><HLINE n={conn.encoder.txt_geo[0]}>')
+        conn.SendTML(f'<WINDOW top=2 bottom={lines-1}>') 	#Set Text Window
     ecolors = conn.encoder.colors
-    conn.Sendall(TT.to_Text(0,ecolors['BLACK'],ecolors['BLACK']))
+    conn.SendTML(f'<TEXT page=0 border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
     loop = True
     while loop == True:
         PodcastTitle(conn)
@@ -60,7 +60,7 @@ def plugFunction(conn:Connection):
             if conn.connected == False :
                 return()
             if termino == '_':
-                conn.Sendall(TT.set_Window(0,lines))
+                conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
         conn.SendTML('<BR><BR>Searching...<SPINNER><CRSRL>')
         searchRes = searchPodcast(termino)
@@ -101,10 +101,10 @@ def plugFunction(conn:Connection):
             if sel.upper() == 'N':
                 page = min(npodcasts//pcount, page+1)
             if sel == '':
-                conn.Sendall(TT.set_Window(0,lines))
+                conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 break
             if sel == '_':
-                conn.Sendall(TT.set_Window(0,lines))
+                conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
             if sel.isdigit() and int(sel) < npodcasts:
                 episodes = getEpisodes(searchRes['results'][int(sel)])
@@ -129,7 +129,7 @@ def plugFunction(conn:Connection):
                     gm = conn.encoder.def_gfxmode
 
                 favicon = FT.SendBitmap(conn,newimage, lines=12, cropmode=cropmodes.TOP ,gfxmode=gm,preproc=PreProcess(contrast=1.5,saturation=1.5),dither=dithertype.BAYER2, display=False)
-                conn.Sendall(TT.split_Screen(12,False,ord(favicon),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
+                conn.SendTML(f'<SPLIT row=12 mode=False bgtop={ord(favicon)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')
 
                 eppage = 0
                 nepisodes = len(episodes)
@@ -163,11 +163,11 @@ def plugFunction(conn:Connection):
                         eppage = min(nepisodes//eppcount, eppage+1)
                     if epsel == '':
                         conn.SendTML(tml)
-                        conn.Sendall(TT.set_Window(0,lines))
+                        conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                         break
                     if epsel == '_':
                         conn.SendTML(tml)
-                        conn.Sendall(TT.set_Window(0,lines))
+                        conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                         return()
                     if epsel.isdigit() and int(epsel) < nepisodes:
                         url = None

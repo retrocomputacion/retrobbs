@@ -59,10 +59,11 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     _LOG(logtext,id=conn.id,v=4)
     _LOG('Displaying Page: '+str(conn.MenuParameters['current']+1),id=conn.id,v=4)
     # Send speech message
-    conn.Sendall(TT.to_Speech() + speech)
+    if conn.T56KVer > 0:
+        conn.Sendall(TT.to_Speech() + speech)
+        # Selects screen output
+        conn.Sendall(TT.to_Screen())
     time.sleep(1)
-    # Selects screen output
-    conn.Sendall(TT.to_Screen())
     # Sync
     conn.Sendall(chr(0)*2)
     # # Text mode
@@ -154,9 +155,10 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     else:
         conn.SendTML(f' <GREY><RVSON> <BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
     conn.SendTML(f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
-    conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
-    # Selects screen output
-    conn.SendTML('<PAUSE n=1><SETOUTPUT>')
+    if conn.T56KVer > 0:
+        conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
+        # Selects screen output
+        conn.SendTML('<PAUSE n=1><SETOUTPUT>')
     return MenuDic
 
 #########################################
@@ -287,10 +289,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
                     a_meta['artist'] = a_data.tags.getall(ars)[0][0][:38]
                     break
             if a_data.tags.getall('APIC') != []:
-                # print('APIC',a_data.tags.getall('APIC'))
                 a_meta['apic'] = a_data.tags.getall('APIC')[0].data
-                # im = Image.open(BytesIO(apic))
-                # im.show()
         if not _AudioDialog(conn,a_meta):
             return()
         if not conn.connected:
@@ -317,8 +316,6 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             a_len += 1
         for b in range(0,a_len,2):
             lnibble = int(audio[b])
-            #if lnibble == 0:
-            #    lnibble = 1
             if b+1 <= a_len:
                 hnibble = int(audio[b+1])
             else:
@@ -349,13 +346,11 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             conn.socket.setblocking(1)
             binario = b''
         c_samples += a_len
-        if t_samples > 0 and c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
-            streaming = False
+        # if t_samples > 0 and c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
+        #     streaming = False
 
         ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
         time.sleep(ts if ts>=0 else 0)
-        #while streaming and (time.time()-t1 < (CHUNK/conn.samplerate)): #This method should work for all samplerates
-        #    pass                                        #and with different host performances
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
     t = time.time() - t0
     pcm_stream.stop()
@@ -369,9 +364,6 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 # Receive an audio stream through FFMPEG #
 class PcmStream:
     def __init__(self, fn, sr):
-        # self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-f", "s16le", "pipe:1"],
-        #                 stdout=subprocess.PIPE, preexec_fn=os.setsid)
-
         if "Linux" in platform.system():
             self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, preexec_fn=os.setsid)
@@ -398,7 +390,6 @@ class PcmStream:
         else:
             self.pcm_stream.send_signal(signal.CTRL_BREAK_EVENT)
             self.pcm_stream.kill()
-        #os.killpg(self.pcm_stream.pid, signal.SIGKILL)
 
 ###################################################
 # Get CHIPtune playtimes from ssl file or metadata
@@ -678,15 +669,6 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                             if (b'\xff' in ack) or not conn.connected:
                                 #Abort stream
                                 conn.Flush(1)   # Flush receive buffer for 1 second
-                                # conn.socket.setblocking(0)	# Change socket to non-blocking
-                                # t0 = time.time()
-                                # while time.time()-t0 < 1:   # Flush receive buffer for 1 second
-                                #     try:
-                                #         conn.socket.recv(10)
-                                #     except:
-                                #         pass
-                                # conn.socket.setblocking(1)	# Change socket to blocking
-                                # conn.socket.settimeout(conn.bbs.TOut)
                                 break
                         
                     conn.Sendall(chr(0))	#End stream

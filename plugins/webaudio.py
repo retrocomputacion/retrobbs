@@ -24,6 +24,7 @@ from common import helpers as H
 from common import audio as AA
 from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
 from common.filetools import SendBitmap
+import common.turbo56k as TT
 
 ### User Agent string used for some stingy content sources
 hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
@@ -205,7 +206,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
         return
     #try to open image if any
     img = None
-    if image != '':
+    if image != '' and conn.QueryFeature(TT.PRADDR) < 0x80:
         im = None
         if validators.url(image):
             try:
@@ -264,6 +265,10 @@ def plugFunction(conn:connection.Connection,url,image,title):
             conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
 
     if conn.ReceiveKey('\rx') == 'x':
+        return
+
+    if conn.QueryFeature(TT.STREAM) >= 0x80:
+        conn.SendTML('<FORMAT>Your terminal does not support audio streaming!</FORMAT><PAUSE n=2>')
         return
 
     conn.SendTML('<SPINNER><CRSRL>')

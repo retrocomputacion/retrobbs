@@ -158,9 +158,9 @@ def plugFunction(conn:Connection):
             tnum = 2**zoom #Number of tiles per row/column
             ttotal = tnum**2 #Total number of tiles
             if retrieve:
-                conn.Sendall(TT.split_Screen(rows-1,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode))
+                conn.SendTML(f'<SPLIT row={rows-1} multi=False bgtop={conn.encoder.colors["BLACK"]} mode={conn.mode}>')
                 tiles = getImageCluster(ctilex,ctiley,xtiles,ytiles,zoom)
-                conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'],mode=conn.mode)+TT.to_Hires(0,1))
+                conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors["BLACK"]} mode={conn.mode}><GRAPHIC>')
                 retrieve = False
             mwindow = tiles.crop((xmin,ymin,xmax,ymax))
             mwindow = mwindow.point(lambda p: 255 if p>218 else 0)
@@ -246,13 +246,13 @@ def plugFunction(conn:Connection):
                 if delta[1]-sw < 0:
                     cpos[0]-=1
         elif (k == b'_'):   #Exit
-            conn.Sendall(TT.enable_CRSR())
+            conn.SendTML('<CURSOR>')
             break
         elif (k == b'\r'):  #New Location
             conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
             locqry = _dec(conn.ReceiveStr(keys,30))
             if locqry == '_':
-                conn.Sendall(TT.split_Screen(0,False,conn.encoder.colors['BLACK'],conn.encoder.colors['BLACK'])+TT.enable_CRSR())
+                conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors["BLACK"]} mode={conn.mode}><CURSOR>')
                 break
             conn.SendTML('<SPINNER><CRSRL>')
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)

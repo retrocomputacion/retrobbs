@@ -87,7 +87,7 @@ def feedentry(conn:Connection,entry,feedname):
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
         conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-2-25}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
-        conn.Sendall(TT.set_Window(3,scheight-2))
+        conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         e_text = ''
         content = entry.get('content',[]) #Atom
         for c in content:
@@ -107,7 +107,7 @@ def feedentry(conn:Connection,entry,feedname):
         text = title + body
         H.text_displayer(conn,text,scheight-4)
         #H.More(conn,text,22)
-    conn.Sendall(TT.set_Window(0,scheight-1))
+    conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
 
 #############################################################
 # Try to scrap data from wordpress and some other CMS sites,
@@ -209,13 +209,13 @@ def webarticle(conn:Connection,url, feedname):
                 if a_img == None:
                     a_img = a_body.find('img')
             if a_img != None:
-                conn.Sendall(TT.disable_CRSR())
+                conn.SendTML('<CURSOR enable=False>')
                 FT.SendBitmap(conn,getImg(top_url,a_img))
                 conn.ReceiveKey()
                 conn.SendTML('<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
         conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
-        conn.Sendall(TT.set_Window(3,scheight-2))
+        conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         title = H.formatX(a_title,scwidth)
         title[0] = '<WHITE>'+title[0]
         title.append(f'<YELLOW><HLINE n={scwidth}>')
@@ -225,7 +225,7 @@ def webarticle(conn:Connection,url, feedname):
         body[0] = '<GREY2>'+body[0]
         text = title + body
         H.text_displayer(conn,text,scheight-4)
-        conn.Sendall(TT.set_Window(0,scheight))
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
     else:
         conn.SendTML(f'<DEL>{resp.status_code}<PAUSE n=1>')
         _LOG('Newsfeed - '+bcolors.WARNING+'webscrapping failed - defaulting to rss description'+bcolors.ENDC, id=conn.id,v=2)

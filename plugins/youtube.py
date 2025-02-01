@@ -94,7 +94,7 @@ def plugFunction(conn:Connection,url, crop):
             pass
     if best in [None,'']:
         _LOG(bcolors.WARNING+"YouTube: Video not found"+bcolors.ENDC,id=conn.id,v=1)
-        conn.Sendall('...error'+TT.enable_CRSR()) #Enable cursor
+        conn.SendTML('...error<CURSOR>')
         return
     conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR>'
                  f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> for a new image<BR>'

@@ -4,6 +4,7 @@ from common.classes import Encoder
 from common.imgcvt import gfxmodes
 import os
 import codecs
+from copy import deepcopy
 
 #PETSCII constants
 
@@ -107,9 +108,11 @@ SPINNER = COMM_B    # Character to use while waiting
 BACK = LEFT_ARROW
 
 # Color code to palette index dictionary
-PALETTE = {BLACK:0,WHITE:1,RED:2,CYAN:3,PURPLE:4,GREEN:5,BLUE:6,YELLOW:7,ORANGE:8,BROWN:9,PINK:10,GREY1:11,GREY2:12,LT_GREEN:13,LT_BLUE:14,GREY3:15}
-PALETTE264 = {BLACK:0x00,WHITE:0x71,RED:0x32,CYAN:0x63,PURPLE:0x34,GREEN:0x45,BLUE:0x26,YELLOW:0x67,
-              ORANGE:0x48,BROWN:0x29,PINK:0x52,GREY1:0x31,GREY2:0x41,LT_GREEN:0x65,LT_BLUE:0x46,GREY3:0x51}
+PALETTE = {chr(BLACK):0,chr(WHITE):1,chr(RED):2,chr(CYAN):3,chr(PURPLE):4,chr(GREEN):5,chr(BLUE):6,chr(YELLOW):7,
+           chr(ORANGE):8,chr(BROWN):9,chr(PINK):10,chr(GREY1):11,chr(GREY2):12,chr(LT_GREEN):13,chr(LT_BLUE):14,chr(GREY3):15}
+PALETTE264 = {chr(BLACK):0x00,chr(WHITE):0x71,chr(RED):0x32,chr(CYAN):0x63,chr(PURPLE):0x34,chr(GREEN):0x45,chr(BLUE):0x26,chr(YELLOW):0x67,
+              chr(ORANGE):0x48,chr(BROWN):0x29,chr(PINK):0x52,chr(GREY1):0x31,chr(GREY2):0x41,chr(LT_GREEN):0x65,chr(LT_BLUE):0x46,chr(GREY3):0x51}
+PALETTE20 = {chr(BLACK):0,chr(WHITE):1,chr(RED):2,chr(CYAN):3,chr(PURPLE):4,chr(GREEN):5,chr(BLUE):6,chr(YELLOW):7}
 
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,13)]+[chr(i) for i in range(14,32)]+[chr(i) for i in range(128,160)]
@@ -122,7 +125,9 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
             'ORANGE':chr(ORANGE),'BROWN':chr(BROWN),'PINK':chr(PINK),'GREY1':chr(GREY1),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3),
             'LTGREY':chr(GREY3),'MGREY':chr(GREY2),'GREY':chr(GREY2),'DGREY':chr(GREY1)},
-            'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)}}
+            'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)},
+            'PET20':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r','UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
+            'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW)}}
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
             'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L),
@@ -134,6 +139,7 @@ t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR
 
 t_mono['PET264'].update(t_mono['PET64'])
 t_multi['PET264'] = t_multi['PET64']
+t_multi['PET20'] = t_multi['PET64']
 
 # Multiple replace
 # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
@@ -160,44 +166,61 @@ class PETencoder(Encoder):
         self.decode = toASCII	#	Function to decode to ASCII/Unicode
         self.non_printable = NONPRINTABLE	#	List of non printable characters
         self.nl	= '\r'			#	New line string/character
+        self.nl_out	= '\r'		#	New line string/character (out)
         self.bs = chr(DELETE)	#	Backspace string/character
         self.back = chr(BACK)
+        self.features = {'color':       True,   # Encoder supports color
+                         'charsets':    2,      # Number if character sets supported
+                         'reverse':     True,   # Encoder supports reverse video
+                         'blink':       False,  # Encoder supports blink/flash text
+                         'underline':   False,  # Encoder supports underlined text
+                         'cursor':      True    # Encoder supports cursor movement/set. Including home position and screen clear
+                         }
 
     ### Wordwrap text preserving control codes
-    def wordwrap(self,text):
+    def wordwrap(self,text,split=False):
         codes = '\x05\x11\x12\x13\x14\x1c\x1d\x1e\x1f\x81\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f'
-        out = ''
+
+        if split:
+            out = []
+        else:
+            out = ''
 
         lines = text.split('\r')
         for line in lines:
+            t_line = ''
             if len(line)!=0:
-                space = 40  # Space left in line
+                space = self.txt_geo[0]  # Space left in line
                 line = re.sub(r'(['+codes+r'])',r'\n\1\n', line)
                 line = line if line[0]!='\n' else line[1:]
                 words = re.split('\n+| ',line) # words = line.split(' ')
                 pword = False
-                last = ''
                 for word in words:
                     if len(word) == 0:
                         # if pword or len(last) == 0:
                         #     space -= 1
-                        out = out + ' ' # Add space if last item was a word or a space 
+                        t_line = t_line + ' '   # out = out + ' ' # Add space if last item was a word or a space 
                         pword= False
                         space -=1
                         #     # if space == 0:
-                        #     #     space = 40
+                        #     #     space = self.txt_geo[0]
                     elif (32 <= ord(word[0]) <= 127) or (160 <= ord(word[0]) <= 253):   #Printable
                         if pword:
                             pword = False
                             space -= 1
-                            out = out + ' ' # Add space if last word was a _word_
+                            t_line = t_line + ' '   # out = out + ' ' # Add space if last word was a _word_
                             if space == 0:
-                                space = 40
+                                space = self.txt_geo[0]
                         if space - len(word) < 0:
-                            out = out + '\r' + word
-                            space = 40 - len(word)
+                            t_line = t_line + '\r'  # out = out + '\r' + word
+                            if split:
+                                out.append(t_line)
+                            else:
+                                out = out + t_line
+                            t_line = word
+                            space = self.txt_geo[0] - len(word)
                         else:
-                            out = out + word
+                            t_line = t_line + word  # out = out + word
                             space -= len(word)
                         #Add space
                         if space != 0:
@@ -205,34 +228,38 @@ class PETencoder(Encoder):
                             pword = True
                             # space -= 1
                         # if space == 0:
-                        #     space = 40
+                        #     space = self.txt_geo[0]
                     elif word[0] in '\x05\x1c\x1e\x1f\x81\x90\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9e\x9f\x11\x91\x94\x12\x92': #Colors, crsr up/down, INSERT, RVSON/OFF
                         #just add the code
-                        out = out + word
+                        t_line = t_line + word  # out = out + word
                         pword = False
                     elif word[0] in '\x13\x93': #HOME CLR
-                        out = out + word
-                        space = 40
+                        t_line = t_line + word  # out = out + word
+                        space = self.txt_geo[0]
                         pword = False
                     elif word[0] in '\x14\x9d': #DELETE crsr left
-                        out = out + word
-                        space = space+1 if space+1 <= 40 else 1 # <- take into account going around to the previous line (being already at home not taken into account)
+                        t_line = t_line + word  # out = out + word
+                        space = space+1 if space+1 <= self.txt_geo[0] else 1 # <- take into account going around to the previous line (being already at home not taken into account)
                         pword = False
                     elif word[0] == '\x1d': #crsr right
-                        out = out + word
+                        t_line = t_line + word  # out = out + word
                         pword = False
                         space -= 1
                         # if space == 0:
-                        #     space = 40
+                        #     space = self.txt_geo[0]
                     else:
                         pword = False
                     if space == 0:
-                        space = 40
+                        space = self.txt_geo[0]
                     last = word
                 if space != 0:
-                    out = out + '\r'
+                    t_line = t_line + '\r'  # out = out + '\r'
             else:
-                out = out + '\r'
+                t_line = t_line + '\r'  # out = out + '\r'
+            if split:
+                out.append(t_line)
+            else:
+                out = out + t_line
         return out
 
     def check_fit(self, filename):
@@ -255,6 +282,20 @@ class PETencoder(Encoder):
                 la = la[0]|(la[1]<<8)
                 bin = f.read(-1)
         return (la,bin)
+    
+    ### Encoder setup routine
+    # Setup the required parameters for the given client id
+    # Either automatically or by enquiring the user
+    # Return None if no setup is necessary, or a customized
+    # copy of the encoder object
+    def setup(self, conn, id):
+        sch = {b'C64CG':25,b'C64NT':24,b'C64HT':22}
+        if self.name == 'PET64std':
+            _copy = deepcopy(self)
+            _copy.txt_geo = (40,sch[id])
+            return _copy
+        else:
+            return None
 
 ####################################################
 # Convert ASCII/unicode text to PETSCII
@@ -285,41 +326,63 @@ def toASCII(text):
 def _Register():
     codecs.register_error('spaces',pethandler)  # Register encoder error handler. This might be more useful if global 
     e0 = PETencoder('PET64')
+    e0.clients = {b'default':'Retroterm 64',b'SL':'Retroterm 64 Swiftlink',b'SLU':'Retroterm 64 Ultimate-Swiftlink'}
     e0.tml_mono  = t_mono['PET64']
     e0.tml_multi = t_multi['PET64']
     e0.bbuffer = 0x02ed #Bottom of the buffer
     e0.tbuffer = 0xbfff #Top of the buffer
-    #e0.encode = toPETSCII
-    #e0.decode = toASCII
     e0.palette = PALETTE
     e0.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
                  'ORANGE':8,'BROWN':9,  'PINK':10,  'GREY1':11, 'GREY2':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'GREY3':15,
                  'LIGHT_GREY':15,'DARK_GREY':11, 'MEDIUM_GREY':12, 'GREY':12}
-    #e0.non_printable = NONPRINTABLE
-    #e0.nl = '\r' # New line string
-    #e0.bs = chr(DELETE)
     e0.def_gfxmode = gfxmodes.C64MULTI
     e0.gfxmodes = (gfxmodes.C64HI,gfxmodes.C64MULTI)
     e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
 
     e1 = PETencoder('PET264')
+    e1.clients = {b'P4':'Retroterm Plus/4'}
     e1.tml_mono  = t_mono['PET264']
     e1.tml_multi = t_multi['PET264']
     e1.bbuffer = 0x0800 #Bottom of the buffer
     e1.tbuffer = 0x6fff #Top of the buffer
-    #e1.encode = toPETSCII
-    #e1.decode = toASCII
     e1.palette = PALETTE264
     e1.colors = {'BLACK':0,    'WHITE':0x71,  'RED':0x32  ,'CYAN':0x63 ,'PURPLE':0x34,'GREEN':0x45 ,'BLUE':0x26 ,'YELLOW':0x67,
                  'ORANGE':0x48,'BROWN':0x29,  'PINK':0x52 ,'GREY1':0x31,'GREY2':0x41 ,'LIGHT_GREEN':0x65,'LIGHT_BLUE':0x46,'GREY3':0x51,
                  'LIGHT_GREY':0x51 ,'DARK_GREY':0x31,  'MEDIUM_GREY':0x41,'GREY':0x41,
                  'DARK_GREEN':0x2F,'MAGENTA':0x4B,'DARK_RED':0x12}
-    #e1.non_printable = NONPRINTABLE
-    #e1.nl = '\r' # New line string
-    #e1.bs = chr(DELETE)
     e1.def_gfxmode = gfxmodes.P4HI
     e1.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
     e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'HELP':HELP,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER, 'ESC':ESC}
-    return [e0,e1]  #Each encoder module can return more than one encoder object. For example here it could also return PET128.
+    e1.features['blink'] = True
+
+
+    ### Non-Turbo56K encoders
+    e2 = PETencoder('PET20std')
+    e2.minT56Kver = 0
+    e2.clients = {b'VC':'Commodore VIC-20'}
+    e2.tml_mono  = t_mono['PET20'].copy()
+    e2.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
+    e2.tml_multi = t_multi['PET20']
+    e2.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'HOME':HOME,'CLEAR':CLEAR,
+                   'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
+    e2.txt_geo = (22,23)
+    e2.palette = PALETTE20
+    e2.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
+                 'ORANGE':8,'LIGHT_ORANGE':9,  'LIGHT_RED':10,  'LIGHT_CYAN':11, 'LIGHT_PURPLE':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'LIGHT_YELLOW':15,
+                 'PINK':10}
+    e3 = PETencoder('PET64std')
+    e3.minT56Kver = 0
+    e3.clients = {b'C64CG':'Commodore 64 CCGMS',b'C64NT':'Commodore 64 Novaterm',b'C64HT':'Commodore 64 Handyterm'}
+    e3.tml_mono = t_mono['PET64'].copy()
+    e3.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
+    e3.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])
+    e3.tml_multi = t_multi['PET64']
+    e3.ctrlkeys = e2.ctrlkeys
+    e3.palette = PALETTE
+    e3.colors  = e0.colors
+
+    return [e0,e1,e2,e3]  #Each encoder module can return more than one encoder object.
+
+#####

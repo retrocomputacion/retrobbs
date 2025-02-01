@@ -38,10 +38,10 @@ def plugFunction(conn:Connection):
             else:
                 conn.SendTML('<GREEN><LFILL row=1 code=64>')
         else:
-            conn.SendTML('<GREEN><HLINE n=40>')
-        conn.Sendall(TT.set_Window(2,lines-1))	#Set Text Window
+            conn.SendTML(f'<GREEN><HLINE n={conn.encoder.txt_geo[0]}>')
+        conn.SendTML(f'<WINDOW top=2 bottom={lines-1}>')	#Set Text Window
     ecolors = conn.encoder.colors
-    conn.Sendall(TT.to_Text(0,ecolors['BLACK'],ecolors['BLACK']))
+    conn.SendTML(f'<TEXT page=0 border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
     loop = True
     while loop == True:
         RadioTitle(conn)
@@ -54,7 +54,7 @@ def plugFunction(conn:Connection):
             if conn.connected == False :
                 return()
             if termino == '_':
-                conn.Sendall(TT.set_Window(0,lines))
+                conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
         conn.SendTML('<BR><BR>Searching...<SPINNER><CRSRL>')
         searchRes = searchRadio(termino)
@@ -97,10 +97,10 @@ def plugFunction(conn:Connection):
             if sel.upper() == 'N':
                 page = min(nradios//pcount, page+1)
             if sel == '':
-                conn.Sendall(TT.set_Window(0,lines))
+                conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 break
             if sel == '_':
-                conn.Sendall(TT.set_Window(0,lines))
+                conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
             if sel.isdigit() and int(sel) < nradios:
                 url = searchRes[int(sel)]['url']
@@ -109,7 +109,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
                 RadioTitle(conn)
 
-    conn.Sendall(TT.set_Window(0,lines))	#Set Text Window
+    conn.SendTML(f'<WINDOW top=0 bottom={lines}>')	#Set Text Window
 
 def searchRadio(termino):
     urls = []
