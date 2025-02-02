@@ -84,7 +84,7 @@ class Connection:
         if not self.p_running:		# Only change the mode if the TML parser object is not running
             self.mode = mode							#Connection mode -> type of client
             self.encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
-            tmp = self.encoder.setup(self,idstring.split(b' ')[0].split(b'-')[1])
+            tmp = self.encoder.setup(self,'default' if b'-' not in idstring else idstring.split(b' ')[0].split(b'-')[1])
             if tmp != None:
                 self.encoder = tmp
             # Reinit Terminal features

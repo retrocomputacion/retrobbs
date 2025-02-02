@@ -661,7 +661,7 @@ def SendPETPetscii(conn:Connection,filename):
 ###########
 # TML tags
 ###########
-t_mono = {	'SENDRAW':(lambda c,file:SendRAWFile(c,file,True),[('c','_C'),('file','')]),
+t_mono = {	'SENDRAW':(lambda c,file,wait:SendRAWFile(c,file,wait),[('c','_C'),('file',''),('wait','True')]),
             'SENDFILE':(lambda c,file,dialog,save:SendFile(c,file,dialog,save),[('c','_C'),('file',''),('dialog',False),('save',False)]),
             'SENDBITMAP':(lambda c,file:SendBitmap(c,file),[('c','_C'),('file','')]),
             }

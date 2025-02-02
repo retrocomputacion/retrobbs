@@ -297,12 +297,16 @@ class PETencoder(Encoder):
             _copy = deepcopy(self)
             _copy.features['windows'] = 0
             if id in sch:
+                _copy.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])
                 _copy.txt_geo = (40,sch[id])
             elif id == b'C64CO':
                 _copy.features['bgcolor'] = 0
                 conn.SendTML('Screen lines? (25): ')
                 _copy.txt_geo = (40,conn.ReceiveInt(1,25,25))
             return _copy
+        elif self.name == 'PET264std':
+            ...
+            return None
         else:
             return None
 
@@ -382,17 +386,29 @@ def _Register():
     e2.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
                  'ORANGE':8,'LIGHT_ORANGE':9,  'LIGHT_RED':10,  'LIGHT_CYAN':11, 'LIGHT_PURPLE':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'LIGHT_YELLOW':15,
                  'PINK':10}
+    
     e3 = PETencoder('PET64std')
     e3.minT56Kver = 0
     e3.clients = {b'C64CG':'Commodore 64 CCGMS',b'C64NT':'Commodore 64 Novaterm',b'C64HT':'Commodore 64 Handyterm',b'C64CO':'Other Commodore 64 color terminal'}
     e3.tml_mono = t_mono['PET64'].copy()
     e3.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
-    e3.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])
     e3.tml_multi = t_multi['PET64']
     e3.ctrlkeys = e2.ctrlkeys
     e3.palette = PALETTE
     e3.colors  = e0.colors
 
-    return [e0,e1,e2,e3]  #Each encoder module can return more than one encoder object.
+    e4 = PETencoder('PET264std')
+    e4.minT56Kver = 0
+    e4.clients = {b'P4MT':'Plus/4 Microterm'}
+    e4.tml_mono = t_mono['PET264'].copy()
+    e4.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
+    e4.tml_multi = t_multi['PET264']
+    e4.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
+                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER, 'ESC':ESC}
+    e4.palette = PALETTE
+    e4.colors  = e0.colors
+    e4.features['bgcolor'] = 0
+    e4.features['blink'] = True
+    return [e0,e1,e2,e3,e4]  #Each encoder module can return more than one encoder object.
 
 #####
