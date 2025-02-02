@@ -36,7 +36,7 @@ def plugFunction(conn:Connection):
                     + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
                     + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER><CRSRL>",
-                    f"<CLR><LTGREEN>A Turbo56K compatible terminal is required to view this image<BR>"\
+                    f"<CLR><LTGREEN><FORMAT>A Turbo56K compatible terminal is required to view this image</FORMAT><BR>"\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
@@ -46,7 +46,7 @@ def plugFunction(conn:Connection):
                     + f"<LTGREEN> para mostrar otra imagen al azar<BR>O "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
                     + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER><CRSRL>",
-                    f"<CLR><LTGREEN>Se requiere una terminal compatible con Turbo56K para ver ésta imagen<BR>"\
+                    f"<CLR><FORMAT><LTGREEN>Se requiere una terminal compatible con Turbo56K para ver ésta imagen</FORMAT><BR>"\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> para una nueva imagen al azar<BR>O "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
@@ -75,7 +75,7 @@ def plugFunction(conn:Connection):
                 barline = 3
             else:
                 barline = scheight-1
-            if conn.QueryFeature(TT.SCROLL) >= 0x80:
+            if conn.QueryFeature(TT.SCROLL) >= 0x80 and not conn.encoder.features['scrollback']:
                 crsr = ''
             else:
                 if set(('CRSRU','CRSRD')) <= conn.encoder.ctrlkeys.keys():
@@ -121,8 +121,6 @@ def plugFunction(conn:Connection):
                 at = ['<BR>']
             #Description
             tdesc = formatX(desc,scwidth)
-            for t in tdesc:
-                print(t)
             tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
             texto += at+tdesc
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')

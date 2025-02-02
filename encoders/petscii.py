@@ -296,6 +296,7 @@ class PETencoder(Encoder):
         if self.name == 'PET64std':
             _copy = deepcopy(self)
             _copy.features['windows'] = 0
+            _copy.features['scrollback'] = False
             if id in sch:
                 _copy.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])
                 _copy.txt_geo = (40,sch[id])
@@ -381,8 +382,10 @@ def _Register():
     e2.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'HOME':HOME,'CLEAR':CLEAR,
                    'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
     e2.txt_geo = (22,23)
-    e2.palette = PALETTE20
     e2.features['bgcolor'] = 0
+    e2.features['scrollback'] = False
+    e2.features['window'] = 0
+    e2.palette = PALETTE20
     e2.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
                  'ORANGE':8,'LIGHT_ORANGE':9,  'LIGHT_RED':10,  'LIGHT_CYAN':11, 'LIGHT_PURPLE':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'LIGHT_YELLOW':15,
                  'PINK':10}
@@ -409,6 +412,7 @@ def _Register():
     e4.colors  = e0.colors
     e4.features['bgcolor'] = 0
     e4.features['blink'] = True
+    e4.features['scrollback'] = False
     return [e0,e1,e2,e3,e4]  #Each encoder module can return more than one encoder object.
 
 #####

@@ -50,7 +50,10 @@ def plugFunction(conn:Connection):
     window_s = conn.QueryFeature(TT.SET_WIN) < 0x80
 
     if conn.encoder.colors == {}:
-        conn.SendTML("<FORMAT>You need a color terminal to play Mindle...</FORMAT><BR><PAUSE n=3>")
+        conn.SendTML("<CLR><FORMAT>You need a color terminal to play Mindle...</FORMAT><BR><PAUSE n=3>")
+        return
+    if  conn.encoder.txt_geo[0] < 30:
+        conn.SendTML("<CLR><FORMAT>Mindle needs at least 30 columns to work...</FORMAT><BR><PAUSE n=3>")
         return
     ecolors = conn.encoder.colors
     mcolors = bbsstyle(ecolors)
@@ -63,7 +66,7 @@ def plugFunction(conn:Connection):
         mcolors.ToddColor = ecolors['DARK_RED']
         mcolors.TevenColor = ecolors['BLUE']
     mcolors.OevenBack = ecolors['BLACK']
-    mcolors.BgColor = ecolors['DARK_GREY']
+    mcolors.BgColor = ecolors.get('DARK_GREY',ecolors.get('LIGHT_BLUE',ecolors['WHITE']))
     dbase = conn.bbs.database
     table = dbase.db
     dbQ = Query()

@@ -237,7 +237,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     
     rep = dict((re.escape(k), v) for k, v in rep.items())
     pattern = re.compile("|".join(rep.keys()))
-    if conn.QueryFeature(TT.SCROLL)< 0x80:
+    if conn.QueryFeature(TT.SCROLL)< 0x80 or conn.encoder.features['scrollback']:
         keys = bytes([CursorDown,CursorUp,PageUp,PageDown])
     else:
         keys = bytes([PageUp,PageDown])
@@ -253,8 +253,11 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     conn.SendTML(f'<INK c={tcolor}>')
     i = _page(0,lines)
     if conn.QueryFeature(TT.SET_WIN) >= 0x80:   # If no window control, following pages render the whole screen height
+        tline = lcount-(conn.encoder.txt_geo[1]-1)
         lcount = conn.encoder.txt_geo[1]-1
-    tline = 0
+    else:
+        tline = 0
+    # tline = 0
     bline = i+1
     #scroll loop
     ldir = True	#Last scroll down?
@@ -278,7 +281,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 tcolor = lcols[bline-1]
             else:
                 tcolor = colors.TxtColor
-            conn.Sendall(TT.scroll(1)+chr(0))
+            conn.SendTML('<SCROLL rows=1>')
             if ldir:
                 conn.SendTML(f'<AT x=0 y={lcount-1}><INK c={tcolor}>{text[bline]}')
                 lcols[bline] = conn.parser.color

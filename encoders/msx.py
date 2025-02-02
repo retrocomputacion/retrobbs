@@ -3,6 +3,7 @@ import re
 from common.classes import Encoder
 from common.imgcvt import gfxmodes
 import os
+from copy import deepcopy
 
 #MSX constants
 
@@ -129,7 +130,7 @@ t_mono = 	{'MSX1':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF
             'LTGREEN':chr(1)+chr(LT_GREEN),'LTBLUE':chr(1)+chr(LT_BLUE),'DRED':chr(1)+chr(DARK_RED),'DGREEN':chr(1)+chr(DARK_GREEN),
             'LTYELLOW':chr(1)+chr(LT_YELLOW),
             'PAPER':(lambda c:'\x01'+chr(c+0x10),[('_R','_C'),('c',1)])},
-            'MSXSTD':{'CLR':chr(CLEAR),'HOME':chr(HOME),'BR':'\r\n','AT':(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])}}
+            'MSXSTD':{'CLR':chr(CLEAR),'HOME':chr(HOME),'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)])}}
 t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(1)+chr(HLINE),'VLINE':chr(1)+chr(VLINE),'CROSS':chr(1)+chr(CROSS),'UARROW':'^',
             'UL-CORNER':chr(1)+chr(UL_CORNER),'UR-CORNER':chr(1)+chr(UR_CORNER),'LL-CORNER':chr(1)+chr(LL_CORNER),'LR-CORNER':chr(1)+chr(LR_CORNER),
@@ -153,7 +154,7 @@ class MSXencoder(Encoder):
         self.txt_geo = (32,24)  #   Text screen dimensions
         self.ellipsis = '\u00bb'   # Ellipsis representation
         self.back = chr(BACK)
-        self.features = {'color':       False,  # Encoder supports color
+        self.features = {'color':       True,  # Encoder supports color
                          'bgcolor':     2,      # Per character background color
                          'charsets':    1,      # Number if character sets supported
                          'reverse':     False,  # Encoder supports reverse video
@@ -172,6 +173,8 @@ class MSXencoder(Encoder):
 
     ### Wordwrap text preserving control codes
     def wordwrap(self,text,split=False):
+        if self.nl_out == '\r\n':
+            return super().wordwrap(text,split)
         codes = ''.join(chr(i) for i in range(1,16))+''.join(chr(i) for i in range(17,32))  #'\x01\x07\x08\x0b\x12\x19\x1a\x1c\x1d\x1e\x1f\x7f'
 
         out = ''
@@ -329,6 +332,32 @@ class MSXencoder(Encoder):
                             la = 0x4000
         return (la,bin)
 
+    ### Encoder setup routine
+    # Setup the required parameters for the given client id
+    # Either automatically or by enquiring the user
+    # Return None if no setup is necessary, or a customized
+    # copy of the encoder object
+    def setup(self, conn, id):
+        if self.name == 'MSXstd':
+            _copy = deepcopy(self)
+            conn.SendTML('Screen columns? (36): ')
+            cols = conn.ReceiveInt(30,80,36)
+            conn.SendTML('<BR>Screen lines? (23): ')
+            _copy.txt_geo = (cols,conn.ReceiveInt(20,24,23))
+            _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
+            return _copy
+        else:
+            return None
+        
+    ### MSX ASCII SCROLL replacement
+    def _scroll(self,rows):
+        if rows > 0:
+            return chr(HOME)+(chr(ESC)+'M')*rows
+        elif rows < 0:
+            return chr(HOME)+(chr(ESC)+'L')*abs(rows)
+        else:
+            return ''
+
 ####################################################
 # Convert ASCII/unicode text to MSX
 ####################################################
@@ -371,22 +400,18 @@ def _Register():
     e0.features['revers'] = True
 
     # Non-Turbo56K encoders
-    e1 = MSXencoder('MSX32std')
+    e1 = MSXencoder('MSXstd')
     e1.minT56Kver = 0
     e1.nl_out = '\r'
-    e1.clients = {b'M32':'MSX 32 columns'}
+    e1.clients = {b'MSX0':'MSX ASCII'}
     e1.tml_mono  = t_mono['MSXSTD']
     e1.tml_multi = t_multi['MSX1']
+    e1.tml_multi['DEL'] = chr(0x7f)
     e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT}
+    e1.features['windows'] = 0
+    e1.features['bgcolor'] = 0
+    e1.features['color'] = False
+    e1.nl_out = '\r\n'
 
-    e2 = MSXencoder('MSX40std')
-    e2.minT56Kver = 0
-    e2.nl_out = '\r'
-    e2.clients = {b'M40':'MSX 40 columns'}
-    e2.tml_mono  = t_mono['MSXSTD']
-    e2.tml_multi = t_multi['MSX1']
-    e2.txt_geo = (40,24)
-    e2.ctrlkeys = e1.ctrlkeys
-
-    return [e0,e1,e2]  #Each encoder module can return more than one encoder object. For example here it could also return MSX2.
+    return [e0,e1]  #Each encoder module can return more than one encoder object. For example here it could also return MSX2.
