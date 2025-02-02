@@ -154,11 +154,14 @@ class MSXencoder(Encoder):
         self.ellipsis = '\u00bb'   # Ellipsis representation
         self.back = chr(BACK)
         self.features = {'color':       False,  # Encoder supports color
+                         'bgcolor':     2,      # Per character background color
                          'charsets':    1,      # Number if character sets supported
                          'reverse':     False,  # Encoder supports reverse video
                          'blink':       False,  # Encoder supports blink/flash text
                          'underline':   False,  # Encoder supports underlined text
-                         'cursor':      True    # Encoder supports cursor movement/set. Including home position and screen clear
+                         'cursor':      True,   # Encoder supports cursor movement/set. Including home position and screen clear
+                         'scrollback':  True,    # Encoder supports scrolling back (down) the screen
+                         'windows':     1       # Encoder support full width screen slice windows
                          }
 
     def color_index(self, code):

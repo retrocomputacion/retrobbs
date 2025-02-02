@@ -76,11 +76,20 @@ class Encoder:
         self.bbuffer = 0x0000	#	Bottom address of the client's buffer
         self.tbuffer = 0x0000	#	Top address/size of the client's buffer
         self.features = {'color':       False,  # Encoder supports color
-                         'charsets':    1,      # Number if character sets supported
+                         'bgcolor':     0,      # Encoder supports background (paper) color:
+                                                # 0 = No background color support
+                                                # 1 = Global background support
+                                                # 2 = Per character background support
+                         'charsets':    1,      # Number of character sets supported
                          'reverse':     False,  # Encoder supports reverse video
                          'blink':       False,  # Encoder supports blink/flash text
                          'underline':   False,  # Encoder supports underlined text
-                         'cursor':      False   # Encoder supports cursor movement/set. Including home position and screen clear
+                         'cursor':      False,  # Encoder supports cursor movement/set. Including home position and screen clear
+                         'scrollback':  False,  # Encoder supports scrolling back (down) the screen
+                         'windows':     0       # Encoder supports restricting text operations to a section of the screen
+                                                # 0 = No window support
+                                                # 1 = Full width screen slice
+                                                # 2 = Arbitrary rectangular section
                          }
 
     # Given a color control code, returns it's index in the color palette
@@ -121,23 +130,33 @@ class Encoder:
     # split: True to return a list of lines instead of
     # a string
     def wordwrap(self, text, split = False):
-        lines = text.split('\n')
+        lines = text.split(self.nl_out)
+        print(len(self.nl_out))
         if split:
             out = []
         else:
             out = ''
         for line in lines:
-            if not split:
-                out = out +textwrap.fill(line,width=self.txt_geo[0])+'\n'
-            else:
-                wlines = textwrap.wrap(line,width=self.txt_geo[0])
-                for l in wlines:
-                    if len(l)<self.txt_geo[0]:
-                        out.append(l+self.nl)
+            # if not split:
+            #     out = out +textwrap.fill(line,width=self.txt_geo[0])+self.nl_out
+            # else:
+            wlines = textwrap.wrap(line,width=self.txt_geo[0])
+            for l in wlines:
+                if len(l)<self.txt_geo[0]:
+                    if not split:
+                        out += l+self.nl_out
+                    else:
+                        out.append(l+self.nl_out)
+                else:
+                    if not split:
+                        out += l
                     else:
                         out.append(l)
-                if len(wlines)==0:
-                    out.append(self.nl)
+            if len(wlines)==0:
+                if not split:
+                    out += self.nl_out
+                else:
+                    out.append(self.nl_out)
         return(out)
 
     ### Encoder setup routine

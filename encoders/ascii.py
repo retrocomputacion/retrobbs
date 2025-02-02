@@ -44,7 +44,7 @@ NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]
 ###########
 # TML tags
 ###########
-t_mono = 	{'BR':'\r\n','AT':''}
+t_mono = 	{'BR':'\r\n','AT':'','CLR':'\r\n'*25}
 t_multi =	{'DEL':chr(DELETE),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': chr(CHECKMARK),
             'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L)}
@@ -83,4 +83,4 @@ def _Register():
                     'underline':   False,  # Encoder supports underlined text
                     'cursor':      False   # Encoder supports cursor movement/set. Including home position and screen clear
                     }
-    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return PET128.
+    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return ANSI.

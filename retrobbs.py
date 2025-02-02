@@ -1198,11 +1198,11 @@ def BBSLoop(conn:Connection):
         else:
             pt = "trying to detect terminal,<BR>press ENTER/RETURN...<BR>"
 
-        welcome = f'''{conn.bbs.WMess.upper()}<BR>
+        welcome = f'''<FORMAT>{conn.bbs.WMess.upper()}<BR>
 RETROBBS V{conn.bbs.version:.2f}<BR>
 RUNNING UNDER:<BR>
 {conn.bbs.OSText.upper()}<BR>
-{pt.upper()}<BR>'''
+{pt.upper()}<BR></FORMAT>'''
 
         conn.SendTML(welcome)
         # Connected, wait for the user to press RETURN
@@ -1284,10 +1284,10 @@ RUNNING UNDER:<BR>
                 conn.SendTML('Please use RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
                 conn.connected = False
         else:
-            conn.SendTML(   '<BR>FOR THE BEST EXPERIENCE,<BR>THIS BBS REQUIRES A TERMINAL<BR>COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
-                            'FOR THE LASTEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR>')
+            conn.SendTML(   '<FORMAT><BR>FOR THE BEST EXPERIENCE, THIS BBS REQUIRES A TERMINAL COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
+                            'FOR THE LASTEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
             time.sleep(1)
-            conn.SendTML('TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR>')
+            conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')
 
             time.sleep(1)
             datos = b""
@@ -1314,7 +1314,7 @@ RUNNING UNDER:<BR>
                     encoders.append(conn.bbs.encoders[encoder])
             if encoders != []:
                 conn.SetMode(b'temp-'+next(iter(encoders[0].clients.keys())),0)  # Temporarily set the first valid encoder
-                conn.SendTML("SELECT THE PLATFORM THAT MORE CLOSELY MATCH YOURS:<BR><BR>")
+                conn.SendTML("<FORMAT>SELECT THE PLATFORM THAT MORE CLOSELY MATCH YOURS:</FORMAT><BR><BR>")
                 count = 0
                 clist = []
                 for encoder in encoders:
@@ -1326,9 +1326,9 @@ RUNNING UNDER:<BR>
                 mode = b'Standard-'+clist[conn.ReceiveInt(1,len(clist),1)-1][1]
                 conn.SendTML('<BR>')
                 conn.SetMode(mode,0)
-                conn.SendTML(f'<CLR><YELLOW>BBS mode set to:<WHITE> {conn.mode}<BR><BR><PAUSE n=2>')
+                conn.SendTML(f'<CLR><FORMAT><YELLOW>BBS mode set to:<WHITE> {conn.mode}</FORMAT><BR><BR><PAUSE n=2>')
             else:
-                conn.SendTML('SORRY, UNKNOWN CLIENT TYPE, DISCONNECTED...<BR>')
+                conn.SendTML('<FORMAT>SORRY, UNKNOWN CLIENT TYPE, DISCONNECTED...</FORMAT><BR>')
                 conn.connected = False
             # _LOG('Not a compatible terminal, disconnecting...',id=conn.id,v=2)
             # # Clean up the connection

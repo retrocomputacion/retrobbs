@@ -291,10 +291,13 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             bline = _page(tline,lcount)+1
             ldir = True
         elif (k[0] == PageDown) and (bline < len(text)):	#Page down
-            bline += lcount
-            if bline > len(text):
+            # bline += lcount
+            if bline + lcount > len(text):
+                tline = bline
                 bline = len(text)
-            tline = bline-lcount
+            else:
+                bline += lcount
+                tline = bline-lcount
             _page(tline,lcount)
             ldir = True
         elif k in ekeys:
