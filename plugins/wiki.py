@@ -30,7 +30,7 @@ def setup():
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
-        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR><BLACK>Wikipedia, the free Enciclopedia<BR>')
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR>{hlcolor}Wikipedia, the free Enciclopedia<BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             conn.SendTML(f'{TxTtag}<LFILL row=1 code={hcode}>')
         else:
@@ -44,13 +44,18 @@ def plugFunction(conn:Connection):
     else:
         hcode = 0x40
         bcode = 0xA0
+    if conn.encoder.features['bgcolor'] == 0:
+        hlcolor = '<YELLOW>'
+    else:
+        hlcolor = '<BLACK>'
+
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
     ecolors = conn.encoder.colors
     wcolors = bbsstyle(ecolors)
-    wcolors.TxtColor = ecolors['DARK_GREY'] if 'PET' in conn.mode else ecolors['BLUE']
+    wcolors.TxtColor = ecolors.get('DARK_GREY',0) if 'PET' in conn.mode else ecolors.get('BLUE',0)
     TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
-    wcolors.PbColor = ecolors['BLACK']
-    wcolors.PtColor = ecolors['BLUE']
+    wcolors.PbColor = ecolors.get('BLACK',0)
+    wcolors.PtColor = ecolors.get('BLUE',0)
     wikipedia.set_lang(conn.bbs.lang)
     if wikipediaapi.__version__[1]<6:
         wiki = wikipediaapi.Wikipedia(conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
@@ -59,7 +64,7 @@ def plugFunction(conn:Connection):
         wiki = wikipediaapi.Wikipedia(user_agent='RetroBBS/0.60',language=conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
 
     sccolors = 'WHITE' if 'MSX' in conn.mode else 'LIGHT_GREY'
-    conn.SendTML(f'<TEXT page=0 border={ecolors[sccolors]} background={ecolors[sccolors]}>')
+    conn.SendTML(f'<TEXT page=0 border={ecolors.get(sccolors,0)} background={ecolors.get(sccolors,0)}>')
     loop = True
     while loop == True:
         WikiTitle(conn)
@@ -84,10 +89,10 @@ def plugFunction(conn:Connection):
         options = ''
         for r in results:
             res = crop(r,scwidth-4,conn.encoder.ellipsis)
-            conn.SendTML(f'<BLACK>[<BLUE>{string.ascii_lowercase[i]}<BLACK>]{TxTtag}{res}<BR>')
+            conn.SendTML(f'{hlcolor}[<BLUE>{string.ascii_lowercase[i]}{hlcolor}]{TxTtag}{res}<BR>')
             options += string.ascii_lowercase[i]
             i += 1
-        conn.SendTML(f'<BLACK>[<BLUE><BACK><BLACK>]{TxTtag}Previous menu<BR><BR>Please select:')
+        conn.SendTML(f'{hlcolor}[<BLUE><BACK>{hlcolor}]{TxTtag}Previous menu<BR><BR>Please select:')
         options += conn.encoder.back+conn.encoder.nl
         sel = conn.ReceiveKey(options)
         if sel == conn.encoder.back:
@@ -127,7 +132,7 @@ def plugFunction(conn:Connection):
                                     w_image = timg
                                 FT.SendBitmap(conn,w_image, cropmode=cropmodes.FIT, preproc=PreProcess(1,1.3,1.3))
                                 conn.ReceiveKey()
-                                conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors[sccolors]} background={ecolors[sccolors]}>')
+                                conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors.get(sccolors,0)} background={ecolors.get(sccolors,0)}>')
                         except Exception as e:
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -135,15 +140,46 @@ def plugFunction(conn:Connection):
                             _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
                     WikiTitle(conn)
                 tt = formatX(normalize('NFKC',page.title),scwidth)
-                tt[0] = '<CLR><BLACK>'+tt[0]
+                tt[0] = '<CLR>'+hlcolor+tt[0]
                 tt.append(f'{TxTtag}<HLINE n={scwidth}>')
                 tt += WikiParseParas(page.summary,scwidth,0,TxTtag)	#<+
                 tt.append('<BR>')
-                tt += WikiSection(conn, page.sections,0)
-                if conn.QueryFeature(TT.SCROLL) < 0x80:
-                    conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [crsr/F1/F3] scroll  [<BACK>] exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+                tt += WikiSection(conn, page.sections, 0, hlcolor=hlcolor)
+
+                conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
+                if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+                    barline = 2
                 else:
-                    conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [F1/F3] to scroll  [<BACK>] to exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+                    barline = scheight-1
+                if conn.QueryFeature(TT.SCROLL) >= 0x80 and not conn.encoder.features['scrollback']:
+                    crsr = ''
+                else:
+                    if set(('CRSRU','CRSRD')) <= conn.encoder.ctrlkeys.keys():
+                        crsr = '/crsr'
+                    else:
+                        crsr = '/a/z'
+                if set(('F1','F3')) <= conn.encoder.ctrlkeys.keys():
+                    pages = 'F1/F3'
+                else:
+                    pages = '-/+'
+                if 'MSX' in conn.mode:
+                    bcode = 0xDB
+                    rcrsr = '<R-NARROW>'
+                else:
+                    bcode = 0xA0
+                    rcrsr = '<CRSRR n=7><R-NARROW>'
+                if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                    conn.SendTML(f'<BLUE><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
+                else:
+                    conn.SendTML(f'<BLUE><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
+                conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<BLUE><L-NARROW>       {rcrsr}<ORANGE><BACK>:exit<BLUE><L-NARROW><RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+
+                # if conn.QueryFeature(TT.SCROLL) < 0x80:
+                #     conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [crsr/F1/F3] scroll  [<BACK>] exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+                # else:
+                #     conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [F1/F3] to scroll  [<BACK>] to exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+                if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+                    conn.SendTML('<BR>')
                 text_displayer(conn,tt,scheight-3,wcolors)
             except Exception as e:
                 conn.SendTML('<RED><BR>ERROR!<PAUSE n=2>')
@@ -156,19 +192,19 @@ def plugFunction(conn:Connection):
 ##################################################################
 # Parse a wiki article sections
 ##################################################################
-def WikiSection(conn:Connection, sections, level = 0, lines = 0):
+def WikiSection(conn:Connection, sections, level = 0, lines = 0, hlcolor = '<BLACK>'):
     tt = []
     scwidth = conn.encoder.txt_geo[0]
     TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
     for s in sections:
         title = ('-'*level)+WikiParseTitles(s.title)
         ts = formatX(normalize('NFKC',title),scwidth)
-        ts[0] = '<BLACK>'+ts[0]
+        ts[0] = hlcolor+ts[0]
         tt += ts
         tt.append(f'<HLINE n={scwidth}>{TxTtag}')
-        tt += WikiParseParas(s.text,scwidth,0,TxTtag)	#<+
+        tt += WikiParseParas(s.text,scwidth,0,TxTtag,hlcolor)	#<+
         tt.append('<BR>')
-        tt += WikiSection(conn, s.sections, level + 1, lines)
+        tt += WikiSection(conn, s.sections, level + 1, lines, hlcolor)
     return(tt) #lines
 
 ##################################################################################################
@@ -176,7 +212,7 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0):
 # replace <p> and <br>with new lines
 # based on: https://stackoverflow.com/questions/10491223/how-can-i-turn-br-and-p-into-line-breaks
 ##################################################################################################
-def WikiParseParas(text, width = 40, level = 0,TxTtag='<GREY1>'):
+def WikiParseParas(text, width = 40, level = 0,TxTtag = '<GREY1>', HLTag = '<BLACK>'):
     def replace_with_newlines(element):
         text = ''
         for elem in element.recursiveChildGenerator():
@@ -201,24 +237,24 @@ def WikiParseParas(text, width = 40, level = 0,TxTtag='<GREY1>'):
             for item in elem.find_all('li',recursive=False):
                 key = next(item.stripped_strings,'')
                 k = formatX(normalize('NFKC',key),width-2-level)
-                k[0] =f'<SPC n={level}><BLACK>\u2022 {TxTtag}'+k[0]
+                k[0] =f'<SPC n={level}>{HLTag}\u2022 {TxTtag}'+k[0]
                 for i in range(1,len(k)):
                     k[i] = f'<SPC n={level+2}>'+k[i]
                 plain_text += k
                 nitem = item.find(['p','ul','ol'])
                 if nitem:
-                    plain_text += WikiParseParas(item,width,level+1,TxTtag)+['<BR>']
+                    plain_text += WikiParseParas(item,width,level+1,TxTtag,HLTag)+['<BR>']
         elif elem.name == 'ol':
             for i,item in enumerate(elem.find_all('li',recursive=False)):
                 key = next(item.stripped_strings,'')
                 k = formatX(normalize('NFKC',key),width-2-level-len(str(i)))
-                k[0] = f'<SPC n=level><BLACK>{i}. {TxTtag}{k[0]}'
+                k[0] = f'<SPC n=level>{HLTag}{i}. {TxTtag}{k[0]}'
                 for i in range(1,len(k)):
                     k[i] = f'<SPC n={level+2}>'+k[i]
                 plain_text += k
                 nitem = item.find(['p','ul','ol'])
                 if nitem:
-                    plain_text += WikiParseParas(item,width,level+1,TxTtag)+'\r'		
+                    plain_text += WikiParseParas(item,width,level+1,TxTtag,HLTag)+'\r'		
         elif elem.name == 'dl':
             for item in elem.find_all('dd',recursive=False):
                 key = next(item.stripped_strings,'')
@@ -229,11 +265,11 @@ def WikiParseParas(text, width = 40, level = 0,TxTtag='<GREY1>'):
                 plain_text += k
                 nitem = item.find(['p','ul','ol'])
                 if nitem:
-                    plain_text += WikiParseParas(item,width,level+1,TxTtag)+['<BR>']
+                    plain_text += WikiParseParas(item,width,level+1,TxTtag,HLTag)+['<BR>']
         elif elem.name == 'blockquote':
             nitem = elem.find(['p','ul','ol'])
             if nitem:
-                plain_text += ['<BR>']+WikiParseParas(elem,width,level+1,TxTtag)+['<BR>']
+                plain_text += ['<BR>']+WikiParseParas(elem,width,level+1,TxTtag,HLTag)+['<BR>']
     if plain_text == []:
         plain_text == formatX(normalize('NFKC',soup.get_text()),width)
     return(plain_text)

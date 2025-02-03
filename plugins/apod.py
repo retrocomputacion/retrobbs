@@ -96,7 +96,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
             else:
                 conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
-            conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<CYAN><GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+            conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
             if conn.QueryFeature(TT.SET_WIN) >= 0x80:
                 conn.SendTML('<BR>')
             date = idata["date"]
