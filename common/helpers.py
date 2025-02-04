@@ -213,10 +213,10 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     #This connection ctrl keys
     ckeys = conn.encoder.ctrlkeys
 
-    CursorUp = ckeys.get('CRSRU',ord('a'))
-    CursorDown = ckeys.get('CRSRD',ord('z'))
-    PageUp = ckeys.get('F1',ord('-'))
-    PageDown = ckeys.get('F3',ord('+'))
+    CursorUp = ckeys.get('CRSRU',ord(conn.encoder.encode('a')))
+    CursorDown = ckeys.get('CRSRD',ord(conn.encoder.encode('z')))
+    PageUp = ckeys.get('F1',ord(conn.encoder.encode('p')))
+    PageDown = ckeys.get('F3',ord(conn.encoder.encode('n')))
 
     firstrun = True
 

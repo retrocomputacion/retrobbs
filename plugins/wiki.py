@@ -161,7 +161,7 @@ def plugFunction(conn:Connection):
                 if set(('F1','F3')) <= conn.encoder.ctrlkeys.keys():
                     pages = 'F1/F3'
                 else:
-                    pages = '-/+'
+                    pages = 'p/n'
                 if 'MSX' in conn.mode:
                     bcode = 0xDB
                     rcrsr = '<R-NARROW>'
