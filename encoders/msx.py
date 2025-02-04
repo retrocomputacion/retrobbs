@@ -405,7 +405,7 @@ def _Register():
     e1.nl_out = '\r'
     e1.clients = {b'MSX0':'MSX ASCII'}
     e1.tml_mono  = t_mono['MSXSTD']
-    e1.tml_multi = t_multi['MSX1']
+    e1.tml_multi = t_multi['MSX1'].copy()
     e1.tml_multi['DEL'] = chr(0x7f)
     e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT}

@@ -156,7 +156,7 @@ def plugFunction(conn:Connection):
                 #Default to config setting, or Meyrin otherwise
                 locqry = conn.bbs.PlugOptions.get('wxdefault','Meyrin')
     loop.close()
-    conn.SendTML(f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode">')
+    conn.SendTML(f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode">')
     return
 
 # Get closest cell x-coord
