@@ -323,8 +323,8 @@ async def getweather(conn:Connection,locquery,geoLoc):
         lpad = (conn.encoder.txt_geo[0]-len(locdisplay))//2
         rpad = conn.encoder.txt_geo[0]-(lpad+len(locdisplay))
         img += f'<GREY><RVSON><SPC n={lpad}>{locdisplay}<SPC n={rpad}><RVSOFF>'
-        img += f'<CRSRD><FORMAT><YELLOW>Current weather: <GREY3>'
-        img += f'{twtypes.get(wt,"Clear")}<BR><WHITE>Temp:{ttco}{ctemp}°{"C" if units==python_weather.METRIC else "F"}<BR></FORMAT>'
+        img += f'<BR><FORMAT><YELLOW>Current weather: <GREY3>'
+        img += f'{twtypes.get(wt,"Clear")}<BR><WHITE>Temp:{ttco}{ctemp}°{"C" if units==python_weather.METRIC else "F"}</FORMAT>'
         img += f'<WHITE>Wind:<GREY> {wd} {weather.wind_speed}{"km/h" if units == python_weather.METRIC else "mph"}<BR>'
         img += f'<WHITE>Pressure:<GREY> {weather.pressure}{"hPa" if units == python_weather.METRIC else "Hg"}<BR><BLUE><HLINE n={conn.encoder.txt_geo[0]}>'
         img += f'<RED>&gt;<GREEN>&gt;<BLUE>&gt;<WHITE>Forecast:<BR><BR>'
