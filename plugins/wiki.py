@@ -164,15 +164,15 @@ def plugFunction(conn:Connection):
                     pages = 'p/n'
                 if 'MSX' in conn.mode:
                     bcode = 0xDB
-                    rcrsr = '<R-NARROW>'
+                    rcrsr = '<CRSRR n=6><R-NARROW>'
                 else:
                     bcode = 0xA0
-                    rcrsr = '<CRSRR n=7><R-NARROW>'
+                    rcrsr = '<CRSRR n=14><R-NARROW>'
                 if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                     conn.SendTML(f'<BLUE><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
                 else:
                     conn.SendTML(f'<BLUE><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
-                conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<BLUE><L-NARROW>       {rcrsr}<ORANGE><BACK>:exit<BLUE><L-NARROW><RVSOFF><WINDOW top=2 bottom={scheight-2}>')
+                conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<BLUE><L-NARROW>{rcrsr}<ORANGE><BACK>:exit<BLUE><L-NARROW><RVSOFF><WINDOW top=2 bottom={scheight-2}>')
 
                 # if conn.QueryFeature(TT.SCROLL) < 0x80:
                 #     conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [crsr/F1/F3] scroll  [<BACK>] exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')

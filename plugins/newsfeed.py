@@ -35,7 +35,7 @@ def plugFunction(conn:Connection,url):
         conn.menu = -1
     colors = conn.encoder.colors
     scwidth,scheight = conn.encoder.txt_geo
-    menucolors = [[colors.get('LIGHT_BLUE',colors.get('BLUE',colors['WHITE'])),colors.get('LIGHT_GREY',colors['WHITE'])],[colors('CYAN',colors.get('GREEN',colors['WHITE'])),colors('YELLOW',colors['WHITE'])]]
+    menucolors = [[colors.get('LIGHT_BLUE',colors.get('BLUE',colors.get('WHITE',0))),colors.get('LIGHT_GREY',colors.get('WHITE',0))],[colors.get('CYAN',colors.get('GREEN',colors.get('WHITE',0))),colors.get('YELLOW',colors.get('WHITE',0))]]
     MenuDic = {
                 conn.encoder.back: (H.MenuBack,(conn,),"Previous menu",0,False),
                 conn.encoder.nl: (plugFunction,(conn,url),"",0,False)
@@ -86,7 +86,8 @@ def feedentry(conn:Connection,entry,feedname):
             bcode = 0xA0
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
-        conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-2-25}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+        renderBar(conn)
+        # conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-2-25}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
         conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         e_text = ''
         content = entry.get('content',[]) #Atom
@@ -214,7 +215,8 @@ def webarticle(conn:Connection,url, feedname):
                 conn.ReceiveKey()
                 conn.SendTML('<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
-        conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+        renderBar(conn)
+        # conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
         conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         title = H.formatX(a_title,scwidth)
         title[0] = '<WHITE>'+title[0]
@@ -244,3 +246,35 @@ def getImg(url,img_t):
     except:
         img = Image.new("RGB",(320,200),"red")
     return(img)
+
+def renderBar(conn:Connection):
+    scwidth,scheight = conn.encoder.txt_geo
+    if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+        barline = 3
+    else:
+        barline = scheight-1
+    if conn.QueryFeature(TT.SCROLL) >= 0x80 and not conn.encoder.features['scrollback']:
+        crsr = ''
+    else:
+        if set(('CRSRU','CRSRD')) <= conn.encoder.ctrlkeys.keys():
+            crsr = '/crsr'
+        else:
+            crsr = '/a/z'
+    if set(('F1','F3')) <= conn.encoder.ctrlkeys.keys():
+        pages = 'F1/F3'
+    else:
+        pages = 'p/n'
+    if 'MSX' in conn.mode:
+        bcode = 0xDB
+        rcrsr = '<CRSRR n=6><R-NARROW>'
+    else:
+        bcode = 0xA0
+        rcrsr = '<CRSRR n=14><R-NARROW>'
+    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+        conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
+    else:
+        conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
+    conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<CYAN><L-NARROW>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+    if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+        conn.SendTML('<BR>')
+
