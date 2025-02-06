@@ -5,7 +5,7 @@ from common import turbo56k as TT
 from common.bbsdebug import _LOG
 from common.style import RenderMenuTitle
 from common.dbase import DBase
-from common.helpers import text_displayer, crop, formatX
+from common.helpers import text_displayer, crop, formatX, More
 from html import escape
 from tinydb import Query
 from tinydb.table import Document
@@ -44,6 +44,7 @@ def readMessage(conn:Connection, msg_id:int):
     table = db.db.table('MESSAGES')
     dbQ = Query()
     done = False
+    win = conn.QueryFeature(TT.SET_WIN) < 0x80
     while not done and conn.connected:
         dmsg = table.get(doc_id = msg_id)
         if dmsg != None:
@@ -55,7 +56,10 @@ def readMessage(conn:Connection, msg_id:int):
                 user = dmsg['msg_from']
             # build option string
             ol = []
-            keys = ''   #'_'
+            if win:
+                keys = ''
+            else:
+                keys = conn.encoder.back
             if conn.userclass == 10:    #Admin reading
                 keys += 'd'
                 adm = ' <RVSON>D<RVSOFF>elete'
@@ -88,13 +92,16 @@ def readMessage(conn:Connection, msg_id:int):
                 conn.SendTML(f'<AT x={scwidth//2} y=1><GREY3><RVSON>to:<LTGREEN>{"*"+rcp if type(rcp)==str else " "+rcp["uname"]}<RVSOFF>')
             else:   # public message, display post date
                 conn.SendTML(f'<AT x={scwidth//2} y=1><GREY3><RVSON>on:<LTGREEN>{datetime.fromtimestamp(dmsg["msg_sent"]):{datestr}}<RVSOFF>')
-            conn.SendTML(f'{f"<YELLOW><LFILL row=2 code={hcode}><LFILL row={scheight-3} code={hcode}>" if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y=2><YELLOW><HLINE n={scwidth}><AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
-                         f'<AT x=0 y={scheight-2}><GREY3>')
-            for i,o in enumerate(ol):
-                conn.SendTML(o)
-                if (i+1) < len(ol):
-                    conn.Sendall('/')
-            conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
+            if win:
+                conn.SendTML(f'{f"<YELLOW><LFILL row=2 code={hcode}><LFILL row={scheight-3} code={hcode}>" if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y=2><YELLOW><HLINE n={scwidth}><AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
+                            f'<AT x=0 y={scheight-2}><GREY3>')
+                for i,o in enumerate(ol):
+                    conn.SendTML(o)
+                    if (i+1) < len(ol):
+                        conn.Sendall('/')
+                conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
+            else:
+                conn.SendTML(f'{f"<YELLOW><LFILL row=2 code={hcode}>" if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y=2><YELLOW><HLINE n={scwidth}>"}<GREY3>')
             msg,lines = formatMsg(dmsg['msg_text'],scwidth)
             # escape html characters and add line breaks
             for i,l in enumerate(msg):
@@ -110,9 +117,19 @@ def readMessage(conn:Connection, msg_id:int):
                     table.upsert(Document({'msg_read':dmsg['msg_read']},doc_id=msg_id))
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}>')
             while conn.connected:
-                k = text_displayer(conn,msg,scheight-6,None,keys)
-                # k = conn.ReceiveKey(keys)
-                if k == '_':
+                if win:
+                    k = text_displayer(conn,msg,scheight-6,None,keys)
+                else:
+                    More(conn,msg,scheight)
+                    conn.SendTML('<DEL n=8>')
+                    conn.SendTML(f'<YELLOW><HLINE n={scwidth}><GREY3>')
+                    for i,o in enumerate(ol):
+                        conn.SendTML(o)
+                        if (i+1) < len(ol):
+                            conn.Sendall('/')
+                    conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
+                    k = conn.ReceiveKey(keys)
+                if k == conn.encoder.back:
                     done = True
                     break
                 elif k == 'f':
@@ -142,9 +159,16 @@ def readMessage(conn:Connection, msg_id:int):
                         msg_id = r_id
                     break
                 elif k == 'd': #Delete:
-                    conn.SendTML(f'<RED>{f"<LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>"}'
-                                 f'<WINDOW top=11 bottom=13>'
-                                 f'<CLR><CRSRD><WHITE><SPC n={(scwidth-20)//2}>Delete message?(Y/N)')
+                    tml = ''
+                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                        tml += f'<RED><LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
+                    else:
+                        tml += f'<RED><AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
+                    if conn.QueryFeature(TT.SET_WIN) < 0x80:
+                        tml += '<WINDOW top = 11 bottom =13><CLR><CRSRD>'
+                    else:
+                        tml += f'<AT x=0 y=11><SPC n={scwidth-1}><DEL> <BR><SPC n={scwidth-1}><DEL> <BR><SPC n={scwidth-1}><DEL> <BR><CRSRU n=2>'
+                    conn.SendTML(tml+f'<WHITE><SPC n={(scwidth-20)//2}>Delete message?(Y/N)')
                     if conn.ReceiveKey('yn') == 'y':
                         if dmsg['msg_parent'] == 0: #delete whole thread
                             deleteThread(conn,msg_id)
@@ -509,7 +533,7 @@ Press {conn.encoder.back} to continue...'''
         user = 0
         board = destination
     # Note - fixme: You can get to this point even if the thread doesnt belong to the destination board
-    topic, message = composer(topic=topic)  ###### Test composer
+    topic, message = composer(topic=topic)
     if message != None:
         if type(message) == list:
             i = 0
@@ -594,6 +618,12 @@ def inbox(conn:Connection, board):
         if refresh:
             conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
             RenderMenuTitle(conn,title)
+            if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+                win = False
+                coff = 3
+            else:
+                win = True
+                coff = 0
             if int(conn.bbs.BoardOptions.get('board'+str(board)+'post',1)) <= conn.userclass:
                 tt = f'<RVSON>n<RVSOFF>ew {"thread" if board != 0 else "message"}{"<BR>" if conn.userclass < 10 else "-<RVSON>d<RVSOFF>elete"}'
             else:
@@ -606,7 +636,10 @@ def inbox(conn:Connection, board):
                          f'<AT x=0 y={scheight-1}>Read <RVSON>f<RVSOFF>irst/<RVSON>l<RVSOFF>ast or <RVSON>u<RVSOFF>nread msg'
                          f'<WINDOW top=3 bottom={scheight-4}>')
             refresh = False
-        conn.SendTML('<CLR>')
+        if win:
+            conn.SendTML('<CLR>')
+        else:
+            conn.SendTML('<AT x=0 y=3>')
         tpp = scheight-6    # threads per page
         last = len(threads) if len(threads) < (tpp*(page+1)) else tpp*(page+1)
         for i in range(tpp*page,last):
@@ -618,34 +651,42 @@ def inbox(conn:Connection, board):
         o_pos = 1
         while conn.connected:
             if pos != o_pos:
-                conn.SendTML(f'<AT x=0 y={pos}>&gt;')
+                conn.SendTML(f'<AT x=0 y={pos+coff}>&gt;<CRSRL>')
                 # conn.Sendall(TT.set_CRSR(0,pos)+'>')
                 o_pos = pos
             # k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]) + bytes('FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
-            k = conn.ReceiveKey(chr(ckeys['CRSRD']) + chr(ckeys['CRSRU']) + chr(ckeys['CRSRL']) + chr(ckeys['CRSRR']) + 'flu_' + ('n'if tt!='' else '') + ('d'if conn.userclass == 10 else ''))
+            k = conn.ReceiveKey(chr(ckeys['CRSRD']) + chr(ckeys['CRSRU']) + chr(ckeys['CRSRL']) + chr(ckeys['CRSRR']) + 'flu' + conn.encoder.back + ('n'if tt!='' else '') + ('d'if conn.userclass == 10 else ''))
             if len(threads) > 0:
                 if ord(k) == ckeys['CRSRD']:
                     if pos+1 < (len(threads)-(tpp*page)):    # move down
                         if pos < scheight-7:
                             pos += 1
-                            conn.SendTML('<CRSRL> ')
+                            conn.SendTML(' ')
                         elif len(threads)>(tpp*(page+1)):
                             page +=1
+                            if not win:
+                                refresh = True
                             break
                 elif ord(k) == ckeys['CRSRU']:                   # move up
                     if pos > 0:
                         pos -= 1
-                        conn.SendTML('<CRSRL> ')
+                        conn.SendTML(' ')
                     elif page > 0:
                         page -= 1
+                        if not win:
+                            refresh = True
                         break
                 elif ord(k) == ckeys['CRSRR']:                 # next page
                     if len(threads)>(tpp*(page+1)):
                         page +=1
+                        if not win:
+                            refresh = True
                         break
                 elif ord(k) == ckeys['CRSRL']:                # previous page
                     if page > 0:
                         page -= 1
+                        if not win:
+                            refresh = True
                         break
                 elif k == 'f':                  # First message
                     conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
@@ -670,7 +711,11 @@ def inbox(conn:Connection, board):
                         tml += f'<RED><LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
                     else:
                         tml += f'<RED><AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
-                    conn.SendTML(tml+f'<WINDOW top=11 bottom=13><CLR><CRSRD><WHITE><SPC n={(scwidth-20)//2}>Delete thread?(Y/N)')
+                    if conn.QueryFeature(TT.SET_WIN) < 0x80:
+                        tml += '<WINDOW top = 11 bottom =13><CLR><CRSRD>'
+                    else:
+                        tml += f'<AT x=0 y=11><SPC n={scwidth-1}><DEL> <BR><SPC n={scwidth-1}><DEL> <BR><SPC n={scwidth-1}><DEL> <BR><CRSRU n=2>'
+                    conn.SendTML(tml+f'<WHITE><SPC n={(scwidth-20)//2}>Delete thread?(Y/N)')
                     if conn.ReceiveKey('yn') == 'y':
                         deleteThread(conn,threads[pos+(tpp*page)][1])
                     refresh = True
@@ -718,7 +763,7 @@ def inbox(conn:Connection, board):
                     writeMessage(conn, destination=dest)
                 refresh = True
                 break
-            if k == '_':
+            if k == conn.encoder.back:
                 conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                 done = True
                 break
