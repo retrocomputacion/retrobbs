@@ -151,8 +151,13 @@ Urep = dict((re.escape(k), v) for k, v in Urep.items())
 def pethandler(e):
     char = b''
     if type(e) == UnicodeEncodeError:
-        if e.object[e.start] in '¿¡':
+        echar = e.object[e.start]
+        if echar in '¿¡°':
             char = b' '
+        elif echar == '\u2190':
+            char = bytes([182])
+        elif echar in NONPRINTABLE:
+            char = bytes([ord(echar)])
     elif type(e) == UnicodeDecodeError:
         ...
     return (char,e.end)
@@ -320,18 +325,20 @@ def toPETSCII(text:str,full=True):
     if full:
         pattern = re.compile("|".join(Urep.keys()))
         text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
-        text = (unicodedata.normalize('NFKD',text).encode('ascii','spaces')).decode('ascii')
+        text = (unicodedata.normalize('NFKD',text).encode('ascii','spaces')).decode('latin1')
         text = text.replace('|', chr(VLINE))
         text = text.replace('_', chr(164))
+        text = text.replace(chr(182),'_')   # Left arrow (previously replaced from unicode to ¶ by pethandler())
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
     return(text)
 
-###########################
-# Convert PETSCII to ASCII
-###########################
+###################################
+# Convert PETSCII to ASCII/Unicode
+###################################
 def toASCII(text):
     text = ''.join(chr(ord(c)-96) if ord(c)>192 else c for c in text)
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
+    text = text.replace('_','\u2190')   # Left Arrow
     return(text)
 
 ###################################

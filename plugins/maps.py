@@ -100,6 +100,9 @@ def plugFunction(conn:Connection):
         return Cluster
 
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
+    back = conn.encoder.decode(conn.encoder.back)
+    if back not in keys:
+        keys += back
     geoserver = conn.bbs.PlugOptions.get('geoserver','Nominatim')
     if geoserver == 'Photon':
         geoLoc = Photon(user_agent="RetroBBS-Maps")
@@ -166,7 +169,7 @@ def plugFunction(conn:Connection):
             mwindow = mwindow.point(lambda p: 255 if p>218 else 0)
             FT.SendBitmap(conn,mwindow.convert('1'),gfxmode=gmode,preproc=PreProcess())
             display = False
-        k = conn.ReceiveKey(b'_+-\r'+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]))
+        k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR'],ord(conn.encoder.nl),ord(conn.encoder.back)]))
         if (k == b'-') and (zoom > 3):
             zoom -= 1
             ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Tile containing "loc"
@@ -245,13 +248,13 @@ def plugFunction(conn:Connection):
             else:
                 if delta[1]-sw < 0:
                     cpos[0]-=1
-        elif (k == b'_'):   #Exit
+        elif (k[0] == ord(conn.encoder.back)):   #Exit
             conn.SendTML('<CURSOR>')
             break
-        elif (k == b'\r'):  #New Location
+        elif (k[0] == ord(conn.encoder.nl)):  #New Location
             conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
             locqry = _dec(conn.ReceiveStr(keys,30))
-            if locqry == '_':
+            if locqry == back:
                 conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors["BLACK"]} mode={conn.mode}><CURSOR>')
                 break
             conn.SendTML('<SPINNER><CRSRL>')

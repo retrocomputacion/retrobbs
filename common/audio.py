@@ -52,7 +52,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
     scwidth = conn.encoder.txt_geo[0]
     # Start with barebones MenuDic
     MenuDic = { 
-                conn.encoder.back: (H.MenuBack,(conn,),"Previous Menu",0,False),
+                conn.encoder.decode(conn.encoder.back): (H.MenuBack,(conn,),"Previous Menu",0,False),
                 conn.encoder.nl: (AudioList,(conn,title,speech,logtext,path),title,0,False)
             }
 
@@ -228,7 +228,8 @@ def _AudioDialog(conn:Connection, data):
             tml+='''<RVSON> Press &lt;x&gt; and wait to stop<BR>
 <RVSON> Press &lt;<BACK>&gt; to cancel'''
         conn.SendTML(tml)
-    if conn.ReceiveKey(conn.encoder.nl+conn.encoder.back) == conn.encoder.back:
+    back = conn.encoder.decode(conn.encoder.back)
+    if conn.ReceiveKey(conn.encoder.nl+back) == back:
         conn.SendTML('<CURSOR><SPINNER><CRSRL>')
         return False
     return True
@@ -426,7 +427,7 @@ def _DisplayCHIPInfo(conn:Connection, info):
         m = int(info['songlength'][subtune-1]/60)
         return m,info['songlength'][subtune-1]- (m*60)
 
-
+    back = conn.encoder.decode(conn.encoder.back)
     scwidth = conn.encoder.txt_geo[0]
     if isinstance(info,dict):   #.SID file
         subtune = info['startsong']
@@ -445,8 +446,8 @@ def _DisplayCHIPInfo(conn:Connection, info):
             tml += ' Any key to stop<RVSOFF><CURSOR enable=False>'
         conn.SendTML(tml)
         while True and conn.connected:
-            k = conn.ReceiveKey('<>'+conn.encoder.back+conn.encoder.nl)
-            if k == conn.encoder.back:
+            k = conn.ReceiveKey('<>'+back+conn.encoder.nl)
+            if k == back:
                 subtune = -1
                 break
             elif k == conn.encoder.nl:
@@ -464,7 +465,7 @@ def _DisplayCHIPInfo(conn:Connection, info):
         conn.SendTML('<CLR><CBMSHIFT-E><UPPER>')
         conn.Sendallbin(info)
         conn.SendTML('<YELLOW><BR>press return to play<BR><BACK> to exit<BR>any key to stop<CURSOR enable=False>')
-        if conn.ReceiveKey(conn.encoder.back+conn.encoder.nl) == conn.encoder.back:
+        if conn.ReceiveKey(back+conn.encoder.nl) == back:
             subtune = -1
     conn.SendTML('<CURSOR enable=True>')
     return subtune

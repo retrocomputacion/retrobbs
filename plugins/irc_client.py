@@ -270,8 +270,8 @@ Accepted commands:
         if r:
             try:
                 i_char = conn.socket.recv(1)
-                if i_char == b'\r' and message != '':
-                    if message =='_':
+                if i_char[0] == ord(conn.encoder.nl) and message != '':
+                    if message == conn.encoder.decode(conn.encoder.back):
                         running = False
                         c.part(channel,'Using-RetroBBS-IRC-plugin')
                         c.quit('Using-RetroBBS-IRC-plugin')

@@ -122,7 +122,7 @@ def More(conn:Connection, text, lines, colors=None):
 <INKEYS k="&#13;_" _R=_S><IF c="_S=='&#13;'"><DEL n=13><INK c={tcolor}></IF>''')
                 if conn.connected == False:
                     return(-1)
-                if k['_S'] == '_':
+                if k['_S'] == conn.encoder.decode(conn.encoder.back):
                     return(-1)
                 l = 0
         conn.SendTML(f'<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN<INK c={colors.PbColor}>]<INKEYS>')
@@ -179,10 +179,10 @@ def More(conn:Connection, text, lines, colors=None):
                 ll = lines*page
             elif ll >= (lines*page)+(lines-1):
                 if cc !=0:
-                    conn.Sendall('\r')
+                    conn.SendTML('<BR>')
                 conn.SendTML(KeyPrompt(conn,prompt+' OR <BACK>',TML=True))
-                k = conn.ReceiveKey(b'\r_')
-                if (conn.connected == False) or (k == b'_'):
+                k = conn.ReceiveKey(bytes([ord(conn.encoder.back),ord(conn.encoder.nl)]))
+                if (conn.connected == False) or (k[0] == ord(conn.encoder.back)):
                     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
                     return -1
                 conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}>') #<AT x={cc} y={(22-lines)+ll-(lines*page)}>')
@@ -261,10 +261,11 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     bline = i+1
     #scroll loop
     ldir = True	#Last scroll down?
+    back = bytes([ord(conn.encoder.back)])
     while conn.connected:
-        k = conn.ReceiveKey(b'_'+keys+ekeys)
-        if k == b'_':
-            ret = k.decode("latin1")
+        k = conn.ReceiveKey(back+keys+ekeys)
+        if k == back:
+            ret = conn.encoder.decode(k.decode('latin1'))
             break
         elif (k[0] == CursorUp) and (tline > 0):	#Scroll up
             tline -= 1

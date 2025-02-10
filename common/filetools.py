@@ -523,7 +523,7 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfer to memory',save=False):
     S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
     tml = '<AT x=0 y=2>'
-    keys = conn.encoder.back+conn.encoder.nl
+    keys = conn.encoder.decode(conn.encoder.back)+conn.encoder.nl
     scwidth = conn.encoder.txt_geo[0]
     if filetype != None:
         tml += f'<RVSON> File: {H.crop(filename,scwidth-8,conn.encoder.ellipsis)}<BR>'

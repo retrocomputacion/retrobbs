@@ -59,7 +59,8 @@ def readMessage(conn:Connection, msg_id:int):
             if win:
                 keys = ''
             else:
-                keys = conn.encoder.back
+                keys = conn.encoder.decode(conn.encoder.back)
+
             if conn.userclass == 10:    #Admin reading
                 keys += 'd'
                 adm = ' <RVSON>D<RVSOFF>elete'
@@ -105,6 +106,7 @@ def readMessage(conn:Connection, msg_id:int):
             msg,lines = formatMsg(dmsg['msg_text'],scwidth)
             # escape html characters and add line breaks
             for i,l in enumerate(msg):
+                l = l.replace('\n','')
                 msg[i] = escape(l)
                 if len(l)<scwidth:
                     msg[i] = msg[i]+'<BR>'
@@ -120,7 +122,7 @@ def readMessage(conn:Connection, msg_id:int):
                 if win:
                     k = text_displayer(conn,msg,scheight-6,None,keys)
                 else:
-                    More(conn,msg,scheight)
+                    More(conn,msg,scheight-1)
                     conn.SendTML('<DEL n=8>')
                     conn.SendTML(f'<YELLOW><HLINE n={scwidth}><GREY3>')
                     for i,o in enumerate(ol):
@@ -129,7 +131,7 @@ def readMessage(conn:Connection, msg_id:int):
                             conn.Sendall('/')
                     conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
                     k = conn.ReceiveKey(keys)
-                if k == conn.encoder.back:
+                if k == conn.encoder.decode(conn.encoder.back):
                     done = True
                     break
                 elif k == 'f':
@@ -217,87 +219,121 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
             return(k)
         
         def help(): #Display help
-            htxt= f'''--- Line editor instructions ---
+            if win:
+                htxt= f'''--- Line editor instructions ---
 
-This editor allows you to type and edit a single line at a time.
-INSERT/DELETE and CLEAR and HOME keys are supported
+This editor allows you to type 
+and edit a single line at a
+time.
+INSERT/DELETE and CLEAR and
+HOME keys are supported
 Press RETURN to accept a line
-{line_k[1]} to select a new line\n{quit_k[1]} to send/abort message
+{line_k[1]} to select a new line
+{quit_k[1]} to send/abort message
 
-Press {conn.encoder.back} to continue...'''
+Press {_dec(conn.encoder.back)} to continue...'''
+            else:
+                htxt= f'''-- Simple message editor help --
+
+Enter the following commands
+on a separate line:
+
+/s Send message
+/q Abort message
+/v View message
+/p Edit previous line
+/? This help screen
+Press {_dec(conn.encoder.back)} to continue...'''
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><CLR>')
-            text_displayer(conn,formatX(htxt,scwidth),scheight-7)
+            text_displayer(conn,formatX(htxt,scwidth),tslines)
 
         def dispMsg(startline = 0): # Display message
             nonlocal fmessage
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}>{tcolor}<CLR>')
-            endline = startline+(scheight-7)
+            if win:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}>{tcolor}<CLR>')
+            endline = startline+(tslines)
             endline = endline if len(fmessage)>=endline else len(fmessage)
             for l in range(startline,endline):
-                conn.SendTML(fmessage[l].replace('\n',''))
-                if len(fmessage[l])<scwidth:
+                fline = fmessage[l].replace('\n','')
+                conn.SendTML(fline)
+                if len(fline)<scwidth:
                     conn.SendTML('<BR>')
+            if not win:
+                conn.SendTML('<CRSRU>')
 
         def updMsg(startline=0,scroll=0,rline=0):   #Update message display
             nonlocal fmessage, lines
             tfmessage,tlines = formatMsg(message,scwidth)
-            # Compare new and old formatted message
-            # Find which line range differ after the edit.
-            if rline >=0:
-                tmpc = ' ' if len(tline)== 0 else ' ' if tline[0] == '\n' else tline[0]    # Refresh first char of line being edited
-                conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={rline}>{tcolor}{tmpc}')
-            for i in range(0+(startline-scroll),(scheight-7)+(startline-scroll)):
-                y = i-(startline-scroll)
-                if i < len(fmessage):
-                    if i < len(tfmessage):
-                        if tfmessage[i] != fmessage[i]:
+            if win:
+                # Compare new and old formatted message
+                # Find which line range differ after the edit.
+                if rline >=0:
+                    tmpc = ' ' if len(tline)== 0 else ' ' if tline[0] == '\n' else tline[0]    # Refresh first char of line being edited
+                    conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={rline}>{tcolor}{tmpc}')
+                for i in range(0+(startline-scroll),(tslines)+(startline-scroll)):
+                    y = i-(startline-scroll)
+                    if i < len(fmessage):
+                        if i < len(tfmessage):
+                            if tfmessage[i] != fmessage[i]:
+                                if conn.QueryFeature(TT.LINE_FILL):
+                                    conn.SendTML(f'<LFILL row={y+3} code=32>')
+                                else:
+                                    conn.SendTML(f'<AT x=0 y={y+3}><SPC n=32>')
+                                tmp = tfmessage[i].replace('\n','')
+                                conn.SendTML(f'<AT x=0 y={y}>'+tmp)
+                                if len(tmp)<scwidth:
+                                    conn.SendTML('<BR>')
+                        else:   # edited message has less formatted lines than before
+                            # Clear the rest of the lines
                             if conn.QueryFeature(TT.LINE_FILL):
-                                conn.Sendall(TT.Fill_Line(y+3,32))
+                                conn.SendTML(f'<LFILL row={y+3} code=32>')
                             else:
-                                conn.SendTML(f'<AT x=0 y={y+3}><SPC n=32>')
-                            tmp = tfmessage[i].replace('\n','')
-                            conn.SendTML(f'<AT x=0 y={y}>'+tmp)
-                            if len(tmp)<scwidth:
-                                conn.SendTML('<BR>')
-                    else:   # edited message has less formatted lines than before
-                        # Clear the rest of the lines
-                        if conn.QueryFeature(TT.LINE_FILL):
-                            conn.Sendall(TT.Fill_Line(y+3,32))
-                        else:
-                            conn.SendTML(f'<AT x=0 y={i+3}><SPC n=32>')
-                elif i < len(tfmessage):    # Edited message has more lines than before
-                    tmp = tfmessage[i].replace('\n','')
-                    conn.SendTML(f'<AT x=0 y={y}>'+tmp)
-                    if len(tmp)<scwidth:
-                        conn.SendTML('<BR>')
-                else:   # No more lines
-                    break
-            #Scroll
-            if scroll != 0:
-                conn.SendTML(f'<SCROLL rows={scroll}>')
-                y = 0 if scroll==-1 else scheight-8
-                conn.SendTML(f'<AT x=0 y={y}>{tfmessage[startline] if y == 0 else tfmessage[startline+(scheight-8)]}')
-                if y == 0:
-                    conn.SendTML('<HOME>')
-                else:
-                    conn.SendTML(f'<AT x=0 y={y}>')
+                                conn.SendTML(f'<AT x=0 y={i+3}><SPC n=32>')
+                    elif i < len(tfmessage):    # Edited message has more lines than before
+                        tmp = tfmessage[i].replace('\n','')
+                        conn.SendTML(f'<AT x=0 y={y}>'+tmp)
+                        if len(tmp)<scwidth:
+                            conn.SendTML('<BR>')
+                    else:   # No more lines
+                        break
+                #Scroll
+                if scroll != 0:
+                    conn.SendTML(f'<SCROLL rows={scroll}>')
+                    y = 0 if scroll==-1 else scheight-8
+                    conn.SendTML(f'<AT x=0 y={y}>{tfmessage[startline] if y == 0 else tfmessage[startline+(scheight-8)]}')
+                    if y == 0:
+                        conn.SendTML('<HOME>')
+                    else:
+                        conn.SendTML(f'<AT x=0 y={y}>')
             fmessage = tfmessage
             lines = tlines
 
         def hl_line():  # Highlight selected line
             nonlocal fmessage, line
-            conn.SendTML(f'<AT x=0 y={line}>{hlcolor}')
-            if (len(fmessage[line+ydisp]) == 0):
-                conn.Sendall('>')
-            elif (fmessage[line+ydisp][0] in ' \n'):
-                conn.Sendall('>')
+            if win:
+                conn.SendTML(f'<AT x=0 y={line}>{hlcolor}')
+                if (len(fmessage[line+ydisp]) == 0):
+                    conn.Sendall('>')
+                elif (fmessage[line+ydisp][0] in ' \n'):
+                    conn.Sendall('>')
+                else:
+                    conn.SendTML(f'<RVSON>{fmessage[line+ydisp][0]}<RVSOFF>')
+                conn.SendTML(f'<WINDOW top={scheight-3} bottom={scheight-3}><AT x=20 y=0>')
             else:
-                conn.SendTML(f'<RVSON>{fmessage[line+ydisp][0]}<RVSOFF>')
-            conn.SendTML(f'<WINDOW top={scheight-3} bottom={scheight-3}><AT x=20 y=0><RVSON><YELLOW>{len(message):0>4}/3000<RVSOFF>{tcolor}')
+                conn.SendTML(f'<BR>Topic: {topic}<BR>Characters used: ')
+            conn.SendTML(f'<RVSON><YELLOW>{len(message):0>4}/3000<RVSOFF>{tcolor}')
+            if not win:
+                conn.SendTML('<BR>')
 
         ydisp = 0   # Message display window offset
 
         scwidth,scheight = conn.encoder.txt_geo
+        if conn.QueryFeature(TT.SET_WIN) < 0x80:
+            tslines = scheight-7         # Number of visible message lines
+            win = True
+        else:
+            tslines = scheight
+            win = False
         if 'MSX' in conn.mode:
             hcode = 0x17
             tcolor = '<WHITE>'
@@ -309,69 +345,120 @@ Press {conn.encoder.back} to continue...'''
         # vfilter = bytes(string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34),'ascii')    #Valid input characters
         vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)    #Valid input characters
         ckeys = conn.encoder.ctrlkeys
-        if conn.mode == 'PET64':
-            help_k = [ckeys['F1'],'F1']
-            line_k = [ckeys['F7'],'F7']
-            quit_k = [ckeys['F8'],'F8']
-        elif conn.mode == "PET264":
-            help_k = [ckeys['HELP'],'HELP']
-            line_k = [ckeys['F3'],'F3']
-            quit_k = [ckeys['ESC'],'ESC']
-        elif conn.mode in ['PET64std','PET20std']:
-            help_k = [chr(8),'^H']
-            line_k = [chr(12),'^L']
-            quit_k = [chr(24),'^X']
-        else: #MSX
-            help_k = [ckeys['F1'],'F1']
-            line_k = [ckeys['F5'],'F5']
-            quit_k = [ckeys['F10'],'F10']
-        conn.SendTML(f'<SETOUTPUT><WINDOW top=0 bottom={scheight-1}><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="Message Editor"><YELLOW>'
-                     f'{f"<LFILL row={scheight-3} code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
-                     f'<AT x=1 y={scheight-3}><RVSON>{help_k[1]} for help<RVSOFF>')
+        if win:
+            if conn.mode == 'PET64':
+                help_k = (ckeys['F1'],'F1')
+                line_k = (ckeys['F7'],'F7')
+                quit_k = (ckeys['F8'],'F8')
+            elif conn.mode == "PET264":
+                help_k = (ckeys['HELP'],'HELP')
+                line_k = (ckeys['F3'],'F3')
+                quit_k = (ckeys['ESC'],'ESC')
+            else: #MSX
+                help_k = (ckeys['F1'],'F1')
+                line_k = (ckeys['F5'],'F5')
+                quit_k = (ckeys['F10'],'F10')
+        else:
+            help_k = line_k = quit_k = (0,'')
+        conn.SendTML(f'<SETOUTPUT><WINDOW top=0 bottom={scheight-1}><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="Message Editor"><YELLOW>')
+        if win:
+            conn.SendTML(f'{f"<LFILL row={scheight-3} code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
+                     f'<AT x=1 y={scheight-3}><RVSON>{help_k[1]} Help - {quit_k[1]} Send<RVSOFF>')
+        else:
+            conn.SendTML('Enter /? for help')
         fmessage,lines = formatMsg(message,scwidth)
-        dispMsg()
-        line = 0
-        hl_line()
         conn.SendTML(f'<PAUSE n=1><WINDOW top={scheight-2} bottom={scheight-1}>{tcolor}')
+        line = 0
         while topic == '': # Get message topic if none provided
+            if not win:
+                conn.SendTML('<BR>')
             conn.SendTML('Topic title:<BR>')
             topic = _dec(conn.ReceiveStr(vfilter, maxlen = 32))
-            conn.SendTML('<PAUSE n=0.5><CLR>')
+            if win:
+                conn.SendTML('<PAUSE n=0.5><CLR>')
             # topic = _dec(topic)
+        dispMsg()
+        hl_line()
         _LOG('Composing message',id=conn.id,v=4)
         running = True
         edit = True
         tline = fmessage[line]  # Line being edited
         column = 0
-        conn.SendTML(tline+'<HOME>')
+        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}>{tcolor}')
+        conn.SendTML(tline)
+        if win:
+            conn.SendTML('<HOME>')
         while running and conn.connected:
             try:
-                # i_char = conn.ReceiveKey(vfilter+bytes([0x0d,ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']])) #conn.socket.recv(1) #b'\r\x11\x13\x14\x1d\x85\x88\x8c\x91\x93\x94\x9d'
-                i_char = conn.ReceiveKey(vfilter + conn.encoder.nl + chr(ckeys['CRSRD']) + chr(ckeys['HOME']) + chr(ckeys['DELETE']) + chr(ckeys['CRSRR']) + chr(help_k[0]) + chr(line_k[0]) + chr(quit_k[0]) + chr(ckeys['CRSRU']) + chr(ckeys['CLEAR']) + chr(ckeys['INSERT']) + chr(ckeys['CRSRL']))
+                # print(len(tline), column)
+                i_char = conn.ReceiveKey(bytes([ord(c) for c in vfilter]+[ord(conn.encoder.nl),ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']]))
+                i_char = chr(i_char[0])
                 if edit :   # Editing text
                     if i_char == conn.encoder.nl:   # New line
+                        # check commands for non-turbo mode
+                        if not win:
+                            if tline == '/?':   # Help
+                                help()
+                                column = 0
+                                tline = ''
+                                hl_line()
+                                dispMsg()
+                                continue
+                            elif tline == '/s': # Send
+                                running = False
+                                continue
+                            elif tline == '/q': # Abort
+                                running = False
+                                message = None
+                                continue  
+                            elif tline == '/v': # View
+                                tline = ''
+                                hl_line()
+                                dispMsg()
+                                column = 0
+                                continue
+                            elif tline == '/p': # Edit previous line
+                                hl_line()
+                                if  len(fmessage) > 1:
+                                    line = len(fmessage)-2
+                                    conn.SendTML(f'<BR>{fmessage[line]}')
+                                    tline = fmessage[line]
+                                    column = len(tline)-1
+                                else:
+                                    column = 0
+                                    tline = ''
+                                continue
                         # column += 1
-                        if column <= len(tline):
-                            tline = tline[0:column] + '\n' + tline[column:]
+                        if column < len(tline):
+                            if tline[column] != '\n':
+                                tline = tline[0:column] + '\n' + tline[column:]
                         else:
                             tline += '\n'
+                        if not win:
+                            spc = scwidth - column
+                            conn.SendTML(f'<SPC n={spc}>')
+                        # print('messlen:',len(message),'\nline+ydisp[0]:',lines[line+ydisp][0],'\nline+ydisp[1]:',lines[line+ydisp][1])
                         message = message[0:lines[line+ydisp][0]]+tline+(' ' if lines[line+ydisp][2] else '')+message[lines[line+ydisp][1]:]  # Insert edited line into original message
                         rline = line
                         if not lines[line+ydisp-1][2] or column != 0: # New line not at the start of a wordwrapped line
                             line += 1
-                        column = 0
-                        if line > scheight-8:
+                        if line > tslines-1:
                             ydisp += 1
                             scroll = 1
-                            line = scheight-8
+                            line = tslines-1
                         else:
                             scroll = 0
                         updMsg(ydisp,scroll,rline)
+                        if line+ydisp >= len(lines):
+                            line -= 1
                         if len(message) < 3000:
                             if line+ydisp > len(fmessage)-1:
                                 fmessage.append('')
-                            hl_line()
-                            conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>{fmessage[line+ydisp]}<HOME>')
+                            if win:
+                                hl_line()
+                                conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>{fmessage[line+ydisp]}<HOME>')
+                            elif column > len(tline):
+                                conn.SendTML('<BR>')
                         else:   # Past character limit
                             option = dialog1()
                             if option == 's':      # Send message
@@ -379,35 +466,45 @@ Press {conn.encoder.back} to continue...'''
                             elif option == 'q':    # Abort editor
                                 running = False
                                 message = None
-                            else:                   # Keep editing
+                            elif win:                   # Keep editing
                                 conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                                 edit = False
+                        column = 0
                         tline = fmessage[line+ydisp]
-                    elif (ord(i_char) == ckeys['CRSRR']) and (column < len(tline)):   # Cursor right
+                        if (len(tline) > 0) and not win:
+                            conn.SendTML(tline)
+                            column = len(tline)
+                            if tline[-1] == '\n':
+                                column -= 1
+                    elif (ord(i_char) == ckeys['CRSRR']) and (column < len(tline)) and tline[column] != '\n':   # Cursor right
                         column += 1
                         conn.Sendall(i_char)
-                    elif (ord(i_char) == ckeys['CRSRL']) and (column > 0):                     # Cursor left
+                    elif (ord(i_char) == ckeys['CRSRL']) and (column > 0):            # Cursor left
                         column -= 1
                         conn.Sendall(i_char)
-                    elif ord(i_char) == ckeys['HOME']:                                             # Cursor home
+                    elif ord(i_char) == ckeys['HOME']:                                # Cursor home
+                        if win:
+                            conn.Sendall(i_char)
+                        elif column > 0:
+                            conn.SendTML(f'<CRSRL n={column}>')
                         column = 0
-                        conn.Sendall(i_char)
-                    elif ord(i_char) == ckeys['CLEAR']:                                            # Clear line
+                    elif win and ord(i_char) == ckeys['CLEAR']:                       # Clear line
                         column = 0
                         tline = ''
-                        conn.Sendall(i_char)
+                        if win:
+                            conn.Sendall(i_char)
                     elif (ord(i_char) == ckeys['DELETE']) and (len(tline)> 0) and (column > 0):   # Delete caracter
                         tline = tline[0:column-1] + tline[column:]
                         column -= 1
-                        conn.Sendall(i_char)
-                    elif (ord(i_char) == ckeys['INSERT']) and (scwidth > len(tline) > 0) and (column < len(tline)):   # Insert blank space
+                        conn.SendTML('<DEL>')
+                    elif (conn.mode not in ['MSXstd']) and (ord(i_char) == ckeys['INSERT']) and (scwidth > len(tline) > 0) and (column < len(tline)):   # Insert blank space
                         tline = tline[0:column] + ' ' + tline[column:]
                         conn.Sendall(i_char)
                     elif ord(i_char) == quit_k[0]:                                               # Finish editing
                         if conn.QueryFeature(TT.LINE_FILL):
-                            conn.Sendall(TT.Fill_Line(line+3,32))
+                            conn.SendTML(f'<LFILL row={line+3} code=32>')
                         else:
-                            conn.SendTML(f'<AT  x=0 y={line+3}><SPC n={scwidth}')
+                            conn.SendTML(f'<AT  x=0 y={line+3}><SPC n={scwidth}>')
                         conn.SendTML(f'<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>{fmessage[line+ydisp]}') # Clear line in display window, print newly edited line
                         option = dialog1()
                         if option == 's':      # Send message
@@ -428,7 +525,8 @@ Press {conn.encoder.back} to continue...'''
                         dispMsg(ydisp)
                         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select line (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                         edit = False
-                    elif i_char in vfilter:
+                    elif _dec(i_char) in vfilter:
+                        i_char = _dec(i_char)
                         # Alphanumeric characters
                         column += 1
                         if column <= len(tline):
@@ -451,8 +549,13 @@ Press {conn.encoder.back} to continue...'''
                                 scroll = 0
                             updMsg(ydisp,scroll,rline)
                             if len(message) < 3000:
-                                hl_line()
-                                conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>{fmessage[line+ydisp]}')
+                                if win:
+                                    hl_line()
+                                    conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
+                                else:
+                                    _tmp = 40-len(fmessage[line+ydisp-1])
+                                    conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
+                                conn.SendTML(f'{fmessage[line+ydisp]}')
                             else:   # Past character limit
                                 option = dialog1()
                                 if option == 's':      # Send message
@@ -460,7 +563,7 @@ Press {conn.encoder.back} to continue...'''
                                 elif option == 'q':    # Abort editor
                                     running = False
                                     message = None
-                                else:                   # Keep editing
+                                elif win:                   # Keep editing
                                     conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                                     edit = False
                             tline = fmessage[line+ydisp]
@@ -555,7 +658,7 @@ Press {conn.encoder.back} to continue...'''
         # Note - update() wont work with doc_id and will update all entries in table. Use upsert()
         # Note2 - update() uses doc_ids instead, but Im too lazy to change all the upsert() now ;)
         _LOG('Messaging: Message sent',id=conn.id,v=4)
-        conn.SendTML('<CLR><LTGREEN>Message sent')
+        conn.SendTML('<CLR><LTGREEN>Message sent<BELL><PAUSE n=1.5>')
     else:
         _LOG('Messaging: Message cancelled',id=conn.id,v=4)
     return m_id
@@ -571,6 +674,7 @@ def inbox(conn:Connection, board):
     else:
         hcode = 0x40
     _dec = conn.encoder.decode
+    _enc = conn.encoder.encode
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     ckeys = conn.encoder.ctrlkeys
     db:DBase = conn.bbs.database
@@ -649,13 +753,16 @@ def inbox(conn:Connection, board):
         conn.SendTML('<CURSOR enable=False><CYAN>')
         pos = 0
         o_pos = 1
+        back = conn.encoder.decode(conn.encoder.back)
         while conn.connected:
             if pos != o_pos:
                 conn.SendTML(f'<AT x=0 y={pos+coff}>&gt;<CRSRL>')
                 # conn.Sendall(TT.set_CRSR(0,pos)+'>')
                 o_pos = pos
             # k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]) + bytes('FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
-            k = conn.ReceiveKey(chr(ckeys['CRSRD']) + chr(ckeys['CRSRU']) + chr(ckeys['CRSRL']) + chr(ckeys['CRSRR']) + 'flu' + conn.encoder.back + ('n'if tt!='' else '') + ('d'if conn.userclass == 10 else ''))
+            k = conn.ReceiveKey(bytes(_enc('flu'),'latin1')+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR'],ord(conn.encoder.back),(ord(_enc('n'))if tt!='' else 0),(ord(_enc('d'))if conn.userclass == 10 else 0)]))
+            k = chr(k[0])
+            # k = conn.ReceiveKey(chr(ckeys['CRSRD']) + chr(ckeys['CRSRU']) + chr(ckeys['CRSRL']) + chr(ckeys['CRSRR']) + 'flu' + back + ('n'if tt!='' else '') + ('d'if conn.userclass == 10 else ''))
             if len(threads) > 0:
                 if ord(k) == ckeys['CRSRD']:
                     if pos+1 < (len(threads)-(tpp*page)):    # move down
@@ -688,24 +795,24 @@ def inbox(conn:Connection, board):
                         if not win:
                             refresh = True
                         break
-                elif k == 'f':                  # First message
+                elif k == _enc('f'):                  # First message
                     conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                     readMessage(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
-                elif k == 'l':                  # Last message
+                elif k == _enc('l'):                  # Last message
                     m = table.get(doc_id=threads[pos+(tpp*page)][1])
                     conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                     readMessage(conn,m['msg_prev'])
                     refresh = True
                     break
-                elif k == 'u':                  # First unread message
+                elif k == _enc('u'):                  # First unread message
                     if threads[pos+(tpp*page)][2] != None:
                         conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                         readMessage(conn,threads[pos+(tpp*page)][2].doc_id)
                         refresh = True
                         break
-                elif k == 'd':                 # Delete thread
+                elif k == _enc('d'):                 # Delete thread
                     tml = ''
                     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                         tml += f'<RED><LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
@@ -720,15 +827,16 @@ def inbox(conn:Connection, board):
                         deleteThread(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
-            if k == 'n':              # new thread
+            if k == _enc('n'):              # new thread
                 conn.SendTML('<CURSOR>')
                 if board == 0:
                     # get destination username
                     tml = ''
-                    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                        tml += f'<LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
-                    else:
-                        tml += f'<AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
+                    if conn.QueryFeature(TT.SET_WIN) < 0x80:
+                        if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+                            tml += f'<LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
+                        else:
+                            tml += f'<AT x=0 y=10><HLINE n={scwidth}><AT x=0 y=14><HLINE n={scwidth}>'
                     conn.SendTML(tml+'<WINDOW top=11 bottom=13>')
                     while conn.connected:
                         conn.SendTML('<CLR>Send PM to: ')

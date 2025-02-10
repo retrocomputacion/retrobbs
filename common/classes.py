@@ -131,7 +131,6 @@ class Encoder:
     # a string
     def wordwrap(self, text, split = False):
         lines = text.split(self.nl_out)
-        print(len(self.nl_out))
         if split:
             out = []
         else:

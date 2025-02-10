@@ -47,13 +47,16 @@ def plugFunction(conn:Connection):
         RadioTitle(conn)
         conn.SendTML('<BR>Search: <BR>(<BACK> to exit)<CRSRU><CRSRL n=3>')
         keys = string.ascii_letters + string.digits + ' +-_,.$%&'
+        back = conn.encoder.decode(conn.encoder.back)
+        if back not in keys:
+            keys += back
         termino = ''
         #Receive search term
         while termino == '':
             termino = _dec(conn.ReceiveStr(keys, columns-10, False))
             if conn.connected == False :
                 return()
-            if termino == '_':
+            if termino == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
         conn.SendTML('<BR><BR>Searching...<SPINNER><CRSRL>')
@@ -99,7 +102,7 @@ def plugFunction(conn:Connection):
             if sel == '':
                 conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 break
-            if sel == '_':
+            if sel == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
             if sel.isdigit() and int(sel) < nradios:

@@ -61,10 +61,11 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
             if conn.connected == False:
                 return()
             _LOG("Waiting for a key to continue",id=conn.id,v=4)
-            tecla = conn.ReceiveKey(b'\r_')
+            back = conn.encoder.decode(conn.encoder.back)
+            tecla = conn.ReceiveKey(back + conn.encoder.nl)
             if conn.connected == False:
                 return()
-            if tecla == b'_' or tecla == b'':
+            if tecla == back or tecla == '':
                 break
         else:
             _LOG(bcolors.WARNING+"Error grabbing video frame"+bcolors.ENDC,id=conn.id,v=1)

@@ -15,25 +15,32 @@ def RenderMenuTitle(conn:Connection,title):
     tml = '<CLR><RVSOFF>'
     # Get screen width
     scwidth = conn.encoder.txt_geo[0]
+    odd = (scwidth % 2) != 0
     if 'MSX' in conn.mode:
         cfill = 0x17
         ucorner = '<B-HALF>'
         bcorner = '<RVSON><B-HALF><RVSOFF>'
+        urcorner = f'<INK c={st.MenuTColor2}><B-HALF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><B-HALF>'
+        brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-HALF><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-HALF><RVSOFF>'
+        rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
     else:
         cfill = 64
         tml += '<LOWER>'
         ucorner = '<RVSON><U-NARROW><RVSOFF>'
         bcorner = '<RVSON><B-NARROW><RVSOFF>'
+        urcorner = f'<INK c={st.MenuTColor2}><RVSON><U-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><U-NARROW><RVSOFF>'
+        brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-NARROW><RVSOFF>'
+        rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
     # Send menu title
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        tml += f'''<INK c={st.MenuTColor2}><LFILL row=0 code={cfill}><LFILL row=2 code={cfill}><INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE><INK c={st.MenuTColor2}>{ucorner}'''
+        tml += f'''<INK c={st.MenuTColor2}><LFILL row=0 code={cfill}><LFILL row=2 code={cfill}><INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{urcorner}'''
     else:
-        tml += f'''<INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE><INK c={st.MenuTColor2}>{ucorner}'''
-    tml += f'''<RVSON> <RVSOFF><INK c={st.HlColor}> {(conn.bbs.name[:(scwidth//2)-1]+" - "+ title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]} <INK c={st.MenuTColor1}><RVSON> <RVSOFF>'''
+        tml += f'''<INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{urcorner}'''
+    tml += f'''<RVSON> <RVSOFF><INK c={st.HlColor}> {(conn.bbs.name[:(scwidth//2)-1]+" - "+ title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]} {rcolor}<RVSON> <RVSOFF>'''
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE><INK c={st.MenuTColor2}>{bcorner}'''
+        tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{brcorner}'''
     else:
-        tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE><INK c={st.MenuTColor2}>{bcorner}'''
+        tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{brcorner}'''
     conn.SendTML(tml)
 
 # Returns '[text]' prompt string in the selected style

@@ -128,6 +128,7 @@ def plugFunction(conn:Connection):
         geoLoc = Photon(user_agent="RetroBBS-Weather")
     else:
         geoLoc = Nominatim(user_agent="RetroBBS-Weather")
+    back = conn.encoder.decode(conn.encoder.back)
     while conn.connected and not done:
         conn.SendTML('<SPINNER><CRSRL>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
@@ -141,7 +142,7 @@ def plugFunction(conn:Connection):
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2><BR>')
         conn.SendTML('<YELLOW>[N]ew location or <BACK> to exit<BR>')
-        if conn.ReceiveKey('n_') == '_':
+        if conn.ReceiveKey('n' + back) == back:
             done = True
         else:
             conn.SendTML('Location:')

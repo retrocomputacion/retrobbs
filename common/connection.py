@@ -181,7 +181,7 @@ class Connection:
         if lista == b'':
             lista = bytes(self.encoder.nl,'latin1')
         if type(lista) == str:
-            lista = bytes(self.encoder.encode(lista,False),'latin1') 
+            lista = bytes(self.encoder.encode(lista,True),'latin1') 
             decode = True
         else:
             decode = False
@@ -251,7 +251,7 @@ class Connection:
     #pw = True for password entry
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
         if type(keys) == str:
-            keys  = bytes(self.encoder.encode(keys,False),'latin1')
+            keys  = bytes(self.encoder.encode(keys,True),'latin1')
         cr = bytes(self.encoder.nl,'latin1')
         bs = bytes(self.encoder.bs,'latin1')
         if cr not in keys:
@@ -360,7 +360,6 @@ class Connection:
                     maxr = 10
             if d == vall and auto:
                 break
-        print(tval)
         return(int(''.join(tval)))
 
     # Receive a date, format taken from bbs instance

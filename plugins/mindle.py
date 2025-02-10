@@ -93,25 +93,13 @@ def plugFunction(conn:Connection):
 
     players = mdata.get('players',[])
 
-    # if conn.mode == 'PET264':
-    # scolor = ecolors['DARK_GREY']
-    # else:
-    #     scolor = 11
-
     conn.SendTML(f'<TEXT border={mcolors.BgColor} background={mcolors.BgColor}><CLR>')
 
     header()
-    # if 'PET' in conn.mode:
-    #     conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
-    #     conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
-    #     conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
-    # elif 'MSX' in conn.mode:
-    #     conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
-    #     conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
-    #     conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
     xc = scwidth//4
+    back = conn.encoder.decode(conn.encoder.back)
     while conn.connected:
-        keys = '_bcd'
+        keys = 'bcd' + back
         conn.SendTML(f'<AT x={xc} y=8>')
         if (conn.userclass != 0) and (conn.userid not in players):
             KeyLabel(conn,'a','Play daily Mindle',True,mcolors)
@@ -252,6 +240,7 @@ def mindle(conn:Connection, xword: str, valid):
     bad = []
 
     badcolor = '<ORANGE>' if conn.encoder.features['bgcolor'] == 0 else '<BLACK>'
+    back = conn.encoder.decode(conn.encoder.back)
 
     t = 0   # Attempt number
     while t<6 and conn.connected:
@@ -265,11 +254,11 @@ def mindle(conn:Connection, xword: str, valid):
         t_bad   = []
         conn.SendTML(f'<AT x={column} y={line}>{"<GREY3>" if "PET" in conn.mode else "<PURPLE>"}')
         while conn.connected:   # Receive guess word
-            keys = conn.encoder.bs + conn.encoder.nl + conn.encoder.back
+            keys = conn.encoder.bs + conn.encoder.nl + back
             if len(guess) < wlen:
                 keys += string.ascii_letters
             rec = conn.ReceiveKey(keys)
-            if rec == conn.encoder.back: # Quit game
+            if rec == back: # Quit game
                 return -1*(t+1)
             if (len(guess) == wlen) and (rec == conn.encoder.nl):   # A word has been received and return/enter pressed
                 break

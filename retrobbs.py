@@ -87,6 +87,7 @@ import string
 import configparser #INI file parser
 import threading
 import errno
+from math import ceil
 
 from common import extensions as EX
 from common import turbo56k as TT
@@ -332,10 +333,11 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
 
     max_e = (scheight-5)*2      # Number of entries per page
     e_width = (scwidth//2)-4    # Max characters per entry
+    separator = '  ' if scwidth % 2 == 0 else '   '
 
     # Start with barebones MenuDic
     MenuDic = { 
-                conn.encoder.back: (MenuBack,(conn,),"Previous Menu",0,False),
+                conn.encoder.decode(conn.encoder.back): (MenuBack,(conn,),"Previous Menu",0,False),
                 conn.encoder.nl: (FileList,(conn,title,speech,logtext,path,ffilter,fhandler,transfer),title,0,False)
               }	
     _LOG(logtext,id=conn.id, v=4)
@@ -393,7 +395,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
                 label = programs[x]
         else:
             label = splitext(programs[x])[0]
-        KeyLabel(conn, valid_keys[x-start], (label+' '*e_width)[:e_width]+(''if x%2 else '  '), (x % 4)<2)
+        KeyLabel(conn, valid_keys[x-start], (label+' '*e_width)[:e_width]+(''if x%2 else separator), (x % 4)<2)
         #Add keybinding to MenuDic
         if fhandler == FT.SendFile:
             parameters = (conn,path+programs[x],True,transfer,)
@@ -434,6 +436,7 @@ def SendMenu(conn:Connection):
         #Items
         count = 0
         toggle = False
+        separator = ' ' if scwidth % 2 == 0 else '  '
         if s['columns'] < 2:
             sw = 1
             tw = scwidth-3
@@ -464,7 +467,7 @@ def SendMenu(conn:Connection):
                 KeyLabel(conn,i,title, toggle)
                 if count % sw == 0:
                     toggle = not toggle
-                    line = ' '*((tw+xw)-1-len(title))+(' 'if sw == 2 else '<GREEN><VLINE>')
+                    line = ' '*((tw+xw)-1-len(title))+(separator if sw == 2 else '<GREEN><VLINE>')
                     conn.SendTML(line)
                 else:
                     conn.SendTML(f'<SPC n={((scwidth//2)-1)-(len(title)+(3-int(xw*1.5)))}><GREEN><VLINE>')
@@ -640,7 +643,7 @@ def GetKeybindings(conn:Connection,id):
                 if e == '\r':
                     e = conn.encoder.nl
                 if e == '_':
-                    e = conn.encoder.back
+                    e = conn.encoder.decode(conn.encoder.back)
                 kb[e] = entry.copy()
                 if isinstance(kb[e][2],tuple):
                     kb[e][2]=kb[e][2][0]
@@ -854,6 +857,7 @@ def EditUser(conn:Connection):
     conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>') # Cancel any split screen/window
     done = False
     line = 64 if 'PET' in conn.mode else 23
+    back = conn.encoder.decode(conn.encoder.back)
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
         prefs = uentry.get('preferences',{'datef':conn.bbs.dateformat})
@@ -875,15 +879,15 @@ def EditUser(conn:Connection):
         conn.SendTML('<BR>')
         KeyLabel(conn,'g','Preferences',False)
         conn.SendTML('<BR>')
-        KeyLabel(conn,conn.encoder.back,'Exit',True)
+        KeyLabel(conn,back,'Exit',True)
         conn.SendTML('<BR><BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             conn.Sendall(TT.Fill_Line(13,line))
         else:
             conn.SendTML(f'<CRSRU><HLINE n={scwidth}>')
         conn.SendTML('Press option')
-        k = conn.ReceiveKey('abcdefg_')
-        if k == conn.encoder.back:
+        k = conn.ReceiveKey('abcdefg' + back)
+        if k == back:
             done = True
         elif k == 'a': #Username
             n = False
@@ -1018,9 +1022,10 @@ def EditPrefs(conn:Connection):
     conn.SendTML(f'<SPLIT row=0 multi=False btop=f{conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')    # Cancel any split screen/window
     done = False
     line = 64 if 'PET' in conn.mode else 23
+    back = conn.encoder.decode(conn.encoder.back)
     while (not done) and conn.connected:
         uentry = conn.bbs.database.chkUser(conn.username)
-        options = 'ab_'
+        options = 'ab' + back
         prefs = uentry.get('preferences',{'intro':True,'datef':conn.bbs.dateformat})
         RenderMenuTitle(conn,"Edit User Preferences")
         conn.SendTML('<CRSRD n=2>')
@@ -1047,7 +1052,7 @@ def EditPrefs(conn:Connection):
                     x += 1
                     st = not st
 
-        KeyLabel(conn,conn.encoder.back,'Exit',True)
+        KeyLabel(conn,back,'Exit',True)
         conn.SendTML('<BR><BR>')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             conn.Sendall(TT.Fill_Line(6+x,line))  # TODO: paginate preferences
@@ -1055,7 +1060,7 @@ def EditPrefs(conn:Connection):
             conn.SendTML(f'<CRSRU><HLINE n={conn.encoder.txt_geo[0]}>')
         conn.SendTML('Press option')
         k = conn.ReceiveKey(options)
-        if k == conn.encoder.back:
+        if k == back:
             done = True
         elif k == 'a':
             conn.SendTML('<BR><CRSRU>Login directly to Main menu? (Y/N) ')
@@ -1109,7 +1114,7 @@ def UserList(conn:Connection):
         conn.MenuParameters['current'] = 0
     # Start with barebones MenuDic
     MenuDic = { 
-                conn.encoder.back: (MenuBack,(conn,),"Previous Menu",0,False),
+                conn.encoder.decode(conn.encoder.back): (MenuBack,(conn,),"Previous Menu",0,False),
                 conn.encoder.nl: (UserList,(conn,),"",0,False)
               }	
     # Select screen output
@@ -1533,6 +1538,7 @@ sock.listen(2)
 conlist = {}
 conthread = threading.Thread(target = ConnTask, args = ())
 conthread.start()
+_LOG('READY.',v=1)
 while True:
     # Wait for a connection
     _LOG('Awaiting a connection',v=3)

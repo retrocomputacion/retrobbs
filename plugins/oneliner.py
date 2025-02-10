@@ -34,9 +34,9 @@ def plugFunction(conn:Connection):
         else:
             conn.SendTML(f'<PURPLE><AT x=0 y=3><RVSON><HLINE n={scwidth}>')
             if conn.T56KVer > 0:
-                conn.Sendall(f'<AT x=0 y={scheight-3}><HLINE n={scwidth}><RVSOFF>')
+                conn.SendTML(f'<AT x=0 y={scheight-3}><HLINE n={scwidth}><RVSOFF>')
             else:
-                conn.Sendall('<RVSOFF>')
+                conn.SendTML('<RVSOFF>')
         
 
     _dec = conn.encoder.decode
@@ -72,8 +72,9 @@ def plugFunction(conn:Connection):
         else:
             conn.SendTML('<BR>')
         conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message {S.KeyPrompt(conn,"<BACK>",TML=True)}<GREEN>exit')
-        comm = conn.ReceiveKey(conn.encoder.back+conn.encoder.nl)
-        if comm == conn.encoder.back:
+        back = conn.encoder.decode(conn.encoder.back)
+        comm = conn.ReceiveKey(back+conn.encoder.nl)
+        if comm == back:
             break
         if conn.T56KVer > 0:
             conn.SendTML('<CLR>')

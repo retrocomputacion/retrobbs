@@ -70,15 +70,16 @@ def plugFunction(conn:Connection):
         WikiTitle(conn)
         conn.SendTML('<BR>Search: <BR>(<BACK> to exit)<CRSRU><CRSRL n=3>')
         keys = string.ascii_letters + string.digits + ' +-_,.$%&'
-        if conn.encoder.back not in keys:
-            keys += conn.encoder.back
+        back = conn.encoder.decode(conn.encoder.back)
+        if back not in keys:
+            keys += back
         termino = ''
         #Receive search term
         while termino == '':
             termino = conn.ReceiveStr(keys, 30, False)
             if conn.connected == False :
                 return()
-            if termino == conn.encoder.back:
+            if termino == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 return()
         termino = conn.encoder.decode(termino)
@@ -93,9 +94,9 @@ def plugFunction(conn:Connection):
             options += string.ascii_lowercase[i]
             i += 1
         conn.SendTML(f'{hlcolor}[<BLUE><BACK>{hlcolor}]{TxTtag}Previous menu<BR><BR>Please select:')
-        options += conn.encoder.back+conn.encoder.nl
+        options += back+conn.encoder.nl
         sel = conn.ReceiveKey(options)
-        if sel == conn.encoder.back:
+        if sel == back:
             loop = False
         elif sel != conn.encoder.nl:
             conn.Sendall(sel)

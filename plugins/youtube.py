@@ -99,7 +99,8 @@ def plugFunction(conn:Connection,url, crop):
     conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR>'
                  f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> for a new image<BR>'
                  f'<BR>Press <KPROMPT t=_><YELLOW> to exit<BR>')
-    if conn.ReceiveKey(b'\r_') == b'_':
+    back = conn.encoder.decode(conn.encoder.back)
+    if conn.ReceiveKey(back + conn.encoder.nl) == back:
         return
     return(VV.Grabframe(conn,best,crop,tmsecs))
 
