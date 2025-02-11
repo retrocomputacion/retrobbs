@@ -85,6 +85,8 @@ Use HTML entities `&lt;` and `&gt;` to output `<` and `>` respectively, use the 
 
 If you need to escape a control code in a string parameter, instead of using the normal _Python_ forward slash (`/`) use HTML entity numbers, for example: `/r` must be represented by `&#13;`.
 
+Use the `&backsim;` entity if you want to depict the '_back key_'
+
 ---
 ---
 ## **The internal registers**
@@ -114,6 +116,20 @@ String register, any value stored into this register will be typecast to a Pytho
 
 #### **_I Integer accumulator**:
 Integer register, any value stored into this register will be typecast to a Python `int`.</br>If the typecasting fails `_I` will be `0`.
+
+#### **_BACK Read only 'back key' register**:
+This special register contains the decoded '_back key_' character for the current connection.
+Use this register when testing a variable for the '_back key_'.
+##### Example: Wait for Return/Enter or the back key, and act accordinly:
+```html
+<INKEY k='&backsim;&#13;'>
+<IF c='_A=="&#13;"'>
+    RETURN!
+</IF>
+<IF c='_A==_BACK'>
+    <BACK> BACK!
+</IF>
+```
 
 #### **Registers, parameter values and expressions**:
 The internal registers can be passed as parameters and can be used in any expression that's accepted by _Python's_ `eval()` function.
@@ -194,7 +210,7 @@ Send the _spinner_ character, which 'animates' depicting a waiting state when th
 
 ---
 #### **&lt;BACK&gt;**
-Send the character used to go back a menu/screen. `←` for Commodore platforms, `_` for MSX1.
+Display the character used to go back a menu/screen. `←` for Commodore platforms, `_` for MSX1.
 
 ---
 </br>
