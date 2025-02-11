@@ -37,7 +37,7 @@ def plugFunction(conn:Connection,url):
     scwidth,scheight = conn.encoder.txt_geo
     menucolors = [[colors.get('LIGHT_BLUE',colors.get('BLUE',colors.get('WHITE',0))),colors.get('LIGHT_GREY',colors.get('WHITE',0))],[colors.get('CYAN',colors.get('GREEN',colors.get('WHITE',0))),colors.get('YELLOW',colors.get('WHITE',0))]]
     MenuDic = {
-                conn.encoder.back: (H.MenuBack,(conn,),"Previous menu",0,False),
+                conn.encoder.decode(conn.encoder.back): (H.MenuBack,(conn,),"Previous menu",0,False),
                 conn.encoder.nl: (plugFunction,(conn,url),"",0,False)
               }
     # Text mode

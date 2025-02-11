@@ -62,6 +62,11 @@ t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
 t_gen_block = {}
 
+########################
+# INKEYS glue function
+def _inkeys(conn,k):
+    k = k.replace('\u223d',conn.encoder.decode(conn.encoder.back))
+    return conn.ReceiveKey(k)
 
 class TMLParser(HTMLParser):
     conn = None
@@ -80,7 +85,8 @@ class TMLParser(HTMLParser):
         self.t_mono = t_gen_mono.copy()
         ###
         self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])								# Update OUT command
-        self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k',conn.encoder.nl,False)])	                # Update INKEYS command
+        self.t_mono['INKEYS'] = (_inkeys,[('_R','_A'),('c','_C'),('k',conn.encoder.nl,False)])	                # Update INKEYS command
+        # self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k',conn.encoder.nl,False)])	                # Update INKEYS command
         self.t_mono['USER'] = (lambda: self.conn.username,[('_R','_S')])											# Update USER command
         if conn.QueryFeature(0xb7) >= 0x80:																			# Update INK command
             # if terminal doesnt support the ink command, try to replace it with a text color control code
@@ -363,7 +369,7 @@ class TMLParser(HTMLParser):
     # Eval parameter
     def _evalParameter(self, data, default):
         try:	#convert to target type
-            data = eval(data,{'_A':self._A,'_I':self._I,'_S':self._S,'_C':self.conn})
+            data = eval(data,{'_A':self._A,'_I':self._I,'_S':self._S,'_C':self.conn,'_BACK':self.conn.encoder.decode(self.conn.encoder.back)})
             if type(default) == int:
                 data = int(data)
         except:
