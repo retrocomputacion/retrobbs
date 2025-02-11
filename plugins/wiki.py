@@ -76,9 +76,10 @@ def plugFunction(conn:Connection):
         termino = ''
         #Receive search term
         while termino == '':
-            termino = conn.ReceiveStr(keys, 30, False)
+            termino = conn.encoder.decode(conn.ReceiveStr(keys, 30, False))
             if conn.connected == False :
                 return()
+            print(termino, back)
             if termino == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 return()

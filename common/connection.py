@@ -217,7 +217,7 @@ class Connection:
         if lista == b'':
             lista = bytes(self.encoder.nl,'latin1')
         if type(lista) == str:
-            lista = bytes(self.encoder.encode(lista,False),'latin1')
+            lista = bytes(self.encoder.encode(lista,True),'latin1')
             decode = True
         else:
             decode = False
@@ -281,7 +281,7 @@ class Connection:
                     done = True
             else:
                 done = True
-        return(cadena.decode('ascii','ignore'))
+        return(cadena.decode('latin1'))
 
     #Interactive positive integer reception with echo
     #min = minimun value
