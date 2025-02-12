@@ -3,6 +3,7 @@ import irc.client
 import string
 import select
 import socket
+from collections import deque
 
 from common.bbsdebug import _LOG,bcolors
 from common import helpers as H
@@ -32,16 +33,35 @@ def plugFunction(conn:Connection,server,port,channel):
     #Current cursor position in input window
     curcolumn = 0
     curline = 0
+    #
+    paused = False  # Chat paused when no window support
+    win = conn.QueryFeature(TT.SET_WIN) < 0x80  # Window support
+    chatdeque = deque() #Paused Chat deque 
 
     # Send TML or PETSCII list to the chat window
     def printchat(text):
-        conn.SendTML(f'<NUL n=2><WINDOW top=3 bottom={scheight-4}><AT x=0 y={scheight-7}>')
-        if isinstance(text,list):
-            for t in text:
-                conn.SendTML(t)
+        nonlocal chatdeque
+        if not paused:
+            if win:
+                conn.SendTML(f'<NUL n=2><WINDOW top=3 bottom={scheight-4}><AT x=0 y={scheight-7}>')
+            while len(chatdeque) > 0:
+                dtxt = chatdeque.pop()
+                if isinstance(dtxt,list):
+                    for t in dtxt:
+                        conn.SendTML(t)
+                else:
+                    conn.SendTML(dtxt)
+            if isinstance(text,list):
+                for t in text:
+                    conn.SendTML(t)
+            else:
+                conn.SendTML(text)
+            if win:
+                conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><AT x={curcolumn} y={curline}>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
+            else:
+                conn.SendTML(f'{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
         else:
-            conn.SendTML(text)
-        conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><AT x={curcolumn} y={curline}>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
+            chatdeque.appendleft(text)
 
     def on_currenttopic(c, event):
         txt = H.formatX('['+event.arguments[0]+'] Topic is: '+event.arguments[1],scwidth)
@@ -58,8 +78,9 @@ def plugFunction(conn:Connection,server,port,channel):
         printchat(f'<CYAN>{nickname} in use<BR>Trying {nickname}-<BR>')
         nickname += '-'
         c.nick(nickname)
-        conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}><WINDOW top={scheight-3} bottom={scheight-3}><RVSON><CRSRR>{nickname}'
-                     f'{"<GREY3>" if "PET" in conn.mode else "<GREY>"}<WINDOW top={scheight-2} bottom={scheight-1}><RVSOFF>')
+        if win:
+            conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}><WINDOW top={scheight-3} bottom={scheight-3}><RVSON><CRSRR>{nickname}'
+                         f'{"<GREY3>" if "PET" in conn.mode else "<GREY>"}<WINDOW top={scheight-2} bottom={scheight-1}><RVSOFF>')
 
     def on_pubmsg(connection, event):
         user = event.source
@@ -142,6 +163,7 @@ def plugFunction(conn:Connection,server,port,channel):
         nonlocal running
         nonlocal nickname
         nonlocal channel
+        nonlocal chatdeque
         if text.lower() == '/help':
             hstring = """----------------------------------------
 Accepted commands:
@@ -183,6 +205,7 @@ Accepted commands:
                 connection.part(oldchan,':Using-RetroBBS-IRC-plugin')
                 #connection.send_raw('PART '+oldchan+' :Using-RetroBBS-IRC-plugin')
                 connection.join(channel)
+                chatdeque.clear()   #Clear paused chat
             else:
                 printchat('Usage: JOIN &lt;channel&gt; join a new channel') #40 characters<<<<<
         elif text.lower().startswith('/names'):
@@ -206,7 +229,8 @@ Accepted commands:
         bcode = 0xA0
         hcode = 0x40
     S.RenderMenuTitle(conn,'IRC')
-    conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}>')
+    if win:
+        conn.SendTML(f'<GREEN><LFILL row={scheight-3} code={hcode}>')
     if conn.userclass > 0:
         nickname = conn.username[0:9]
     else:
@@ -217,12 +241,15 @@ Accepted commands:
     if nickname == '':
         time.sleep(0.5)
         return
-    conn.SendTML(f'<AT x=1 y={scheight-3}><RVSON><GREEN>{nickname}<BR>'
-                 f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
+    if win:
+        conn.SendTML(f'<AT x=1 y={scheight-3}><RVSON><GREEN>{nickname}<BR>'
+                    f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
     if channel == '':
         conn.SendTML(f'<YELLO>Enter channel: #{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
         channel = '#'+_dec(conn.ReceiveStr(keys,20)).translate({ord(i): None for i in '#@/"'}) #Get channel
-    conn.SendTML(f'<CLR><SPINNER><CRSRL>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
+    if win:
+        conn.SendTML('<CLR>')
+    conn.SendTML(f'<SPINNER><CRSRL>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer
     irc.client.ServerConnection.buffer_class.errors = "replace"
@@ -260,7 +287,8 @@ Accepted commands:
             conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
             time.sleep(1)
             return
-    conn.SendTML('<CLR>')
+    if win:
+        conn.SendTML('<CLR>')
     printchat('*** Use /help for help ***<BR>')
     conn.socket.setblocking(0)
     _LOG('Connected to IRC',id=conn.id,v=4)
@@ -271,20 +299,25 @@ Accepted commands:
             try:
                 i_char = conn.socket.recv(1)
                 if i_char[0] == ord(conn.encoder.nl) and message != '':
-                    if message == conn.encoder.decode(conn.encoder.back):
+                    if not win:
+                        conn.SendTML('<BR>')
+                    paused = False
+                    if message == conn.encoder.back:
                         running = False
                         c.part(channel,'Using-RetroBBS-IRC-plugin')
                         c.quit('Using-RetroBBS-IRC-plugin')
                         continue
                     elif message.startswith('/'):
                         command_parser(c,message)
-                        conn.SendTML('<CLR>')
+                        if win:
+                            conn.SendTML('<CLR>')
                         message = ''
                         curcolumn = 0
                         curline = 0
                     else:
                         c.privmsg(channel, _dec(message))
-                        conn.SendTML('<CLR>')
+                        if win:
+                            conn.SendTML('<CLR>')
                         curline = 0
                         curcolumn = 0
                         msg = H.formatX(nickname+': '+_dec(message),scwidth)
@@ -295,12 +328,19 @@ Accepted commands:
                     if chr(i_char[0]) == conn.encoder.bs:
                         if message != '':
                             message = message[:-1]
-                            conn.Sendallbin(i_char)
+                            # conn.Sendallbin(i_char)
+                            conn.SendTML('<DEL>')
                             curcolumn -=1
                             if curcolumn < 0:
                                curcolumn = scwidth-1
                                curline = 0
+                            if len(message) == 0:
+                                paused = False
+                                printchat('')
                     elif not (chr(i_char[0]) in kfilter):
+                        if len(message) == 0 and not win:
+                            printchat('-&gt; CHAT - PAUSED &lt;- <BR>')
+                            paused = True
                         message += chr(i_char[0])
                         conn.Sendallbin(i_char)
                         curcolumn +=1
@@ -317,3 +357,4 @@ Accepted commands:
     _LOG('Leaving IRC',id=conn.id,v=4)
     conn.socket.setblocking(1)
     conn.socket.settimeout(60*5)
+    chatdeque.clear()
