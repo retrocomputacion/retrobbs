@@ -197,13 +197,14 @@ def ConfigRead():
             # also needs conn.MenuParameters added to this
             # finaltuple = (conn,)+ _parms_
             if efunc in func_dic:
-                # [function_call, parameters, title, user_level, wait]
-                sentry['entrydefs'][ekey][emode] = [func_dic[efunc],tuple(parms),tentry,level,False]
+                for mode in emode.split(','):
+                    # [function_call, parameters, title, user_level, wait]
+                    sentry['entrydefs'][ekey][mode] = [func_dic[efunc],tuple(parms),tentry,level,False]
             elif efunc in PlugDict:
-                sentry['entrydefs'][ekey][emode] = [PlugDict[efunc][0],tuple(parms),tentry,level,False]
+                for mode in emode.split(','):
+                    sentry['entrydefs'][ekey][mode] = [PlugDict[efunc][0],tuple(parms),tentry,level,False]
             else:
                 raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
-
         return(sentry)
 
     #Iterate Menu Sections
@@ -327,7 +328,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
 
-    transfer &= conn.QueryFeature(TT.FILETR) < 0x80
+    # transfer &= conn.QueryFeature(TT.FILETR) < 0x80
 
     scwidth,scheight = conn.encoder.txt_geo
 

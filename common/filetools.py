@@ -15,6 +15,9 @@ from common import turbo56k as TT
 from common import style as S
 from common.bbsdebug import _LOG, bcolors
 from crc import Calculator, Configuration
+from ymodem.Socket import ModemSocket
+from ymodem.Protocol import ProtocolType
+import logging
 
 ########################################################################
 # Display image dialog
@@ -80,7 +83,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 
     lines = lines if lines < conn.encoder.txt_geo[1] else conn.encoder.txt_geo[1]
 
-    if conn.QueryFeature(TT.PRADDR) >= 0x80:
+    if conn.QueryFeature(TT.PRADDR) >= 0x80 and not save:
         return False
 
     if gfxmode == None:
@@ -452,8 +455,11 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
         if os.path.exists(file) == False:
             return False
         else:
-            with open(file,'rb') as fb:
-                data = fb.read()
+            if conn.T56KVer > 0:
+                with open(file,'rb') as fb:
+                    data = fb.read()
+            else:
+                return xFileTransfer(conn,file)
     else:
         data = file
     if (conn.QueryFeature(TT.FILETR) < 0x80):
@@ -506,6 +512,30 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
         _LOG("TransferFile: Client doesn't suppport File Transfer command", id = conn.id, v=2)
         return False
 
+
+##### X/YModem file transfer
+def xFileTransfer(conn:Connection, file, savename = None, seq=False):
+    def xread(size, timeout=3):
+        return conn.Receive(size)
+
+    def xwrite(data, timeout=3):
+        conn.Sendallbin(data)
+
+    logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+
+    conn.SendTML('<CLR><RVSOFF>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[<BACK>] Abort')
+    k = conn.ReceiveKey('ab'+conn.encoder.decode(conn.encoder.back))
+    if k == 'a':
+        psize = 128
+    elif k == 'b':
+        psize = 1024
+    else:
+        return False
+    conn.SendTML('<BR>Transferring file...<BR>')
+
+    tmodem = ModemSocket(xread, xwrite, ProtocolType.XMODEM,packet_size=psize)
+    return tmodem.send([file])
+    
 ##########################################################################################################
 # Generic file dialog
 ##########################################################################################################

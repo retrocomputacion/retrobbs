@@ -123,7 +123,9 @@ def RenderDialog(conn:Connection,height,title=None):
         else:
             conn.SendTML(f'{grey1}<LFILL row={height} code={226}>{grey3}')        
     else:
-        conn.SendTML(f'<HLINE n={scwidth}><SPC n={scwidth*height-1}>{grey1}<B-HALF n={scwidth}><HOME>{grey3}')
+        conn.SendTML(f'<HLINE n={scwidth-1}><CRSRL><INS><HLINE><CRSRR>')
+        conn.SendTML(f'<LET x=0><WHILE c="_I!={height-1}"><SPC n={scwidth-1}><CRSRL><INS> <CRSRR><INC></WHILE>{grey1}<B-HALF n={scwidth}><HOME>{grey3}')
+        # conn.SendTML(f'<HLINE n={scwidth}><SPC n={scwidth*(height-1)}>{grey1}<B-HALF n={scwidth}><HOME>{grey3}')
     if title != None:
         ctt = H.crop(title,scwidth-2,conn.encoder.ellipsis)
         conn.SendTML(f'<AT x={1+((scwidth-2)-len(ctt))/2} y=0>{ctt}<BR>')

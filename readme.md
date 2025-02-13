@@ -166,6 +166,12 @@ __New features__:
  - Support for RLE compressed Koala Paint images
  - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
  - Added, optional TML scripts for session start and logout.
+ - Support for non-Turbo56K terminals. Including support for
+    - CCGMS
+    - Novaterm
+    - HandyTerm
+    - Other Commodore 64 CG terminals
+    - MSX RS232 ROM built in terminal: CALL COMTERM 
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming
@@ -175,11 +181,12 @@ __Changes/Bug fixes__:
  - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
  - Fixed *Slideshow* handling of .C and .PET PETSCII files
  - *Weather* plugin now has more robust handling of geocoder timeouts
+ - *Weather* plugin can now fallback to text mode
  - Fixed image converter Bayer 4x4 dithering matrix
  - Added user-agent when using wikipediaapi >= 0.6.0
  - Fixed audio streaming now works when the BBS is running under Windows
  - Messaging system reworked, it now supports different screen dimensions and longer messages
-
+ - MSX-ASCII art header for the *Oneliner* plugin
  
 ---
 # 1.2 The *Turbo56K* protocol
