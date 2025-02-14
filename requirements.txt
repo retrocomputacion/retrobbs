@@ -23,3 +23,4 @@ scikit-image
 pyradios
 validators
 yt_dlp
+ymodem
