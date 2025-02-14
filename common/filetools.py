@@ -541,6 +541,7 @@ def xFileTransfer(conn:Connection, file, savename = None, seq=False):
                 else:
                     pass
         conn.socket.setblocking(True)
+        conn.socket.settimeout(conn.bbs.TOut)
         return data
 
     def xwrite(data, timeout=3):
