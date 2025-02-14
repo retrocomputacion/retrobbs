@@ -263,7 +263,10 @@ Press {_dec(conn.encoder.back)} to continue...'''
 
         def updMsg(startline=0,scroll=0,rline=0):   #Update message display
             nonlocal fmessage, lines
+
+            # print('before ',fmessage)
             tfmessage,tlines = formatMsg(message,scwidth)
+            # print('after ',tfmessage)
             if win:
                 # Compare new and old formatted message
                 # Find which line range differ after the edit.
@@ -553,8 +556,11 @@ Press {_dec(conn.encoder.back)} to continue...'''
                                     hl_line()
                                     conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
                                 else:
-                                    _tmp = 40-len(fmessage[line+ydisp-1])
-                                    conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
+                                    _tmp = scwidth-len(fmessage[line+ydisp-1])
+                                    if _tmp > 0:
+                                        conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
+                                    else:
+                                        conn.SendTML('<DEL>')   # Last character was space and the previous line had 'scwidth' characters
                                 conn.SendTML(f'{fmessage[line+ydisp]}')
                             else:   # Past character limit
                                 option = dialog1()
@@ -988,8 +994,15 @@ def formatMsg(text, columns = 40):
     output = []
     for i in text.replace('\n','\b\n').split('\n'):
         if i != '':
-            cols = columns+1 if (len(i) == columns+1 and i[-1]=='\b') else columns
-            output.extend(textwrap.wrap(i,width=cols))
+            if len(i) == columns+1 and i[-1] in [' ','\b']:
+                output.append(i)
+                output.append('')
+            else:
+              output.extend(textwrap.wrap(i,width=columns))  
+            # cols = columns+1 if (len(i) == columns+1 and i[-1]=='\b') else columns
+            # output.extend(textwrap.wrap(i,width=cols))
+            # if len(i) == columns+1 and i[-1] in [' ','\b']:
+            #     output.extend([''])
         else:
             output.extend([''])
     lines = []
