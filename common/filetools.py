@@ -5,6 +5,8 @@
 import re
 import os
 import time
+import socket
+import errno
 from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
@@ -85,18 +87,25 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 
     if conn.QueryFeature(TT.PRADDR) >= 0x80 and not save:
         return False
+    
+    cmode = conn.mode
 
+
+    gfxmulti = -1
     if gfxmode == None:
         gfxmode = conn.encoder.def_gfxmode
-    if conn.mode == 'PET64':
+    if 'PET64' in conn.mode:
         gfxhi = gfxmodes.C64HI
         gfxmulti = gfxmodes.C64MULTI
+        cmode = 'PET64'
     elif conn.mode == 'PET264':
         gfxhi = gfxmodes.P4HI
         gfxmulti = gfxmodes.P4MULTI
     elif conn.mode == 'MSX1':
         gfxhi = gfxmodes.MSXSC2
         gfxmulti = -1
+    else:
+        return False
 
     ftitle = {'.GIF':' GIF  Image ', '.PNG':' PNG  Image ', '.JPEG':' JPEG Image ', '.JPG':' JPEG Image '}
     fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
@@ -108,7 +117,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     border = None
 
     mode = 1 if gfxmode == gfxmulti else 0
-    save &= conn.QueryFeature(TT.FILETR) < 0x80
+    save &= (conn.QueryFeature(TT.FILETR) < 0x80 or conn.T56KVer == 0)
     pimg = None
     convert = False
     Source = None
@@ -127,7 +136,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                     preproc = PreProcess()
                 cropmode: cropmodes.TOP
                 if gfxmode == None:
-                    gfxmode = mode_conv[conn.mode][pimg[1]]
+                    print(mode_conv, cmode, pimg[1])
+                    gfxmode = mode_conv[cmode][pimg[1]]
                 th = 3
             else:
                 gfxmode = pimg[1]
@@ -159,7 +169,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         else:
             mode = 1 if (gfxmode == gfxmulti) else 0
         gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi
-        if preproc == None and conn.mode == 'PET264':
+        if preproc == None and cmode == 'PET264':
             preproc = PreProcess(1,1.5,1.5)
         cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither, threshold=th)
         Source.close()
@@ -210,9 +220,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         if border == None:
             border = b'\x00' if bgcolor == None else bgcolor
         border = bytes([border]) if type(border) == int else border
-        if (gfxmode == gfxmulti) or (conn.mode != 'PET64' and data[2] != None):
+        if (gfxmode == gfxmulti) or (cmode != 'PET64' and data[2] != None):
             # Set the transfer pointer + $20 (color memory)
-            if 'MSX' in conn.mode:
+            if 'MSX' in cmode:
                 binaryout += b'\x81\x21'
             else:
                 binaryout += b'\x81\x20'
@@ -228,7 +238,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                 binaryout += b'\x92\x00'
                 binaryout += border
                 binaryout += bgcolor
-                if conn.mode == 'PET264':
+                if cmode == 'PET264':
                     binaryout += gcolors[4].to_bytes(1,'big')
             else:
                 # Switch to hires mode + Page number: 0 (default) + Border color: border
@@ -242,7 +252,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         return bgcolor
     else:
         savename = os.path.splitext(os.path.basename(filename))[0]
-        if conn.mode in ['PET64','PET264']:
+        if cmode in ['PET64','PET264']:
             savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
         binaryout, savename = build_File(data,gcolors,savename, gfxmode)
         if TransferFile(conn, binaryout, savename):
@@ -516,7 +526,22 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 ##### X/YModem file transfer
 def xFileTransfer(conn:Connection, file, savename = None, seq=False):
     def xread(size, timeout=3):
-        return conn.Receive(size)
+        timeout = 3 # Override timeout parameter
+        data = b''
+        conn.socket.setblocking(False)
+        tmp = time.time()
+        while ((time.time()-tmp) < timeout) and (len(data) < size):
+            try:
+                data += conn.socket.recv(1) 
+            except socket.error as e:
+                err = e.args[0]
+                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                    time.sleep(0.5)
+                    continue
+                else:
+                    pass
+        conn.socket.setblocking(True)
+        return data
 
     def xwrite(data, timeout=3):
         conn.Sendallbin(data)
@@ -535,7 +560,8 @@ def xFileTransfer(conn:Connection, file, savename = None, seq=False):
 
     tmodem = ModemSocket(xread, xwrite, ProtocolType.XMODEM,packet_size=psize)
     return tmodem.send([file])
-    
+
+
 ##########################################################################################################
 # Generic file dialog
 ##########################################################################################################
