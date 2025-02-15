@@ -406,6 +406,8 @@ def _Register():
     e3.ctrlkeys = e2.ctrlkeys
     e3.palette = PALETTE
     e3.colors  = e0.colors
+    e3.def_gfxmode = gfxmodes.C64MULTI
+    e3.gfxmodes = (gfxmodes.C64HI, gfxmodes.C64MULTI)
 
     e4 = PETencoder('PET264std')
     e4.minT56Kver = 0
@@ -417,6 +419,8 @@ def _Register():
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER, 'ESC':ESC}
     e4.palette = PALETTE
     e4.colors  = e0.colors
+    e4.def_gfxmode = gfxmodes.P4HI
+    e4.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
     e4.features['bgcolor'] = 0
     e4.features['blink'] = True
     e4.features['scrollback'] = False

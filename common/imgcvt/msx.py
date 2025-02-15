@@ -7,6 +7,7 @@ from PIL import Image
 
 from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
+from common.imgcvt.types import gfxmodes
 
 
 #Palette structure
@@ -113,7 +114,7 @@ GFX_MODES=[{'name':'MSX1 Screen 2','bpp':1,'attr':(8,1),'global_colors':(False,F
 # Load native image format
 ##############################
 def load_Image(filename:str):
-    multi = 0
+    multi = gfxmodes.MSXSC2
     data = [None]*3
     gcolors = [0]*2  # Border, Background
     extension = os.path.splitext(filename)[1].upper()

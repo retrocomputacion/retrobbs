@@ -34,7 +34,7 @@ import logging
 ########################################################################
 def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
-    keys= conn.encoder.nl
+    keys=  conn.encoder.decode(conn.encoder.back) #conn.encoder.nl
     tml = ''
     if width != 0:
         tml += f'<RVSON> Original size: {width}x{height}<BR><BR>'
@@ -52,7 +52,10 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     if save:
         tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
         keys += 's'
-    tml += '<RVSON> &lt; RETURN &gt; to view image<BR><CURSOR enable=False>'
+    if conn.QueryFeature(TT.PRADDR) < 0x80:
+        tml += '<RVSON> &lt; RETURN &gt; to view image<BR>'
+        keys += conn.encoder.nl
+    tml += '<RVSON> &lt; <BACK> &gt; to exit<BR><CURSOR enable=False>'
     conn.SendTML(tml)
     while conn.connected:
         k = conn.ReceiveKey(keys)
@@ -66,6 +69,9 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
             out |= 0x80
             break
         elif k == conn.encoder.nl:
+            break
+        else:
+            out = -1
             break
     conn.SendTML('<RVSON><CURSOR>')
     return out
@@ -179,6 +185,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         border = bgcolor if border == None else bytes([border])
     elif pimg != None and dialog:
         mode = ImageDialog(conn,text,save=save)
+        if mode < 0:
+            return False
 
 
     alines = lines*(8//GFX_MODES[gfxmode]['attr'][1])   # <<<< This assumes a text line is 8 pixels tall
@@ -255,10 +263,18 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         if cmode in ['PET64','PET264']:
             savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
         binaryout, savename = build_File(data,gcolors,savename, gfxmode)
-        if TransferFile(conn, binaryout, savename):
-            conn.SendTML(fok)
+        if conn.T56KVer > 0:
+            if TransferFile(conn, binaryout, savename):
+                conn.SendTML(fok)
+            else:
+                conn.SendTML(fabort)
         else:
-            conn.SendTML(fabort)
+            with open(conn.bbs.Paths['temp']+savename,"wb") as oh:
+                oh.write(binaryout)
+            if xFileTransfer(conn,conn.bbs.Paths['temp']+savename):
+                conn.SendTML(fok)
+            else:
+                conn.SendTML(fabort)
         conn.SendTML('<KPROMPT t=RETURN>')
         return
 
@@ -525,6 +541,10 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 
 ##### X/YModem file transfer
 def xFileTransfer(conn:Connection, file, savename = None, seq=False):
+
+    tbytes = -1
+    okbytes = 0
+
     def xread(size, timeout=3):
         timeout = 3 # Override timeout parameter
         data = b''
@@ -547,7 +567,14 @@ def xFileTransfer(conn:Connection, file, savename = None, seq=False):
     def xwrite(data, timeout=3):
         conn.Sendallbin(data)
 
-    logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+    def xcallback(tindex, tname, tpackets, spackets):
+        nonlocal tbytes, okbytes
+        # print(f'Task Name: {tname}\nTask index: {tindex} - Total bytes: {tpackets} - OK bytes: {spackets}')
+        if tbytes == -1:
+            tbytes = tpackets
+        okbytes = spackets
+
+    # logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
     conn.SendTML('<CLR><RVSOFF>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[<BACK>] Abort')
     k = conn.ReceiveKey('ab'+conn.encoder.decode(conn.encoder.back))
@@ -560,7 +587,9 @@ def xFileTransfer(conn:Connection, file, savename = None, seq=False):
     conn.SendTML('<BR>Transferring file...<BR>')
 
     tmodem = ModemSocket(xread, xwrite, ProtocolType.XMODEM,packet_size=psize)
-    return tmodem.send([file])
+    result = tmodem.send([file], callback=xcallback)
+    conn.SendTML('<BR><PAUSE n=1>')
+    return tbytes - okbytes == 0
 
 
 ##########################################################################################################

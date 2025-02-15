@@ -7,6 +7,7 @@ from PIL import Image
 
 from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
+from common.imgcvt.types import gfxmodes
 
 #Palette structure
 Palette_Colodore = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':0},
@@ -212,7 +213,7 @@ GFX_MODES=[{'name':'C64 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False
 # Load native image format
 ##############################
 def load_Image(filename:str):
-    multi = 0
+    multi = gfxmodes.C64HI
     data = [None]*3
     gcolors = [0]*2  # Border, Background
     extension = os.path.splitext(filename)[1].upper()
@@ -258,7 +259,7 @@ def load_Image(filename:str):
                 ifile.read(14)
                 # Color data
                 data[2] = ifile.read(1000)
-                multi = 1
+                multi = gfxmodes.C64MULTI
                 text = 'Advanced Art Studio'
             else:
                 return None
@@ -274,7 +275,7 @@ def load_Image(filename:str):
                 # Read background color
                 gcolors[1] = ifile.read(1)[0]
                 gcolors[0] = gcolors[1]
-                multi = 1
+                multi = gfxmodes.C64MULTI
                 text = 'Koala Paint'
             else:
                 return None
@@ -304,7 +305,7 @@ def load_Image(filename:str):
                 data[2] = d_buffer[9000:10000]
                 gcolors[1] = d_buffer[10000]
                 gcolors[0] = gcolors[1]
-                multi = 1
+                multi = gfxmodes.C64MULTI
                 text = 'Koala Paint (RLE)'
             else:
                 return None
@@ -318,7 +319,7 @@ def load_Image(filename:str):
     fsPal = [element for sublist in rgb_in for element in sublist]
     plen = len(fsPal)//3
     fsPal.extend(fsPal[:3]*(256-plen))
-    if multi == 0:
+    if multi == gfxmodes.C64HI:
         nimg = np.empty((200,320),dtype=np.uint8)
         for c in range(1000):
             cell = np.unpackbits(np.array(list(data[0][c*8:(c+1)*8]),dtype=np.uint8), axis=0)

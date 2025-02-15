@@ -12,13 +12,12 @@ from common.imgcvt import msx as msx
 #import cvtmods.zxspectrum as zx
 from common.imgcvt import palette as Palette
 from common.imgcvt import dither as DT
+from common.imgcvt.types import gfxmodes, cropmodes
 import os
-
-from enum import IntEnum
 
 #Gfx modes
 GFX_MODES = []
-gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI','MSXSC2'], start=0)
+# gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI','MSXSC2'], start=0)
 
 #Mode conversion mapping
 mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64MULTI,gfxmodes.MSXSC2:gfxmodes.C64MULTI},
@@ -26,7 +25,7 @@ mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64
              'MSX1':{gfxmodes.P4HI:gfxmodes.MSXSC2,gfxmodes.P4MULTI:gfxmodes.MSXSC2,gfxmodes.C64HI:gfxmodes.MSXSC2,gfxmodes.C64MULTI:gfxmodes.MSXSC2}}
 
 #Image scale/crop modes
-cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
+# cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
 
 #Native format filename extensions
 im_extensions = c64.Native_Ext + p4.Native_Ext + msx.Native_Ext
@@ -423,16 +422,16 @@ def open_Image(filename:str):
     extension = os.path.splitext(filename)[1].upper()
     if extension in c64.Native_Ext:
         result = c64.load_Image(filename)
-        if result != None:
-            result[1] = gfxmodes.C64HI + result[1]
+        # if result != None:
+        #     result[1] = gfxmodes.C64HI + result[1]
     elif extension in p4.Native_Ext:
         result = p4.load_Image(filename)
-        if result != None:
-            result[1] = gfxmodes.P4HI + result[1]
+        # if result != None:
+        #     result[1] = gfxmodes.P4HI + result[1]
     elif extension in msx.Native_Ext:
         result = msx.load_Image(filename)
-        if result != None:
-            result[1] = gfxmodes.MSXSC2 + result[1]
+        # if result != None:
+        #     result[1] = gfxmodes.MSXSC2 + result[1]
     else:
         return None
     return result

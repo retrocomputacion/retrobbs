@@ -7,6 +7,7 @@ from PIL import Image
 
 from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
+from common.imgcvt.types import gfxmodes
 
 # TED YCbCr Values, Derived from Yape/VICE
 TED_luminances = [0.125, 0.1875, 0.25, 0.3125, 0.46875, 0.5625, 0.75, 1]	#VICE luminances
@@ -201,7 +202,7 @@ GFX_MODES=[{'name':'Plus/4 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,Fa
 # Load native image format
 ##############################
 def load_Image(filename:str):
-    multi = 0
+    multi = gfxmodes.P4HI
     data = [None]*3
     gcolors = [0]*5 # Border, Background, MC1, MC2, MC3
     extension = os.path.splitext(filename)[1].upper()
@@ -223,7 +224,7 @@ def load_Image(filename:str):
                     # Background
                     tmp = ifile.read(1)[0]
                     gcolors[1] = ((tmp&240)>>4)+((tmp&15)<<4)
-                    multi = 1
+                    multi = gfxmodes.P4MULTI
                     text = 'Multi-Botticelli'
                 else:
                     # Skip
@@ -245,7 +246,7 @@ def load_Image(filename:str):
     fsPal = [element for sublist in rgb_in for element in sublist]
     plen = len(fsPal)//3
     fsPal.extend(fsPal[:3]*(256-plen))
-    if multi == 0:
+    if multi == gfxmodes.P4HI:
         nimg = np.empty((200,320),dtype=np.uint8)
         for c in range(1000):
             cell = np.unpackbits(np.array(list(data[0][c*8:(c+1)*8]),dtype=np.uint8), axis=0)
