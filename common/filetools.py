@@ -271,7 +271,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         else:
             with open(conn.bbs.Paths['temp']+savename,"wb") as oh:
                 oh.write(binaryout)
-            if xFileTransfer(conn,conn.bbs.Paths['temp']+savename):
+            if xFileTransfer(conn,conn.bbs.Paths['temp']+savename,savename):
                 conn.SendTML(fok)
             else:
                 conn.SendTML(fabort)
@@ -485,7 +485,7 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
                 with open(file,'rb') as fb:
                     data = fb.read()
             else:
-                return xFileTransfer(conn,file)
+                return xFileTransfer(conn,file,savename if savename != None else '')
     else:
         data = file
     if (conn.QueryFeature(TT.FILETR) < 0x80):
@@ -540,7 +540,7 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 
 
 ##### X/YModem file transfer
-def xFileTransfer(conn:Connection, file, savename = None, seq=False):
+def xFileTransfer(conn:Connection, file, savename = '', seq=False):
 
     tbytes = -1
     okbytes = 0
@@ -585,6 +585,7 @@ def xFileTransfer(conn:Connection, file, savename = None, seq=False):
     else:
         return False
     conn.SendTML('<BR>Transferring file...<BR>')
+    conn.Sendall(savename)
 
     tmodem = ModemSocket(xread, xwrite, ProtocolType.XMODEM,packet_size=psize)
     result = tmodem.send([file], callback=xcallback)

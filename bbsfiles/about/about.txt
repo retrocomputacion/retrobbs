@@ -1,20 +1,25 @@
+RetroBBS server v0.60
 
-Retro64 BBS server 0.9 running on Linux
+A BBS system written in Python, aimed at retro computers running the RetroTerm terminal software.
 
-Sysop: sysop
-Location: Argentina
-
-Music, graphics, games, wikipedia
 
 List of TURBO56K BBS
 ====================
 
-Thierry's Lair (English):
-        thierryslair.ddnsfree.com:64128
+Thierry's Lair:
+thierryslair.ddnsfree.com:64128
 
-BBS Drean C64 (English):
-            bbsdreanc64.hopto.org:10000
-            bbsdreanc64.hopto.org:10010
+LU4FBU BBS:
+lu4fbu.ddns.net:6400
 
-64 BBS (English):
-                    64bbs.ddns.net:6400
+Omega 64 BBS:
+omegabbs.scumm.it:6400
+
+SotanoMSXBBS:
+sotanomsxbbs.org:6400
+
+Temporal Vortex:
+bbs.gunstar.one:6400
+
+Vaporatorious 64:
+jsanchez.ddns.net:6400
