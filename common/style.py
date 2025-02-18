@@ -55,8 +55,8 @@ def KeyPrompt(conn:Connection, text, style=default_style, TML=False):
         else:
             if conn.QueryFeature(TT.INK) >= 0x80:																			# Update INK command
                 tmp = pal.items()
-                bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else 0
-                tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else 0
+                bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
+                tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
             else:
                 bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
                 tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)

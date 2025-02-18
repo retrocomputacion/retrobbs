@@ -659,7 +659,7 @@ def SendText(conn:Connection, filename, title='', lines=25):
         conn.SendTML('<CLR>')
 
     if filename.endswith(('.txt','.TXT')):
-        #Convert plain text to PETSCII and display with More
+        #Convert format text to the client's screen width and display with More
         with open(filename,"r") as tf:
             ot = tf.read()
         text = H.formatX(ot,conn.encoder.txt_geo[0])

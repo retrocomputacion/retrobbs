@@ -52,7 +52,7 @@ def plugFunction(conn:Connection):
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
     ecolors = conn.encoder.colors
     wcolors = bbsstyle(ecolors)
-    wcolors.TxtColor = ecolors.get('DARK_GREY',0) if 'PET' in conn.mode else ecolors.get('BLUE',0)
+    wcolors.TxtColor = ecolors.get('DARK_GREY',0) if 'PET64' in conn.mode else ecolors.get('BLUE',0)
     TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
     wcolors.PbColor = ecolors.get('BLACK',0)
     wcolors.PtColor = ecolors.get('BLUE',0)
