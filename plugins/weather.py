@@ -89,7 +89,7 @@ def setup():
 #########################################
 def plugPrefs(conn:Connection = None, param = None, value = None):
     if conn == None: # Get parameter list
-        return [{'name':'wxunits','title':'Weather units:','prompt':'Set weather units:','values':{'F':'Imperial','C':'Metric'}}]
+        return [{'name':'wxunits','title':'Weather units','prompt':'Set weather units:','values':{'F':'Imperial','C':'Metric'}}]
     elif param != None:
         if value == None: # Get parameter value
             if param == 'wxunits':
@@ -141,7 +141,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(img)
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2><BR>')
-        conn.SendTML('<YELLOW>[N]ew location or <BACK> to exit<BR>')
+        conn.SendTML('<FORMAT><YELLOW>[N]ew location or <BACK> to exit<BR></FORMAT>')
         if conn.ReceiveKey('n' + back) == back:
             done = True
         else:

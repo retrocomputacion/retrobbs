@@ -131,7 +131,10 @@ def ConfigRead():
         PlugDict = bbs_instance.plugins
         nchar = 0   # LABEL (no associated key) entries use chars 0x00 to 0x0c
         for e in range(0,sentry['entries']):
-            tentry = cfg[key]['entry'+str(e+1)+'title']	#Entry Title
+            try:
+                tentry = cfg[key]['entry'+str(e+1)+'title']	#Entry Title
+            except:
+                raise Exception(f'Configuration file error:\n entry{str(e+1)}title not found')
             if sentry['columns'] < 2:
                 dentry = cfg.get(key,'entry'+str(e+1)+'desc', fallback = '')
                 if dentry != '':
@@ -141,7 +144,7 @@ def ConfigRead():
                 try:
                     ekey = cfg[key]['entry'+str(e+1)+'key']		#Entry Key binding
                 except:
-                    raise Exception('Configuration file - Menu entry missing associated key')
+                    raise Exception('Configuration file error:\n Menu entry missing associated key')
             else:
                 ekey = chr(nchar)
                 nchar += 1
@@ -840,6 +843,8 @@ def SignIn(conn:Connection):
 # This always runs outside the mainloop regardless of where is called
 ######################################################################
 def EditUser(conn:Connection):
+    u_items = [('a','Username','uname'),('b','First name','fname'),('c','Last name','lname'),('d','Birthdate','bday'),('e','Country','country')]
+
     _dec = conn.encoder.decode
     _LOG('Editing user '+conn.username, v=3)
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
@@ -866,16 +871,10 @@ def EditUser(conn:Connection):
         dout = date_strings[prefs.get('datef',conn.bbs.dateformat)][1]
         RenderMenuTitle(conn,"Edit User Data")
         conn.SendTML('<CRSRD n=2>')
-        KeyLabel(conn,'a','Username: '+uentry['uname'],True)
-        conn.SendTML('<BR>')
-        KeyLabel(conn,'b','First name: '+uentry['fname'],False)
-        conn.SendTML('<BR>')
-        KeyLabel(conn,'c','Last name: '+uentry['lname'],True)
-        conn.SendTML('<BR>')
-        KeyLabel(conn,'d','Birthdate: '+datetime.datetime.strptime(uentry['bday'],'%d/%m/%Y').strftime(datestr),False)
-        conn.SendTML('<BR>')
-        KeyLabel(conn,'e','Country: '+uentry['country'],True)
-        conn.SendTML('<BR>')
+        for k,l,f in u_items:
+            label = crop(l, scwidth-(6+len(uentry[f])),conn.encoder.ellipsis)
+            KeyLabel(conn,k,f'{label}: {uentry[f]}',True)
+            conn.SendTML('<BR>')
         KeyLabel(conn,'f','Change password',False)
         conn.SendTML('<BR>')
         KeyLabel(conn,'g','Preferences',False)
@@ -1022,6 +1021,7 @@ def EditUser(conn:Connection):
 def EditPrefs(conn:Connection):
     conn.SendTML(f'<SPLIT row=0 multi=False btop=f{conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')    # Cancel any split screen/window
     done = False
+    scwidth = conn.encoder.txt_geo[0]
     line = 64 if 'PET' in conn.mode else 23
     back = conn.encoder.decode(conn.encoder.back)
     while (not done) and conn.connected:
@@ -1030,9 +1030,11 @@ def EditPrefs(conn:Connection):
         prefs = uentry.get('preferences',{'intro':True,'datef':conn.bbs.dateformat})
         RenderMenuTitle(conn,"Edit User Preferences")
         conn.SendTML('<CRSRD n=2>')
-        KeyLabel(conn,'a','Login to Main menu: '+('No' if prefs.get('intro',True) else 'Yes'),True)
+        label = crop('Login to Main menu', scwidth-9,conn.encoder.ellipsis)
+        KeyLabel(conn,'a',f'{label}: {"No" if prefs.get("intro",True) else "Yes"}',True)
         conn.SendTML('<BR>')
-        KeyLabel(conn,'b','Date format: '+date_strings[prefs.get('datef',conn.bbs.dateformat)][1],False)
+        label = crop('Date format', scwidth-(6+len(date_strings[prefs.get('datef',conn.bbs.dateformat)][1])),conn.encoder.ellipsis)
+        KeyLabel(conn,'b',f'{label}: {date_strings[prefs.get("datef",conn.bbs.dateformat)][1]}',True)
         conn.SendTML('<BR>')
         x = 2
         st = True
@@ -1046,7 +1048,8 @@ def EditPrefs(conn:Connection):
                     value = ppf(conn,i['name'])
                     if type(pv) == dict:    # Preference can have a given set of values
                         value = pv[value]   # Translate preference value to a verbose string
-                    KeyLabel(conn,valid_keys[x],i['title']+' '+value, st)
+                    label = crop(i['title'], scwidth-(6+len(value)),conn.encoder.ellipsis)
+                    KeyLabel(conn,valid_keys[x],label+': '+value, st)
                     conn.SendTML('<BR>')
                     options += valid_keys[x]
                     opdic[valid_keys[x]] = (ppf, i)

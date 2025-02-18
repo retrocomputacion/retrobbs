@@ -30,9 +30,9 @@ def setup():
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
-        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR>{hlcolor}Wikipedia, the free Enciclopedia<BR>')
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR>{hlcolor}{crop("Wikipedia, the free Enciclopedia",scwidth,conn.encoder.ellipsis)}')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-            conn.SendTML(f'{TxTtag}<LFILL row=1 code={hcode}>')
+            conn.SendTML(f'{TxTtag}<AT x=0 y=2><LFILL row=1 code={hcode}>')
         else:
             conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
         conn.SendTML(f'<WINDOW top=2 bottom={scheight-1}>')	#Set Text Window
@@ -169,7 +169,10 @@ def plugFunction(conn:Connection):
                     rcrsr = '<CRSRR n=6><R-NARROW>'
                 else:
                     bcode = 0xA0
-                    rcrsr = '<CRSRR n=14><R-NARROW>'
+                    if 'PET20' in conn.mode:
+                        rcrsr = ''
+                    else:
+                        rcrsr = '<CRSRR n=14><R-NARROW>'
                 if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                     conn.SendTML(f'<BLUE><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
                 else:
