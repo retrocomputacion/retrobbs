@@ -306,8 +306,13 @@ class PETencoder(Encoder):
                 _copy.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])
                 _copy.txt_geo = (40,sch[id])
             elif id == b'C64CO':
+                conn.Sendallbin(b'\x80\x80')    # Xgraphic handshake
+                if conn.NBReceive(1,2) == b'\xba':
+                    conn.SendTML('Xgraphic compatible Terminal')
+                    _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
+                    _copy.features['scrollback'] = True
                 _copy.features['bgcolor'] = 0
-                conn.SendTML('Screen lines? (25): ')
+                conn.SendTML('<BR>Screen lines? (25): ')
                 _copy.txt_geo = (40,conn.ReceiveInt(1,25,25))
             return _copy
         elif self.name == 'PET264std':
@@ -315,6 +320,15 @@ class PETencoder(Encoder):
             return None
         else:
             return None
+
+    ### Xgraphic SCROLL replacement
+    def _scroll(self,rows):
+        if rows > 0:
+            return (chr(0x80)+'V')*rows
+        elif rows < 0:
+            return (chr(0x80)+'W')*abs(rows)
+        else:
+            return ''
 
 ####################################################
 # Convert ASCII/unicode text to PETSCII

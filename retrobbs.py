@@ -1223,22 +1223,23 @@ RUNNING UNDER:<BR>
         time.sleep(1)
         datos = b""
         # conn.socket.settimeout(5.0)
-        conn.socket.setblocking(False)
+        # conn.socket.setblocking(False)
         conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
-        tmp = time.time()
-        while ((time.time()-tmp) < 5) and (len(datos) < 2):
-            try:
-                datos += conn.socket.recv(1) 
-            except socket.error as e:
-                err = e.args[0]
-                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                    time.sleep(0.5)
-                    continue
-                else:
-                    pass
-        conn.socket.setblocking(True)
-        # datos = conn.Receive(2)
-        conn.socket.settimeout(_tout)
+        datos = conn.NBReceive(2,5)
+        # tmp = time.time()
+        # while ((time.time()-tmp) < 5) and (len(datos) < 2):
+        #     try:
+        #         datos += conn.socket.recv(1) 
+        #     except socket.error as e:
+        #         err = e.args[0]
+        #         if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+        #             time.sleep(0.5)
+        #             continue
+        #         else:
+        #             pass
+        # conn.socket.setblocking(True)
+        # # datos = conn.Receive(2)
+        # conn.socket.settimeout(_tout)
         _LOG('ID:', datos[0:2],id=conn.id,v=4)
         if datos[0:2] == b"RT":
             datos = datos[2:]
@@ -1250,44 +1251,7 @@ RUNNING UNDER:<BR>
             t56kver = ord(dato1)+((ord(dato2))/10)
             if t56kver > 0.4:
                 conn.SetMode(datos,t56kver)
-                # GetTerminalFeatures(conn)
-                # if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
-                #     _LOG('Sending intro pic',id=conn.id,v=4)
-                #     if conn.mode == 'PET264':
-                #         splash = 'splash.boti'
-                #     elif conn.mode == 'PET64':
-                #         splash = 'splash.art'
-                #     else:
-                #         splash = 'splash.sc2'
-                #     bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
-                #     _LOG('Spliting Screen',id=conn.id,v=4)
-                #     conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
-                # time.sleep(1)
-                # Done = False
-                # tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CLR>'
-                # while True:
-                #     r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
-                #     if not conn.connected:
-                #         return()
-                #     t = r['_A']
-                #     if t == 'l':
-                #         SignIn(conn)
-                #         if conn.username != '_guest_':
-                #             conn.SendTML(tml)
-                #             uentry = conn.bbs.database.chkUser(conn.username)
-                #             prefs = uentry.get('preferences',{'intro':True})
-                #             if prefs['intro']:
-                #                 SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
-                #             conn.SendTML('<CURSOR>')
-                #             break   #Done = True
-                #     elif t == 'g':
-                #         conn.SendTML(tml)
-                #         SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
-                #         conn.SendTML('<CURSOR>')
-                #         break   #Done = True
-                #     else:
-                #         conn.SendTML(tml)
-                #         break   #Done = True
+
             else:
                 _LOG('Old terminal detected - Terminating',id=conn.id)
                 conn.SendTML('Please use RETROTERM v0.13 or posterior<BR> For the latest version visit<BR>WWW.PASTBYTES.COM/RETROTERM<BR><WHITE>')
@@ -1299,22 +1263,23 @@ RUNNING UNDER:<BR>
             conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')
 
             time.sleep(1)
-            datos = b""
+            # datos = b""
             # conn.socket.settimeout(5.0)
-            conn.socket.setblocking(False)
-            tmp = time.time()
-            while ((time.time()-tmp) < 10) and (len(datos) < 1):
-                try:
-                    datos = conn.socket.recv(1) 
-                except socket.error as e:
-                    err = e.args[0]
-                    if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                        time.sleep(0.5)
-                        continue
-                    else:
-                        pass
-            conn.socket.setblocking(True)
-            conn.socket.settimeout(_tout)
+            # conn.socket.setblocking(False)
+            # tmp = time.time()
+            # while ((time.time()-tmp) < 10) and (len(datos) < 1):
+            #     try:
+            #         datos = conn.socket.recv(1) 
+            #     except socket.error as e:
+            #         err = e.args[0]
+            #         if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+            #             time.sleep(0.5)
+            #             continue
+            #         else:
+            #             pass
+            # conn.socket.setblocking(True)
+            # conn.socket.settimeout(_tout)
+            datos = conn.NBReceive(1,10)
             if len(datos) == 0:
                 datos = b'\x00'
             encoders = []

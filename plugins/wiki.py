@@ -34,6 +34,8 @@ def plugFunction(conn:Connection):
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             conn.SendTML(f'{TxTtag}<AT x=0 y=2><LFILL row=1 code={hcode}>')
         else:
+            if conn.encoder.txt_geo[0] > 32:
+                conn.SendTML('<BR>')
             conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
         conn.SendTML(f'<WINDOW top=2 bottom={scheight-1}>')	#Set Text Window
 
@@ -79,7 +81,6 @@ def plugFunction(conn:Connection):
             termino = conn.encoder.decode(conn.ReceiveStr(keys, 30, False))
             if conn.connected == False :
                 return()
-            print(termino, back)
             if termino == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 return()

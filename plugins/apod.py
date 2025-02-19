@@ -125,7 +125,6 @@ def plugFunction(conn:Connection):
             texto += at+tdesc
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
             tecla = text_displayer(conn,texto,scheight-4,ekeys='v')
-            print(tecla)
             conn.SendTML('<WINDOW>')
             back = conn.encoder.decode(conn.encoder.back)
             if conn.connected == False:

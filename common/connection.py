@@ -13,6 +13,7 @@ from common import turbo56k as TT
 from common.classes import BBS, bbsstyle, Encoder
 import time
 from common.parser import TMLParser
+import errno
 
 # Dictionary of client variant -> Encoder
 clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264', 'M1':'MSX1'}
@@ -175,6 +176,26 @@ class Connection:
                     cadena = b''
                     break
         return cadena
+
+    #Non-blocking receive up to (count) binary chars from socket, within (timeout) seconds
+    def NBReceive(self, count:int=1, timeout:float=3):
+        data = b""
+        # conn.socket.settimeout(5.0)
+        self.socket.setblocking(False)
+        tmp = time.time()
+        while ((time.time()-tmp) < timeout) and (len(data) < count):
+            try:
+                data += self.socket.recv(1) 
+            except socket.error as e:
+                err = e.args[0]
+                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                    time.sleep(0.5)
+                    continue
+                else:
+                    pass
+        self.socket.setblocking(True)
+        self.socket.settimeout(self.bbs.TOut)
+        return data
 
     #Receive single binary char from socket
     def ReceiveKey(self, lista=b''):
