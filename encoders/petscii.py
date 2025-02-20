@@ -311,9 +311,12 @@ class PETencoder(Encoder):
                     conn.SendTML('Xgraphic compatible Terminal')
                     _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
                     _copy.features['scrollback'] = True
+                    lines = 24
+                else:
+                    lines = 25
                 _copy.features['bgcolor'] = 0
-                conn.SendTML('<BR>Screen lines? (25): ')
-                _copy.txt_geo = (40,conn.ReceiveInt(1,25,25))
+                conn.SendTML(f'<BR>Screen lines? ({lines}): ')
+                _copy.txt_geo = (40,conn.ReceiveInt(1,25,lines))
             return _copy
         elif self.name == 'PET264std':
             ...

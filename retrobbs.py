@@ -1222,24 +1222,8 @@ RUNNING UNDER:<BR>
         # Ask for ID and supported TURBO56K version
         time.sleep(1)
         datos = b""
-        # conn.socket.settimeout(5.0)
-        # conn.socket.setblocking(False)
         conn.Sendall(chr(TT.CMDON) + chr(TT.VERSION) + chr(TT.CMDOFF))
         datos = conn.NBReceive(2,5)
-        # tmp = time.time()
-        # while ((time.time()-tmp) < 5) and (len(datos) < 2):
-        #     try:
-        #         datos += conn.socket.recv(1) 
-        #     except socket.error as e:
-        #         err = e.args[0]
-        #         if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-        #             time.sleep(0.5)
-        #             continue
-        #         else:
-        #             pass
-        # conn.socket.setblocking(True)
-        # # datos = conn.Receive(2)
-        # conn.socket.settimeout(_tout)
         _LOG('ID:', datos[0:2],id=conn.id,v=4)
         if datos[0:2] == b"RT":
             datos = datos[2:]
@@ -1259,26 +1243,11 @@ RUNNING UNDER:<BR>
         else:
             conn.SendTML(   '<FORMAT><BR>FOR THE BEST EXPERIENCE, THIS BBS REQUIRES A TERMINAL COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
                             'FOR THE LASTEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
-            time.sleep(1)
+            # time.sleep(1)
+            conn.Flush(1)
             conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')
-
             time.sleep(1)
-            # datos = b""
-            # conn.socket.settimeout(5.0)
-            # conn.socket.setblocking(False)
-            # tmp = time.time()
-            # while ((time.time()-tmp) < 10) and (len(datos) < 1):
-            #     try:
-            #         datos = conn.socket.recv(1) 
-            #     except socket.error as e:
-            #         err = e.args[0]
-            #         if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-            #             time.sleep(0.5)
-            #             continue
-            #         else:
-            #             pass
-            # conn.socket.setblocking(True)
-            # conn.socket.settimeout(_tout)
+
             datos = conn.NBReceive(1,10)
             if len(datos) == 0:
                 datos = b'\x00'

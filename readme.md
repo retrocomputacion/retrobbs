@@ -170,8 +170,12 @@ __New features__:
     - CCGMS
     - Novaterm
     - HandyTerm
+    - Xgraphic enabled terminals (EdgeTerm)
     - Other Commodore 64 CG terminals
-    - MSX RS232 ROM built in terminal: CALL COMTERM 
+    - VicTerm (VIC-20 color PETSCII terminal)
+    - MSX RS232 ROM built in terminal (CALL COMTERM)
+ - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
+ - Added non-blocking receive function to the _connection_ class
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming
@@ -187,6 +191,7 @@ __Changes/Bug fixes__:
  - Fixed audio streaming now works when the BBS is running under Windows
  - Messaging system reworked, it now supports different screen dimensions and longer messages
  - MSX-ASCII art header for the *Oneliner* plugin
+ - Fix to support Python-Weather >= 2.0.0
  
 ---
 # 1.2 The *Turbo56K* protocol
@@ -859,6 +864,8 @@ Implements the Connection class, this is the class used to communicate with clie
 **Flush(ftime)**: Flush the receiving buffer for **\<ftime\>** seconds.
 
 **Receive(count)**: Receives **\<count\>** binary chars from the client.<br>Returns: binary string.
+
+**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to **\<count\>** within the time specified by **\<timeout\>** (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
 
 **ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** binary string.<br>Returns: The received matching char as a binary string.
 

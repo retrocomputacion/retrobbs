@@ -136,12 +136,12 @@ def plugFunction(conn:Connection):
             if conn.QueryFeature(TT.PRADDR) < 0x80:
                 gmod = gfxmodes.P4HI if conn.mode == 'PET264' else gfxmodes.C64HI
                 FT.SendBitmap(conn,img,gfxmode=gmod,preproc=PreProcess(),lines=conn.encoder.txt_geo[1]-2,display=False,dither=dithertype.NONE)
-                conn.SendTML(f'<SPLIT row={conn.encoder.txt_geo[1]-2} multi=False bgtop={conn.encoder.colors["BLACK"]} bgbottom={conn.encoder.colors["BLACK"]} mode={conn.mode}><CURSOR><CLR>')
+                conn.SendTML(f'<SPLIT row={conn.encoder.txt_geo[1]-2} multi=False bgtop={conn.encoder.colors["BLACK"]} bgbottom={conn.encoder.colors["BLUE"]} mode={conn.mode}><CURSOR><CLR>')
             else:
                 conn.SendTML(img)
         else:
             conn.SendTML('<CLR><WHITE>LOCATION NOT FOUND!<PAUSE n=2><BR>')
-        conn.SendTML('<FORMAT><YELLOW>[N]ew location or <BACK> to exit<BR></FORMAT>')
+        conn.SendTML('<FORMAT><YELLOW>[N]ew location or <BACK> to exit</FORMAT>')
         if conn.ReceiveKey('n' + back) == back:
             done = True
         else:
