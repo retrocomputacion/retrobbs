@@ -134,7 +134,7 @@ t_mono = 	{'MSX1':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF
 t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(1)+chr(HLINE),'VLINE':chr(1)+chr(VLINE),'CROSS':chr(1)+chr(CROSS),'UARROW':'^',
             'UL-CORNER':chr(1)+chr(UL_CORNER),'UR-CORNER':chr(1)+chr(UR_CORNER),'LL-CORNER':chr(1)+chr(LL_CORNER),'LR-CORNER':chr(1)+chr(LR_CORNER),
-            'V-RIGHT':chr(1)+chr(V_RIGHT),'V-LEFT':chr(1)+chr(V_LEFT),'H-UP':chr(1)+chr(H_UP),'H-DOWN':chr(1)+chr(H_DOWN),
+            'V-RIGHT':chr(1)+chr(V_RIGHT),'V-LEFT':chr(1)+chr(V_LEFT),'H-UP':chr(1)+chr(H_UP),'H-DOWN':chr(1)+chr(H_DOWN),'BLOCK':'\xDB',
             'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
             'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
             'TRI-LEFT':chr(TRI_LEFT),'TRI-RIGHT':chr(TRI_RIGHT),'TRI-UP':chr(TRI_UP),'TRI-DOWN':chr(TRI_DOWN),
@@ -388,16 +388,17 @@ def _Register():
     e0.bbuffer = 0x02ed #Bottom of the buffer
     e0.tbuffer = 0xbfff #Top of the buffer
     e0.palette = PALETTE
-    e0.colors = {'BLACK':1,'GREEN':2,'LT_GREEN':3,'BLUE':4,'LT_BLUE':5,'DARK_RED':6,'CYAN':7,'RED':8,'PINK':9,'YELLOW':10,
-                 'LT_YELLOW':11,'DARK_GREEN':12,'PURPLE':13,'GREY':14,'WHITE':15,'LIGHT_GREY':14,'DARK_GREY':14,'GREY1':14,
-                 'GREY2':14,'MEDIUM_GREY':14,'ORANGE':9,'BROWN':6, 'GREY3':14,'LIGHT_BLUE':5,'LIGHT_GREEN':3}
+    e0.colors = {'BLACK':1,'GREEN':2,'LTGREEN':3,'BLUE':4,'LTBLUE':5,'DARK_RED':6,'CYAN':7,'RED':8,'PINK':9,'YELLOW':10,
+                 'LTYELLOW':11,'DARK_GREEN':12,'PURPLE':13,'GREY':14,'WHITE':15,'LIGHT_GREY':14,'DARK_GREY':14,'GREY1':14,
+                 'GREY2':14,'MEDIUM_GREY':14,'ORANGE':9,'BROWN':6, 'GREY3':14,'LIGHT_BLUE':5,'LIGHT_GREEN':3,
+                 'DGREEN':12,'DRED':6}
     e0.def_gfxmode = gfxmodes.MSXSC2
     e0.gfxmodes = (gfxmodes.MSXSC2,)
     e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
                    'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,'F9':F9,'F10':F10,
                    'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF}
     e0.features['color']  = True
-    e0.features['revers'] = True
+    e0.features['reverse'] = True
 
     # Non-Turbo56K encoders
     e1 = MSXencoder('MSXstd')

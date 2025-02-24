@@ -43,6 +43,10 @@ def plugFunction(conn:Connection,url):
     # Text mode
     conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER><CRSRL>')
     nfeed = feedparser.parse(url)
+    if conn.mode in ['VidTex','VT52']:
+        kdeco = ('[',']')
+    else:
+        kdeco = ('<L-NARROW>','<R-NARROW>')
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
@@ -59,7 +63,7 @@ def plugFunction(conn:Connection,url):
             lines+=len(text)
             if lines>scheight-2:
                 continue
-            conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><L-NARROW>{H.valid_keys[i-1]}<R-NARROW><RVSOFF><INK c={menucolors[i%2][1]}>')
+            conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}>{kdeco[0]}{H.valid_keys[i-1]}{kdeco[1]}<RVSOFF><INK c={menucolors[i%2][1]}>')
             x = 0
             for t in text:
                 conn.SendTML(f'<SPC n={3*x}>{t}')

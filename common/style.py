@@ -22,15 +22,20 @@ def RenderMenuTitle(conn:Connection,title):
         bcorner = '<RVSON><B-HALF><RVSOFF>'
         urcorner = f'<INK c={st.MenuTColor2}><B-HALF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><B-HALF>'
         brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-HALF><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-HALF><RVSOFF>'
-        rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
-    else:
+    elif 'PET' in conn.mode:
         cfill = 64
         tml += '<LOWER>'
         ucorner = '<RVSON><U-NARROW><RVSOFF>'
         bcorner = '<RVSON><B-NARROW><RVSOFF>'
         urcorner = f'<INK c={st.MenuTColor2}><RVSON><U-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><U-NARROW><RVSOFF>'
         brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-NARROW><RVSOFF>'
-        rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
+    else:
+        ucorner = '+'
+        bcorner = '+'
+        urcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
+        brcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
+    rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
+
     # Send menu title
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
         tml += f'''<INK c={st.MenuTColor2}><LFILL row=0 code={cfill}><LFILL row=2 code={cfill}><INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{urcorner}'''
@@ -81,9 +86,12 @@ def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=No
     if 'MSX' in conn.mode:
         lside = '<L-HALF>'
         rside = '<RVSOFF><TRI-LEFT>'
-    else:
+    elif 'PET' in conn.mode:
         lside = '<L-NARROW>'
         rside = '<R-NARROW><RVSOFF>'
+    else:
+        lside = '['
+        rside = ']'
     if key >= '\r':
         if key == '_':		# FIXME: Workaround for PETSCII left arrow character
             key = '<BACK>'
@@ -134,5 +142,5 @@ def RenderDialog(conn:Connection,height,title=None):
 # TML tags
 ###########
 t_mono = {	'MTITLE':(lambda c,t:RenderMenuTitle(c,t),[('c','_C'),('t','')]),
-              'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN')]),
+              'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('tml','True')]),
             'DIALOG':(lambda c,h,t:RenderDialog(c,h,t),[('c','_C'),('h',4),('t','')])}

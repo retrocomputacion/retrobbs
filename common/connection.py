@@ -14,6 +14,7 @@ from common.classes import BBS, bbsstyle, Encoder
 import time
 from common.parser import TMLParser
 import errno
+import string
 
 # Dictionary of client variant -> Encoder
 clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264', 'M1':'MSX1'}
@@ -88,6 +89,7 @@ class Connection:
             tmp = self.encoder.setup(self,'default' if b'-' not in idstring else idstring.split(b' ')[0].split(b'-')[1])
             if tmp != None:
                 self.encoder = tmp
+                self.mode = tmp.name
             # Reinit Terminal features
             self.TermFt[0xb7] = None	# Maybe reinit the whole dictionary in the future?
             del(self.parser)
@@ -195,43 +197,84 @@ class Connection:
                     pass
         self.socket.setblocking(True)
         self.socket.settimeout(self.bbs.TOut)
+        self.inbytes += len(data)
         return data
 
     #Receive single binary char from socket
     def ReceiveKey(self, lista=b''):
-        if lista == b'':
-            lista = bytes(self.encoder.nl,'latin1')
-        if type(lista) == str:
-            lista = bytes(self.encoder.encode(lista,True),'latin1') 
-            decode = True
-        else:
-            decode = False
-        t = True
-        while t == True:
-            cadena = b''
-            if self.connected == True:
-                try:
-                    _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
-                    cadena = self.socket.recv(1)
-                    self.inbytes += 1
-                    _LOG("ReceiveKey - Received", cadena, id=self.id,v=4)
-                    if cadena != b'':
-                        if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
-                            cadena = bytes([cadena[0]-96])
-                        if cadena in lista:
+        if type(lista) != list:
+            if lista == b'':
+                lista = bytes(self.encoder.nl,'latin1')
+            if type(lista) == str:
+                lista = bytes(self.encoder.encode(lista,True),'latin1') 
+                decode = True
+            else:
+                decode = False
+            t = True
+            while t == True:
+                cadena = b''
+                if self.connected == True:
+                    try:
+                        _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
+                        cadena = self.socket.recv(1)
+                        self.inbytes += 1
+                        _LOG("ReceiveKey - Received", cadena, id=self.id,v=4)
+                        if cadena != b'':
+                            if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
+                                cadena = bytes([cadena[0]-96])
+                            if cadena in lista:
+                                t = False
+                        else:
+                            self.connected = False
                             t = False
-                    else:
+                    except socket.error:
+                        #if e.errno == errno.ECONNRESET:
+                        _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - ReceiveKey'+bcolors.ENDC, id=self.id,v=2)
+                        cadena = ''
                         self.connected = False
                         t = False
+                else:
+                    t = False
+            return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
+        else:
+            mlen = max([len(a) for a in lista])
+            vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)
+            eflag = [False]*len(lista)
+            for i,item in enumerate(lista):     # Encode single characters
+                if item in vfilter:
+                    lista[i] = self.encoder.encode(item,True)
+                    eflag[i] = True
+            charlist = []
+            for i in range(mlen):
+                c = []
+                for j in lista:
+                    if len(j) >= i+1:
+                        c.append(j[i])
+                    else:
+                        c.append('')
+                charlist.append(c)
+            received = ''
+            while True and self.connected:
+                try:
+                    _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
+                    inchar = chr(self.socket.recv(1)[0])
+                    self.inbytes += 1
+                    if inchar in charlist[len(received)]:
+                        received += inchar
+                        if received in lista:
+                            break
+                    else:
+                        received = ''
                 except socket.error:
                     #if e.errno == errno.ECONNRESET:
                     _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - ReceiveKey'+bcolors.ENDC, id=self.id,v=2)
-                    cadena = ''
+                    received = ''
                     self.connected = False
-                    t = False
+                    break
+            if eflag[lista.index(received)]:
+                return self.encoder.decode(received)
             else:
-                t = False
-        return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
+                return received
 
     #Receive single binary char from socket - NO LOG
     def ReceiveKeyQuiet(self, lista=b''):

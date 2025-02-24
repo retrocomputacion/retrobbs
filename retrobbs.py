@@ -86,7 +86,6 @@ import signal
 import string
 import configparser #INI file parser
 import threading
-import errno
 from math import ceil
 
 from common import extensions as EX
@@ -1242,7 +1241,7 @@ RUNNING UNDER:<BR>
                 conn.connected = False
         else:
             conn.SendTML(   '<FORMAT><BR>FOR THE BEST EXPERIENCE, THIS BBS REQUIRES A TERMINAL COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
-                            'FOR THE LASTEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
+                            'FOR THE LATEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
             # time.sleep(1)
             conn.Flush(1)
             conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')

@@ -306,6 +306,7 @@ class PETencoder(Encoder):
                 _copy.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])
                 _copy.txt_geo = (40,sch[id])
             elif id == b'C64CO':
+                conn.SendTML('...<BR>')
                 conn.Sendallbin(b'\x80\x80')    # Xgraphic handshake
                 if conn.NBReceive(1,2) == b'\xba':
                     conn.SendTML('Xgraphic compatible Terminal')
@@ -342,7 +343,7 @@ def toPETSCII(text:str,full=True):
     if full:
         pattern = re.compile("|".join(Urep.keys()))
         text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
-        text = (unicodedata.normalize('NFKD',text).encode('ascii','spaces')).decode('latin1')
+        text = (unicodedata.normalize('NFKD',text).encode('ascii','petspc')).decode('latin1')
         text = text.replace('|', chr(VLINE))
         text = text.replace('_', chr(164))
         text = text.replace(chr(182),'_')   # Left arrow (previously replaced from unicode to ¶ by pethandler())
@@ -362,7 +363,7 @@ def toASCII(text):
 # Register with the encoder module
 ###################################
 def _Register():
-    codecs.register_error('spaces',pethandler)  # Register encoder error handler. This might be more useful if global 
+    codecs.register_error('petspc',pethandler)  # Register encoder error handler.
     e0 = PETencoder('PET64')
     e0.clients = {b'default':'Retroterm 64',b'SL':'Retroterm 64 Swiftlink',b'SLU':'Retroterm 64 Ultimate-Swiftlink'}
     e0.tml_mono  = t_mono['PET64']
@@ -370,9 +371,10 @@ def _Register():
     e0.bbuffer = 0x02ed #Bottom of the buffer
     e0.tbuffer = 0xbfff #Top of the buffer
     e0.palette = PALETTE
-    e0.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
-                 'ORANGE':8,'BROWN':9,  'PINK':10,  'GREY1':11, 'GREY2':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'GREY3':15,
-                 'LIGHT_GREY':15,'DARK_GREY':11, 'MEDIUM_GREY':12, 'GREY':12}
+    e0.colors = {'BLACK':0, 'WHITE':1, 'RED':2, 'CYAN':3, 'PURPLE':4, 'GREEN':5, 'BLUE':6,'YELLOW':7,
+                 'ORANGE':8, 'BROWN':9, 'PINK':10, 'GREY1':11, 'GREY2':12, 'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'GREY3':15,
+                 'LIGHT_GREY':15, 'DARK_GREY':11, 'MEDIUM_GREY':12, 'GREY':12,
+                 'LTGREEN':13, 'LTBLUE':14}
     e0.def_gfxmode = gfxmodes.C64MULTI
     e0.gfxmodes = (gfxmodes.C64HI,gfxmodes.C64MULTI)
     e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,
@@ -385,10 +387,11 @@ def _Register():
     e1.bbuffer = 0x0800 #Bottom of the buffer
     e1.tbuffer = 0x6fff #Top of the buffer
     e1.palette = PALETTE264
-    e1.colors = {'BLACK':0,    'WHITE':0x71,  'RED':0x32  ,'CYAN':0x63 ,'PURPLE':0x34,'GREEN':0x45 ,'BLUE':0x26 ,'YELLOW':0x67,
-                 'ORANGE':0x48,'BROWN':0x29,  'PINK':0x52 ,'GREY1':0x31,'GREY2':0x41 ,'LIGHT_GREEN':0x65,'LIGHT_BLUE':0x46,'GREY3':0x51,
-                 'LIGHT_GREY':0x51 ,'DARK_GREY':0x31,  'MEDIUM_GREY':0x41,'GREY':0x41,
-                 'DARK_GREEN':0x2F,'MAGENTA':0x4B,'DARK_RED':0x12}
+    e1.colors = {'BLACK':0, 'WHITE':0x71, 'RED':0x32, 'CYAN':0x63, 'PURPLE':0x34, 'GREEN':0x45, 'BLUE':0x26, 'YELLOW':0x67,
+                 'ORANGE':0x48, 'BROWN':0x29, 'PINK':0x52 , 'GREY1':0x31, 'GREY2':0x41 , 'LIGHT_GREEN':0x65, 'LIGHT_BLUE':0x46, 'GREY3':0x51,
+                 'LIGHT_GREY':0x51, 'DARK_GREY':0x31, 'MEDIUM_GREY':0x41, 'GREY':0x41,
+                 'DARK_GREEN':0x2F, 'MAGENTA':0x4B, 'DARK_RED':0x12,
+                 'LTGREEN':0x65, 'LTBLUE':0x46}
     e1.def_gfxmode = gfxmodes.P4HI
     e1.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
     e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'HELP':HELP,
@@ -410,9 +413,9 @@ def _Register():
     e2.features['scrollback'] = False
     e2.features['window'] = 0
     e2.palette = PALETTE20
-    e2.colors = {'BLACK':0, 'WHITE':1,  'RED':2,    'CYAN':3,   'PURPLE':4,'GREEN':5,   'BLUE':6,   'YELLOW':7,
-                 'ORANGE':8,'LIGHT_ORANGE':9,  'LIGHT_RED':10,  'LIGHT_CYAN':11, 'LIGHT_PURPLE':12,'LIGHT_GREEN':13, 'LIGHT_BLUE':14, 'LIGHT_YELLOW':15,
-                 'PINK':10}
+    e2.colors = {'BLACK':0, 'WHITE':1, 'RED':2, 'CYAN':3, 'PURPLE':4, 'GREEN':5, 'BLUE':6, 'YELLOW':7,
+                 'ORANGE':8, 'LIGHT_ORANGE':9, 'LIGHT_RED':10, 'LIGHT_CYAN':11, 'LIGHT_PURPLE':12, 'LIGHT_GREEN':13,
+                 'LIGHT_BLUE':14, 'LIGHT_YELLOW':15, 'PINK':10}
     
     e3 = PETencoder('PET64std')
     e3.minT56Kver = 0

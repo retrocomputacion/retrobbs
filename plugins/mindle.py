@@ -4,6 +4,7 @@ from tinydb import Query, where
 from datetime import datetime
 
 from common.connection import Connection
+from common.style import RenderMenuTitle
 from common.bbsdebug import _LOG
 from common.style import KeyLabel
 from common.style import bbsstyle
@@ -46,6 +47,15 @@ def plugFunction(conn:Connection):
             conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
             conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
             conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
+        elif 'VidTex' in conn.mode:
+            spc = (conn.encoder.txt_geo[0]-28)//2
+            conn.SendTML(f'<RED><SPC n={spc}><LL-QUAD><B-HALF N=6><BLUE><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><RED> <B-HALF N=6><LR-QUAD><BR>')
+            conn.SendTML(f'<ORANGE><SPC n={spc}> <LL-QUAD><B-HALF N=5><BLUE><R-HALF><UL-LR-QUAD><RVSON><UL-UR-LR-QUAD><GREEN><LR-QUAD> <UL-UR-LL-QUAD><UL-LR-QUAD><LR-QUAD><U-HALF><L-HALF><L-HALF><YELLOW><R-HALF><B-HALF><L-HALF><ORANGE><B-HALF N=5><LR-QUAD><BR>')
+            conn.SendTML(f'<RED><SPC n={spc}>  <LL-QUAD><B-HALF N=4><BLUE><R-HALF><CRSRR><R-HALF><GREEN><R-HALF><LL-QUAD><L-HALF><R-HALF><UR-QUAD><B-HALF><L-HALF><UL-LL-LR-QUAD><YELLOW><UR-QUAD><B-HALF><LL-QUAD><RED><B-HALF N=4><LR-QUAD><BR>')
+        else:
+            conn.SendTML('<BLACK>*   * * ** * **  *   ***<BR>')
+            conn.SendTML(       '** ** * * ** * * *   **<BR>')
+            conn.SendTML(       '* * * * *  * **  *** ***<BR>')
 
     window_s = conn.QueryFeature(TT.SET_WIN) < 0x80
 
@@ -65,6 +75,9 @@ def plugFunction(conn:Connection):
     if 'MSX' in conn.mode:
         mcolors.ToddColor = ecolors['DARK_RED']
         mcolors.TevenColor = ecolors['BLUE']
+    elif conn.mode in ['VT52','VidTex']:
+        mcolors.TevenColor = ecolors['BLUE']
+        mcolors.ToddColor = ecolors['RED']
     mcolors.OevenBack = ecolors['BLACK']
     mcolors.BgColor = ecolors.get('DARK_GREY',ecolors.get('LIGHT_BLUE',ecolors['WHITE']))
     dbase = conn.bbs.database
@@ -204,6 +217,7 @@ def mindle(conn:Connection, xword: str, valid):
     scores = [500,400,200,100,50,25,0]
     #_LOG('Mindle - word to guess: '+xword,id=conn.id, v=4)
 
+    ecolors = conn.encoder.colors
     scwidth, scheight = conn.encoder.txt_geo
 
     wlen = len(xword)  # Word lenght
@@ -212,7 +226,8 @@ def mindle(conn:Connection, xword: str, valid):
         offset -= 1 # Center playfield
 
     # Draw playfield
-    conn.SendTML(f'<AT x={offset} y=5><CURSOR enable=False><LTBLUE><UL-CORNER>')   # <HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=174><BR>')
+    pfcolor = '<LTBLUE>' if 'LTBLUE' in ecolors else '<BLUE>' if 'BLUE' in ecolors else '<BLACK>'
+    conn.SendTML(f'<AT x={offset} y=5><CURSOR enable=False>{pfcolor}<UL-CORNER>')   # <HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=174><BR>')
     for j in range(wlen-1):
         conn.SendTML('<HLINE><H-DOWN>')
     conn.SendTML('<HLINE><UR-CORNER><BR>')
@@ -240,7 +255,11 @@ def mindle(conn:Connection, xword: str, valid):
     bad = []
 
     badcolor = '<ORANGE>' if conn.encoder.features['bgcolor'] == 0 else '<BLACK>'
+    bullcolor = f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>' if 'MSX' in conn.mode else '<GREEN>'
+    cowcolor =  f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>' if 'MSX' in conn.mode else '<YELLOW>'
+    wincolor = '<GREEN>' if conn.mode in ('VT52','VidTex') else '<WHITE>'
     back = conn.encoder.decode(conn.encoder.back)
+    null = '' if conn.T56KVer == 0 else '<NULL>'
 
     t = 0   # Attempt number
     while t<6 and conn.connected:
@@ -281,14 +300,14 @@ def mindle(conn:Connection, xword: str, valid):
                 conn.SendTML(' <CRSRR>')
             continue
         if guess == xword:
-            conn.SendTML(f'<NULL><AT x={column} y={line}><LTGREEN>')
+            conn.SendTML(f'{null}<AT x={column} y={line}><LTGREEN>')
             for c in xword:
                 conn.SendTML(f'{c.upper()}<CRSRR>')
-            conn.SendTML(f'<AT x={(scwidth-19)//2} y=19><WHITE><FLASHON>CONGRATULATIONS !!!<FLASHOFF>')
+            conn.SendTML(f'<AT x={(scwidth-19)//2} y=19>{wincolor}<FLASHON>CONGRATULATIONS !!!<FLASHOFF>')
             break
         else:
             out = ''
-            conn.SendTML(f'<NULL><AT x={column} y={line}>')
+            conn.SendTML(f'{null}<AT x={column} y={line}>')
             # xtemp = xword
             chars = {}
             for g,x in zip(guess,xword):
@@ -300,30 +319,32 @@ def mindle(conn:Connection, xword: str, valid):
                     chars[x] = 1
             for g,x in zip(guess,xword):
                 if g == x:
-                    if 'PET' in conn.mode:
-                        out += '<GREEN>'
-                    else:
-                        out += f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>'
+                    out += bullcolor
+                    # if 'PET' in conn.mode:
+                    #     out += '<GREEN>'
+                    # else:
+                    #     out += f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>'
                     if g in cows:
                         cows.remove(g)
                     if g not in bulls:
                         t_bulls.append(g)
                 elif (g in xword) and (g in chars) and (chars[g] >= 0):
-                    if 'PET' in conn.mode:
-                        out += '<YELLOW>'
-                    else:
-                        out += f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>'
+                    out += cowcolor
+                    # if 'PET' in conn.mode:
+                    #     out += '<YELLOW>'
+                    # else:
+                    #     out += f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>'
                     if (g not in bulls) and (g not in cows):
                         t_cows.append(g)
                     chars[g] -= 1
                 else:
-                    if 'PET' not in conn.mode:
+                    if 'MSX' in conn.mode:
                         out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
                     out += badcolor #'<BLACK>'
                     if (g not in bad) and (g not in t_bad):
                         t_bad.append(g)
                 out += g.upper()+'<CRSRR>'
-            if 'PET' not in conn.mode:
+            if 'MSX' in conn.mode:
                 out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
 
             # for i,c in enumerate(guess):

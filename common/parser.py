@@ -448,6 +448,8 @@ class TMLParser(HTMLParser):
                             if (p[2] if len(p)>2 else True):
                                 val = self._evalParameter(val,p[1])
                             parms.append(val)
+                        if tag == 'ink' and p[0] == 'c':
+                            _color = val
                     self._R = func(*parms)
                     if ret == '_A':
                         self.set_A(self._R)
@@ -463,7 +465,7 @@ class TMLParser(HTMLParser):
                     elif ret == '_B' and self.block == 0:
                         self.conn.Sendallbin(self._R)
                     if tag == 'ink':	#Handle ink color change
-                        self.color = parms[0]
+                        self.color = _color  #parms[0]
             elif tag in self.t_multi:
                 n = self._evalParameter(attr.get('n','1'),1)
                 c= self.t_multi[tag]

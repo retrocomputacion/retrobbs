@@ -30,7 +30,7 @@ def setup():
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
-        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR>{hlcolor}{crop("Wikipedia, the free Enciclopedia",scwidth,conn.encoder.ellipsis)}')
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR>{hlcolor}{crop("Wikipedia, the free Encyclopedia",scwidth,conn.encoder.ellipsis)}')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             conn.SendTML(f'{TxTtag}<AT x=0 y=2><LFILL row=1 code={hcode}>')
         else:
@@ -65,7 +65,7 @@ def plugFunction(conn:Connection):
         _LOG('version 0.6.0')
         wiki = wikipediaapi.Wikipedia(user_agent='RetroBBS/0.60',language=conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
 
-    sccolors = 'WHITE' if 'MSX' in conn.mode else 'LIGHT_GREY'
+    sccolors = 'WHITE' if conn.mode in ['MSX1','VT52','VidTex'] else 'LIGHT_GREY'
     conn.SendTML(f'<TEXT page=0 border={ecolors.get(sccolors,0)} background={ecolors.get(sccolors,0)}>')
     loop = True
     while loop == True:
