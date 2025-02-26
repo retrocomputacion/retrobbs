@@ -391,11 +391,17 @@ Press {_dec(conn.encoder.back)} to continue...'''
         conn.SendTML(tline)
         if win:
             conn.SendTML('<HOME>')
+        if 'CRSRU' in ckeys:
+            cursors = [chr(ckeys['CRSRU']),chr(ckeys['CRSRD']),chr(ckeys['CRSRL']),chr(ckeys['CRSRR'])]
+        else:
+            cursors = [chr(0),chr(0),chr(0),chr(0)]
+        cursors += [chr(ckeys.get('HOME',0)),chr(ckeys.get('INSERT',0)),chr(ckeys.get('CLEAR',0)),chr(ckeys.get('DELETE',0))]
         while running and conn.connected:
             try:
                 # print(len(tline), column)
-                i_char = conn.ReceiveKey(bytes([ord(c) for c in vfilter]+[ord(conn.encoder.nl),ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']]))
-                i_char = chr(i_char[0])
+                # i_char = conn.ReceiveKey(bytes([ord(c) for c in vfilter]+[ord(conn.encoder.nl),ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']]))
+                i_char = conn.ReceiveKey([c for c in vfilter]+cursors+[conn.encoder.nl]+[chr(help_k[0]),chr(line_k[0]),chr(quit_k[0])])
+                # i_char = chr(i_char[0])
                 if edit :   # Editing text
                     if i_char == conn.encoder.nl:   # New line
                         # check commands for non-turbo mode
@@ -479,28 +485,28 @@ Press {_dec(conn.encoder.back)} to continue...'''
                             column = len(tline)
                             if tline[-1] == '\n':
                                 column -= 1
-                    elif (ord(i_char) == ckeys['CRSRR']) and (column < len(tline)) and tline[column] != '\n':   # Cursor right
+                    elif i_char == cursors[3] and (column < len(tline)) and tline[column] != '\n':   # Cursor right
                         column += 1
                         conn.Sendall(i_char)
-                    elif (ord(i_char) == ckeys['CRSRL']) and (column > 0):            # Cursor left
+                    elif i_char == cursors[2] and (column > 0):            # Cursor left
                         column -= 1
                         conn.Sendall(i_char)
-                    elif ord(i_char) == ckeys['HOME']:                                # Cursor home
+                    elif i_char == cursors[4]:                                # Cursor home
                         if win:
                             conn.Sendall(i_char)
                         elif column > 0:
                             conn.SendTML(f'<CRSRL n={column}>')
                         column = 0
-                    elif win and ord(i_char) == ckeys['CLEAR']:                       # Clear line
+                    elif win and i_char == cursors[6]:                       # Clear line
                         column = 0
                         tline = ''
                         if win:
                             conn.Sendall(i_char)
-                    elif (ord(i_char) == ckeys['DELETE']) and (len(tline)> 0) and (column > 0):   # Delete caracter
+                    elif (i_char == cursors[7]) and (len(tline)> 0) and (column > 0):   # Delete caracter
                         tline = tline[0:column-1] + tline[column:]
                         column -= 1
                         conn.SendTML('<DEL>')
-                    elif (conn.mode not in ['MSXstd']) and (ord(i_char) == ckeys['INSERT']) and (scwidth > len(tline) > 0) and (column < len(tline)):   # Insert blank space
+                    elif (conn.mode not in ['MSXstd']) and (i_char == cursors[5]) and (scwidth > len(tline) > 0) and (column < len(tline)):   # Insert blank space
                         tline = tline[0:column] + ' ' + tline[column:]
                         conn.Sendall(i_char)
                     elif ord(i_char) == quit_k[0]:                                               # Finish editing
@@ -528,8 +534,8 @@ Press {_dec(conn.encoder.back)} to continue...'''
                         dispMsg(ydisp)
                         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select line (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                         edit = False
-                    elif _dec(i_char) in vfilter:
-                        i_char = _dec(i_char)
+                    elif i_char in vfilter:
+                        # i_char = _dec(i_char)
                         # Alphanumeric characters
                         column += 1
                         if column <= len(tline):
@@ -575,7 +581,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
                             tline = fmessage[line+ydisp]
                             column = len(tline)
                 else:   # Selecting line to edit
-                    if (ord(i_char) == ckeys['CRSRD']) and (line+ydisp < len(fmessage)-1):
+                    if i_char == cursors[1] and (line+ydisp < len(fmessage)-1):
                         line += 1
                         if line <= scheight-8:
                             conn.Sendall(i_char)
@@ -584,7 +590,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
                             ydisp += 1
                             scroll = 1
                             updMsg(ydisp,scroll,-1)
-                    elif (ord(i_char) == ckeys['CRSRU']):
+                    elif i_char == cursors[0]:
                         if (line > 0):
                             line -= 1
                             conn.Sendall(i_char)
@@ -684,7 +690,7 @@ def inbox(conn:Connection, board):
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     ckeys = conn.encoder.ctrlkeys
     db:DBase = conn.bbs.database
-    conn.SendTML('<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
+    conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
     query = {'msg_board':board,'msg_parent':0}
     q2 = query.copy()
     if board == 0:
@@ -702,6 +708,12 @@ def inbox(conn:Connection, board):
     done = False
     refresh = True
     utable = db.db.table('USERS')
+    if 'CRSRU' in ckeys:
+        cursors = [chr(ckeys['CRSRU']),chr(ckeys['CRSRD']),chr(ckeys['CRSRL']),chr(ckeys['CRSRR'])]
+        ctext = 'crsr'
+    else:
+        cursors = ['a','z','n','m']
+        ctext = 'a/z/n/m'
     while not done and conn.connected:
         # display thread list
         msgs = table.search(dbQ.fragment(query)|dbQ.fragment(q2))
@@ -742,7 +754,7 @@ def inbox(conn:Connection, board):
                 tt += f'<YELLOW><LFILL row={scheight-3} code={hcode}>'
             else:
                 tt += f'<AT x=0 y={scheight-3}><YELLOW><HLINE n={scwidth}>'
-            conn.SendTML(f'<AT x=0 y={scheight-2}><GREY3>Navigate with <RVSON>crsr<RVSOFF> - '+ tt +
+            conn.SendTML(f'<AT x=0 y={scheight-2}><GREY3>Navigate with <RVSON>{ctext}<RVSOFF> - '+ tt +
                          f'<AT x=0 y={scheight-1}>Read <RVSON>f<RVSOFF>irst/<RVSON>l<RVSOFF>ast or <RVSON>u<RVSOFF>nread msg'
                          f'<WINDOW top=3 bottom={scheight-4}>')
             refresh = False
@@ -765,12 +777,11 @@ def inbox(conn:Connection, board):
                 conn.SendTML(f'<AT x=0 y={pos+coff}>&gt;<CRSRL>')
                 # conn.Sendall(TT.set_CRSR(0,pos)+'>')
                 o_pos = pos
-            # k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR']]) + bytes('FLU_'+('N'if tt!='' else '')+('D'if conn.userclass == 10 else ''),'utf_8'))
-            k = conn.ReceiveKey(bytes(_enc('flu'),'latin1')+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR'],ord(conn.encoder.back),(ord(_enc('n'))if tt!='' else 0),(ord(_enc('d'))if conn.userclass == 10 else 0)]))
-            k = chr(k[0])
-            # k = conn.ReceiveKey(chr(ckeys['CRSRD']) + chr(ckeys['CRSRU']) + chr(ckeys['CRSRL']) + chr(ckeys['CRSRR']) + 'flu' + back + ('n'if tt!='' else '') + ('d'if conn.userclass == 10 else ''))
+            # k = conn.ReceiveKey(bytes(_enc('flu'),'latin1')+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR'],ord(conn.encoder.back),(ord(_enc('n'))if tt!='' else 0),(ord(_enc('d'))if conn.userclass == 10 else 0)]))
+            k = conn.ReceiveKey(['f','l','u',conn.encoder.back,'n' if tt!= '' else '','d' if conn.userclass == 10 else '']+cursors)
+            # k = chr(k[0])
             if len(threads) > 0:
-                if ord(k) == ckeys['CRSRD']:
+                if k == cursors[1]:
                     if pos+1 < (len(threads)-(tpp*page)):    # move down
                         if pos < scheight-7:
                             pos += 1
@@ -780,7 +791,7 @@ def inbox(conn:Connection, board):
                             if not win:
                                 refresh = True
                             break
-                elif ord(k) == ckeys['CRSRU']:                   # move up
+                elif k == cursors[0]:                   # move up
                     if pos > 0:
                         pos -= 1
                         conn.SendTML(' ')
@@ -789,36 +800,36 @@ def inbox(conn:Connection, board):
                         if not win:
                             refresh = True
                         break
-                elif ord(k) == ckeys['CRSRR']:                 # next page
+                elif k == cursors[3]:                 # next page
                     if len(threads)>(tpp*(page+1)):
                         page +=1
                         if not win:
                             refresh = True
                         break
-                elif ord(k) == ckeys['CRSRL']:                # previous page
+                elif k == cursors[2]:                # previous page
                     if page > 0:
                         page -= 1
                         if not win:
                             refresh = True
                         break
-                elif k == _enc('f'):                  # First message
+                elif k == 'f':                  # First message
                     conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                     readMessage(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
-                elif k == _enc('l'):                  # Last message
+                elif k == 'l':                  # Last message
                     m = table.get(doc_id=threads[pos+(tpp*page)][1])
                     conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                     readMessage(conn,m['msg_prev'])
                     refresh = True
                     break
-                elif k == _enc('u'):                  # First unread message
+                elif k == 'u':                  # First unread message
                     if threads[pos+(tpp*page)][2] != None:
                         conn.SendTML(f'<CURSOR><WINDOW top=0 bottom={scheight}>')
                         readMessage(conn,threads[pos+(tpp*page)][2].doc_id)
                         refresh = True
                         break
-                elif k == _enc('d'):                 # Delete thread
+                elif k == 'd':                 # Delete thread
                     tml = ''
                     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                         tml += f'<RED><LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
@@ -833,7 +844,7 @@ def inbox(conn:Connection, board):
                         deleteThread(conn,threads[pos+(tpp*page)][1])
                     refresh = True
                     break
-            if k == _enc('n'):              # new thread
+            if k == 'n':              # new thread
                 conn.SendTML('<CURSOR>')
                 if board == 0:
                     # get destination username

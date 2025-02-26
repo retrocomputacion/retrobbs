@@ -67,7 +67,7 @@ PALETTE = {'\x1bk'+chr((j*16)+i):j for i in range(9) for j in range(9)}
 t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'H'+chr(ESC)+'J','HOME':chr(ESC)+'H',
                      'BACK':chr(BACK),'SPINNER':chr(SPINNER)},
              'VidTex':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'j','HOME':chr(ESC)+'H',
-                       'BACK':chr(BACK)},'TEXT':'\x1bGN','SPINNER':chr(SPINNER)}
+                       'BACK':chr(BACK),'TEXT':'\x1bGN','SPINNER':chr(SPINNER)}}
 t_multi =	{'DEL':chr(DELETE),'CRSRR':chr(ESC)+'C','CRSRL':chr(ESC)+'D','CRSRU':chr(ESC)+'A','CRSRD':chr(ESC)+'B',
             'POUND':'','PI':'','HASH':'#','HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': '+',
             'LARROW':'_','UARROW':'^','CBM-U':'','CBM-O':'','CBM-J':'','CBM-L':'',

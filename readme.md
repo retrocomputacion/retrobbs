@@ -174,6 +174,7 @@ __New features__:
     - Other Commodore 64 CG terminals
     - VicTerm (VIC-20 color PETSCII terminal)
     - MSX RS232 ROM built in terminal (CALL COMTERM)
+    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal)
  - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
  - Added non-blocking receive function to the _connection_ class
 
@@ -867,7 +868,11 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to **\<count\>** within the time specified by **\<timeout\>** (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
 
-**ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** binary string.<br>Returns: The received matching char as a binary string.
+**ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** parameter.<br>**\<keys\>** can be:
+ - A binary string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, no conversion performed before or after.
+ - A normal string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, the passed parameter is encoded before comparison, and the received character is decoded before returning.
+ - A list of strings: _ReceiveKey_ will wait for any character matching any one of the individual strings in the passed list. Only single character alphanumerical strings are encoded before comparison and decoded before returning. Strings containing control codes are left untouched. This option is useful for receiving control sequences, ie: ANSI escape codes.
+ <br>Returns: The received matching char/string as a binary or normal string depending of the input parameter type.
 
 **ReceiveKeyQuiet(keys=b'\r')**: Same as `ReceiveKey`, but no logging is ever performed, disregarding logging level. Use it when a password or other sensitive user data must be received.
 

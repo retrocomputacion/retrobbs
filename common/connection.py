@@ -241,7 +241,7 @@ class Connection:
             vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)
             eflag = [False]*len(lista)
             for i,item in enumerate(lista):     # Encode single characters
-                if item in vfilter:
+                if item in vfilter and item != self.encoder.back:
                     lista[i] = self.encoder.encode(item,True)
                     eflag[i] = True
             charlist = []
@@ -258,6 +258,8 @@ class Connection:
                 try:
                     _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
                     inchar = chr(self.socket.recv(1)[0])
+                    if ('PET' in self.mode) and (ord(inchar) in range(0xC1,0xDA + 1)):
+                        inchar = chr(ord(inchar)-96)
                     self.inbytes += 1
                     if inchar in charlist[len(received)]:
                         received += inchar
