@@ -203,7 +203,7 @@ def webarticle(conn:Connection,url, feedname):
             if body == []:
                 body = H.formatX(a_body.get_text(),scwidth)
         #####   Entry image   #####
-        if conn.QueryFeature(TT.PRADDR) < 0x80:
+        if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
             d_img = soup.find('div',{'class':'entry-featured-image'})
             if d_img != None:
                 a_img = d_img.find('img')
@@ -217,7 +217,7 @@ def webarticle(conn:Connection,url, feedname):
                 conn.SendTML('<CURSOR enable=False>')
                 FT.SendBitmap(conn,getImg(top_url,a_img))
                 conn.ReceiveKey()
-                conn.SendTML('<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
+                conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
         renderBar(conn)
         # conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
