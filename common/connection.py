@@ -239,15 +239,16 @@ class Connection:
         else:
             mlen = max([len(a) for a in lista])
             vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)
-            eflag = [False]*len(lista)
-            for i,item in enumerate(lista):     # Encode single characters
+            _lista = lista.copy()
+            eflag = [False]*len(_lista)
+            for i,item in enumerate(_lista):     # Encode single characters
                 if item in vfilter and item != self.encoder.back:
-                    lista[i] = self.encoder.encode(item,True)
+                    _lista[i] = self.encoder.encode(item,True)
                     eflag[i] = True
             charlist = []
             for i in range(mlen):
                 c = []
-                for j in lista:
+                for j in _lista:
                     if len(j) >= i+1:
                         c.append(j[i])
                     else:
@@ -263,7 +264,7 @@ class Connection:
                     self.inbytes += 1
                     if inchar in charlist[len(received)]:
                         received += inchar
-                        if received in lista:
+                        if received in _lista:
                             break
                     else:
                         received = ''
@@ -273,7 +274,7 @@ class Connection:
                     received = ''
                     self.connected = False
                     break
-            if eflag[lista.index(received)]:
+            if eflag[_lista.index(received)]:
                 return self.encoder.decode(received)
             else:
                 return received

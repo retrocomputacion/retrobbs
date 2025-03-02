@@ -34,14 +34,14 @@ import logging
 ########################################################################
 def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
-    keys=  conn.encoder.decode(conn.encoder.back) #conn.encoder.nl
+    keys=  [conn.encoder.back] #conn.encoder.nl
     tml = ''
     if width != 0:
         tml += f'<RVSON> Original size: {width}x{height}<BR><BR>'
         if 'PET' in conn.mode:
             tml +='''<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; for multicolor conversion<BR>
 <RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
-            keys += 'hm'
+            keys.extend(['h','m'])
             out = 1
         else:
             out = 0
@@ -51,14 +51,16 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
         out = 0
     if save:
         tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
-        keys += 's'
+        keys.append('s')
     if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
         tml += '<RVSON> &lt; RETURN &gt; to view image<BR>'
-        keys += conn.encoder.nl
-    tml += '<RVSON> &lt; <BACK> &gt; to exit<BR><CURSOR enable=False>'
+        keys.append(conn.encoder.nl)
+    tml += '<RVSON> &lt; <BACK> &gt; to exit<CURSOR enable=False>'
     conn.SendTML(tml)
     while conn.connected:
+        print(keys)
         k = conn.ReceiveKey(keys)
+        print(k)
         if k == 'h' and out == 1:
             conn.SendTML('<RVSON><AT x=1 y=5> <CRSRD><CRSRL>*')
             out = 0
@@ -70,7 +72,7 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
             break
         elif k == conn.encoder.nl:
             break
-        else:
+        elif k == conn.encoder.back:
             out = -1
             break
     conn.SendTML('<RVSON><CURSOR>')
@@ -269,6 +271,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         else:   #Other image transfers
             if conn.mode == 'VidTex':
                 conn.encoder.SetVTMode('M') # Just set the internal flag to something different than text mode. See VT52encoder.SetBTMode() for the reason
+                if len(data[0]) > 15000:    # Increase socket timeout in case the RLE stream is too big (Assuming 600 baud connection)
+                    conn.socket.settimeout(60.0*10)  # A dynamic value would be even better
             conn.Sendallbin(bytes(data[0])) #Assume data[0] already has the required 'commands' to set the client in the correct mode
     else:
         savename = os.path.splitext(os.path.basename(filename))[0]

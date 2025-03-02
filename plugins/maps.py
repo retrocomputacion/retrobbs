@@ -10,6 +10,7 @@ from common.bbsdebug import _LOG
 from common.imgcvt import gfxmodes, PreProcess, dithertype, GFX_MODES
 from common import filetools as FT
 from common import turbo56k as TT
+from common import style as S
 from geopy.geocoders import Photon, Nominatim
 
 # Missing tile image
@@ -66,7 +67,11 @@ def plugFunction(conn:Connection):
         _LOG("MAPS: Missing Stadia Maps API key - Exiting", id=conn.id,v=2)
         return
 
-    if conn.QueryFeature(TT.PRADDR) >= 80:
+    if conn.T56KVer > 0:
+        if conn.QueryFeature(TT.PRADDR) >= 80:
+            _LOG("MAPS: terminal doesn't support graphic transfers", id=conn.id, v=2)
+            return
+    elif len(conn.encoder.gfxmodes) == 0:
         _LOG("MAPS: terminal doesn't support graphic transfers", id=conn.id, v=2)
         return
 
@@ -84,6 +89,8 @@ def plugFunction(conn:Connection):
         smurl = r"https://tiles.stadiamaps.com/tiles/stamen_toner/{0}/{1}/{2}.png?api_key={3}"   #r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
         tnum = 2**zoom #Number of tiles per row/column
         Cluster = Image.new('RGB',((width)*256,(height)*256))
+        if conn.T56KVer == 0:
+            conn.SendTML('<TEXT>')
         conn.SendTML('<YELLOW><CLR>Loading .........<CRSRL n=9>')
         for xtile in range((xmin-int(width/2)), (xmin+1+int(width/2))):
             for ytile in range(ymin-int(height/2),  ymin+1+int(height/2)):
@@ -109,16 +116,33 @@ def plugFunction(conn:Connection):
     else:
         geoLoc = Nominatim(user_agent="RetroBBS-Maps")
 
-    gmode = gfxmodes.C64HI if 'PET64' in conn.mode else conn.encoder.def_gfxmode
-    if 'MSX' in conn.mode:
-        introfile = 'plugins/maps_intro_256.png'
+    ckeys = conn.encoder.ctrlkeys
+
+    if 'CRSRU' in ckeys:
+        cursors = [chr(ckeys['CRSRU']),chr(ckeys['CRSRD']),chr(ckeys['CRSRL']),chr(ckeys['CRSRR'])]
+        ctext = 'cursors'
     else:
-        introfile = 'plugins/maps_intro.png'
-    FT.SendBitmap(conn,introfile, gfxmode = gmode, preproc=PreProcess(), display=False, dither=dithertype.NONE)
-    conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><YELLOW><CLR>Location:')
+        cursors = ['a','z','n','m']
+        ctext = 'a/z/n/m'
+
+
+    gmode = gfxmodes.C64HI if 'PET64' in conn.mode else conn.encoder.def_gfxmode
+    if conn.T56KVer > 0:
+        if 'MSX' in conn.mode:
+            introfile = 'plugins/maps_intro_256.png'
+        else:
+            introfile = 'plugins/maps_intro.png'
+        FT.SendBitmap(conn,introfile, gfxmode = gmode, preproc=PreProcess(), display=False, dither=dithertype.NONE)
+        conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CLR>')
+    else:
+        S.RenderMenuTitle(conn, 'RetroMaps')
+        conn.SendTML(f'<FORMAT><BR><YELLOW> Instructions:<BR>Use {ctext} to move<BR>+/- to zoom in/out<BR></FORMAT>')
+        conn.SendTML(f'<FORMAT>RETURN/ENTER to enter a new location<BR><BACK> to exit</FORMAT>')
+        conn.SendTML('<BR><BR><FORMAT>Image data (c) by:<BR>Stadia, Stamen Design<BR>OpenMapTiles and the Open StreetMap contributors<BR></FORMAT>')
+    conn.SendTML('<YELLOW>Location:')
     locqry = _dec(conn.ReceiveStr(keys,30))
     if locqry == '_':
-        conn.SendTML(f'<SPLIT bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR>')
+        conn.SendTML(f'<SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CURSOR>')
         return
     conn.SendTML('<SPINNER><CRSRL>')
     tloc = do_geocode(locqry)
@@ -169,8 +193,8 @@ def plugFunction(conn:Connection):
             mwindow = mwindow.point(lambda p: 255 if p>218 else 0)
             FT.SendBitmap(conn,mwindow.convert('1'),gfxmode=gmode,preproc=PreProcess())
             display = False
-        k = conn.ReceiveKey(bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR'],ord(conn.encoder.nl),ord(conn.encoder.back)]))
-        if (k == b'-') and (zoom > 3):
+        k = conn.ReceiveKey([conn.encoder.nl,conn.encoder.back,'+','-']+cursors)
+        if (k == '-') and (zoom > 3):
             zoom -= 1
             ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Tile containing "loc"
             tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
@@ -178,7 +202,7 @@ def plugFunction(conn:Connection):
             display = True
             retrieve = True
             cpos=[1,1]
-        elif (k == b'+') and (zoom < 20):
+        elif (k == '+') and (zoom < 20):
             zoom += 1
             ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Tile containing "loc"
             tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
@@ -186,7 +210,7 @@ def plugFunction(conn:Connection):
             display = True
             retrieve = True
             cpos=[1,1]
-        elif ord(k) == ckeys['CRSRD']:
+        elif k == cursors[1]:
             if ymax+sh >= 256*ytiles:
                 ctiley += 1
                 tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
@@ -203,7 +227,7 @@ def plugFunction(conn:Connection):
                     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]-(dppy*sh),loc[1])
                 display = True
-        elif ord(k) == ckeys['CRSRU']:
+        elif k == cursors[0]:
             if ymin-sh < 0:
                 ctiley -= 1
                 tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
@@ -220,7 +244,7 @@ def plugFunction(conn:Connection):
                     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]+(dppy*sh),loc[1])
                 display = True
-        elif ord(k) == ckeys['CRSRR']:
+        elif k == cursors[3]:
             lon = loc[1]+(dppx*sw)
             if lon > 180:   #wrap around
                 lon -= 360
@@ -234,7 +258,7 @@ def plugFunction(conn:Connection):
             else:
                 if delta[1]+sw >= 256:
                     cpos[0]+=1
-        elif ord(k) == ckeys['CRSRL']:
+        elif k == cursors[2]:
             lon = loc[1]-(dppx*sw)
             if lon < -180:   #wrap around
                 lon += 360
@@ -248,14 +272,16 @@ def plugFunction(conn:Connection):
             else:
                 if delta[1]-sw < 0:
                     cpos[0]-=1
-        elif (k[0] == ord(conn.encoder.back)):   #Exit
+        elif k == conn.encoder.back:   #Exit
             conn.SendTML('<CURSOR>')
             break
-        elif (k[0] == ord(conn.encoder.nl)):  #New Location
-            conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors["BLACK"]} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
+        elif k == conn.encoder.nl:  #New Location
+            if conn.T56KVer == 0:
+                conn.SendTML('<TEXT>')
+            conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
             locqry = _dec(conn.ReceiveStr(keys,30))
             if locqry == back:
-                conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors["BLACK"]} mode={conn.mode}><CURSOR>')
+                conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}><CURSOR>')
                 break
             conn.SendTML('<SPINNER><CRSRL>')
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)

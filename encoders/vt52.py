@@ -82,7 +82,7 @@ vt_colors = {'BLACK':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),
              'BLUE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',2)]),'YELLOW':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',1)]),
              'ORANGE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',7)]),
              'INK':(lambda conn,c:VT52encoder.SetColor(conn.encoder,c),[('_R','_C'),('conn','_C'),('c',4)]),
-             'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N')+VT52encoder.SetBackground(conn.encoder,background),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
+             'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N')+VT52encoder.SetBackground(conn.encoder,background),[('_R','_C'),('conn','_C'),('page',0),('border',8),('background',8)])}
 
 vt_semi = {'G4':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'),('conn','_C'),('m','4')]),
            'GN':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'),('conn','_C'),('m','N')]),
