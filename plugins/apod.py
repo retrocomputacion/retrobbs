@@ -12,6 +12,7 @@ from common import filetools as FT
 from common.helpers import formatX, More, text_displayer
 from common.bbsdebug import _LOG,bcolors
 from common.connection import Connection
+from common.imgcvt import gfxmodes
 
 url = 'https://api.nasa.gov/planetary/apod'
 
@@ -132,9 +133,7 @@ def plugFunction(conn:Connection):
             if tecla == back or tecla == '':
                 loop = False
             if loop == True:
-                if conn.QueryFeature(TT.PRADDR) >= 0x80:
-                    conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[2])
-                else:
+                if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
                     conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[1])
                     _LOG("Downloading and converting image",id=conn.id,v=4)
                     try:
@@ -143,7 +142,8 @@ def plugFunction(conn:Connection):
                     except:
                         _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id,v=2)
                         conn.SendTML("<BR>ERROR, unable to receive image")
-
+                else:
+                    conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[2])
                 tecla = conn.ReceiveKey(conn.encoder.nl + back)
                 conn.SendTML('<CURSOR>')
                 if conn.connected == False:

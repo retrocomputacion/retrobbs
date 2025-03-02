@@ -86,15 +86,18 @@ def plugFunction(conn:Connection):
                 return()
         termino = conn.encoder.decode(termino)
         conn.SendTML('<SPINNER><CRSRL>')
-        results = wikipedia.search(termino, results = scheight-10)
-        conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the SPINNER wait character
-        i = 0
-        options = ''
-        for r in results:
-            res = crop(r,scwidth-4,conn.encoder.ellipsis)
-            conn.SendTML(f'{hlcolor}[<BLUE>{string.ascii_lowercase[i]}{hlcolor}]{TxTtag}{res}<BR>')
-            options += string.ascii_lowercase[i]
-            i += 1
+        try:
+            results = wikipedia.search(termino, results = scheight-10)
+            conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the SPINNER wait character
+            i = 0
+            options = ''
+            for r in results:
+                res = crop(r,scwidth-4,conn.encoder.ellipsis)
+                conn.SendTML(f'{hlcolor}[<BLUE>{string.ascii_lowercase[i]}{hlcolor}]{TxTtag}{res}<BR>')
+                options += string.ascii_lowercase[i]
+                i += 1
+        except:
+            conn.SendTML('<FORMAT><ORANGE> Could not perform seach...</FORMAT>')
         conn.SendTML(f'{hlcolor}[<BLUE><BACK>{hlcolor}]{TxTtag}Previous menu<BR><BR>Please select:')
         options += back+conn.encoder.nl
         sel = conn.ReceiveKey(options)
@@ -109,7 +112,7 @@ def plugFunction(conn:Connection):
                 resp = requests.get(page.fullurl)
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.content, "html.parser")
-                    if conn.QueryFeature(TT.PRADDR) < 0x80:
+                    if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
                         try:
                             im_p = soup.find(['table','td','div'],{'class':['infobox','infobox-image', 'infobox-full-data','sidebar-image','thumbinner']}).find('img')
                             if im_p != None:

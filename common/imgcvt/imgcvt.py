@@ -9,6 +9,7 @@ from common.imgcvt import common as CC
 from common.imgcvt import c64 as c64
 from common.imgcvt import plus4 as p4
 from common.imgcvt import msx as msx
+from common.imgcvt import rle as rle
 #import cvtmods.zxspectrum as zx
 from common.imgcvt import palette as Palette
 from common.imgcvt import dither as DT
@@ -20,15 +21,16 @@ GFX_MODES = []
 # gfxmodes = IntEnum('gfxmodes',['C64HI','C64MULTI','P4HI','P4MULTI','MSXSC2'], start=0)
 
 #Mode conversion mapping
-mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64MULTI,gfxmodes.MSXSC2:gfxmodes.C64MULTI},
-             'PET264':{gfxmodes.C64HI:gfxmodes.P4HI,gfxmodes.C64MULTI:gfxmodes.P4MULTI,gfxmodes.MSXSC2:gfxmodes.P4MULTI},
-             'MSX1':{gfxmodes.P4HI:gfxmodes.MSXSC2,gfxmodes.P4MULTI:gfxmodes.MSXSC2,gfxmodes.C64HI:gfxmodes.MSXSC2,gfxmodes.C64MULTI:gfxmodes.MSXSC2}}
+mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64MULTI,gfxmodes.MSXSC2:gfxmodes.C64MULTI,gfxmodes.VTHI:gfxmodes.C64HI,gfxmodes.VTMED:gfxmodes.C64HI},
+             'PET264':{gfxmodes.C64HI:gfxmodes.P4HI,gfxmodes.C64MULTI:gfxmodes.P4MULTI,gfxmodes.MSXSC2:gfxmodes.P4MULTI,gfxmodes.VTHI:gfxmodes.P4HI,gfxmodes.VTMED:gfxmodes.P4HI},
+             'MSX1':{gfxmodes.P4HI:gfxmodes.MSXSC2,gfxmodes.P4MULTI:gfxmodes.MSXSC2,gfxmodes.C64HI:gfxmodes.MSXSC2,gfxmodes.C64MULTI:gfxmodes.MSXSC2,gfxmodes.VTHI:gfxmodes.MSXSC2,gfxmodes.VTMED:gfxmodes.MSXSC2},
+             'VIDTEX':{gfxmodes.C64HI:gfxmodes.VTHI,gfxmodes.C64MULTI:gfxmodes.VTHI,gfxmodes.P4HI:gfxmodes.VTHI,gfxmodes.P4MULTI:gfxmodes.VTHI,gfxmodes.MSXSC2:gfxmodes.VTHI}}
 
 #Image scale/crop modes
 # cropmodes = IntEnum('cropmodes',['LEFT','TOP','RIGHT','BOTTOM','T_LEFT','T_RIGHT','B_LEFT','B_RIGHT','CENTER','FILL','FIT','H_FIT','V_FIT'], start=0)
 
 #Native format filename extensions
-im_extensions = c64.Native_Ext + p4.Native_Ext + msx.Native_Ext
+im_extensions = c64.Native_Ext + p4.Native_Ext + msx.Native_Ext + rle.Native_Ext
 
 ######## Image preprocess class ########
 class PreProcess:
@@ -54,6 +56,8 @@ def build_modes():
     for m in p4.GFX_MODES:
         GFX_MODES.append(m)
     for m in msx.GFX_MODES:
+        GFX_MODES.append(m)
+    for m in rle.GFX_MODES:
         GFX_MODES.append(m)
     # for m in zx.GFX_MODES:
     #     GFX_MODES.append(m)
@@ -432,6 +436,8 @@ def open_Image(filename:str):
         result = msx.load_Image(filename)
         # if result != None:
         #     result[1] = gfxmodes.MSXSC2 + result[1]
+    elif extension in rle.Native_Ext:
+        result = rle.load_Image(filename)
     else:
         return None
     return result

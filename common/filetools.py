@@ -38,21 +38,21 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     tml = ''
     if width != 0:
         tml += f'<RVSON> Original size: {width}x{height}<BR><BR>'
-        if 'MSX' not in conn.mode:
+        if 'PET' in conn.mode:
             tml +='''<RVSON> Select:<BR><BR><RVSON> * &lt; M &gt; for multicolor conversion<BR>
 <RVSON>   &lt; H &gt; for hi-res conversion<BR>'''
             keys += 'hm'
             out = 1
         else:
             out = 0
-    elif 'MSX' not in conn.mode:
+    elif 'PET' in conn.mode:
         out = 1
     else:
         out = 0
     if save:
         tml += '<BR><RVSON> &lt; S &gt; to save image<BR>'
         keys += 's'
-    if conn.QueryFeature(TT.PRADDR) < 0x80:
+    if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
         tml += '<RVSON> &lt; RETURN &gt; to view image<BR>'
         keys += conn.encoder.nl
     tml += '<RVSON> &lt; <BACK> &gt; to exit<BR><CURSOR enable=False>'
@@ -91,7 +91,10 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 
     lines = lines if lines < conn.encoder.txt_geo[1] else conn.encoder.txt_geo[1]
 
-    if conn.QueryFeature(TT.PRADDR) >= 0x80 and not save:
+    if conn.T56KVer > 0:
+        if conn.QueryFeature(TT.PRADDR) >= 0x80 and not save:
+            return False
+    elif len(conn.encoder.gfxmodes) == 0 and not save:
         return False
     
     cmode = conn.mode
@@ -109,6 +112,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         gfxmulti = gfxmodes.P4MULTI
     elif conn.mode == 'MSX1':
         gfxhi = gfxmodes.MSXSC2
+        gfxmulti = -1
+    elif conn.mode == 'VidTex':
+        gfxhi = gfxmodes.VTHI if gfxmodes.VTHI in conn.encoder.gfxmodes else gfxmodes.VTMED
         gfxmulti = -1
     else:
         return False
@@ -142,7 +148,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                     preproc = PreProcess()
                 cropmode: cropmodes.TOP
                 if gfxmode == None:
-                    print(mode_conv, cmode, pimg[1])
+                    # print(mode_conv, cmode, pimg[1])
                     gfxmode = mode_conv[cmode][pimg[1]]
                 th = 3
             else:
@@ -202,62 +208,68 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     # tbytes = 320*lines
 
     if mode & 0x80 == 0:	# Transfer to memory
-        # Sync
-        binaryout = b'\x00'
-        # Enter command mode
-        binaryout += b'\xFF'
-        # Set the transfer pointer + $10 (bitmap memory)
-        binaryout += b'\x81\x10'
-        # Transfer bitmap block + Byte count (low, high)
-        binaryout += b'\x82'
-        binaryout += tbytes.to_bytes(2,'little')	#Block size
 
-        if display:
-            conn.SendTML('<CURSOR enable=False>')	#Disable cursor blink
-        conn.Sendallbin(binaryout)
+        if conn.T56KVer > 0:    #Turbo56K memory transfer
+            # Sync
+            binaryout = b'\x00'
+            # Enter command mode
+            binaryout += b'\xFF'
+            # Set the transfer pointer + $10 (bitmap memory)
+            binaryout += b'\x81\x10'
+            # Transfer bitmap block + Byte count (low, high)
+            binaryout += b'\x82'
+            binaryout += tbytes.to_bytes(2,'little')	#Block size
 
-        # Bitmap data
-        binaryout = data[0][0:tbytes] #Bitmap
-        # Set the transfer pointer + $00 (screen memory)
-        binaryout += b'\x81\x00'
-        # Transfer screen block + Byte count (low, high)
-        binaryout += b'\x82'
-        binaryout += tchars.to_bytes(2,'little')	#Block size
-        # Screen Data
-        binaryout += data[1][0:tchars] #Screen
-        if border == None:
-            border = b'\x00' if bgcolor == None else bgcolor
-        border = bytes([border]) if type(border) == int else border
-        if (gfxmode == gfxmulti) or (cmode != 'PET64' and data[2] != None):
-            # Set the transfer pointer + $20 (color memory)
-            if 'MSX' in cmode:
-                binaryout += b'\x81\x21'
-            else:
-                binaryout += b'\x81\x20'
-            # Transfer color block + Byte count (low, high)
-            binaryout += b'\x82'	# Color data
-            binaryout += tcolor.to_bytes(2,'little')	#Block size
-            binaryout += data[2][0:tcolor] #ColorRAM
-        if bgcolor == None:
-            bgcolor = bytes([gcolors[1]]) if gcolors[1] != None else b'\x00'
-        if display:
-            if gfxmode == gfxmulti:
-                # Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
-                binaryout += b'\x92\x00'
-                binaryout += border
-                binaryout += bgcolor
-                if cmode == 'PET264':
-                    binaryout += gcolors[4].to_bytes(1,'big')
-            else:
-                # Switch to hires mode + Page number: 0 (default) + Border color: border
-                binaryout += b'\x91\x00'
-                binaryout += border
-        # Exit command mode
-        binaryout += b'\xFE'
-        # if display:
-        #     conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
-        conn.Sendallbin(binaryout)
-        return bgcolor
+            if display:
+                conn.SendTML('<CURSOR enable=False>')	#Disable cursor blink
+            conn.Sendallbin(binaryout)
+
+            # Bitmap data
+            binaryout = data[0][0:tbytes] #Bitmap
+            # Set the transfer pointer + $00 (screen memory)
+            binaryout += b'\x81\x00'
+            # Transfer screen block + Byte count (low, high)
+            binaryout += b'\x82'
+            binaryout += tchars.to_bytes(2,'little')	#Block size
+            # Screen Data
+            binaryout += data[1][0:tchars] #Screen
+            if border == None:
+                border = b'\x00' if bgcolor == None else bgcolor
+            border = bytes([border]) if type(border) == int else border
+            if (gfxmode == gfxmulti) or (cmode != 'PET64' and data[2] != None):
+                # Set the transfer pointer + $20 (color memory)
+                if 'MSX' in cmode:
+                    binaryout += b'\x81\x21'
+                else:
+                    binaryout += b'\x81\x20'
+                # Transfer color block + Byte count (low, high)
+                binaryout += b'\x82'	# Color data
+                binaryout += tcolor.to_bytes(2,'little')	#Block size
+                binaryout += data[2][0:tcolor] #ColorRAM
+            if bgcolor == None:
+                bgcolor = bytes([gcolors[1]]) if gcolors[1] != None else b'\x00'
+            if display:
+                if gfxmode == gfxmulti:
+                    # Switch to multicolor mode + Page number: 0 (default) + Border color: border + Background color: bgcolor
+                    binaryout += b'\x92\x00'
+                    binaryout += border
+                    binaryout += bgcolor
+                    if cmode == 'PET264':
+                        binaryout += gcolors[4].to_bytes(1,'big')
+                else:
+                    # Switch to hires mode + Page number: 0 (default) + Border color: border
+                    binaryout += b'\x91\x00'
+                    binaryout += border
+            # Exit command mode
+            binaryout += b'\xFE'
+            # if display:
+            #     conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
+            conn.Sendallbin(binaryout)
+            return bgcolor
+        else:   #Other image transfers
+            if conn.mode == 'VidTex':
+                conn.encoder.SetVTMode('M') # Just set the internal flag to something different than text mode. See VT52encoder.SetBTMode() for the reason
+            conn.Sendallbin(bytes(data[0])) #Assume data[0] already has the required 'commands' to set the client in the correct mode
     else:
         savename = os.path.splitext(os.path.basename(filename))[0]
         if cmode in ['PET64','PET264']:
