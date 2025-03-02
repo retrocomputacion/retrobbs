@@ -69,6 +69,11 @@ def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
     i_ratio = i_image.size[0] / i_image.size[1]
     in_size = GFX_MODES[gfxmode]['in_size']
     dst_ratio = in_size[0]/in_size[1]
+    if mode == cropmodes.BIG_FILL:
+        if (i_image.size[0] < in_size[0]) and (i_image.size[1] < in_size[1]):
+            mode = cropmodes.CENTER
+        else:
+            mode = cropmodes.FILL
     if mode == cropmodes.FILL:
         if dst_ratio >= i_ratio:
             i_image = i_image.resize((in_size[0],in_size[0]*i_image.size[1]//i_image.size[0]), Image.LANCZOS)

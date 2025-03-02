@@ -58,9 +58,7 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
     tml += '<RVSON> &lt; <BACK> &gt; to exit<CURSOR enable=False>'
     conn.SendTML(tml)
     while conn.connected:
-        print(keys)
         k = conn.ReceiveKey(keys)
-        print(k)
         if k == 'h' and out == 1:
             conn.SendTML('<RVSON><AT x=1 y=5> <CRSRD><CRSRL>*')
             out = 0
@@ -148,7 +146,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                 Source = pimg[0]
                 if preproc == None:
                     preproc = PreProcess()
-                cropmode: cropmodes.TOP
+                cropmode = cropmodes.BIG_FILL
                 if gfxmode == None:
                     # print(mode_conv, cmode, pimg[1])
                     gfxmode = mode_conv[cmode][pimg[1]]
