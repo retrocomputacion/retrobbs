@@ -4,6 +4,7 @@ from common.classes import Encoder
 import os
 from copy import deepcopy
 import codecs
+from common.imgcvt import gfxmodes
 
 #VT-52 and related encoders
 
@@ -67,7 +68,9 @@ PALETTE = {'\x1bk'+chr((j*16)+i):j for i in range(9) for j in range(9)}
 t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'H'+chr(ESC)+'J','HOME':chr(ESC)+'H',
                      'BACK':chr(BACK),'SPINNER':chr(SPINNER)},
              'VidTex':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'j','HOME':chr(ESC)+'H',
-                       'BACK':chr(BACK),'TEXT':'\x1bGN','SPINNER':chr(SPINNER)}}
+                       'BACK':chr(BACK),
+                       'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N'),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)]),
+                       'SPINNER':chr(SPINNER)}}
 t_multi =	{'DEL':chr(DELETE),'CRSRR':chr(ESC)+'C','CRSRL':chr(ESC)+'D','CRSRU':chr(ESC)+'A','CRSRD':chr(ESC)+'B',
             'POUND':'','PI':'','HASH':'#','HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': '+',
             'LARROW':'_','UARROW':'^','CBM-U':'','CBM-O':'','CBM-J':'','CBM-L':'',
@@ -79,7 +82,7 @@ vt_colors = {'BLACK':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),
              'BLUE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',2)]),'YELLOW':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',1)]),
              'ORANGE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',7)]),
              'INK':(lambda conn,c:VT52encoder.SetColor(conn.encoder,c),[('_R','_C'),('conn','_C'),('c',4)]),
-             'TEXT':(lambda conn,page,border,background:'\x1bGN'+VT52encoder.SetBackground(conn.encoder,background),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
+             'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N')+VT52encoder.SetBackground(conn.encoder,background),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
 
 vt_semi = {'G4':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'),('conn','_C'),('m','4')]),
            'GN':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'),('conn','_C'),('m','N')]),
@@ -145,6 +148,8 @@ class VT52encoder(Encoder):
         self.palette = {}
         self.bgcolor = 8        # Background color for VidTex mode (default Black)
         self.fgcolor = 2
+        self.gfxmodes = []
+        self.def_gfxmode = None
         self.black_replace = False  # Workaround for black color in Compuserve's VidTex terminals
         self.vt_mode = 'N'      # VidTex current graphic mode: possible values: N,4,H,M
 
@@ -161,8 +166,11 @@ class VT52encoder(Encoder):
         m = str(m)
         if m.upper() not in ['N','4','H','M']:
             m = 'N'
-        self.vt_mode = m.upper()
-        return f'\x1bG{m.upper()}'
+        if m != self.vt_mode:           # CBTerm stops rendering text if the GN escape code is sent while the terminal is already in text mode
+            self.vt_mode = m.upper()
+            return f'\x1bG{m.upper()}'
+        else:
+            return ''
     
     def SetBackground(self,c):
         c &= 15
@@ -170,7 +178,7 @@ class VT52encoder(Encoder):
         self.bgcolor = c
         self.palette = {'\x1bk'+chr((j*16)+c):j for j in range(9)}  # Refresh Palette
         if self.black_replace:
-            self.palette['\x1bk'+chr((8*16)+c)] = 7   # Replace black with orange in
+            self.palette['\x1bk'+chr((8*16)+c)] = 7   # Replace black with orange in VidTex terminal
         return f'\x1bk{chr((self.fgcolor*16)+c)}'
 
     def SemiChar(self,sg,n):
@@ -202,26 +210,37 @@ class VT52encoder(Encoder):
                 _copy.name = 'VidTex'
                 options = idstring[1:-1].split(',')
                 conn.SendTML('<FORMAT>VidTex compatible terminal detected</FORMAT>')
+                _copy.gfxmodes = []
                 for opt in options:
                     if 'SS' in opt: #Screen size
                         lines = ord(opt[2])-31
                         cols = ord(opt[3])-31
                     if opt == 'G4': #Semigraphics support
                         _copy.tml_mono.update(vt_semi)
+                    if opt == 'GM': #MedRes RLE
+                        _copy.gfxmodes.append(gfxmodes.VTMED)
+                    if opt == 'GH': #HiRes RLE
+                        _copy.gfxmodes.append(gfxmodes.VTHI)
+                if len(_copy.gfxmodes) != 0:
+                    if gfxmodes.VTHI in _copy.gfxmodes:
+                        _copy.def_gfxmode = gfxmodes.VTHI
+                    else:
+                        _copy.def_gfxmode = gfxmodes.VTMED
+                    _copy.tml_mono['GRAPHIC']=(lambda mode,page,border,background: self.SetVTMode('H' if mode==gfxmodes.VTHI else 'M'),[('_R','_C'),('mode',False),('page',0),('border',0),('background',0)])
                 if lines == 0 or cols == 0:
                     conn.SendTML('Screen columns? (40): ')
                     cols = conn.ReceiveInt(32,80,40)
                     conn.SendTML('<BR>Screen lines? (25): ')
                     lines = conn.ReceiveInt(16,25,25)
                 elif cols <= 40:
-                    # Only CBTerm seems to miss screen dimensions, and it also doesnt support color
+                    # Only CBTerm seems to be missing screen dimensions, and it also doesnt support color
                     # Add color for any other terminal, but only if in 40 column mode
                     _copy.tml_mono.update(vt_colors)
                     _copy.features['color'] = True
                     _copy.features['bgcolor'] = 1
                     # _copy.palette = PALETTE
                     _copy.colors={'GREEN':0, 'YELLOW':1, 'BLUE':2, 'RED':3, 'WHITE':4, 'CYAN': 5, 'PURPLE':6, 'ORANGE':7, 'BLACK':8}
-                    if len(options[0]) > 3: # Compuserve's VidTex II and Compuserve Executive uses Green instead of Black, we'll replace Black with Orange
+                    if len(options[0]) > 3: # Compuserve's VidTex uses Green instead of Black, we'll replace Black with Orange
                         _copy.black_replace = True
                         _copy.tml_mono['BLACK'] = (lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',7)])
                     _copy.SetBackground(8)
