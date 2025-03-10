@@ -30,6 +30,11 @@ def setup():
 # Plugin callable function
 #######################################
 def plugFunction(conn:Connection,url):
+
+    kdecos = {'VT52':('[',']'),'VidTex':('[',']'),'ASCII':('[',']'),
+              'ATRSTM':('<RVSON> ',' <RVSOFF>'),'ATRSTL':('<RVSON> ',' <RVSOFF>'),
+              'default':('<RVSON><L-NARROW>','<R-NARROW><RVSOFF>')}
+
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
@@ -43,10 +48,11 @@ def plugFunction(conn:Connection,url):
     # Text mode
     conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER><CRSRL>')
     nfeed = feedparser.parse(url)
-    if conn.mode in ['VidTex','VT52']:
-        kdeco = ('[',']')
-    else:
-        kdeco = ('<L-NARROW>','<R-NARROW>')
+    # if conn.mode in ['VidTex','VT52']:
+    #     kdeco = ('[',']')
+    # else:
+    #     kdeco = ('<L-NARROW>','<R-NARROW>')
+    kdeco = kdecos.get(conn.mode,kdecos['default'])
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
@@ -61,16 +67,16 @@ def plugFunction(conn:Connection,url):
             text = textwrap.shorten(e.get('title','No title'),width=72,placeholder='...')
             text = H.formatX(text,columns=scwidth-3)
             lines+=len(text)
-            if lines>scheight-2:
+            if lines>scheight-3:
                 continue
-            conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}>{kdeco[0]}{H.valid_keys[i-1]}{kdeco[1]}<RVSOFF><INK c={menucolors[i%2][1]}>')
+            conn.SendTML(f'<INK c={menucolors[i%2][0]}>{kdeco[0]}{H.valid_keys[i-1]}{kdeco[1]}<INK c={menucolors[i%2][1]}>')
             x = 0
             for t in text:
                 conn.SendTML(f'<SPC n={3*x}>{t}')
                 x=1
             MenuDic[H.valid_keys[i-1]] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
             i+=1
-        conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}><L-NARROW><BACK><R-NARROW><RVSOFF><INK c={menucolors[i%2][1]}>Back<BR>'
+        conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}>{kdeco[0]}<BACK>{kdeco[1]}<INK c={menucolors[i%2][1]}>Back<BR>'
                      f'<WHITE><BR>Your choice: ')
         return MenuDic
     except:

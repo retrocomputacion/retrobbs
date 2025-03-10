@@ -43,7 +43,7 @@ def plugFunction(conn:Connection):
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
     title = None
     try:
-        if 'PET' in conn.mode and not 'PET20' in conn.mode:
+        if 'PET' in conn.mode and conn.encoder.txt_geo[0] == 40:
             fname = 'plugins/oneliner.seq'
         elif 'MSX' in conn.mode:
             fname = 'plugins/oneliner.mseq'
@@ -71,7 +71,7 @@ def plugFunction(conn:Connection):
             conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
         else:
             conn.SendTML('<BR>')
-        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message {S.KeyPrompt(conn,"<BACK>",TML=True)}<GREEN>exit')
+        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message <KPROMPT t={conn.encoder.back}><GREEN>exit')
         back = conn.encoder.decode(conn.encoder.back)
         comm = conn.ReceiveKey(back+conn.encoder.nl)
         if comm == back:

@@ -1,0 +1,74 @@
+<CLR><RVSOFF>
+{# Generic Commodore color PETSCII #}
+{% if 'PET' in mode %}
+	<LOWER>
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.MenuTColor2}}><LFILL row=0 code=64><LFILL row=2 code=64><INK c={{st.MenuTColor1}}><RVSON><U-NARROW><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><RVSON><U-NARROW><RVSOFF>
+	{% else %}
+		<INK c={{st.MenuTColor1}}><RVSON><U-NARROW><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><RVSON><U-NARROW><RVSOFF>
+	{% endif %}
+	<RVSON> <RVSOFF><INK c={{st.HlColor}}> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <INK c={{st.MenuTColor1}}><RVSON> <RVSOFF>
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.MenuTColor1}}><RVSON><B-NARROW><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><RVSON><B-NARROW><RVSOFF>
+	{% else %}
+		<INK c={{st.MenuTColor1}}><RVSON><B-NARROW><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><RVSON><B-NARROW><RVSOFF>
+	{% endif %}
+{# MSX1 Retroterm #}
+{% elif mode == 'MSX1' %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.MenuTColor2}}><LFILL row=0 code=0x17><LFILL row=2 code=0x17><INK c={{st.MenuTColor1}}><B-HALF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><HLINE><INC></WHILE>
+		{% if scwidth%2 == 0 %}
+			<INK c={{st.MenuTColor2}}><B-HALF>
+		{% else %}
+			<INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><B-HALF>
+		{% endif %}
+	{% else %}
+		<INK c={{st.MenuTColor1}}><B-HALF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><HLINE><INC></WHILE>
+		{% if scwidth%2 == 0 %}
+			<INK c={{st.MenuTColor2}}><B-HALF>
+		{% else %}
+			<INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><B-HALF>
+		{% endif %}
+	{% endif %}
+	<BLOCK><INK c={{st.HlColor}}> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} {# <- There's a trailing space here #}
+	{% if scwidth%2 == 0 %}
+		<INK c={{st.MenuTColor1}}>
+	{% else %}
+		<INK c={{st.MenuTColor2}}>
+	{% endif %}
+	<BLOCK>
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.MenuTColor1}}><RVSON><B-HALF><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><RVSON><B-HALF><RVSOFF>
+	{% else %}
+		<INK c={{st.MenuTColor1}}><RVSON><B-HALF><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><HLINE><INC></WHILE>
+		{% if scwidth%2 == 0 %}
+			<INK c={{st.MenuTColor2}}><RVSON><B-HALF><RVSOFF>
+		{% else %}
+			<INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><RVSON><B-HALF><RVSOFF>
+		{% endif %}
+	{% endif %}
+{# MSX comterm #}
+{% elif mode == 'MSXstd' %}
+	<B-HALF><HLINE n={{scwidth-2}}><B-HALF>
+	<BLOCK> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <BLOCK>
+	<U-HALF><HLINE n={{scwidth-2}}><U-HALF>
+{# VidTex #}
+{% elif mode == 'VidTex' %}
+	{% if conn.encoder.features['color'] %}
+		{# Assume that a VidTex terminal which supports color also supports semigraphics #}
+		<G4>
+		<INK c={{st.MenuTColor1}}><UL-UR-LL-QUAD><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><U-HALF><INK c={{st.MenuTColor1}}><U-HALF><INC></WHILE><INK c={{st.MenuTColor2}}><UL-UR-LR-QUAD>
+		<L-HALF><INK c={{st.HlColor}}> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <INK c={{st.MenuTColor1}}><R-HALF>
+		<INK c={{st.MenuTColor1}}><UL-LL-LR-QUAD><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><B-HALF><INK c={{st.MenuTColor1}}><B-HALF><INC></WHILE><INK c={{st.MenuTColor2}}><LL-LR-UR-QUAD>
+		<GN>
+	{% else %}
+		+<HLINE n={{scwidth-2}}>+
+		<VLINE> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <VLINE>
+		+<HLINE n={{scwidth-2}}>+
+	{% endif %}
+{# Generic fallback #}
+{% else %}
+		+<HLINE n={{scwidth-2}}>+
+		<VLINE> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <VLINE>
+		+<HLINE n={{scwidth-2}}>+
+{% endif %}

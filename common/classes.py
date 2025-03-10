@@ -4,10 +4,14 @@
 #########################################################
 
 from common.dbase import DBase
+from common.bbsdebug import _LOG
 import time
 from enum import Enum
 import os
+import sys
 import textwrap
+from jinja2 import Environment, FileSystemLoader, TemplateError
+import json
 
 ########### BBS Class ###########
 class BBS:
@@ -23,10 +27,11 @@ class BBS:
         self.BSYMess = ''		#Busy Message
         self.OSText = ''		#Host OS (Specific distro for Linux)
         self.TOut = 60*5		#Default Connection Timeout
-        self.Paths = {'bbsfiles': 'bbsfiles/', 'plugins': 'plugins/', }
+        self.Paths = {'bbsfiles': 'bbsfiles/', 'audio': 'audio/', 'images': 'images/', 'downloads': 'programs/', 'temp': 'tmp/', 'plugins': 'plugins/', 'templates':'templates/'}
         self.PlugOptions = {}	#Plugins options from the config file
         self.BoardOptions = {}	#Message boards options from the config file
-        self.Paths = {}			#Preset paths
+        self.Template = 'default'   #Template in use
+        # self.Paths = {}			#Preset paths WHY WAS THIS HERE???!!!
         self.dateformat = 0		#Date format
         self.database = None	#Database
         self.version = 0		#BBS version
@@ -166,13 +171,34 @@ class Encoder:
     def setup(self, conn, id):
         return None
 
+############ Style color enum ############
 SCOLOR = Enum('style_colors',
           [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
             'OoddColor','ToddColor','OevenColor','TevenColor',
             'MenuTColor1','MenuTColor2','SBorderColor1','SBorderColor2',
             'PbColor','PtColor'])
 
+# ##### Support class for bbstyle templates #####
+# # safe format(): https://stackoverflow.com/questions/17215400/format-string-unused-named-arguments
+# class Safedict(dict): 
+#     def __missing__(self,key):
+#         return '{'+key+'}'
+
+# ##### Support class for bbstyle templates #####
+# # Truncate with ellipsis: https://discuss.python.org/t/enhanced-string-formatting-for-truncation-with-ellipses/69823
+# class Truncate:
+#     def __init__(self, string, ellipsis):
+#         self.string = string
+#         self.ellipsis = ellipsis
+
+#     def __format__(self, format_spec):
+#         max_length = int(format_spec[1:]) if format_spec.startswith('t') else None
+#         if max_length is not None and len(self.string) > max_length:
+#             return self.string[:max_length-len(self.ellipsis)] + self.ellipsis
+#         return self.string
+
 ############# bbstyle class #############
+# Set default color set
 class bbsstyle:
     def __init__(self, colors:dict=None):
         if colors != None:
@@ -198,11 +224,32 @@ class bbsstyle:
             ### [Prompt] ###
             self.PbColor		= colors.get('YELLOW',0)		#Key prompt brackets color
             self.PtColor		= colors.get('LIGHT_BLUE',colors.get('CYAN',0))	#Key prompt text color
+        else:
+            # Default colors (in palette index)
+            self.BgColor		= 0		#Background color
+            self.BoColor		= 0		#Border color
+            self.TxtColor		= 0	    #Main text color
+            self.HlColor		= 0		#Highlight text color
+            self.RvsColor		= 0	    #Reverse text color
+            ### Menu specific colors ###
+            self.OoddColor		= 0	    #Odd option key color
+            self.OoddBack       = 0     #Odd option key bg color if applicable
+            self.ToddColor		= 0	    #Odd option text color
+            self.OevenColor		= 0		#Even option key color
+            self.OevenBack      = 0     #Even option key bg color if applicable
+            self.TevenColor		= 0     #Even option text color
+            self.MenuTColor1	= 0		#Menu title border color 1
+            self.MenuTColor2	= 0	    #Menu title border color 2
+            self.SBorderColor1	= 0 	#Section border color 1
+            self.SBorderColor2	= 0		#Section border color 2
+            ### [Prompt] ###
+            self.PbColor		= 0		#Key prompt brackets color
+            self.PtColor		= 0 	#Key prompt text color
 
     # Set an style color, a section or the whole style
     # color : SCOLOR and index != None to set a single style color
     # color : dictionary with SCOLOR:int pairs to set the whole or part of the theme 
-    def set(self, color, index: int = None):
+    def set(self, color:SCOLOR, index: int = None):
         if type(color) != dict:
             if index != None:
                 color = {color:index}
@@ -240,3 +287,70 @@ class bbsstyle:
                 self.PbColor		= index
             elif color == SCOLOR.PtColor:
                 self.PtColor		= index
+
+
+######## Template class ########
+class template:
+    def __init__(self, conn, mytemplate:str='default/'):
+        self.connection = conn
+        tpath = conn.bbs.Paths['templates']
+        self.path = mytemplate
+        self.j2env = Environment(loader=FileSystemLoader([tpath+mytemplate,tpath+'default/','templates/default/']))
+        self.j2env.globals={'conn':conn,'st':conn.style,'mode':conn.mode,'scwidth':conn.encoder.txt_geo[0],'scheight':conn.encoder.txt_geo[1]}
+
+    # Return a parsed template
+    # Parameters:
+    #
+    # name: Slash separated template name:
+    #       '<section>/<template>'
+    #       ie: 'main/title'
+    # conn: Connection object
+    # **kwargs: Dictionary of parameters
+    def GetTemplate(self, name:str, **kwargs):
+        try:
+            template = self.j2env.get_template(name+'.j2')
+            return (template.render(kwargs))
+        except TemplateError as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            _LOG(e,id=self.connection.id,v=1)
+            _LOG(fname+'|'+str(exc_tb.tb_lineno),id=self.connection.id,v=1)
+        return ''
+    
+    # Get a bbsstyle color set from the templates directory
+    # if no style file is found, the connection default bbsstyle object is returned
+    def GetStyle(self,name:str=''):
+        tpath = self.connection.bbs.Paths['templates']
+        paths = [tpath+self.path,tpath+'default/','temnplates/default/']
+        for p in paths:
+            if os.path.exists(p+name+'.json'):  # Look for the file in the valid paths
+                with open(p+name+'.json','r') as sf:
+                    jstyle = json.load(sf)
+                break
+        else:   # File not found
+            return(self.connection.style)
+        # Create style object
+        if self.connection.mode in jstyle:
+            default = self.connection.style #<<<
+            style = bbsstyle()
+            st = jstyle[self.connection.mode]
+            style.BgColor		= st.get('BgColor',default.BgColor)
+            style.BoColor		= st.get('BoColor',default.BoColor)
+            style.TxtColor		= st.get('TxtColor',default.TxtColor)
+            style.HlColor		= st.get('HlColor',default.HlColor)
+            style.RvsColor		= st.get('RvsColor',default.RvsColor)
+            style.OoddColor		= st.get('OoddColor',default.OoddColor)
+            style.OoddBack      = st.get('OoddBack',default.OoddBack)
+            style.ToddColor		= st.get('ToddColor',default.ToddColor)
+            style.OevenColor	= st.get('OevenColor',default.OevenColor)
+            style.OevenBack     = st.get('OevenBack',default.OevenBack)
+            style.TevenColor	= st.get('TevenColor',default.TevenColor)
+            style.MenuTColor1	= st.get('MenuTColor1',default.MenuTColor1)
+            style.MenuTColor2	= st.get('MenuTColor2',default.MenuTColor2)
+            style.SBorderColor1	= st.get('SBorderColor1',default.SBorderColor1)
+            style.SBorderColor2	= st.get('SBorderColor2',default.SBorderColor2)
+            style.PbColor		= st.get('PbColor',default.PbColor)
+            style.PtColor		= st.get('PtColor',default.PtColor)
+            return style
+        else:   # Style file doesn't define color for the current mode
+            return(self.connection.style)

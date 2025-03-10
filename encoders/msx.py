@@ -137,6 +137,7 @@ t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_
             'V-RIGHT':chr(1)+chr(V_RIGHT),'V-LEFT':chr(1)+chr(V_LEFT),'H-UP':chr(1)+chr(H_UP),'H-DOWN':chr(1)+chr(H_DOWN),'BLOCK':'\xDB',
             'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
             'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
+            'U-HALF':'\xDF','R-HALF':'\xDE',
             'TRI-LEFT':chr(TRI_LEFT),'TRI-RIGHT':chr(TRI_RIGHT),'TRI-UP':chr(TRI_UP),'TRI-DOWN':chr(TRI_DOWN),
             'SPINNER':chr(SPINNER),'BACK':chr(BACK)}}
 

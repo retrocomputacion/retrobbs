@@ -36,7 +36,10 @@ def plugFunction(conn:Connection):
         else:
             if conn.encoder.txt_geo[0] > 32:
                 conn.SendTML('<BR>')
-            conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
+            if 'PET' in conn.mode:
+                conn.SendTML(f'{TxTtag}<HLINE n={scwidth-1}><CRSRL><INS><HLINE>')
+            else:
+                conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
         conn.SendTML(f'<WINDOW top=2 bottom={scheight-1}>')	#Set Text Window
 
     scwidth,scheight = conn.encoder.txt_geo
@@ -54,8 +57,8 @@ def plugFunction(conn:Connection):
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
     ecolors = conn.encoder.colors
     wcolors = bbsstyle(ecolors)
-    wcolors.TxtColor = ecolors.get('DARK_GREY',0) if 'PET64' in conn.mode else ecolors.get('BLUE',0)
-    TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
+    wcolors.TxtColor = ecolors.get('DARK_GREY',0) if '64' in conn.mode else ecolors.get('GREY',0) if 'PET128' in conn.mode else ecolors.get('BLUE',0)
+    TxTtag = '<GREY1>' if '64' in conn.mode else '<GREY2>' if 'PET128' in conn.mode else '<BLUE>'
     wcolors.PbColor = ecolors.get('BLACK',0)
     wcolors.PtColor = ecolors.get('BLUE',0)
     wikipedia.set_lang(conn.bbs.lang)
@@ -147,7 +150,10 @@ def plugFunction(conn:Connection):
                     WikiTitle(conn)
                 tt = formatX(normalize('NFKC',page.title),scwidth)
                 tt[0] = '<CLR>'+hlcolor+tt[0]
-                tt.append(f'{TxTtag}<HLINE n={scwidth}>')
+                if 'PET' in conn.mode:
+                    tt.append(f'{TxTtag}<HLINE n={scwidth-1}><BR>')
+                else:
+                    tt.append(f'{TxTtag}<HLINE n={scwidth}>')
                 tt += WikiParseParas(page.summary,scwidth,0,TxTtag)	#<+
                 tt.append('<BR>')
                 tt += WikiSection(conn, page.sections, 0, hlcolor=hlcolor)
@@ -210,7 +216,11 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0, hlcolor = '<BLA
         ts = formatX(normalize('NFKC',title),scwidth)
         ts[0] = hlcolor+ts[0]
         tt += ts
-        tt.append(f'<HLINE n={scwidth}>{TxTtag}')
+        if 'PET' in conn.mode:
+            tt.append(f'<HLINE n={scwidth-1}><BR>{TxTtag}')
+        else:
+            tt.append(f'<HLINE n={scwidth}>{TxTtag}')
+    
         tt += WikiParseParas(s.text,scwidth,0,TxTtag,hlcolor)	#<+
         tt.append('<BR>')
         tt += WikiSection(conn, s.sections, level + 1, lines, hlcolor)

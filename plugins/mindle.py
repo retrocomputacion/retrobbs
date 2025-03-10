@@ -40,9 +40,10 @@ def plugFunction(conn:Connection):
     #Render title
     def header():
         if 'PET' in conn.mode and not 'PET20' in conn.mode:
-            conn.SendTML('<WHITE>  <BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
-            conn.SendTML('<GREY3>   <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
-            conn.SendTML('<GREY2>    <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
+            spc = (conn.encoder.txt_geo[0]-36)//2
+            conn.SendTML(f'<WHITE><SPC n={spc}><BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
+            conn.SendTML(f'<GREY3><SPC n={spc}> <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
+            conn.SendTML(f'<GREY2><SPC n={spc}>  <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
         elif 'MSX' in conn.mode:
             conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
             conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
@@ -68,7 +69,10 @@ def plugFunction(conn:Connection):
     ecolors = conn.encoder.colors
     mcolors = bbsstyle(ecolors)
     if conn.encoder.features['bgcolor'] == 0:
-        badcolor = ('<ORANGE>','Orange')
+        if '64' in conn.mode:
+            badcolor = ('<ORANGE>','Orange')
+        else:
+            badcolor = ('<PINK>','Pink')
     else:
         badcolor = ('<BLACK>','Black')
     mcolors.OoddBack = ecolors['BLACK']
@@ -176,7 +180,7 @@ def plugFunction(conn:Connection):
                 header()
             conn.SendTML(f'''<FORMAT><CRSRD><GREY3>Instructions: You have to guess the hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>
 After each try the color of the characters will change color to show how close you are from guessing the correct word.<BR>
-'<BR><GREEN> * <GREY3>Green means the character exists in the hidden word and is in the correct position<BR>
+<BR><GREEN> * <GREY3>Green means the character exists in the hidden word and is in the correct position<BR>
 <YELLOW> * <GREY3>Yellow means the character exists in the hidden word but is in the wrong position<BR>
 {badcolor[0]} * <GREY3>{badcolor[1]} means the character is not present in the hidden word<BR>
 <BR>Press any key to continue</FORMAT>''')
@@ -254,10 +258,16 @@ def mindle(conn:Connection, xword: str, valid):
     cows = []
     bad = []
 
-    badcolor = '<ORANGE>' if conn.encoder.features['bgcolor'] == 0 else '<BLACK>'
+    if conn.encoder.features['bgcolor'] == 0:
+        if '64' in conn.mode:
+            badcolor = '<ORANGE>'
+        else:
+            badcolor = '<PINK>'
+    else:
+        badcolor = '<BLACK>'
     bullcolor = f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>' if 'MSX' in conn.mode else '<GREEN>'
     cowcolor =  f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>' if 'MSX' in conn.mode else '<YELLOW>'
-    wincolor = '<GREEN>' if conn.mode in ('VT52','VidTex') else '<WHITE>'
+    wincolor = '<GREEN>' if conn.mode in ('VT52','VidTex','ATTRST') else '<WHITE>'
     back = conn.encoder.decode(conn.encoder.back)
     null = '' if conn.T56KVer == 0 else '<NULL>'
 

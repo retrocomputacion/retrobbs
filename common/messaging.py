@@ -751,9 +751,9 @@ def inbox(conn:Connection, board):
             else:
                 tt = '<BR>' #'\r'
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                tt += f'<YELLOW><LFILL row={scheight-3} code={hcode}>'
+                conn.SendTML(f'<YELLOW><LFILL row={scheight-3} code={hcode}>')
             else:
-                tt += f'<AT x=0 y={scheight-3}><YELLOW><HLINE n={scwidth}>'
+                conn.SendTML(f'<AT x=0 y={scheight-3}><YELLOW><HLINE n={scwidth}>')
             conn.SendTML(f'<AT x=0 y={scheight-2}><GREY3>Navigate with <RVSON>{ctext}<RVSOFF> - '+ tt +
                          f'<AT x=0 y={scheight-1}>Read <RVSON>f<RVSOFF>irst/<RVSON>l<RVSOFF>ast or <RVSON>u<RVSOFF>nread msg'
                          f'<WINDOW top=3 bottom={scheight-4}>')

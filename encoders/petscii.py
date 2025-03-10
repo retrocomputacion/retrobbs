@@ -40,22 +40,25 @@ HOME = 0x13
 DELETE = 0x14
 
 #--Colors
-BLACK = 0x90
-WHITE = 0x05
-RED = 0x1C
-CYAN = 0x9F
-PURPLE = 0x9C
-GREEN = 0x1E
-BLUE = 0x1F
-YELLOW = 0x9E
-ORANGE = 0x81
-BROWN = 0x95
-PINK = 0x96
-GREY1 = 0x97
-GREY2 = 0x98
+BLACK    = 0x90
+WHITE    = 0x05
+RED      = 0x1C
+CYAN     = 0x9F
+PURPLE   = 0x9C
+GREEN    = 0x1E
+BLUE     = 0x1F
+YELLOW   = 0x9E
+ORANGE   = 0x81
+BROWN    = 0x95
+PINK     = 0x96
+GREY1    = 0x97
+GREY2    = 0x98
 LT_GREEN = 0x99
-LT_BLUE = 0x9A
-GREY3 = 0x9B
+LT_BLUE  = 0x9A
+GREY3    = 0x9B
+#--C128
+DK_CYAN   = 0x97
+DK_PURPLE = 0x81
 
 #--F Keys
 F1 = 0x85
@@ -114,6 +117,9 @@ PALETTE264 = {chr(BLACK):0x00,chr(WHITE):0x71,chr(RED):0x32,chr(CYAN):0x63,chr(P
               chr(ORANGE):0x48,chr(BROWN):0x29,chr(PINK):0x52,chr(GREY1):0x31,chr(GREY2):0x41,chr(LT_GREEN):0x65,chr(LT_BLUE):0x46,chr(GREY3):0x51}
 PALETTE20 = {chr(BLACK):0,chr(WHITE):1,chr(RED):2,chr(CYAN):3,chr(PURPLE):4,chr(GREEN):5,chr(BLUE):6,chr(YELLOW):7}
 
+PALETTE128 ={chr(BLACK):0,chr(GREY2):1,chr(BLUE):2,chr(LT_BLUE):3,chr(GREEN):4,chr(LT_GREEN):5,chr(DK_CYAN):6,chr(CYAN):7,
+             chr(RED):8,chr(PINK):9,chr(DK_PURPLE):10,chr(PURPLE):11,chr(BROWN):12,chr(YELLOW):13,chr(GREY3):14,chr(WHITE):15}
+
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,13)]+[chr(i) for i in range(14,32)]+[chr(i) for i in range(128,160)]
 
@@ -125,9 +131,19 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
             'ORANGE':chr(ORANGE),'BROWN':chr(BROWN),'PINK':chr(PINK),'GREY1':chr(GREY1),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3),
             'LTGREY':chr(GREY3),'MGREY':chr(GREY2),'GREY':chr(GREY2),'DGREY':chr(GREY1)},
+            
             'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)},
+            
             'PET20':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r','UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
-            'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW)}}
+            'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW)},
+            
+            'PET128':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r',
+            'CBMSHIFT-D':chr(DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(ENABLE_CBMSHIFT),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
+            'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
+            'DPURPLE':chr(DK_PURPLE),'BROWN':chr(BROWN),'PINK':chr(PINK),'DCYAN':chr(DK_CYAN),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3),
+            'LTGREY':chr(GREY3),'MGREY':chr(GREY2),'GREY':chr(GREY2),'DARK_CYAN':chr(DK_CYAN),'DARK_PURPLE':chr(DK_PURPLE),
+            'FLASHON':'\x0f','FLASHOFF':'\x8f','ULINEON':'\x02','ULINEOFF':'\x82'}}
+
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
             'BOTTOM-HASH':chr(BOTTOM_HASH),'LARROW':'_','UARROW':'^','CBM-U':chr(COMM_U),'CBM-O':chr(COMM_O),'CBM-B':chr(COMM_B),'CBM-J':chr(COMM_J),'CBM-L':chr(COMM_L),
@@ -140,6 +156,7 @@ t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR
 t_mono['PET264'].update(t_mono['PET64'])
 t_multi['PET264'] = t_multi['PET64']
 t_multi['PET20'] = t_multi['PET64']
+t_multi['PET128'] = t_multi['PET64']
 
 # Multiple replace
 # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
@@ -310,7 +327,8 @@ class PETencoder(Encoder):
                 conn.Sendallbin(b'\x80\x80')    # Xgraphic handshake
                 if conn.NBReceive(1,2) == b'\xba':
                     conn.SendTML('Xgraphic compatible Terminal')
-                    _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
+                    _copy.name = 'PET64XG'
+                    _copy.tml_mono['SCROLL'] = (self._scrollX ,[('_R','_C'),('rows',0)])
                     _copy.features['scrollback'] = True
                     lines = 24
                 else:
@@ -322,15 +340,32 @@ class PETencoder(Encoder):
         elif self.name == 'PET264std':
             ...
             return None
+        elif self.name == 'PET128std':
+            _copy = deepcopy(self)
+            _copy.features.update({'underline':True,'blink':True,'bgcolor':0,'scrollback':False})
+            # _copy.tml_mono['SCROLL'] = (self._scroll128 ,[('_R','_C'),('rows',0)])
+            conn.SendTML(f'<HOME><HOME><CLR>Screen lines? (25): ')
+            _copy.txt_geo = (80,conn.ReceiveInt(1,25,25))
+            return _copy
         else:
             return None
 
     ### Xgraphic SCROLL replacement
-    def _scroll(self,rows):
+    def _scrollX(self,rows):
         if rows > 0:
             return (chr(0x80)+'V')*rows
         elif rows < 0:
             return (chr(0x80)+'W')*abs(rows)
+        else:
+            return ''
+    
+    ### C128 SCROLL replacement
+    # Do not use, unreliable due to expanded logical lines 
+    def _scroll128(self,rows):
+        if rows > 0:
+            return ('\x13\x1bD')*rows
+        elif rows < 0:
+            return ('\x13\x1bI')*abs(rows)
         else:
             return ''
 
@@ -402,7 +437,7 @@ def _Register():
     ### Non-Turbo56K encoders
     e2 = PETencoder('PET20std')
     e2.minT56Kver = 0
-    e2.clients = {b'VC':'Commodore VIC-20'}
+    e2.clients = {b'VCCG':'Commodore VIC-20'}
     e2.tml_mono  = t_mono['PET20'].copy()
     e2.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
     e2.tml_multi = t_multi['PET20']
@@ -444,6 +479,18 @@ def _Register():
     e4.features['bgcolor'] = 0
     e4.features['blink'] = True
     e4.features['scrollback'] = False
-    return [e0,e1,e2,e3,e4]  #Each encoder module can return more than one encoder object.
+
+    e5 = PETencoder('PET128std')
+    e5.minT56Kver = 0
+    e5.clients = {b'C128CG':'Commodore 128 80 column color terminal'}
+    e5.tml_mono = t_mono['PET128'].copy()
+    e5.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
+    e5.tml_multi = t_multi['PET128']
+    e5.ctrlkeys = e2.ctrlkeys
+    e5.palette = PALETTE
+    e5.colors  = e0.colors
+    e5.def_gfxmode = gfxmodes.C64MULTI
+    e5.gfxmodes = ()#(gfxmodes.C64HI, gfxmodes.C64MULTI)
+    return [e0,e1,e2,e3,e4,e5]  #Each encoder module can return more than one encoder object.
 
 #####

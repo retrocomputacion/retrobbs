@@ -70,11 +70,26 @@ t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+3
              'VidTex':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'j','HOME':chr(ESC)+'H',
                        'BACK':chr(BACK),
                        'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N'),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)]),
-                       'SPINNER':chr(SPINNER)}}
+                       'SPINNER':chr(SPINNER)},
+             'ST':{'RVSON':'\x1bp','RVSOFF':'\x1bq','CLR':'\x1bE',
+                   'PAPER':(lambda c:'\x1bc'+chr(32+c),[('_R','_C'),('c',0)])}}
+
 t_multi =	{'DEL':chr(DELETE),'CRSRR':chr(ESC)+'C','CRSRL':chr(ESC)+'D','CRSRU':chr(ESC)+'A','CRSRD':chr(ESC)+'B',
             'POUND':'','PI':'','HASH':'#','HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': '+',
             'LARROW':'_','UARROW':'^','CBM-U':'','CBM-O':'','CBM-J':'','CBM-L':'',
             'UR-CORNER':'+','UL-CORNER':'+','LR-CORNER':'+','LL-CORNER':'+','V-LEFT':'+','V-RIGHT':'+','H-UP':'+','H-DOWN':'+'}
+
+st_colorsmed = {'WHITE':'\x1bb\x20','RED':'\x1bb\x21','GREEN':'\x1bb\x22','BLACK':'\x1bb\x23',
+                'INK':(lambda c:'\x1bb'+chr(32+c),[('_R','_C'),('c',3)]),
+                'TEXT':(lambda page,border,background:'\x1bq\x1bc'+chr(32+background)+'\x1bE',[('_R','_C'),('page',0),('border',3),('background',3)]),
+
+}
+st_colorslo = {'WHITE':'\x1bb\x20','DRED':'\x1bb\x21','GREEN':'\x1bb\x22','DYELLOW':'\x1bb\x23','DBLUE':'\x1bb\x24','DPURPLE':'\x1bb\x25','DCYAN':'\x1bb\x26','GREY3':'\x1bb\x27',
+                'GREY2':'\x1bb\x28','RED':'\x1bb\x29','LTGREEN':'\x1bb\x2A','YELLOW':'\x1bb\x2B','BLUE':'\x1bb\x2C','PURPLE':'\x1bb\x2D','CYAN':'\x1bb\x2E','BLACK':'\x1bb\x2F',
+                'INK':(lambda c:'\x1bb'+chr(32+c),[('_R','_C'),('c',3)]),
+                'TEXT':(lambda page,border,background:'\x1bq\x1bc'+chr(32+background)+'\x1bE',[('_R','_C'),('page',0),('border',15),('background',15)]),
+}
+
 
 vt_colors = {'BLACK':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',8)]),'WHITE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',4)]),
              'RED':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',3)]),'PURPLE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',6)]),
@@ -248,10 +263,25 @@ class VT52encoder(Encoder):
                 _copy.txt_geo = (cols,lines)
                 conn.SendTML('<PAUSE n=1.5>')
                 return _copy
-        conn.SendTML('<BR>Screen columns? (40): ')
+        conn.SendTML('<BR><BR>Screen columns? (40): ')
         cols = conn.ReceiveInt(32,80,40)
         conn.SendTML('<BR>Screen lines? (25): ')
         _copy.txt_geo = (cols,conn.ReceiveInt(16,25,25))
+        conn.SendTML('<BR>Atari ST mode (Y/N):')
+        if conn.ReceiveKey('yn') == 'y':
+            _copy.tml_mono.update(t_mono['ST'])
+            conn.Sendallbin(b'\x1bv\x1bq')   #Enable wordwrap, normal video
+            _copy.features['color'] = True
+            _copy.features['bgcolor'] = 2
+            if _copy.txt_geo[0] > 40:   #Assume hi/medres
+                _copy.name = 'ATRSTM'
+                _copy.colors={'WHITE':0, 'RED':1, 'GREEN':2, 'BLACK':3}
+                _copy.tml_mono.update(st_colorsmed)
+            else:   # Assume lores
+                _copy.name = 'ATRSTL'
+                _copy.colors={'WHITE':0, 'DKRED':1, 'GREEN':2, 'DKYELLOW':3, 'DKBLUE':4, 'DKPURPLE': 5, 'DKCYAN':6, 'GREY3':7, 'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'BLUE':12,'PURPLE':13,'CYAN':14,'BLACK':15}
+                _copy.tml_mono.update(st_colorslo)
+            _copy.tml_multi['DEL'] = '\x08 \x08'
         return _copy
 
 ###################################
@@ -261,10 +291,10 @@ def _Register():
     codecs.register_error('vtspc',vthandler)  # Register encoder error handler. 
     e0 = VT52encoder('VT52')
     e0.minT56Kver = 0
-    e0.clients = {b'VT52':'VT52 or VidTex compatible'}
+    e0.clients = {b'VT52':'VT52/VidTex compatible/Atari ST'}
     e0.tml_mono  = t_mono['VT52']
     e0.tml_multi = t_multi
     e0.def_gfxmode = None
-    e0.gfxmodes = None
+    e0.gfxmodes = ()
     e0.ctrlkeys = {'DELETE':DELETE}
-    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return ANSI.
+    return [e0]

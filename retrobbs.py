@@ -87,6 +87,7 @@ import string
 import configparser #INI file parser
 import threading
 from math import ceil
+from html import unescape
 
 from common import extensions as EX
 from common import turbo56k as TT
@@ -181,6 +182,8 @@ def ConfigRead():
                 parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures')]
             elif efunc == 'SENDFILE':
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),cfg.getboolean(key,'entry'+str(e+1)+'dialog', fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'save', fallback=False)]
+            elif efunc == 'SENDRAW':
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback='')]
             elif efunc == 'INBOX':
                 parms = [0]
             elif efunc == 'BOARD':
@@ -259,9 +262,10 @@ def ConfigRead():
 
     #Get any paths
     try:
-        bbs_instance.Paths = dict(config.items('PATHS'))
+        bbs_instance.Paths.update(dict(config.items('PATHS')))
     except:
-        bbs_instance.Paths = {'temp':'tmp/','bbsfiles':'bbsfiles/'}
+        pass
+        # bbs_instance.Paths = {'temp':'tmp/','bbsfiles':'bbsfiles/'}
     #Get any message boards options
     try:
         bbs_instance.BoardOptions = dict(config.items('BOARDS'))
@@ -478,7 +482,7 @@ def SendMenu(conn:Connection):
                 tdesc = ''
                 for l in desc:
                     l = l.replace('<BR>','')    # We dont need them line breaks here
-                    tdesc += f'<LTGREEN><VLINE><WHITE><SPC n={scwidth-2-dw}>{l}<SPC n={dw-len(l)}><GREEN><VLINE>'
+                    tdesc += f'<LTGREEN><VLINE><WHITE><SPC n={scwidth-2-dw}>{l}<SPC n={dw-len(unescape(l))}><GREEN><VLINE>'
                 conn.SendTML(tdesc)
             count += 1
         if (count % sw == 1) and (sw == 2):
@@ -1268,7 +1272,7 @@ RUNNING UNDER:<BR>
                 mode = b'Standard-'+clist[conn.ReceiveInt(1,len(clist),1)-1][1]
                 conn.SendTML('<BR>')
                 conn.SetMode(mode,0)
-                conn.SendTML(f'<CLR><FORMAT><YELLOW>BBS mode set to:<WHITE> {conn.mode}</FORMAT><BR><BR><PAUSE n=2>')
+                conn.SendTML(f'<TEXT><WHITE><CLR><FORMAT><YELLOW>BBS mode set to:<WHITE> {conn.mode}</FORMAT><BR><BR><PAUSE n=2>')
             else:
                 conn.SendTML('<FORMAT>SORRY, UNKNOWN CLIENT TYPE, DISCONNECTED...</FORMAT><BR>')
                 conn.connected = False

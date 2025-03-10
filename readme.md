@@ -193,7 +193,8 @@ __Changes/Bug fixes__:
  - Messaging system reworked, it now supports different screen dimensions and longer messages
  - MSX-ASCII art header for the *Oneliner* plugin
  - Fix to support Python-Weather >= 2.0.0
- 
+ - Fixed menu item descriptions with special characters resulting on misaligned menu screen
+
 ---
 # 1.2 The *Turbo56K* protocol
 
@@ -1306,6 +1307,7 @@ temp = /mnt/ramdisk/
 
   * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
+  * When downloading a file using XMODEM in VIP Terminal, transfer will fail around block 46.
 
 
 ---

@@ -5,53 +5,57 @@ from common import turbo56k as TT
 from common import helpers as H
 from common.classes import bbsstyle
 
-default_style = bbsstyle()
+# default_style = bbsstyle()
 
-def RenderMenuTitle(conn:Connection,title):
+def RenderMenuTitle(conn:Connection, title, style:bbsstyle=None):
     if type(title) == tuple:
         title = title[0]
-    st = conn.style
-    # Clear screen
-    tml = '<CLR><RVSOFF>'
-    # Get screen width
-    scwidth = conn.encoder.txt_geo[0]
-    odd = (scwidth % 2) != 0
-    if 'MSX' in conn.mode:
-        cfill = 0x17
-        ucorner = '<B-HALF>'
-        bcorner = '<RVSON><B-HALF><RVSOFF>'
-        urcorner = f'<INK c={st.MenuTColor2}><B-HALF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><B-HALF>'
-        brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-HALF><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-HALF><RVSOFF>'
-    elif 'PET' in conn.mode:
-        cfill = 64
-        tml += '<LOWER>'
-        ucorner = '<RVSON><U-NARROW><RVSOFF>'
-        bcorner = '<RVSON><B-NARROW><RVSOFF>'
-        urcorner = f'<INK c={st.MenuTColor2}><RVSON><U-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><U-NARROW><RVSOFF>'
-        brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-NARROW><RVSOFF>'
-    else:
-        ucorner = '+'
-        bcorner = '+'
-        urcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
-        brcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
-    rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
+    parms = {'title':title}
+    if style != None:
+        parms['st':style]
+    tml = conn.templates.GetTemplate('main/menutitle',**parms)
+    # st = conn.style
+    # # Clear screen
+    # tml = '<CLR><RVSOFF>'
+    # # Get screen width
+    # scwidth = conn.encoder.txt_geo[0]
+    # odd = (scwidth % 2) != 0
+    # if 'MSX' in conn.mode:
+    #     cfill = 0x17
+    #     ucorner = '<B-HALF>'
+    #     bcorner = '<RVSON><B-HALF><RVSOFF>'
+    #     urcorner = f'<INK c={st.MenuTColor2}><B-HALF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><B-HALF>'
+    #     brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-HALF><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-HALF><RVSOFF>'
+    # elif 'PET' in conn.mode:
+    #     cfill = 64
+    #     tml += '<LOWER>'
+    #     ucorner = '<RVSON><U-NARROW><RVSOFF>'
+    #     bcorner = '<RVSON><B-NARROW><RVSOFF>'
+    #     urcorner = f'<INK c={st.MenuTColor2}><RVSON><U-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><U-NARROW><RVSOFF>'
+    #     brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-NARROW><RVSOFF>'
+    # else:
+    #     ucorner = '+'
+    #     bcorner = '+'
+    #     urcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
+    #     brcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
+    # rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
 
-    # Send menu title
-    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        tml += f'''<INK c={st.MenuTColor2}><LFILL row=0 code={cfill}><LFILL row=2 code={cfill}><INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{urcorner}'''
-    else:
-        tml += f'''<INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{urcorner}'''
-    tml += f'''<RVSON> <RVSOFF><INK c={st.HlColor}> {(conn.bbs.name[:(scwidth//2)-1]+" - "+ title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]} {rcolor}<RVSON> <RVSOFF>'''
-    if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{brcorner}'''
-    else:
-        tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{brcorner}'''
+    # # Send menu title
+    # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+    #     tml += f'''<INK c={st.MenuTColor2}><LFILL row=0 code={cfill}><LFILL row=2 code={cfill}><INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{urcorner}'''
+    # else:
+    #     tml += f'''<INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{urcorner}'''
+    # tml += f'''<RVSON> <RVSOFF><INK c={st.HlColor}> {(conn.bbs.name[:(scwidth//2)-1]+" - "+ title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]} {rcolor}<RVSON> <RVSOFF>'''
+    # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+    #     tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{brcorner}'''
+    # else:
+    #     tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{brcorner}'''
     conn.SendTML(tml)
 
 # Returns '[text]' prompt string in the selected style
 # TML: True to return TML sequence
-def KeyPrompt(conn:Connection, text, style=default_style, TML=False):
-    if style != None:
+def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
+    if style == None:
         style = conn.style
     pal = conn.encoder.palette
     if pal != {}:
@@ -84,10 +88,10 @@ def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=No
         style = conn.style
     tml = ''
     if 'MSX' in conn.mode:
-        lside = '<L-HALF>'
+        lside = '<RVSON><L-HALF>'
         rside = '<RVSOFF><TRI-LEFT>'
     elif 'PET' in conn.mode:
-        lside = '<L-NARROW>'
+        lside = '<RVSON><L-NARROW>'
         rside = '<R-NARROW><RVSOFF>'
     else:
         lside = '['
@@ -95,7 +99,7 @@ def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=No
     if key >= '\r':
         if key == '_':		# FIXME: Workaround for PETSCII left arrow character
             key = '<BACK>'
-        tml += f'<INK c={c1}><RVSON>{lside}{bg1}{key.lower()}{bg}{rside}'
+        tml += f'<INK c={c1}>{lside}{bg1}{key.lower()}{bg}{rside}'
     tml += f'<INK c={c2}>{label}'
     conn.SendTML(tml)
     return not toggle
@@ -142,5 +146,5 @@ def RenderDialog(conn:Connection,height,title=None):
 # TML tags
 ###########
 t_mono = {	'MTITLE':(lambda c,t:RenderMenuTitle(c,t),[('c','_C'),('t','')]),
-              'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('tml','True')]),
+              'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('style',None),('tml','False')]),
             'DIALOG':(lambda c,h,t:RenderDialog(c,h,t),[('c','_C'),('h',4),('t','')])}

@@ -10,7 +10,7 @@ import socket
 from common.bbsdebug import _LOG, bcolors
 import datetime
 from common import turbo56k as TT
-from common.classes import BBS, bbsstyle, Encoder
+from common.classes import BBS, bbsstyle, Encoder, template
 import time
 from common.parser import TMLParser
 import errno
@@ -59,6 +59,7 @@ class Connection:
         self.mode = 'ASCII'			#Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
+        self.templates = template(self)
         self.parser = TMLParser(self)				#TML parser
         self.p_running = False
 
@@ -95,7 +96,10 @@ class Connection:
             del(self.parser)
             self.parser = TMLParser(self)
             del(self.style)
-            self.style = bbsstyle(self.encoder.colors)
+            self.style = bbsstyle(self.encoder.colors)  #Init default colors
+            del(self.templates)
+            self.templates = template(self)
+            self.style = self.templates.GetStyle('default') # Set template colors
             _LOG(f'Connection mode set to: {mode}', id=self.id, v=2)
             return True
         else:
