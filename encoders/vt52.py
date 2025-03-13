@@ -72,7 +72,8 @@ t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+3
                        'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N'),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)]),
                        'SPINNER':chr(SPINNER)},
              'ST':{'RVSON':'\x1bp','RVSOFF':'\x1bq','CLR':'\x1bE',
-                   'PAPER':(lambda c:'\x1bc'+chr(32+c),[('_R','_C'),('c',0)])}}
+                   'PAPER':(lambda c:'\x1bc'+chr(32+c),[('_R','_C'),('c',0)]),
+                   'CURSOR':(lambda enable: '\x1be' if enable else '\x1bf',[('_R','_C'),('enable',True)]),}}
 
 t_multi =	{'DEL':chr(DELETE),'CRSRR':chr(ESC)+'C','CRSRL':chr(ESC)+'D','CRSRU':chr(ESC)+'A','CRSRD':chr(ESC)+'B',
             'POUND':'','PI':'','HASH':'#','HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': '+',
@@ -91,12 +92,12 @@ st_colorslo = {'WHITE':'\x1bb\x20','DRED':'\x1bb\x21','GREEN':'\x1bb\x22','DYELL
 }
 
 
-vt_colors = {'BLACK':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',8)]),'WHITE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',4)]),
-             'RED':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',3)]),'PURPLE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',6)]),
-             'CYAN':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',5)]),'GREEN':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',0)]),
-             'BLUE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',2)]),'YELLOW':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',1)]),
-             'ORANGE':(lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',7)]),
-             'INK':(lambda conn,c:VT52encoder.SetColor(conn.encoder,c),[('_R','_C'),('conn','_C'),('c',4)]),
+vt_colors = {'BLACK':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',8)]),'WHITE':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',4)]),
+             'RED':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',3)]),'PURPLE':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',6)]),
+             'CYAN':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',5)]),'GREEN':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',0)]),
+             'BLUE':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',2)]),'YELLOW':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',1)]),
+             'ORANGE':(lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',7)]),
+             'INK':(lambda conn,c:VT52encoder.SetColor(conn.encoder,conn,c),[('_R','_C'),('conn','_C'),('c',4)]),
              'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N')+VT52encoder.SetBackground(conn.encoder,background),[('_R','_C'),('conn','_C'),('page',0),('border',8),('background',8)])}
 
 vt_semi = {'G4':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'),('conn','_C'),('m','4')]),
@@ -123,6 +124,11 @@ def toASCII(text:str, full=True):
 
 def fromASCII(text:str, full=True):
     return text
+
+def toATRST(text:str, full=True):
+    text = (unicodedata.normalize('NFKD',text).encode('cp437','vtspc')).decode('latin1')
+    return text
+
 
 ######### VT52 ASCII codec error handler #########
 # Replace unknowns with a space
@@ -171,10 +177,11 @@ class VT52encoder(Encoder):
     def color_index(self, code):
         return self.palette.get(code,-1)
 
-    def SetColor(self,c):
+    def SetColor(self,conn,c):
         c &= 15
         # c = c if c < 9 else c & 7
         self.fgcolor = c
+        conn.parser.color = c
         return f'\x1bk{chr((c*16)+self.bgcolor)}'
     
     def SetVTMode(self,m:str):
@@ -257,7 +264,7 @@ class VT52encoder(Encoder):
                     _copy.colors={'GREEN':0, 'YELLOW':1, 'BLUE':2, 'RED':3, 'WHITE':4, 'CYAN': 5, 'PURPLE':6, 'ORANGE':7, 'BLACK':8}
                     if len(options[0]) > 3: # Compuserve's VidTex uses Green instead of Black, we'll replace Black with Orange
                         _copy.black_replace = True
-                        _copy.tml_mono['BLACK'] = (lambda c,i:VT52encoder.SetColor(c.encoder,i),[('_R','_C'),('c','_C'),('i',7)])
+                        _copy.tml_mono['BLACK'] = (lambda c,i:VT52encoder.SetColor(c.encoder,c,i),[('_R','_C'),('c','_C'),('i',7)])
                     _copy.SetBackground(8)
                     conn.SendTML('<FORMAT>Please disable wordwrapping!</FORMAT>')
                 _copy.txt_geo = (cols,lines)
@@ -273,13 +280,17 @@ class VT52encoder(Encoder):
             conn.Sendallbin(b'\x1bv\x1bq')   #Enable wordwrap, normal video
             _copy.features['color'] = True
             _copy.features['bgcolor'] = 2
+            _copy.encode = toATRST
+            _copy.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
             if _copy.txt_geo[0] > 40:   #Assume hi/medres
                 _copy.name = 'ATRSTM'
                 _copy.colors={'WHITE':0, 'RED':1, 'GREEN':2, 'BLACK':3}
+                _copy.palette = {'\x1bb'+chr(32+j):j for j in range(4)}  # Refresh Palette
                 _copy.tml_mono.update(st_colorsmed)
             else:   # Assume lores
                 _copy.name = 'ATRSTL'
                 _copy.colors={'WHITE':0, 'DKRED':1, 'GREEN':2, 'DKYELLOW':3, 'DKBLUE':4, 'DKPURPLE': 5, 'DKCYAN':6, 'GREY3':7, 'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'BLUE':12,'PURPLE':13,'CYAN':14,'BLACK':15}
+                _copy.palette = {'\x1bb'+chr(32+j):j for j in range(16)}  # Refresh Palette
                 _copy.tml_mono.update(st_colorslo)
             _copy.tml_multi['DEL'] = '\x08 \x08'
         return _copy

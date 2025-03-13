@@ -1,0 +1,12 @@
+{# Menu Section template macros #}
+{% macro s_title(title) -%}
+	<SPC><INK c={{st.HlColor}}>{{title}}<BR>
+{%- endmacro %}
+
+{% macro s_top() -%}
+	<INK c={{st.SBorderColor1}}><UL-CORNER><HLINE n={{scwidth-2}}><UR-CORNER>
+{%- endmacro %}
+
+{% macro s_bottom() -%}
+    <LL-CORNER><HLINE n={{scwidth-2}}><LR-CORNER>
+{%- endmacro %}

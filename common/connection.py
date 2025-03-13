@@ -100,6 +100,7 @@ class Connection:
             del(self.templates)
             self.templates = template(self)
             self.style = self.templates.GetStyle('default') # Set template colors
+            self.templates.j2env.globals['st'] = self.style # Update the globals with the new colors
             _LOG(f'Connection mode set to: {mode}', id=self.id, v=2)
             return True
         else:

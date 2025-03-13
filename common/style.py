@@ -75,32 +75,34 @@ def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
 
 # Renders a menu option in the selected style  
 def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=None):
-    if style == None:
-        style = conn.style
-    c1 = style.OevenColor if toggle else style.OoddColor
-    c2 = style.TevenColor if toggle else style.ToddColor
-    if (style.OevenBack != style.BgColor) or (style.OoddBack != style.BgColor):
-        bg1 = f'<PAPER c={style.OevenBack if toggle else style.OoddBack}>'
-        bg = f'<PAPER c={style.BgColor}>'
-    else:
-        bg = bg1 = ''
-    if style == None:
-        style = conn.style
-    tml = ''
-    if 'MSX' in conn.mode:
-        lside = '<RVSON><L-HALF>'
-        rside = '<RVSOFF><TRI-LEFT>'
-    elif 'PET' in conn.mode:
-        lside = '<RVSON><L-NARROW>'
-        rside = '<R-NARROW><RVSOFF>'
-    else:
-        lside = '['
-        rside = ']'
-    if key >= '\r':
-        if key == '_':		# FIXME: Workaround for PETSCII left arrow character
-            key = '<BACK>'
-        tml += f'<INK c={c1}>{lside}{bg1}{key.lower()}{bg}{rside}'
-    tml += f'<INK c={c2}>{label}'
+    parms = {'key':key, 'label':label, 'toggle':toggle}
+    if style != None:
+        parms['st'] = style
+    tml = conn.templates.GetTemplate('main/keylabel',**parms)
+    # if style == None:
+    #     style = conn.style
+    # c1 = style.OevenColor if toggle else style.OoddColor
+    # c2 = style.TevenColor if toggle else style.ToddColor
+    # if (style.OevenBack != style.BgColor) or (style.OoddBack != style.BgColor):
+    #     bg1 = f'<PAPER c={style.OevenBack if toggle else style.OoddBack}>'
+    #     bg = f'<PAPER c={style.BgColor}>'
+    # else:
+    #     bg = bg1 = ''
+    # tml = ''
+    # if 'MSX' in conn.mode:
+    #     lside = '<RVSON><L-HALF>'
+    #     rside = '<RVSOFF><TRI-LEFT>'
+    # elif 'PET' in conn.mode:
+    #     lside = '<RVSON><L-NARROW>'
+    #     rside = '<R-NARROW><RVSOFF>'
+    # else:
+    #     lside = '['
+    #     rside = ']'
+    # if key >= '\r':
+    #     if key == '_':		# FIXME: Workaround for PETSCII left arrow character
+    #         key = '<BACK>'
+    #     tml += f'<INK c={c1}>{lside}{bg1}{key.lower()}{bg}{rside}'
+    # tml += f'<INK c={c2}>{label}'
     conn.SendTML(tml)
     return not toggle
 

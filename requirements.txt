@@ -8,12 +8,13 @@ mutagen
 numpy
 opencv_python
 geopy
+jinja2
 # youtube-dl
 # pafy @ git+https://github.com/Cupcakus/pafy
 Pillow>=8.0.0
 python_weather>=2.0.0
 requests>=2.26.0
-streamlink
+streamlink>=5.5.0
 tinydb
 wikipedia
 Wikipedia_API<=0.6.0

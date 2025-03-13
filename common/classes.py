@@ -296,7 +296,7 @@ class template:
         tpath = conn.bbs.Paths['templates']
         self.path = mytemplate
         self.j2env = Environment(loader=FileSystemLoader([tpath+mytemplate,tpath+'default/','templates/default/']))
-        self.j2env.globals={'conn':conn,'st':conn.style,'mode':conn.mode,'scwidth':conn.encoder.txt_geo[0],'scheight':conn.encoder.txt_geo[1]}
+        self.j2env.globals.update({'conn':conn,'st':conn.style,'mode':conn.mode,'scwidth':conn.encoder.txt_geo[0],'scheight':conn.encoder.txt_geo[1]})
 
     # Return a parsed template
     # Parameters:
@@ -333,24 +333,25 @@ class template:
         if self.connection.mode in jstyle:
             default = self.connection.style #<<<
             style = bbsstyle()
+            colors = self.connection.encoder.colors
             st = jstyle[self.connection.mode]
-            style.BgColor		= st.get('BgColor',default.BgColor)
-            style.BoColor		= st.get('BoColor',default.BoColor)
-            style.TxtColor		= st.get('TxtColor',default.TxtColor)
-            style.HlColor		= st.get('HlColor',default.HlColor)
-            style.RvsColor		= st.get('RvsColor',default.RvsColor)
-            style.OoddColor		= st.get('OoddColor',default.OoddColor)
-            style.OoddBack      = st.get('OoddBack',default.OoddBack)
-            style.ToddColor		= st.get('ToddColor',default.ToddColor)
-            style.OevenColor	= st.get('OevenColor',default.OevenColor)
-            style.OevenBack     = st.get('OevenBack',default.OevenBack)
-            style.TevenColor	= st.get('TevenColor',default.TevenColor)
-            style.MenuTColor1	= st.get('MenuTColor1',default.MenuTColor1)
-            style.MenuTColor2	= st.get('MenuTColor2',default.MenuTColor2)
-            style.SBorderColor1	= st.get('SBorderColor1',default.SBorderColor1)
-            style.SBorderColor2	= st.get('SBorderColor2',default.SBorderColor2)
-            style.PbColor		= st.get('PbColor',default.PbColor)
-            style.PtColor		= st.get('PtColor',default.PtColor)
+            style.BgColor		= colors.get(st.get('BgColor'),default.BgColor) if 'BgColor' in st else default.BgColor
+            style.BoColor		= colors.get(st.get('BoColor'),default.BoColor) if 'BoColor' in st else default.BoColor
+            style.TxtColor		= colors.get(st.get('TxtColor'),default.TxtColor) if 'TxtColor' in st else default.TxtColor
+            style.HlColor		= colors.get(st.get('HlColor'),default.HlColor) if 'HlColor' in st else default.HlColor
+            style.RvsColor		= colors.get(st.get('RvsColor'),default.RvsColor) if 'RvsColor' in st else default.RvsColor
+            style.OoddColor		= colors.get(st.get('OoddColor'),default.OoddColor) if 'OoddColor' in st else default.OoddColor
+            style.OoddBack      = colors.get(st.get('OoddBack'),default.OoddBack) if 'OoddBack' in st else default.OoddBack
+            style.ToddColor		= colors.get(st.get('ToddColor'),default.ToddColor) if 'ToddColor' in st else default.ToddColor
+            style.OevenColor	= colors.get(st.get('OevenColor'),default.OevenColor) if 'OevenColor' in st else default.OevenColor
+            style.OevenBack     = colors.get(st.get('OevenBack'),default.OevenBack) if 'OevenBack' in st else default.OevenBack
+            style.TevenColor	= colors.get(st.get('TevenColor'),default.TevenColor) if 'TevenColor' in st else default.TevenColor
+            style.MenuTColor1	= colors.get(st.get('MenuTColor1'),default.MenuTColor1) if 'MenuTColor1' in st else default.MenuTColor1
+            style.MenuTColor2	= colors.get(st.get('MenuTColor2'),default.MenuTColor2) if 'MenuTColor2' in st else default.MenuTColor2
+            style.SBorderColor1	= colors.get(st.get('SBorderColor1'),default.SBorderColor1) if 'SBorderColor1' in st else default.SBorderColor1
+            style.SBorderColor2	= colors.get(st.get('SBorderColor2'),default.SBorderColor2) if 'SBorderColor2' in st else default.SBorderColor2
+            style.PbColor		= colors.get(st.get('PbColor'),default.PbColor) if 'PbColor' in st else default.PbColor
+            style.PtColor		= colors.get(st.get('PtColor'),default.PtColor) if 'PtColor' in st else default.PtColor
             return style
         else:   # Style file doesn't define color for the current mode
             return(self.connection.style)

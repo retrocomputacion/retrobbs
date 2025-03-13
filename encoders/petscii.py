@@ -307,7 +307,12 @@ class PETencoder(Encoder):
                 la = la[0]|(la[1]<<8)
                 bin = f.read(-1)
         return (la,bin)
-    
+
+    # Given a color control code, returns it's index in the color palette
+    # or -1 if not found
+    def color_index(self, code):
+        return self.palette.get(code,-1)
+   
     ### Encoder setup routine
     # Setup the required parameters for the given client id
     # Either automatically or by enquiring the user
@@ -448,9 +453,9 @@ def _Register():
     e2.features['scrollback'] = False
     e2.features['window'] = 0
     e2.palette = PALETTE20
-    e2.colors = {'BLACK':0, 'WHITE':1, 'RED':2, 'CYAN':3, 'PURPLE':4, 'GREEN':5, 'BLUE':6, 'YELLOW':7,
-                 'ORANGE':8, 'LIGHT_ORANGE':9, 'LIGHT_RED':10, 'LIGHT_CYAN':11, 'LIGHT_PURPLE':12, 'LIGHT_GREEN':13,
-                 'LIGHT_BLUE':14, 'LIGHT_YELLOW':15, 'PINK':10}
+    e2.colors = {'BLACK':0, 'WHITE':1, 'RED':2, 'CYAN':3, 'PURPLE':4, 'GREEN':5, 'BLUE':6, 'YELLOW':7}
+                #  'ORANGE':8, 'LIGHT_ORANGE':9, 'LIGHT_RED':10, 'LIGHT_CYAN':11, 'LIGHT_PURPLE':12, 'LIGHT_GREEN':13,
+                #  'LIGHT_BLUE':14, 'LIGHT_YELLOW':15, 'PINK':10}
     
     e3 = PETencoder('PET64std')
     e3.minT56Kver = 0
@@ -487,8 +492,11 @@ def _Register():
     e5.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
     e5.tml_multi = t_multi['PET128']
     e5.ctrlkeys = e2.ctrlkeys
-    e5.palette = PALETTE
-    e5.colors  = e0.colors
+    e5.palette = PALETTE128
+    e5.colors  = {'BLACK':0, 'GREY2':1, 'BLUE':2, 'LTBLUE':3, 'GREEN':4, 'LTGREEN':5, 'CKCYAN':6,'CYAN':7,
+                 'RED':8, 'PINK':9, 'DKPURPLE':10, 'PURPLE':11, 'BROWN':12, 'YELLOW':13, 'GREY3':14, 'WHITE':15,
+                 'LIGHT_GREY':14, 'MEDIUM_GREY':1, 'GREY':1,
+                 'LIGHT_GREEN':5, 'LIGHT_BLUE':3}
     e5.def_gfxmode = gfxmodes.C64MULTI
     e5.gfxmodes = ()#(gfxmodes.C64HI, gfxmodes.C64MULTI)
     return [e0,e1,e2,e3,e4,e5]  #Each encoder module can return more than one encoder object.

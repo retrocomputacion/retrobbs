@@ -132,7 +132,8 @@ def plugFunction(conn:Connection):
                     gm = conn.encoder.def_gfxmode
 
                 favicon = FT.SendBitmap(conn,newimage, lines=12, cropmode=cropmodes.TOP ,gfxmode=gm,preproc=PreProcess(contrast=1.5,saturation=1.5),dither=dithertype.BAYER2, display=False)
-                conn.SendTML(f'<SPLIT row=12 mode=False bgtop={ord(favicon)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')
+                if favicon != False:
+                    conn.SendTML(f'<SPLIT row=12 mode=False bgtop={ord(favicon)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')
 
                 eppage = 0
                 nepisodes = len(episodes)

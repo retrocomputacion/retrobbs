@@ -1,0 +1,61 @@
+{# Key Label Template #}
+{# Parameters: key, label, toggle #}
+{# set colors #}
+{% set bg1 = -1 %}
+{% set bg = -1 %}
+{% if toggle %}
+	{% set c1 = st.OevenColor %}
+	{% set c2 = st.TevenColor %}
+	{% if st.OevenBack != st.BgColor %}
+		{% set bg1 = st.OevenBack %}
+		{% set bg = st.BgColor %}
+	{% endif %}
+{% else %}
+	{% set c1 = st.OoddColor %}
+	{% set c2 = st.ToddColor %}
+	{% if st.OoddBack != st.BgColor %}
+		{% set bg1 = st.OoddBack %}
+		{% set bg = st.BgColor %}
+	{% endif %}
+{% endif %}
+{# PET modes #}
+{% if 'PET' in mode %}
+	<INK c={{ c1 }}><RVSON><L-NARROW>{{ key.lower() }}<R-NARROW><RVSOFF><INK c={{ c2 }}>{{ label }}
+{# MSX1 retroterm #}
+{% elif mode == 'MSX1' %}
+	<INK c={{ c1 }}><R-HALF><RVSON>
+	{% if bg1 >= 0 %}
+		<PAPER c={{ bg1 }}>
+	{% endif %}
+	{{ key.lower() }}
+	{% if bg >= 0 %}
+		<PAPER c={{ bg }}>
+	{% endif %}
+	<RVSOFF><TRI-LEFT><INK c={{ c2 }}>{{ label }}
+{# MSX comterm #}
+{% elif mode == 'MSXstd' %}
+	<VLINE>{{ key.lower() }}<TRI-LEFT>{{ label }}
+{# VidTex #}
+{% elif mode == 'VidTex' %}
+	{% if conn.encoder.features['color'] %}
+		{# Assume that a VidTex terminal which supports color also supports semigraphics #}
+		<INK c={{ c1 }}>[{{ key.lower() }}]<INK c={{ c2 }}>{{ label }}
+		{# <G4><INK c={{ c1 }}<R-HALF>{{ key.lower() }}<L-HALF><GN><INK c={{ c2 }}>{{ label }} #}
+	{% else %}
+		[{{ key.lower() }}]{{ label }}
+	{% endif %}
+{# Atari ST #}
+{% elif 'ATRST' in mode %}
+	<INK c={{ c1 }}><RVSON><SPC>
+	{% if bg1 >= 0 %}
+		<PAPER c={{ bg1 }}>
+	{% endif %}
+	{{ key.lower() }}
+	{% if bg >= 0 %}
+		<PAPER c={{ bg }}>
+	{% endif %}
+	<SPC><RVSOFF><INK c={{ c2 }}>{{ label }}
+{# Generic fallback #}
+{% else %}
+	[{{ key.lower() }}]{{ label }}
+{% endif%}

@@ -437,57 +437,63 @@ def SendMenu(conn:Connection):
     conn.SendTML('<BR>')
     for scount, s in enumerate(tmenu['entries']):
         #Sections
-        if len(s['title'])>0 or scount > 0:
-            conn.SendTML(f' <WHITE>{s["title"]}<BR>')
-        conn.SendTML(f'<LTGREEN><UL-CORNER><HLINE n={scwidth-2}><UR-CORNER>')
-        #Items
-        count = 0
-        toggle = False
-        separator = ' ' if scwidth % 2 == 0 else '  '
-        if s['columns'] < 2:
-            sw = 1
-            tw = scwidth-3
-        else:
-            sw = 2
-            tw = (scwidth//2)-3
-        for i in s['entrydefs']:
-            if conn.mode in s['entrydefs'][i]:
-                mode = conn.mode
-            elif '' in s['entrydefs'][i]:
-                mode = ''
-            else:
-                continue
-            if i == conn.encoder.nl:
-                continue
-            xw = (2 if i<'\r' else 0)    # Extra width if LABEL item
-            if isinstance(s['entrydefs'][i][mode][2],tuple):
-                t = s['entrydefs'][i][mode][2][0]
-                dw = scwidth-2 if len(t) == 0 and i<'\r' else scwidth-4
-                desc = formatX(s['entrydefs'][i][mode][2][1],columns=dw)
-            else:
-                t = s['entrydefs'][i][mode][2]
-                desc =''
-            title = crop(t,tw+xw-1,conn.encoder.ellipsis)
-            if len(title) > 0 or count > (sw-1) or i >= '\r':
-                if i < '\r' and count % sw == 0:    #NULL entry
-                        conn.SendTML('<LTGREEN><VLINE>')
-                KeyLabel(conn,i,title, toggle)
-                if count % sw == 0:
-                    toggle = not toggle
-                    line = ' '*((tw+xw)-1-len(title))+(separator if sw == 2 else '<GREEN><VLINE>')
-                    conn.SendTML(line)
-                else:
-                    conn.SendTML(f'<SPC n={((scwidth//2)-1)-(len(title)+(3-int(xw*1.5)))}><GREEN><VLINE>')
-            if desc != '':
-                tdesc = ''
-                for l in desc:
-                    l = l.replace('<BR>','')    # We dont need them line breaks here
-                    tdesc += f'<LTGREEN><VLINE><WHITE><SPC n={scwidth-2-dw}>{l}<SPC n={dw-len(unescape(l))}><GREEN><VLINE>'
-                conn.SendTML(tdesc)
-            count += 1
-        if (count % sw == 1) and (sw == 2):
-            conn.SendTML(f'<SPC n={(scwidth//2)-1}><GREEN><VLINE>')
-        conn.SendTML(f'<LL-CORNER><HLINE n={scwidth-2}><LR-CORNER>')
+        parms = {'section': s, 'scount':scount, 'formatX':formatX, 'crop':crop, 'unescape':unescape}
+        if s['columns'] == 1:
+            conn.SendTML(conn.templates.GetTemplate('main/menusection1col',**parms))
+        elif s['columns'] == 2:
+            conn.SendTML(conn.templates.GetTemplate('main/menusection2col',**parms))
+
+        # if len(s['title'])>0 or scount > 0:
+        #     conn.SendTML(f' <WHITE>{s["title"]}<BR>')
+        # conn.SendTML(f'<LTGREEN><UL-CORNER><HLINE n={scwidth-2}><UR-CORNER>')
+        # #Items
+        # count = 0
+        # toggle = False
+        # separator = ' ' if scwidth % 2 == 0 else '  '
+        # if s['columns'] < 2:
+        #     sw = 1
+        #     tw = scwidth-3
+        # else:
+        #     sw = 2
+        #     tw = (scwidth//2)-3
+        # for i in s['entrydefs']:
+        #     if conn.mode in s['entrydefs'][i]:
+        #         mode = conn.mode
+        #     elif '' in s['entrydefs'][i]:
+        #         mode = ''
+        #     else:
+        #         continue
+        #     if i == conn.encoder.nl:
+        #         continue
+        #     xw = (2 if i<'\r' else 0)    # Extra width if LABEL item
+        #     if isinstance(s['entrydefs'][i][mode][2],tuple):
+        #         t = s['entrydefs'][i][mode][2][0]
+        #         dw = scwidth-2 if len(t) == 0 and i<'\r' else scwidth-4
+        #         desc = formatX(s['entrydefs'][i][mode][2][1],columns=dw)
+        #     else:
+        #         t = s['entrydefs'][i][mode][2]
+        #         desc =''
+        #     title = crop(t,tw+xw-1,conn.encoder.ellipsis)
+        #     if len(title) > 0 or count > (sw-1) or i >= '\r':
+        #         if i < '\r' and count % sw == 0:    #NULL entry
+        #                 conn.SendTML('<LTGREEN><VLINE>')
+        #         KeyLabel(conn,i,title, toggle)
+        #         if count % sw == 0:
+        #             toggle = not toggle
+        #             line = ' '*((tw+xw)-1-len(title))+(separator if sw == 2 else '<GREEN><VLINE>')
+        #             conn.SendTML(line)
+        #         else:
+        #             conn.SendTML(f'<SPC n={((scwidth//2)-1)-(len(title)+(3-int(xw*1.5)))}><GREEN><VLINE>')
+        #     if desc != '':
+        #         tdesc = ''
+        #         for l in desc:
+        #             l = l.replace('<BR>','')    # We dont need them line breaks here
+        #             tdesc += f'<LTGREEN><VLINE><WHITE><SPC n={scwidth-2-dw}>{l}<SPC n={dw-len(unescape(l))}><GREEN><VLINE>'
+        #         conn.SendTML(tdesc)
+        #     count += 1
+        # if (count % sw == 1) and (sw == 2):
+        #     conn.SendTML(f'<SPC n={(scwidth//2)-1}><GREEN><VLINE>')
+        # conn.SendTML(f'<LL-CORNER><HLINE n={scwidth-2}><LR-CORNER>')
     conn.SendTML(f'<AT x=0 y={scheight-1}><WHITE> {tmenu["prompt"]} ')
 
 #####################################################################
@@ -833,7 +839,7 @@ def SignIn(conn:Connection):
                             return
                         #Edit user data
                         EditUser(conn)
-                        Done = True
+                    Done = True
                 else:
                     Done = True
                 if not conn.connected:

@@ -1,3 +1,4 @@
+{# Menu Title template #}
 <CLR><RVSOFF>
 {# Generic Commodore color PETSCII #}
 {% if 'PET' in mode %}
@@ -66,6 +67,12 @@
 		<VLINE> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <VLINE>
 		+<HLINE n={{scwidth-2}}>+
 	{% endif %}
+{# Atari ST #}
+{% elif 'ATRST' in mode %}
+	<WHITE><PAPER c={{st.MenuTColor1}}><CHR c=240><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><PAPER c={{st.MenuTColor2}}><CHR c=240><PAPER c={{st.MenuTColor1}}><CHR c=240><INC></WHILE><PAPER c={{st.MenuTColor2}}><CHR c=240>
+	<CHR c=240><PAPER c= {{st.BgColor}}><INK c={{st.HlColor}}> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <PAPER c={{st.MenuTColor1}}><WHITE><CHR c=240>
+	<CHR c=240><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><PAPER c={{st.MenuTColor2}}><CHR c=240><PAPER c={{st.MenuTColor1}}><CHR c=240><INC></WHILE><PAPER c={{st.MenuTColor2}}><CHR c=240>
+	<PAPER c={{st.BgColor}}>
 {# Generic fallback #}
 {% else %}
 		+<HLINE n={{scwidth-2}}>+

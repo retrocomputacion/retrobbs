@@ -1,0 +1,61 @@
+{# Menu section template, 2 columns #}
+{# Parameters: section #}
+{# Functions: formatX(), crop() #}
+
+{% import 'main/menusection_macros.j2' as msm %}
+
+{{ msm.s_title(section.title) }}
+{{ msm.s_top() }}
+{% if scwidth%2 == 0 %}
+	{% set odd = 0 %}
+{% else %}
+	{% set odd = 1 %}
+{% endif %}
+{% set tw = (scwidth//2)-3 %}
+{% set ns = namespace(toggle = False, count= 0) %}
+{% for key in section.entrydefs %}
+	{% set toggle = ns.toggle %}
+	{% set count = ns.count %}
+	{% if mode in section.entrydefs[key] %}
+		{% set smode = mode %}
+	{% elif '' in section.entrydefs[key] %}
+		{% set smode = '' %}
+	{% else %}
+		{% set smode = None %}
+	{% endif %}
+	{% if smode != None and key != conn.encoder.nl %}
+		{% set xw = 2 if key < '\r' else 0 %}{# Extra width if a LABEL item #}
+		{% if section.entrydefs[key][smode][2] is not string %}
+			{% set t=section.entrydefs[key][smode][2][0] %}
+			{% set dw = scwidth-2 if t|length == 0 and key<'\r' else scwidth-4 %}
+			{% set desc = formatX(section.entrydefs[key][smode][2][1],columns=dw) %}
+		{% else %}
+			{% set t=section.entrydefs[key][smode][2] %}
+			{% set desc ='' %}
+		{% endif %}
+		{% set label = crop(t,tw+xw-1,conn.encoder.ellipsis) %}
+		{% if label|length>0 or count>1 or key>='\r' %}
+			{% if key<'\r' and count%2==0 %}{# NULL entry #}
+				<INK c={{st.SBorderColor1}}><VLINE>
+			{% endif %}
+			{% include 'main/keylabel.j2' %}
+			{% if count%2 == 0 %}
+				{% set toggle = not toggle %}
+				<SPC n={{(tw+xw)-1-(label|length)+1}}>
+			{% else %}
+				<SPC n={{((scwidth//2)-1)-((label|length)+((3-odd)-(xw*1.5)|round(0,'floor')|int))}}><INK c={{st.SBorderColor2}}><VLINE>
+			{% endif %}
+		{% endif %}
+		{% for l in desc %}
+			{% set l=l.replace('<BR>','') %}
+			<INK c={{st.SBorderColor1}}><VLINE><INK c={{st.HlColor}}><SPC n={{scwidth-2-dw}}>{{l}}<SPC n={{dw-(unescape(l)|length)}}><INK c={{st.SBorderColor2}}><VLINE>
+		{% endfor %}
+		{% set count = count+1 %}
+	{% endif %}
+	{% set ns.toggle = toggle %}
+	{% set ns.count = count%}
+{% endfor %}
+{%if ns.count%2==1 %}
+	<SPC n={{(scwidth//2)-(1-odd)}}><INK c={{st.SBorderColor2}}><VLINE>
+{% endif %}
+{{ msm.s_bottom()}}
