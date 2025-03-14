@@ -1,0 +1,18 @@
+<MODE m='MSX1'>
+	<SENDRAW file='bbsfiles/logout/logout.mseq' wait=False>
+</MODE>
+<MODE m='PET64'>
+	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
+</MODE>
+<MODE m='PET64std'>
+	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
+</MODE>
+<MODE m='PET264'>
+	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
+</MODE>
+<MODE m='PET264std'>
+	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
+</MODE>
+<MODE m='PET64XG'>
+	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
+</MODE>
