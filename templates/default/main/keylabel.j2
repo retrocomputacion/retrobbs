@@ -38,9 +38,13 @@
 {# VidTex #}
 {% elif mode == 'VidTex' %}
 	{% if conn.encoder.features['color'] %}
-		{# Assume that a VidTex terminal which supports color also supports semigraphics #}
-		<INK c={{ c1 }}>[{{ key.lower() }}]<INK c={{ c2 }}>{{ label }}
-		{# <G4><INK c={{ c1 }}<R-HALF>{{ key.lower() }}<L-HALF><GN><INK c={{ c2 }}>{{ label }} #}
+		{% if conn.encoder.def_gfxmode != None %}
+			{# Assume that a VidTex terminal which supports color and graphics also supports semigraphics #}
+			{# VIP Terminal XL clears the screen each time G4 mode is engaged, so we avoid semigraphics for that terminal #}
+			<G4><INK c={{ c1 }}><R-HALF>{{ key.lower() }}<L-HALF><GN><INK c={{ c2 }}>{{ label }}
+		{% else %}
+			<INK c={{ c1 }}>[{{ key.lower() }}]<INK c={{ c2 }}>{{ label }}
+		{% endif %}
 	{% else %}
 		[{{ key.lower() }}]{{ label }}
 	{% endif %}

@@ -36,19 +36,19 @@
 		{% set label = crop(t,tw+xw-1,conn.encoder.ellipsis) %}
 		{% if label|length>0 or count>1 or key>='\r' %}
 			{% if key<'\r' and count%2==0 %}{# NULL entry #}
-				<INK c={{st.SBorderColor1}}><VLINE>
+				{{ msm.s_left() }}
 			{% endif %}
 			{% include 'main/keylabel.j2' %}
 			{% if count%2 == 0 %}
 				{% set toggle = not toggle %}
 				<SPC n={{(tw+xw)-1-(label|length)+1}}>
 			{% else %}
-				<SPC n={{((scwidth//2)-1)-((label|length)+((3-odd)-(xw*1.5)|round(0,'floor')|int))}}><INK c={{st.SBorderColor2}}><VLINE>
+				<SPC n={{((scwidth//2)-1)-((label|length)+((3-odd)-(xw*1.5)|round(0,'floor')|int))}}>{{ msm.s_right() }}
 			{% endif %}
 		{% endif %}
 		{% for l in desc %}
 			{% set l=l.replace('<BR>','') %}
-			<INK c={{st.SBorderColor1}}><VLINE><INK c={{st.HlColor}}><SPC n={{scwidth-2-dw}}>{{l}}<SPC n={{dw-(unescape(l)|length)}}><INK c={{st.SBorderColor2}}><VLINE>
+			{{ msm.s_left() }}<INK c={{st.HlColor}}><SPC n={{scwidth-2-dw}}>{{l}}<SPC n={{dw-(unescape(l)|length)}}>{{ msm.s_right() }}
 		{% endfor %}
 		{% set count = count+1 %}
 	{% endif %}
@@ -56,6 +56,6 @@
 	{% set ns.count = count%}
 {% endfor %}
 {%if ns.count%2==1 %}
-	<SPC n={{(scwidth//2)-(1-odd)}}><INK c={{st.SBorderColor2}}><VLINE>
+	<SPC n={{(scwidth//2)-(1-odd)}}>{{ msm.s_right() }}
 {% endif %}
 {{ msm.s_bottom()}}

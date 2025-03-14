@@ -31,15 +31,15 @@
 		{% set label = crop(t,tw+xw-1,conn.encoder.ellipsis) %}
 		{% if label|length>0 or count>1 or key>='\r' %}
 			{% if key<'\r' %}{# NULL entry #}
-				<INK c={{st.SBorderColor1}}><VLINE>
+				{{ msm.s_left() }}
 			{% endif %}
 			{% include 'main/keylabel.j2' %}
 			{% set toggle = not toggle %}
-			<SPC n={{(tw+xw)-1-(label|length)}}><INK c={{st.SBorderColor2}}><VLINE>
+			<SPC n={{(tw+xw)-1-(label|length)}}>{{ msm.s_right() }}
 		{% endif %}
 		{% for l in desc %}
 			{% set l=l.replace('<BR>','') %}
-			<INK c={{st.SBorderColor1}}><VLINE><INK c={{st.HlColor}}><SPC n={{scwidth-2-dw}}>{{l}}<SPC n={{dw-(unescape(l)|length)}}><INK c={{st.SBorderColor2}}><VLINE>
+			{{ msm.s_left() }}<INK c={{st.HlColor}}><SPC n={{scwidth-2-dw}}>{{l}}<SPC n={{dw-(unescape(l)|length)}}>{{ msm.s_right() }}
 		{% endfor %}
 		{% set count = count + 1 %}
 	{% endif %}
