@@ -71,9 +71,9 @@ t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+3
                        'BACK':chr(BACK),
                        'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N'),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)]),
                        'SPINNER':chr(SPINNER)},
-             'ST':{'RVSON':'\x1bp','RVSOFF':'\x1bq','CLR':'\x1bE',
+             'ST':{'RVSON':'\x1bp','RVSOFF':'\x1bq','CLR':'\x1bE','WROFF':'\x1bw','WRON':'\x1bv',
                    'PAPER':(lambda c:'\x1bc'+chr(32+c),[('_R','_C'),('c',0)]),
-                   'CURSOR':(lambda enable: '\x1be' if enable else '\x1bf',[('_R','_C'),('enable',True)]),}}
+                   'CURSOR':(lambda enable: '\x1be' if enable else '\x1bf',[('_R','_C'),('enable',True)])}}
 
 t_multi =	{'DEL':chr(DELETE),'CRSRR':chr(ESC)+'C','CRSRL':chr(ESC)+'D','CRSRU':chr(ESC)+'A','CRSRD':chr(ESC)+'B',
             'POUND':'','PI':'','HASH':'#','HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': '+',
@@ -118,7 +118,15 @@ vt_semi = {'G4':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'
            'LL-LR-UR-QUAD':(lambda conn,c,n:VT52encoder.SemiChar(conn.encoder,c,n),[('_R','_C'),('conn','_C'),('c',0b0111),('n',1)]),
            'BLOCK':(lambda conn,c,n:VT52encoder.SemiChar(conn.encoder,c,n),[('_R','_C'),('conn','_C'),('c',0b1111),('n',1)])}
 
+# Multiple replace
+# https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
+Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*'}
+Urep = dict((re.escape(k), v) for k, v in Urep.items())
+
+
 def toASCII(text:str, full=True):
+    pattern = re.compile("|".join(Urep.keys()))
+    text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
     text = (unicodedata.normalize('NFKD',text).encode('ascii','vtspc')).decode('latin1')
     return text
 
@@ -126,6 +134,8 @@ def fromASCII(text:str, full=True):
     return text
 
 def toATRST(text:str, full=True):
+    pattern = re.compile("|".join(Urep.keys()))
+    text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
     text = (unicodedata.normalize('NFKD',text).encode('cp437','vtspc')).decode('latin1')
     return text
 
@@ -180,6 +190,8 @@ class VT52encoder(Encoder):
     def SetColor(self,conn,c):
         c &= 15
         # c = c if c < 9 else c & 7
+        if self.black_replace and c == 8:
+            c = 7
         self.fgcolor = c
         conn.parser.color = c
         return f'\x1bk{chr((c*16)+self.bgcolor)}'

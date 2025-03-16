@@ -16,7 +16,34 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
+    },
+    "PET64CG":{
+        "BgColor"		: "BLACK",
+        "BoColor"		: "BLACK",
+        "TxtColor"		: "GREY3",
+        "HlColor"		: "WHITE",
+        "RvsColor"		: "LTGREEN",
+        "OoddColor"		: "LTBLUE",
+        "OoddBack"      : "BLACK",
+        "ToddColor"		: "GREY3",
+        "OevenColor"	: "CYAN",
+        "OevenBack"     : "BLACK",
+        "TevenColor"	: "YELLOW",
+        "MenuTColor1"	: "CYAN",
+        "MenuTColor2"	: "LTGREEN",
+        "SBorderColor1"	: "LTGREEN",
+        "SBorderColor2"	: "GREEN",
+        "PbColor"		: "YELLOW",
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "PET64std":{
         "BgColor"		: "BLACK",
@@ -35,7 +62,11 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "PET64XG":{
         "BgColor"		: "BLACK",
@@ -54,7 +85,11 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "PET264":{
         "BgColor"		: "BLACK",
@@ -73,7 +108,11 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "PET264std":{
         "BgColor"		: "BLACK",
@@ -92,7 +131,11 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "PET128std":{
         "BgColor"		: "BLACK",
@@ -111,7 +154,11 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "PET20std":{
         "BgColor"		: "BLACK",
@@ -130,7 +177,11 @@
         "SBorderColor1"	: "CYAN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "BLUE"
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "CYAN",
+        "NBarMove"      : "BLUE",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "MSX1":{
         "BgColor"		: "BLACK",
@@ -149,7 +200,10 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "LTBLUE"
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "CYAN",
+        "NBarExit"      : "YELLOW",
+        "NBarKeys"      : "GREEN"
     },
     "VidTex":{
         "BgColor"		: "BLACK",

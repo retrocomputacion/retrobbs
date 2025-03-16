@@ -80,24 +80,25 @@ def plugFunction(conn:Connection):
                 crsr = ''
             else:
                 if set(('CRSRU','CRSRD')) <= conn.encoder.ctrlkeys.keys():
-                    crsr = '/crsr'
+                    crsr = 'crsr'
                 else:
-                    crsr = '/a/z'
+                    crsr = 'a/z'
             if set(('F1','F3')) <= conn.encoder.ctrlkeys.keys():
                 pages = 'F1/F3'
             else:
                 pages = 'p/n'
-            if 'MSX' in conn.mode:
-                bcode = 0xDB
-                rcrsr = ''
-            else:
-                bcode = 0xA0
-                rcrsr = '<CRSRR n=7><R-NARROW>'
-            if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
-            else:
-                conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
-            conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+            conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':barline,'crsr':crsr,'pages':pages,'keys':[('v','view')]}))
+            # if 'MSX' in conn.mode:
+            #     bcode = 0xDB
+            #     rcrsr = ''
+            # else:
+            #     bcode = 0xA0
+            #     rcrsr = '<CRSRR n=7><R-NARROW>'
+            # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+            #     conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
+            # else:
+            #     conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
+            # conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
             if conn.QueryFeature(TT.SET_WIN) >= 0x80:
                 conn.SendTML('<BR>')
             date = idata["date"]
@@ -112,12 +113,12 @@ def plugFunction(conn:Connection):
             texto = formatX(title,scwidth)
             #Date
             tdate = formatX('\n'+date+'\n\n',scwidth)
-            tdate[0] = '<LTBLUE>'+tdate[0]
+            tdate[0] = f'<INK c={conn.style.HlColor}>'+tdate[0]
             texto += tdate
             #Author
             if autor != '':
                 at = formatX(autor,scwidth)
-                at[0] = '<ORANGE>'+at[0]
+                at[0] = f'<INK c={conn.style.TevenColor}>'+at[0]
             else:
                 at = ['<BR>']
             #Description

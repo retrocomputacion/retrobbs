@@ -224,6 +224,11 @@ class bbsstyle:
             ### [Prompt] ###
             self.PbColor		= colors.get('YELLOW',0)		#Key prompt brackets color
             self.PtColor		= colors.get('LIGHT_BLUE',colors.get('CYAN',0))	#Key prompt text color
+            ### Nav Bar ###
+            self.NBarBG         = colors.get('LIGHT_BLUE',colors.get('CYAN',0)) #Nav bar main background color
+            self.NBarMove       = colors.get('LIGHT_BLUE',colors.get('BLUE',0)) #Nav bar move keys background color
+            self.NBarExit       = colors.get('YELLOW',colors.get('ORANGE',0))   #Nav bar exit section background color
+            self.NBarKeys       = colors.get('GREEN',colors.get('LIGHT_GREEN',0)) #Nav bar keys section background color
         else:
             # Default colors (in palette index)
             self.BgColor		= 0		#Background color
@@ -245,6 +250,11 @@ class bbsstyle:
             ### [Prompt] ###
             self.PbColor		= 0		#Key prompt brackets color
             self.PtColor		= 0 	#Key prompt text color
+            ### Nav Bar ###
+            self.NBarBG         = 0     #Nav bar main background color
+            self.NBarMove       = 0     #Nav bar main background color
+            self.NBarExit       = 0     #Nav bar exit section background color
+            self.NBarKeys       = 0     #Nav bar keys section background color
 
     # Set an style color, a section or the whole style
     # color : SCOLOR and index != None to set a single style color
@@ -331,7 +341,7 @@ class template:
             return(self.connection.style)
         # Create style object
         if self.connection.mode in jstyle:
-            default = self.connection.style #<<<
+            default:bbsstyle = self.connection.style #<<<
             style = bbsstyle()
             colors = self.connection.encoder.colors
             st = jstyle[self.connection.mode]
@@ -352,6 +362,10 @@ class template:
             style.SBorderColor2	= colors.get(st.get('SBorderColor2'),default.SBorderColor2) if 'SBorderColor2' in st else default.SBorderColor2
             style.PbColor		= colors.get(st.get('PbColor'),default.PbColor) if 'PbColor' in st else default.PbColor
             style.PtColor		= colors.get(st.get('PtColor'),default.PtColor) if 'PtColor' in st else default.PtColor
+            style.NBarBG        = colors.get(st.get('NBarBG'),default.NBarBG) if 'NBarBG' in st else default.NBarBG
+            style.NBarMove      = colors.get(st.get('NBarMove'),default.NBarMove) if 'NBarMove' in st else default.NBarMove
+            style.NBarExit      = colors.get(st.get('NBarExit'),default.NBarExit) if 'NBarExit' in st else default.NBarExit
+            style.NBarKeys      = colors.get(st.get('NBarKeys'),default.NBarKeys) if 'NBarKeys' in st else default.NBarKeys
             return style
         else:   # Style file doesn't define color for the current mode
             return(self.connection.style)
