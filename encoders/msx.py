@@ -130,7 +130,8 @@ t_mono = 	{'MSX1':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF
             'LTGREEN':chr(1)+chr(LT_GREEN),'LTBLUE':chr(1)+chr(LT_BLUE),'DRED':chr(1)+chr(DARK_RED),'DGREEN':chr(1)+chr(DARK_GREEN),
             'LTYELLOW':chr(1)+chr(LT_YELLOW),
             'PAPER':(lambda c:'\x01'+chr(c+0x10),[('_R','_C'),('c',1)])},
-            'MSXSTD':{'CLR':chr(CLEAR),'HOME':chr(HOME),'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)])}}
+            'MSXSTD':{'CLR':chr(CLEAR),'HOME':chr(HOME),'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),
+                      'CURSOR':(lambda enable: '\x1by5' if enable else '\x1bx5',[('_R','_C'),('enable',True)])}}
 t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(1)+chr(HLINE),'VLINE':chr(1)+chr(VLINE),'CROSS':chr(1)+chr(CROSS),'UARROW':'^',
             'UL-CORNER':chr(1)+chr(UL_CORNER),'UR-CORNER':chr(1)+chr(UR_CORNER),'LL-CORNER':chr(1)+chr(LL_CORNER),'LR-CORNER':chr(1)+chr(LR_CORNER),
@@ -363,7 +364,10 @@ class MSXencoder(Encoder):
 ####################################################
 # Convert ASCII/unicode text to MSX
 ####################################################
-Urep = {'\u2014':'-','\u2013':'\u2500','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'\u2219'}
+Urep = {'\u2014':'-','\u2013':'\u2500','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'\u2219',
+        '\u00c3':'\u2591','\u00e3':'\u2592','\u0128':'\u2593','\u0129':'\u2502','\u00d5':'\u2524','\u00f5':'\u2561','\u0170':'\u2562','\u0171':'\u2556',
+        '\u0132':'\u2555','\u0133':'\u2563','\u00be':'\u2551','\u223d':'\u2557','\u25ca':'\u255d','\u2030':'\u255c','\u00b6':'\u255b','\u00a7':'\u2510',
+        '\u2300':'\u03c6','\u2208':'\u03b5'}
 Urep = dict((re.escape(k), v) for k, v in Urep.items())
 
 
@@ -384,7 +388,7 @@ def toASCII(text):
 ###################################
 def _Register():
     e0 = MSXencoder('MSX1')
-    e0.clients = {b'M1':'Retroterm MSX1'}
+    e0.clients = {b'M1':'Retroterm MSX1',b'M138':'Retroterm MSX1-38K'}
     e0.tml_mono  = t_mono['MSX1']
     e0.tml_multi = t_multi['MSX1']
     e0.bbuffer = 0x02ed #Bottom of the buffer
@@ -396,9 +400,9 @@ def _Register():
                  'DGREEN':12,'DRED':6}
     e0.def_gfxmode = gfxmodes.MSXSC2
     e0.gfxmodes = (gfxmodes.MSXSC2,)
-    e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
-                   'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,'F9':F9,'F10':F10,
-                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF}
+    e0.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
+                   'F1':chr(F1),'F2':chr(F2),'F3':chr(F3),'F4':chr(F4),'F5':chr(F5),'F6':chr(F6),'F7':chr(F7),'F8':chr(F8),'F9':chr(F9),'F10':chr(F10),
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE),'INSERT':chr(INSERT),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF)}
     e0.features['color']  = True
     e0.features['reverse'] = True
 
@@ -410,8 +414,8 @@ def _Register():
     e1.tml_mono  = t_mono['MSXSTD']
     e1.tml_multi = t_multi['MSX1'].copy()
     e1.tml_multi['DEL'] = chr(0x7f)
-    e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
-                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT}
+    e1.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE),'INSERT':chr(INSERT)}
     e1.features['windows'] = 0
     e1.features['bgcolor'] = 0
     e1.features['color'] = False

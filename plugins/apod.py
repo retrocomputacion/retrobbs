@@ -128,7 +128,7 @@ def plugFunction(conn:Connection):
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
             tecla = text_displayer(conn,texto,scheight-4,ekeys='v')
             conn.SendTML('<WINDOW>')
-            back = conn.encoder.decode(conn.encoder.back)
+            back = conn.encoder.back
             if conn.connected == False:
                 return()
             if tecla == back or tecla == '':
@@ -145,7 +145,7 @@ def plugFunction(conn:Connection):
                         conn.SendTML("<BR>ERROR, unable to receive image")
                 else:
                     conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[2])
-                tecla = conn.ReceiveKey(conn.encoder.nl + back)
+                tecla = conn.ReceiveKey([conn.encoder.nl,back])
                 conn.SendTML('<CURSOR>')
                 if conn.connected == False:
                     _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id,v=1)

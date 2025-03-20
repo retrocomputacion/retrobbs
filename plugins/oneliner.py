@@ -45,7 +45,7 @@ def plugFunction(conn:Connection):
     try:
         if 'PET' in conn.mode and conn.encoder.txt_geo[0] == 40:
             fname = 'plugins/oneliner.seq'
-        elif 'MSX' in conn.mode:
+        elif 'MSX1' in conn.mode:
             fname = 'plugins/oneliner.mseq'
         with open(fname,'rb') as f:
             title = f.read()

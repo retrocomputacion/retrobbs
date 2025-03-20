@@ -36,6 +36,42 @@ except:
 import common.siddumpparser as sd
 import common.ymparse as ym
 
+# 0 	0        	0
+# 1 	0,0078125 	2
+# 2 	0,0110485 	3
+# 3 	0,015625 	4
+# 4 	0,0220971 	6
+# 5 	0,03125 	8
+# 6 	0,0441942 	11
+# 7 	0,0625 	    16
+# 8 	0,0883883 	23
+# 9 	0,125 	    32
+# 10 	0,1767767 	45
+# 11 	0,25 	    64
+# 12 	0,3535534 	90
+# 13 	0,5 	    128
+# 14 	0,7071068 	180
+# 15 	1 	        255
+#PSG Log volume table
+psg_to = numpy.array([ 0,  0, +1, +2, +3,  3, +4,  4, +5,  5,  6, +6,  6,  6,  7,  7, +7,
+                       7,  7,  7,  8,  8,  8, +8,  8,  8,  8,  9,  9,  9,  9,  9, +9,  9,
+                       9,  9,  9,  9,  9,  9, 10, 10, 10, 10, 10,+10, 10, 10, 10, 10, 10,
+                      10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11,+11, 11, 11, 11,
+                      11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12,
+                      12, 12, 12, 12, 12,+12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+                      12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13,
+                      13, 13, 13, 13, 13, 13, 13, 13, 13,+13, 13, 13, 13, 13, 13, 13, 13,
+                      13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+                      13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14,
+                      14, 14, 14, 14, 14, 14, 14, 14, 14, 14,+14, 14, 14, 14, 14, 14, 14,
+                      14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+                      14, 14, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+                      15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+                      15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+                      15], dtype=numpy.uint8)
+
+psg_from = numpy.array(range(256),dtype=numpy.uint8)
+
 ##########################################################
 # Display list of audio files, with playtime
 ##########################################################
@@ -298,7 +334,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
         conn.SendTML('<SPINNER><CRSRL><NUL><NUL>')
     #Streaming mode
     binario = b'\xFF\x83'
-    pcm_stream = PcmStream(filename,conn.samplerate)
+    pcm_stream = PcmStream(filename,conn.samplerate)    #,b'RETROTERM-M138' not in conn.TermString)
     t0 = time.time()
     streaming = True
     t_samples = length * conn.samplerate # Total number of samples for the selected playtime
@@ -364,19 +400,28 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 ############# PcmStream Class ############
 # Receive an audio stream through FFMPEG #
 class PcmStream:
-    def __init__(self, fn, sr):
+    def __init__(self, fn, sr,lineal=True):
+        self.lineal = lineal
+        crusher = ["-af","acrusher=bits=4:mode=lin,acontrast=contrast=50"] if lineal else ['-af',"acontrast=contrast=50"]
         if "Linux" in platform.system():
-            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, preexec_fn=os.setsid)
         else:
-            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted", "-af", "acrusher=bits=4:mode=lin,acontrast=contrast=50", "-f", "u8", "pipe:1", "-nostdin"],
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
     async def read(self, size):
         try:
             a = self.pcm_stream.stdout.read(size)
             na = numpy.frombuffer(a, dtype=numpy.ubyte)
-            norm = na/16
+            if not self.lineal:
+                mask = na[:,None] == psg_from
+                val = psg_to[mask.argmax(1)]
+                norm = numpy.where(mask.any(1), val, (numpy.floor((na-128)*.75)+96).astype(numpy.ubyte))
+                # log_array = numpy.floor((numpy.log10(na)/math.log10(2))*2)
+                # norm = numpy.where(log_array < 0,0,log_array)
+            else:
+                norm = na/16
             bin8 = numpy.uint8(norm)
 
             return bin8

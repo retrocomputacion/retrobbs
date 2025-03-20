@@ -274,7 +274,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
     conn.SendTML('<SPINNER><CRSRL>')
 
     #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
-    pcm_stream = AA.PcmStream(sURL,conn.samplerate)
+    pcm_stream = AA.PcmStream(sURL,conn.samplerate,b'RETROTERM-M38' not in conn.TermString)
     CHUNK = 1<<int(conn.samplerate*1.5).bit_length()
     t0 = time.time()
     streaming = True

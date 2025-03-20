@@ -764,14 +764,14 @@ def SignIn(conn:Connection):
                 while (not Done) and (retries > 0):
                     conn.SendTML('<BR>Password:')
                     if conn.bbs.database.chkPW(uentry, _dec(conn.ReceiveStr(keys, 16, True))):
-                        conn.SendTML('<LTGREEN><BR>Login successful<BELL><CHECKMARK><PAUSE n=1>')
+                        conn.SendTML(f'<INK c={conn.style.OKTxtColor}><BR>Login successful<BELL><CHECKMARK><PAUSE n=1>')
                         conn.username = _dec(name)
                         conn.userid = uentry.doc_id
                         conn.userclass = uentry['uclass']
                         Done = True
                     else:
                         retries -= 1
-                        conn.SendTML('<RED><BR>Password incorrect<CYAN><PAUSE n=1>')
+                        conn.SendTML(f'<INK c={conn.style.BADTxtColor}><BR>Password incorrect<CYAN><PAUSE n=1>')
                 if retries == 0:
                     Done = True
                 if not conn.connected:
@@ -779,8 +779,6 @@ def SignIn(conn:Connection):
             else:
                 conn.SendTML('<BR>User not found, register (Y/N)?')
                 if conn.ReceiveKey('yn') == 'y':
-                    # dord = dateord[conn.bbs.dateformat]
-                    # dleft = dateleft[conn.bbs.dateformat]
                     datestr = date_strings[conn.bbs.dateformat][0]
                     dout = date_strings[conn.bbs.dateformat][1]
                     # if conn.bbs.dateformat == 1:
@@ -1186,18 +1184,22 @@ def GetTerminalFeatures(conn:Connection, display = True):
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
         conn.samplerate = 7680
     elif (b"RETROTERM-P4" in conn.TermString) or (b"RETROTERM-M1" in conn.TermString):
-        _LOG('Plus/4 / MSX mode, audio streaming at 3840Hz',id=conn.id,v=3)
-        conn.samplerate = 3840
-    if conn.mode == 'MSX1':
-        grey = '<GREY>'
-    else:
-        grey = '<GREY3>'
+        if b'M138' in conn.TermString:
+            _LOG('MSX 38K mode, audio streaming at 7680Hz',id=conn.id,v=3)
+            conn.samplerate = 7680
+        else:
+            _LOG('Plus/4 / MSX mode, audio streaming at 3840Hz',id=conn.id,v=3)
+            conn.samplerate = 3840
+    grey = f'<INK c={conn.style.TxtColor}>'
+    # if conn.mode == 'MSX1':
+    #     grey = '<GREY>'
+    # else:
+    #     grey = '<GREY3>'
     if conn.T56KVer > 0.5:
-        good = "<LTGREEN>+" if "MSX" in conn.mode else "<LTGREEN><CHECKMARK>"
+        good = f"<INK c={conn.style.OKTxtColor}>+" if "MSX" in conn.mode else f"<INK c={conn.style.OKTxtColor}><CHECKMARK>"
         conn.SendTML(f'<LTBLUE>{conn.encoder.nl.join(formatX("Checking some terminal features...",conn.encoder.txt_geo[0]),)}<BR>')
-        # result = [None]*(TT.TURBO56K_LCMD-127)
         for cmd in [129,130,179]:
-            conn.SendTML(f'{grey}{TT.T56K_CMD[cmd]}: {good if conn.QueryFeature(cmd)< 0x80 else "<RED>x"}<BR>')
+            conn.SendTML(f'{grey}{TT.T56K_CMD[cmd]}: {good if conn.QueryFeature(cmd)< 0x80 else f"<INK c={conn.style.BADTxtColor}>x"}<BR>')
     conn.SendTML('<BR>')
     if conn.QueryFeature(131) < 0x80:
         conn.SendTML(f'{grey}PCM audio samplerate <YELLOW>{conn.samplerate}Hz<BR>')
@@ -1282,9 +1284,6 @@ RUNNING UNDER:<BR>
             else:
                 conn.SendTML('<FORMAT>SORRY, UNKNOWN CLIENT TYPE, DISCONNECTED...</FORMAT><BR>')
                 conn.connected = False
-            # _LOG('Not a compatible terminal, disconnecting...',id=conn.id,v=2)
-            # # Clean up the connection
-            # conn.socket.close()
         if conn.connected:
             # Get Turbo56K terminal features and send splash screen if possible
             if conn.T56KVer > 0.4:

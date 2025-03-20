@@ -1,10 +1,12 @@
 {# Menu section template, 2 columns #}
-{# Parameters: section #}
-{# Functions: formatX(), crop() #}
+{# Parameters: section, scount#}
+{# Functions: formatX(), crop(), unescape() #}
 
 {% import 'main/menusection_macros.j2' as msm %}
 
-{{ msm.s_title(section.title) }}
+{% if section.title|length > 0 or scount > 0 %}
+	{{ msm.s_title(section.title) }}
+{% endif %}
 {{ msm.s_top() }}
 {% if scwidth%2 == 0 %}
 	{% set odd = 0 %}

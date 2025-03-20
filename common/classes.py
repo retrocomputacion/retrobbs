@@ -176,7 +176,9 @@ SCOLOR = Enum('style_colors',
           [ 'BgColor','BoColor','TxtColor','HlColor','RvsColor',
             'OoddColor','ToddColor','OevenColor','TevenColor',
             'MenuTColor1','MenuTColor2','SBorderColor1','SBorderColor2',
-            'PbColor','PtColor'])
+            'PbColor','PtColor',
+            'NBarBG','NBarMove','NBarExit','NBarKeys',
+            'OKTxtColor','WRNTxtColor','BADTxtColor'])
 
 # ##### Support class for bbstyle templates #####
 # # safe format(): https://stackoverflow.com/questions/17215400/format-string-unused-named-arguments
@@ -229,6 +231,10 @@ class bbsstyle:
             self.NBarMove       = colors.get('LIGHT_BLUE',colors.get('BLUE',0)) #Nav bar move keys background color
             self.NBarExit       = colors.get('YELLOW',colors.get('ORANGE',0))   #Nav bar exit section background color
             self.NBarKeys       = colors.get('GREEN',colors.get('LIGHT_GREEN',0)) #Nav bar keys section background color
+            ### Status colors ###
+            self.OKTxtColor     = colors.get('GREEN',0)     # OK/Good text
+            self.WRNTxtColor    = colors.get('YELLOW',0)    # Warning text
+            self.BADTxtColor    = colors.get('RED',0)       # Bad/Error text
         else:
             # Default colors (in palette index)
             self.BgColor		= 0		#Background color
@@ -255,6 +261,10 @@ class bbsstyle:
             self.NBarMove       = 0     #Nav bar main background color
             self.NBarExit       = 0     #Nav bar exit section background color
             self.NBarKeys       = 0     #Nav bar keys section background color
+            ### Status colors ###
+            self.OKTxtColor     = 0     # OK/Good text
+            self.WRNTxtColor    = 0     # Warning text
+            self.BADTxtColor    = 0     # Bad/Error text
 
     # Set an style color, a section or the whole style
     # color : SCOLOR and index != None to set a single style color
@@ -297,6 +307,20 @@ class bbsstyle:
                 self.PbColor		= index
             elif color == SCOLOR.PtColor:
                 self.PtColor		= index
+            elif color == SCOLOR.NBarBG:
+                self.NBarBG		    = index
+            elif color == SCOLOR.NBarMove:
+                self.NBarMove		= index
+            elif color == SCOLOR.NBarExit:
+                self.NBarExit		= index
+            elif color == SCOLOR.NBarKeys:
+                self.NBarKeys		= index
+            elif color == SCOLOR.OKTxtColor:
+                self.OKTxtColor		= index
+            elif color == SCOLOR.WRNTxtColor:
+                self.WRNTxtColor		= index
+            elif color == SCOLOR.BADTxtColor:
+                self.NBarKeys		= index
 
 
 ######## Template class ########
@@ -366,6 +390,9 @@ class template:
             style.NBarMove      = colors.get(st.get('NBarMove'),default.NBarMove) if 'NBarMove' in st else default.NBarMove
             style.NBarExit      = colors.get(st.get('NBarExit'),default.NBarExit) if 'NBarExit' in st else default.NBarExit
             style.NBarKeys      = colors.get(st.get('NBarKeys'),default.NBarKeys) if 'NBarKeys' in st else default.NBarKeys
+            style.OKTxtColor    = colors.get(st.get('OKTxtColor'),default.OKTxtColor) if 'OKTxtColor' in st else default.OKTxtColor
+            style.WRNTxtColor   = colors.get(st.get('WRNTxtColor'),default.WRNTxtColor) if 'WRNTxtColor' in st else default.WRNTxtColor
+            style.BADTxtColor   = colors.get(st.get('BADTxtColor'),default.BADTxtColor) if 'BADTxtColor' in st else default.BADTxtColor
             return style
         else:   # Style file doesn't define color for the current mode
             return(self.connection.style)

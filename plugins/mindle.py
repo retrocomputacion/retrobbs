@@ -330,20 +330,11 @@ def mindle(conn:Connection, xword: str, valid):
             for g,x in zip(guess,xword):
                 if g == x:
                     out += bullcolor
-                    # if 'PET' in conn.mode:
-                    #     out += '<GREEN>'
-                    # else:
-                    #     out += f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>'
                     if g in cows:
                         cows.remove(g)
-                    if g not in bulls:
-                        t_bulls.append(g)
+                    t_bulls.append(g)
                 elif (g in xword) and (g in chars) and (chars[g] >= 0):
                     out += cowcolor
-                    # if 'PET' in conn.mode:
-                    #     out += '<YELLOW>'
-                    # else:
-                    #     out += f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>'
                     if (g not in bulls) and (g not in cows):
                         t_cows.append(g)
                     chars[g] -= 1
@@ -351,25 +342,12 @@ def mindle(conn:Connection, xword: str, valid):
                     if 'MSX' in conn.mode:
                         out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
                     out += badcolor #'<BLACK>'
-                    if (g not in bad) and (g not in t_bad):
+                    if g not in (bad+t_bad+t_bulls+t_cows):
                         t_bad.append(g)
                 out += g.upper()+'<CRSRR>'
             if 'MSX' in conn.mode:
                 out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
 
-            # for i,c in enumerate(guess):
-            #     if xtemp[i] == c:
-            #         out += '<GREEN>'
-            #         xtemp = xtemp[:i]+'-'+xtemp[i+1:]  # Replace fully matching character with an invalid one
-            #                         # so it doesnt match again if the guess word has repeated characters 
-            #     elif c in xtemp:
-            #         out += '<YELLOW>'
-            #         x = xtemp.find(c)
-            #         xtemp = xtemp[:x]+'-'+xtemp[x+1:] # Replace partially matching character so it doesnt match again for repeated characters
-            #     else:
-            #         out += '<BLACK>'
-            #     out += c.upper()+'<CRSRR>'
-            #     print(xtemp)
             conn.SendTML(out)
             # Update used characters display
             t_bulls.sort()
@@ -384,11 +362,11 @@ def mindle(conn:Connection, xword: str, valid):
             conn.SendTML(badcolor)
             for c in t_bad:
                 conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
-            conn.SendTML('<GREEN>')
-            for c in t_bulls:
-                conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
             conn.SendTML('<YELLOW>')
             for c in t_cows:
+                conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
+            conn.SendTML('<GREEN>')
+            for c in t_bulls:
                 conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
         t += 1
     if t == 6:

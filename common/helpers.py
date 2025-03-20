@@ -140,31 +140,31 @@ def More(conn:Connection, text, lines, colors=None):
             #Keep track of cursor position
             if ord(char) in itertools.chain(range(32,128),range(160,256)): #Printable chars
                 cc += 1
-            elif char == chr(ckeys.get('CRSRR',0)):
+            elif char == ckeys.get('CRSRR',0):
                 cc += 1
-            elif ord(char) in [ckeys.get('CRSRL',0), ckeys.get('DELETE',0)]:
+            elif char in [ckeys.get('CRSRL',0), ckeys.get('DELETE',0)]:
                 cc -= 1
-            elif char == chr(ckeys.get('CRSRU',0)):
+            elif char == ckeys.get('CRSRU',0):
                 ll -= 1
-            elif char == chr(ckeys.get('CRSRD',0)):
+            elif char == ckeys.get('CRSRD',0):
                 ll += 1
             elif char == conn.encoder.nl:
                 ll += 1
                 cc = 0
                 rvs = ''
-            elif ord(char) == [ckeys.get('HOME',0), ckeys.get('CLEAR',0)]:
+            elif char == [ckeys.get('HOME',0), ckeys.get('CLEAR',0)]:
                 ll = 0
                 page = 0
                 cc = 0
             elif char in conn.encoder.palette:
                 color = conn.encoder.palette[char]	#char
-            elif char == chr(ckeys.get('RVSON',0)):
+            elif char == ckeys.get('RVSON',0):
                 rvs = '<RVSON>'
-            elif char == chr(ckeys.get('RVSOFF',0)):
+            elif char == ckeys.get('RVSOFF',0):
                 rvs = ''
-            elif char == chr(ckeys.get('LOWER',0)):
+            elif char == ckeys.get('LOWER',0):
                 prompt = 'RETURN'
-            elif char == chr(ckeys.get('UPPER',0)):
+            elif char == ckeys.get('UPPER',0):
                 prompt = 'return'
             if cc == scwidth:
                 cc = 0
@@ -207,16 +207,16 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     lcols = [colors.TxtColor]*len(text)
     tcolor = lcols[0]
 
-    ekeys = bytes(conn.encoder.encode(ekeys,False),'latin1')
+    ekeys = list(ekeys)
     #Problematic TML tags
     rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
     #This connection ctrl keys
     ckeys = conn.encoder.ctrlkeys
 
-    CursorUp = ckeys.get('CRSRU',ord(conn.encoder.encode('a')))
-    CursorDown = ckeys.get('CRSRD',ord(conn.encoder.encode('z')))
-    PageUp = ckeys.get('F1',ord(conn.encoder.encode('p')))
-    PageDown = ckeys.get('F3',ord(conn.encoder.encode('n')))
+    CursorUp = ckeys.get('CRSRU',conn.encoder.encode('a'))
+    CursorDown = ckeys.get('CRSRD',conn.encoder.encode('z'))
+    PageUp = ckeys.get('F1',conn.encoder.encode('p'))
+    PageDown = ckeys.get('F3',conn.encoder.encode('n'))
 
     firstrun = True
 
@@ -238,9 +238,9 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     rep = dict((re.escape(k), v) for k, v in rep.items())
     pattern = re.compile("|".join(rep.keys()))
     if conn.QueryFeature(TT.SCROLL)< 0x80 or conn.encoder.features['scrollback']:
-        keys = bytes([CursorDown,CursorUp,PageUp,PageDown])
+        keys = [CursorDown,CursorUp,PageUp,PageDown]
     else:
-        keys = bytes([PageUp,PageDown])
+        keys = [PageUp,PageDown]
     #eliminate problematic control codes
     for i,t in enumerate(text):
         text[i] = pattern.sub(lambda m: rep[re.escape(m.group(0))], t)
@@ -261,13 +261,13 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     bline = i+1
     #scroll loop
     ldir = True	#Last scroll down?
-    back = bytes([ord(conn.encoder.back)])
+    back = conn.encoder.back
     while conn.connected:
-        k = conn.ReceiveKey(back+keys+ekeys)
+        k = conn.ReceiveKey([back]+keys+ekeys)
         if k == back:
-            ret = conn.encoder.decode(k.decode('latin1'))
+            ret = k     #conn.encoder.decode(k.decode('latin1'))
             break
-        elif (k[0] == CursorUp) and (tline > 0):	#Scroll up
+        elif (k == CursorUp) and (tline > 0):	#Scroll up
             tline -= 1
             bline -= 1
             if tline > 0:
@@ -276,7 +276,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 tcolor = colors.TxtColor
             conn.SendTML(f'<SCROLL rows=-1><HOME><INK c={tcolor}>{text[tline]}')
             ldir = False
-        elif (k[0] == CursorDown) and (bline < len(text)):	#Scroll down
+        elif (k == CursorDown) and (bline < len(text)):	#Scroll down
             tline += 1
             if bline > 0:
                 tcolor = lcols[bline-1]
@@ -288,13 +288,13 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 lcols[bline] = conn.parser.color
             bline += 1
             ldir = True
-        elif (k[0] == PageUp) and (tline > 0):	#Page up
+        elif (k == PageUp) and (tline > 0):	#Page up
             tline -= lcount
             if tline < 0:
                 tline = 0
             bline = _page(tline,lcount)+1
             ldir = True
-        elif (k[0] == PageDown) and (bline < len(text)):	#Page down
+        elif (k == PageDown) and (bline < len(text)):	#Page down
             # bline += lcount
             if bline + lcount > len(text):
                 tline = bline
@@ -305,7 +305,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             _page(tline,lcount)
             ldir = True
         elif k in ekeys:
-            ret = conn.encoder.decode(k.decode('latin1'))
+            ret = k #conn.encoder.decode(k.decode('latin1'))
             break
     # else:
     #     conn.ReceiveKey(b'_')

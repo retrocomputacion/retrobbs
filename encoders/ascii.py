@@ -75,7 +75,7 @@ def _Register():
                  'LIGHT_GREY':0,'DARK_GREY':0, 'MEDIUM_GREY':0, 'GREY':0}
     e0.def_gfxmode = None
     e0.gfxmodes = None
-    e0.ctrlkeys = {'DELETE':DELETE}
+    e0.ctrlkeys = {'DELETE':chr(DELETE)}
     e0.features = { 'color':       False,  # Encoder supports color
                     'charsets':    1,      # Number if character sets supported
                     'reverse':     False,  # Encoder supports reverse video

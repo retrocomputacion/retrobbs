@@ -20,7 +20,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET64CG":{
         "BgColor"		: "BLACK",
@@ -43,7 +46,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET64std":{
         "BgColor"		: "BLACK",
@@ -66,7 +72,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET64XG":{
         "BgColor"		: "BLACK",
@@ -89,7 +98,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET264":{
         "BgColor"		: "BLACK",
@@ -112,7 +124,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET264std":{
         "BgColor"		: "BLACK",
@@ -135,7 +150,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET128std":{
         "BgColor"		: "BLACK",
@@ -158,7 +176,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "PET20std":{
         "BgColor"		: "BLACK",
@@ -181,7 +202,10 @@
         "NBarBG"        : "CYAN",
         "NBarMove"      : "BLUE",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "MSX1":{
         "BgColor"		: "BLACK",
@@ -203,7 +227,10 @@
         "PtColor"       : "LTBLUE",
         "NBarBG"        : "CYAN",
         "NBarExit"      : "YELLOW",
-        "NBarKeys"      : "GREEN"
+        "NBarKeys"      : "GREEN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "VidTex":{
         "BgColor"		: "BLACK",
@@ -222,7 +249,10 @@
         "SBorderColor1"	: "CYAN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "BLUE"
+        "PtColor"       : "BLUE",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     },
     "ATRSTM":{
         "BgColor"		: "BLACK",
@@ -241,7 +271,10 @@
         "SBorderColor1"	: "WHITE",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "RED",
-        "PtColor"       : "WHITE"
+        "PtColor"       : "WHITE",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "WHITE",
+        "BADTxtColor"   : "RED"
     },
     "ATRSTL":{
         "BgColor"		: "BLACK",
@@ -260,7 +293,10 @@
         "SBorderColor1"	: "LTGREEN",
         "SBorderColor2"	: "GREEN",
         "PbColor"		: "YELLOW",
-        "PtColor"       : "DKCYAN"
+        "PtColor"       : "DKCYAN",
+        "OKTxtColor"    : "GREEN",
+        "WRNTxtColor"   : "YELLOW",
+        "BADTxtColor"   : "RED"
     }
 
 }

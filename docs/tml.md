@@ -210,7 +210,7 @@ Send the _spinner_ character, which 'animates' depicting a waiting state when th
 
 ---
 #### **&lt;BACK&gt;**
-Display the character used to go back a menu/screen. `←` for Commodore platforms, `_` for MSX1.
+Display the character used to go back a menu/screen. `←` for Commodore platforms, `_` for other platforms.
 
 ---
 </br>

@@ -418,8 +418,9 @@ def _Register():
                  'LTGREEN':13, 'LTBLUE':14}
     e0.def_gfxmode = gfxmodes.C64MULTI
     e0.gfxmodes = (gfxmodes.C64HI,gfxmodes.C64MULTI)
-    e0.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'F8':F8,
-                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
+    e0.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
+                   'F1':chr(F1),'F2':chr(F2),'F3':chr(F3),'F4':chr(F4),'F5':chr(F5),'F6':chr(F6),'F7':chr(F7),'F8':chr(F8),
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE),'INSERT':chr(INSERT),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER)}
 
     e1 = PETencoder('PET264')
     e1.clients = {b'P4':'Retroterm Plus/4'}
@@ -435,8 +436,10 @@ def _Register():
                  'LTGREEN':0x65, 'LTBLUE':0x46}
     e1.def_gfxmode = gfxmodes.P4HI
     e1.gfxmodes = (gfxmodes.P4HI,gfxmodes.P4MULTI)
-    e1.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'F1':F1,'F2':F2,'F3':F3,'F4':F4,'F5':F5,'F6':F6,'F7':F7,'HELP':HELP,
-                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER, 'ESC':ESC}
+    e1.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
+                   'F1':chr(F1),'F2':chr(F2),'F3':chr(F3),'F4':chr(F4),'F5':chr(F5),'F6':chr(F6),'F7':chr(F7),'HELP':chr(HELP),
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE),'INSERT':chr(INSERT),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),
+                   'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER), 'ESC':chr(ESC)}
     e1.features['blink'] = True
 
 
@@ -447,8 +450,8 @@ def _Register():
     e2.tml_mono  = t_mono['PET20'].copy()
     e2.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
     e2.tml_multi = t_multi['PET20']
-    e2.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,'HOME':HOME,'CLEAR':CLEAR,
-                   'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER}
+    e2.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),'HOME':chr(HOME),'CLEAR':chr(CLEAR),
+                   'DELETE':chr(DELETE),'INSERT':chr(INSERT),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER)}
     e2.txt_geo = (22,23)
     e2.features['bgcolor'] = 0
     e2.features['scrollback'] = False
@@ -476,8 +479,9 @@ def _Register():
     e4.tml_mono = t_mono['PET264'].copy()
     e4.tml_mono['AT'] =(lambda x,y:chr(HOME)+(chr(CRSR_DOWN)*y)+(chr(CRSR_RIGHT)*x),[('_R','_C'),('x',0),('y',0)])
     e4.tml_multi = t_multi['PET264']
-    e4.ctrlkeys = {'CRSRU':CRSR_UP,'CRSRD':CRSR_DOWN,'CRSRL':CRSR_LEFT,'CRSRR':CRSR_RIGHT,
-                   'HOME':HOME,'CLEAR':CLEAR,'DELETE':DELETE,'INSERT':INSERT,'RVSON':RVS_ON,'RVSOFF':RVS_OFF,'UPPER':TOUPPER,'LOWER':TOLOWER, 'ESC':ESC}
+    e4.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE),'INSERT':chr(INSERT),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),
+                   'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER), 'ESC':chr(ESC)}
     e4.palette = PALETTE
     e4.colors  = e0.colors
     e4.def_gfxmode = gfxmodes.P4HI

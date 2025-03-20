@@ -119,7 +119,7 @@ def plugFunction(conn:Connection):
     ckeys = conn.encoder.ctrlkeys
 
     if 'CRSRU' in ckeys:
-        cursors = [chr(ckeys['CRSRU']),chr(ckeys['CRSRD']),chr(ckeys['CRSRL']),chr(ckeys['CRSRR'])]
+        cursors = [ckeys['CRSRU'],ckeys['CRSRD'],ckeys['CRSRL'],ckeys['CRSRR']]
         ctext = 'cursors'
     else:
         cursors = ['a','z','n','m']
@@ -169,7 +169,6 @@ def plugFunction(conn:Connection):
     tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
     cpos = [1,1]
-    ckeys = conn.encoder.ctrlkeys
     display = True
     retrieve = True
     while conn.connected:

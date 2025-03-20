@@ -69,15 +69,18 @@ def plugFunction(conn:Connection,url):
             lines+=len(text)
             if lines>scheight-3:
                 continue
-            conn.SendTML(f'<INK c={menucolors[i%2][0]}>{kdeco[0]}{H.valid_keys[i-1]}{kdeco[1]}<INK c={menucolors[i%2][1]}>')
+            # conn.SendTML(f'<INK c={menucolors[i%2][0]}>{kdeco[0]}{H.valid_keys[i-1]}{kdeco[1]}<INK c={menucolors[i%2][1]}>')
+            conn.SendTML(conn.templates.GetTemplate('main/keylabel',**{'key':H.valid_keys[i-1],'label':'','toggle':i%2==0}))
             x = 0
             for t in text:
                 conn.SendTML(f'<SPC n={3*x}>{t}')
                 x=1
             MenuDic[H.valid_keys[i-1]] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
             i+=1
-        conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}>{kdeco[0]}<BACK>{kdeco[1]}<INK c={menucolors[i%2][1]}>Back<BR>'
-                     f'<WHITE><BR>Your choice: ')
+        conn.SendTML(conn.templates.GetTemplate('main/keylabel',**{'key':conn.encoder.back,'label':'Back','toggle':i%2==0})+
+                     '<BR><WHITE><BR>Your choice: ')
+        # conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}>{kdeco[0]}<BACK>{kdeco[1]}<INK c={menucolors[i%2][1]}>Back<BR>'
+        #              f'<WHITE><BR>Your choice: ')
         return MenuDic
     except:
         _LOG('Newsfeed - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)

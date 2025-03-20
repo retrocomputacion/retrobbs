@@ -122,7 +122,15 @@ vt_semi = {'G4':(lambda conn,m:VT52encoder.SetVTMode(conn.encoder,m),[('_R','_C'
 # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
 Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*'}
 Urep = dict((re.escape(k), v) for k, v in Urep.items())
-
+UrepST = {'\u00d7':'x','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*','\u00df':'\u20a7',
+          '\u00e3':'\u2591','\u00f5':'\u2592','\u00d8':'\u2593','\u00f8':'\u2502','\u0153':'\u2524','\u0152':'\u2561','\u00c0':'\u2562','\u00c3':'\u2556',
+          '\u00d5':'\u2555','\u00a8':'\u2563','\u00b4':'\u2551','\u2020':'\u2557','\u00b6':'\u255d','\u00a9':'\u255c','\u00ae':'\u255b','\u2122':'\u2510',
+          '\u0133':'\u2514','\u0132':'\u2534','\u05d0':'\u252c','\u05d1':'\u251c','\u05d2':'\u2500','\u05d3':'\u253c','\u05d4':'\u255e','\u05d5':'\u255f',
+          '\u05d6':'\u255a','\u05d7':'\u2554','\u05d8':'\u2569','\u05d9':'\u2566','\u05db':'\u2560','\u05dc':'\u2550','\u05de':'\u256c','\u05e0':'\u2567',
+          '\u05e1':'\u2568','\u05e2':'\u2564','\u05e4':'\u2565','\u05e6':'\u2559','\u05e7':'\u2558','\u05e8':'\u2552','\u05e9':'\u2553','\u05ea':'\u256b',
+          '\u05df':'\u256a','\u05da':'\u2518','\u05dd':'\u250c','\u05e3':'\u2588','\u05e5':'\u2584','\u09a7':'\u258c','\u2227':'\u2590','\u221e':'\u2580',
+          '\u03b2':'\u00df','\u222e':'\u221e','\u03d5':'\u03c6','\u2208':'\u03b5'}
+UrepST = dict((re.escape(k), v) for k, v in UrepST.items())
 
 def toASCII(text:str, full=True):
     pattern = re.compile("|".join(Urep.keys()))
@@ -134,8 +142,8 @@ def fromASCII(text:str, full=True):
     return text
 
 def toATRST(text:str, full=True):
-    pattern = re.compile("|".join(Urep.keys()))
-    text = pattern.sub(lambda m: Urep[re.escape(m.group(0))], text)
+    pattern = re.compile("|".join(UrepST.keys()))
+    text = pattern.sub(lambda m: UrepST[re.escape(m.group(0))], text)
     text = (unicodedata.normalize('NFKD',text).encode('cp437','vtspc')).decode('latin1')
     return text
 
@@ -288,12 +296,14 @@ class VT52encoder(Encoder):
         _copy.txt_geo = (cols,conn.ReceiveInt(16,25,25))
         conn.SendTML('<BR>Atari ST mode (Y/N):')
         if conn.ReceiveKey('yn') == 'y':
+            # Atari ST modes
             _copy.tml_mono.update(t_mono['ST'])
             conn.Sendallbin(b'\x1bv\x1bq')   #Enable wordwrap, normal video
             _copy.features['color'] = True
             _copy.features['bgcolor'] = 2
             _copy.encode = toATRST
             _copy.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
+            _copy.ctrlkeys.update({'CRSRU':'\x1bA','CRSRD':'\x1bB','CRSRR':'\x1bC','CRSRL':'\x1bD'})
             if _copy.txt_geo[0] > 40:   #Assume hi/medres
                 _copy.name = 'ATRSTM'
                 _copy.colors={'WHITE':0, 'RED':1, 'GREEN':2, 'BLACK':3}
@@ -319,5 +329,5 @@ def _Register():
     e0.tml_multi = t_multi
     e0.def_gfxmode = None
     e0.gfxmodes = ()
-    e0.ctrlkeys = {'DELETE':DELETE}
+    e0.ctrlkeys = {'DELETE':chr(DELETE)}
     return [e0]

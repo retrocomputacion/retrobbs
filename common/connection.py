@@ -342,7 +342,7 @@ class Connection:
                     if k == bs:
                         if len(cadena) > 0:
                             cadena = cadena[:-1]	#Delete character
-                            self.Sendallbin(k)
+                            self.SendTML('<DEL>')
                     elif len(cadena) < maxlen:
                         cadena += k	#Add character
                         if pw:
@@ -366,7 +366,7 @@ class Connection:
         bs = bytes(self.encoder.bs,'ascii')
         ins = self.encoder.ctrlkeys.get('INSERT',None)
         if ins != None:
-            ins = ins.to_bytes(1,'big')
+            ins = ord(ins).to_bytes(1,'big')
         if minv < 0:
             minv = -minv
         if maxv < 0:
@@ -407,11 +407,12 @@ class Connection:
                     self.Sendall(defs)
                     return(defv)
             if temp != cr:
-                self.Sendallbin(temp)
                 if temp != bs:
                     tval[d] = temp.decode('utf-8')
                     d += 1
+                    self.Sendallbin(temp)
                 else:
+                    self.SendTML('<DEL>')
                     d -= 1
                     if ins != None:
                         self.Sendallbin(ins) #Insert

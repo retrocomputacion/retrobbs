@@ -1,6 +1,9 @@
 {# Key Label Template #}
 {# Parameters: key, label, toggle #}
 {# set colors #}
+{% if key == conn.encoder.back %}
+	{% set key = conn.encoder.decode(key) %}
+{% endif %}
 {% set bg1 = -1 %}
 {% set bg = -1 %}
 {% if toggle %}

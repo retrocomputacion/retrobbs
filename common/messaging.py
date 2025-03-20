@@ -59,7 +59,7 @@ def readMessage(conn:Connection, msg_id:int):
             if win:
                 keys = ''
             else:
-                keys = conn.encoder.decode(conn.encoder.back)
+                keys = conn.encoder.back
 
             if conn.userclass == 10:    #Admin reading
                 keys += 'd'
@@ -131,7 +131,7 @@ def readMessage(conn:Connection, msg_id:int):
                             conn.Sendall('/')
                     conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
                     k = conn.ReceiveKey(keys)
-                if k == conn.encoder.decode(conn.encoder.back):
+                if k == conn.encoder.back:
                     done = True
                     break
                 elif k == 'f':
@@ -400,7 +400,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
             try:
                 # print(len(tline), column)
                 # i_char = conn.ReceiveKey(bytes([ord(c) for c in vfilter]+[ord(conn.encoder.nl),ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']]))
-                i_char = conn.ReceiveKey([c for c in vfilter]+cursors+[conn.encoder.nl]+[chr(help_k[0]),chr(line_k[0]),chr(quit_k[0])])
+                i_char = conn.ReceiveKey([c for c in vfilter]+cursors+[conn.encoder.nl]+[help_k[0],line_k[0],quit_k[0]])
                 # i_char = chr(i_char[0])
                 if edit :   # Editing text
                     if i_char == conn.encoder.nl:   # New line
@@ -509,7 +509,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
                     elif (conn.mode not in ['MSXstd']) and (i_char == cursors[5]) and (scwidth > len(tline) > 0) and (column < len(tline)):   # Insert blank space
                         tline = tline[0:column] + ' ' + tline[column:]
                         conn.Sendall(i_char)
-                    elif ord(i_char) == quit_k[0]:                                               # Finish editing
+                    elif i_char == quit_k[0]:                                               # Finish editing
                         if conn.QueryFeature(TT.LINE_FILL):
                             conn.SendTML(f'<LFILL row={line+3} code=32>')
                         else:
@@ -524,12 +524,12 @@ Press {_dec(conn.encoder.back)} to continue...'''
                         else:                   # Keep editing
                             conn.SendTML(f'<CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                             edit = False
-                    elif ord(i_char) == line_k[0]:   # Select line to edit
+                    elif i_char == line_k[0]:   # Select line to edit
                         message = message[0:lines[line+ydisp][0]]+tline+(' ' if lines[line+ydisp][2] else '')+message[lines[line+ydisp][1]:]  # Insert edited line into original message
                         updMsg(ydisp,rline=line)
                         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select LINE (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                         edit = False
-                    elif ord(i_char) == help_k[0]:   # Display help screen
+                    elif i_char == help_k[0]:   # Display help screen
                         help()
                         dispMsg(ydisp)
                         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select line (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
@@ -709,7 +709,7 @@ def inbox(conn:Connection, board):
     refresh = True
     utable = db.db.table('USERS')
     if 'CRSRU' in ckeys:
-        cursors = [chr(ckeys['CRSRU']),chr(ckeys['CRSRD']),chr(ckeys['CRSRL']),chr(ckeys['CRSRR'])]
+        cursors = [ckeys['CRSRU'],ckeys['CRSRD'],ckeys['CRSRL'],ckeys['CRSRR']]
         ctext = 'crsr'
     else:
         cursors = ['a','z','n','m']
