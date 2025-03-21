@@ -362,7 +362,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
                 line_k = (ckeys['F5'],'F5')
                 quit_k = (ckeys['F10'],'F10')
         else:
-            help_k = line_k = quit_k = (0,'')
+            help_k = line_k = quit_k = (chr(0),'')
         conn.SendTML(f'<SETOUTPUT><WINDOW top=0 bottom={scheight-1}><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><MTITLE t="Message Editor"><YELLOW>')
         if win:
             conn.SendTML(f'{f"<LFILL row={scheight-3} code={hcode}>"if conn.QueryFeature(TT.LINE_FILL)<0x80 else f"<AT x=0 y={scheight-3}><HLINE n={scwidth}>"}'
@@ -392,10 +392,10 @@ Press {_dec(conn.encoder.back)} to continue...'''
         if win:
             conn.SendTML('<HOME>')
         if 'CRSRU' in ckeys:
-            cursors = [chr(ckeys['CRSRU']),chr(ckeys['CRSRD']),chr(ckeys['CRSRL']),chr(ckeys['CRSRR'])]
+            cursors = [ckeys['CRSRU'],ckeys['CRSRD'],ckeys['CRSRL'],ckeys['CRSRR']]
         else:
             cursors = [chr(0),chr(0),chr(0),chr(0)]
-        cursors += [chr(ckeys.get('HOME',0)),chr(ckeys.get('INSERT',0)),chr(ckeys.get('CLEAR',0)),chr(ckeys.get('DELETE',0))]
+        cursors += [ckeys.get('HOME',chr(0)),ckeys.get('INSERT',chr(0)),ckeys.get('CLEAR',chr(0)),ckeys.get('DELETE',chr(0))]
         while running and conn.connected:
             try:
                 # print(len(tline), column)

@@ -233,6 +233,13 @@ class VT52encoder(Encoder):
         else:
             return char*n
 
+    def _scroll(self,rows):
+        if rows > 0:
+            return '\x1bH'+(chr(ESC)+'M')*rows
+        elif rows < 0:
+            return '\x1bH'+(chr(ESC)+'L')*abs(rows)
+        else:
+            return ''
 
     ### Encoder setup routine
     # Setup the required parameters for the given client id
@@ -298,17 +305,24 @@ class VT52encoder(Encoder):
         if conn.ReceiveKey('yn') == 'y':
             # Atari ST modes
             _copy.tml_mono.update(t_mono['ST'])
+            _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
             conn.Sendallbin(b'\x1bv\x1bq')   #Enable wordwrap, normal video
             _copy.features['color'] = True
             _copy.features['bgcolor'] = 2
+            _copy.features['scrollback'] = True
             _copy.encode = toATRST
             _copy.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
             _copy.ctrlkeys.update({'CRSRU':'\x1bA','CRSRD':'\x1bB','CRSRR':'\x1bC','CRSRL':'\x1bD'})
             if _copy.txt_geo[0] > 40:   #Assume hi/medres
-                _copy.name = 'ATRSTM'
-                _copy.colors={'WHITE':0, 'RED':1, 'GREEN':2, 'BLACK':3}
-                _copy.palette = {'\x1bb'+chr(32+j):j for j in range(4)}  # Refresh Palette
-                _copy.tml_mono.update(st_colorsmed)
+                conn.SendTML('<BR>(M)edium or (H)i-Res?')
+                if conn.ReceiveKey('mhMH').lower() == 'm':
+                    _copy.name = 'ATRSTM'
+                    _copy.colors={'WHITE':0, 'RED':1, 'GREEN':2, 'BLACK':3}
+                    _copy.palette = {'\x1bb'+chr(32+j):j for j in range(4)}  # Refresh Palette
+                    _copy.tml_mono.update(st_colorsmed)
+                else:
+                    _copy.features['color'] = False
+                    _copy.name = 'ATRSTH'
             else:   # Assume lores
                 _copy.name = 'ATRSTL'
                 _copy.colors={'WHITE':0, 'DKRED':1, 'GREEN':2, 'DKYELLOW':3, 'DKBLUE':4, 'DKPURPLE': 5, 'DKCYAN':6, 'GREY3':7, 'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'BLUE':12,'PURPLE':13,'CYAN':14,'BLACK':15}

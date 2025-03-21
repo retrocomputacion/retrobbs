@@ -4,6 +4,9 @@
 <MODE m='PET64'>
 	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
 </MODE>
+<MODE m='PET64CG'>
+	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
+</MODE>
 <MODE m='PET64std'>
 	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
 </MODE>
