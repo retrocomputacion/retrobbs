@@ -375,6 +375,44 @@ class Connection:
             maxv = minv+1
         if not(minv <= defv <= maxv):
             defv = minv
+        o_val = 0
+        o_str = ''
+        digits = 0
+        keys = bs+cr+b'0123456789'
+        while True:
+            temp = self.ReceiveKey(keys)
+            if temp == bs:
+                if digits > 0:
+                    self.SendTML('<DEL>')
+                    o_val //=10
+                    digits -= 1
+            elif temp == cr:
+                if digits == 0:
+                    return defv
+                elif o_val >= minv:
+                    return o_val
+            else: #Digits
+                if (o_val*10)+int(temp) <= maxv:
+                    o_val = (o_val*10)+int(temp)
+                    digits += 1
+                    self.Sendallbin(temp)
+
+
+
+    def _ReceiveInt(self, minv, maxv, defv, auto = False):
+        cr = bytes(self.encoder.nl,'ascii')
+        bs = bytes(self.encoder.bs,'ascii')
+        ins = self.encoder.ctrlkeys.get('INSERT',None)
+        if ins != None:
+            ins = ord(ins).to_bytes(1,'big')
+        if minv < 0:
+            minv = -minv
+        if maxv < 0:
+            maxv = -maxv
+        if maxv < minv:
+            maxv = minv+1
+        if not(minv <= defv <= maxv):
+            defv = minv
         temp = b''
         done = False
         vall = max(len(str(minv)),len(str(maxv))) #Max digits
@@ -468,7 +506,7 @@ class Connection:
             x = 0
             while True:
                 if x == dord[0]: #0
-                    day = self.ReceiveInt(1,31,defdate.day,True)
+                    day = self._ReceiveInt(1,31,defdate.day,True)
                     if not self.connected:
                         return
                     if day == None:
@@ -485,7 +523,7 @@ class Connection:
                         else:
                             self.SendTML('<DEL n=2>')
                 if x == dord[1]: #1
-                    month = self.ReceiveInt(1,12,defdate.month,True)
+                    month = self._ReceiveInt(1,12,defdate.month,True)
                     if not self.connected:
                         return
                     if month == None:
@@ -502,7 +540,7 @@ class Connection:
                         else:
                             self.SendTML('<DEL n=2>')
                 if x == dord[2]: #2
-                    year = self.ReceiveInt(mindate.year,maxdate.year,defdate.year,True)
+                    year = self._ReceiveInt(mindate.year,maxdate.year,defdate.year,True)
                     if not self.connected:
                         return
                     if year == None:

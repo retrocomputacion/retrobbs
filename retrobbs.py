@@ -1190,6 +1190,10 @@ def GetTerminalFeatures(conn:Connection, display = True):
         else:
             _LOG('Plus/4 / MSX mode, audio streaming at 3840Hz',id=conn.id,v=3)
             conn.samplerate = 3840
+    elif b'UNKNOWN-' in conn.TermString:   # Unknown Turbo56k terminal
+        conn.SendTML('<BR>Enter your baudrate<BR>(57600): ')
+        conn.samplerate = conn.ReceiveInt(1200,115200,57600)//5
+        conn.SendTML('<BR>')
     grey = f'<INK c={conn.style.TxtColor}>'
     # if conn.mode == 'MSX1':
     #     grey = '<GREY>'
@@ -1245,7 +1249,29 @@ RUNNING UNDER:<BR>
             _LOG('TURBO56K version: '+ bcolors.OKGREEN + str(ord(dato1)) + '.' + str(ord(dato2)) + bcolors.ENDC,id=conn.id,v=4) 
             t56kver = ord(dato1)+((ord(dato2))/10)
             if t56kver > 0.4:
-                conn.SetMode(datos,t56kver)
+                mode = 'PET64' if b'-' not in datos else conn.bbs.clients.get(datos.split(b' ')[0].split(b'-')[1],None)
+                if mode == None:    # Unknown Turbo56k terminal
+                    encoders = []
+                    for encoder in conn.bbs.encoders:       # Get Turbo56k encoders
+                        if conn.bbs.encoders[encoder].minT56Kver > 0:
+                            encoders.append(conn.bbs.encoders[encoder])
+                    conn.SendTML("<FORMAT>UNKNOWN TURBO56K CLIENT, PLEASE SELECT THE CLIENT THAT MORE CLOSELY MATCH YOURS:</FORMAT><BR><BR>")
+                    count = 0
+                    clist = []
+                    for encoder in encoders:
+                        for client in encoder.clients:
+                            conn.SendTML(f'{count+1}:{encoder.clients[client].upper()}<BR>')
+                            count += 1
+                            clist.append([encoder.name,client])
+                    conn.SendTML('<BR>YOUR CHOICE:')
+                    sel = conn.ReceiveInt(1,len(clist),1)-1
+                    t_mode = (b'UNKNOWN-'+clist[sel][1]) if clist[sel][1] !='default' else b'RETROTERM'
+                    conn.SendTML('<BR>')
+                    conn.SetMode(t_mode,t56kver)
+                    # conn.mode = mode    # Restore real client ID
+                    ...
+                else:
+                    conn.SetMode(datos,t56kver)
 
             else:
                 _LOG('Old terminal detected - Terminating',id=conn.id)
@@ -1461,6 +1487,10 @@ bbs_instance.encoders = EX.RegisterEncoders()
 for encoder in bbs_instance.encoders:
     for client in bbs_instance.encoders[encoder].clients:
         bbs_instance.clients[client] = encoder
+        # if bbs_instance.encoders[encoder].minT56Kver > 0:
+        #     _LOG(f'Turbo56K client: {client}',v=4)
+        # else:
+        #     _LOG(f'Standard client: {client}',v=4)
 # Register TML tags
 EX.RegisterTMLtags()
 
