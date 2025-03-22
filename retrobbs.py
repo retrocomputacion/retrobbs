@@ -1299,9 +1299,10 @@ RUNNING UNDER:<BR>
                 clist = []
                 for encoder in encoders:
                     for client in encoder.clients:
-                        conn.SendTML(f'{count+1}:{encoder.clients[client].upper()}<BR>')
-                        count += 1
-                        clist.append([encoder.name,client])
+                        if client != b'_default_':
+                            conn.SendTML(f'{count+1}:{encoder.clients[client].upper()}<BR>')
+                            count += 1
+                            clist.append([encoder.name,client])
                 conn.SendTML('<BR>YOUR CHOICE:')
                 mode = b'Standard-'+clist[conn.ReceiveInt(1,len(clist),1)-1][1]
                 conn.SendTML('<BR>')
