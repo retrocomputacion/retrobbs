@@ -305,7 +305,7 @@ class VT52encoder(Encoder):
         if conn.ReceiveKey('yn') == 'y':
             # Atari ST modes
             _copy.tml_mono.update(t_mono['ST'])
-            _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
+            _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',1)])
             conn.Sendallbin(b'\x1bv\x1bq')   #Enable wordwrap, normal video
             _copy.features['color'] = True
             _copy.features['bgcolor'] = 2
@@ -325,7 +325,9 @@ class VT52encoder(Encoder):
                     _copy.name = 'ATRSTH'
             else:   # Assume lores
                 _copy.name = 'ATRSTL'
-                _copy.colors={'WHITE':0, 'DKRED':1, 'GREEN':2, 'DKYELLOW':3, 'DKBLUE':4, 'DKPURPLE': 5, 'DKCYAN':6, 'GREY3':7, 'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'BLUE':12,'PURPLE':13,'CYAN':14,'BLACK':15}
+                _copy.colors={'WHITE':0,'DKRED':1,'GREEN':2, 'DKYELLOW':3,'DKBLUE':4,'DKPURPLE': 5,'DKCYAN':6,'GREY3':7,
+                              'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'BLUE':12,'PURPLE':13,'CYAN':14,'BLACK':15,
+                              'DRED':1,'DYELLOW':3,'DBLUE':4,'DPURPLE':5,'DCYAN':6,'LIGHT_GREEN':10,'LIGHT_GREY':7,'GREY':8,'MEDIUM_GREY':8}
                 _copy.palette = {'\x1bb'+chr(32+j):j for j in range(16)}  # Refresh Palette
                 _copy.tml_mono.update(st_colorslo)
             _copy.tml_multi['DEL'] = '\x08 \x08'

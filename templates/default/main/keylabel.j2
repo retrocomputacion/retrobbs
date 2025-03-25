@@ -35,6 +35,16 @@
 		<PAPER c={{ bg }}>
 	{% endif %}
 	<RVSOFF><TRI-LEFT><INK c={{ c2 }}>{{ label }}
+{% elif mode == 'ANSI' %}
+	<INK c={{ c1 }}><R-HALF><RVSON>
+	{% if bg1 >= 0 %}
+		<PAPER c={{ bg1 }}>
+	{% endif %}
+	{{ key.lower() }}
+	{% if bg >= 0 %}
+		<PAPER c={{ bg }}>
+	{% endif %}
+	<RVSOFF><L-HALF><INK c={{ c2 }}>{{ label }}
 {# MSX comterm #}
 {% elif mode == 'MSXstd' %}
 	<VLINE>{{ key.lower() }}<TRI-LEFT>{{ label }}

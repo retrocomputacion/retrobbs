@@ -88,6 +88,7 @@ import configparser #INI file parser
 import threading
 from math import ceil
 from html import unescape
+import random
 
 from common import extensions as EX
 from common import turbo56k as TT
@@ -176,10 +177,10 @@ def ConfigRead():
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
             elif efunc == 'GRABFRAME':		#Grab video frame
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),None]
-            elif efunc == 'SIDPLAY':        #Play SID/MUS
+            elif efunc == 'SIDPLAY' or efunc == 'CHIPPLAY':        #Play SID/MUS
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
             elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
-                parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures')]
+                parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures'),1,True,cfg.getboolean(key,'entry'+str(e+1)+'shuffle', fallback=False)]
             elif efunc == 'SENDFILE':
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),cfg.getboolean(key,'entry'+str(e+1)+'dialog', fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'save', fallback=False)]
             elif efunc == 'SENDRAW':
@@ -334,6 +335,8 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
 
+    st = conn.style
+
     # transfer &= conn.QueryFeature(TT.FILETR) < 0x80
 
     scwidth,scheight = conn.encoder.txt_geo
@@ -409,12 +412,15 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         else:
             parameters = (conn,path+programs[x],True,transfer,)
         MenuDic[valid_keys[x-start]] = (fhandler,parameters,valid_keys[x-start],0,keywait)
-    conn.SendTML(f'<AT x=1 y={scheight-2}>')
-    if 'PET' in conn.mode:
-        conn.SendTML(f'<GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
-    else:
-        conn.SendTML(f'<GREY> <RVSON><BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
-    conn.SendTML(f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
+    # conn.SendTML(f'<AT x=1 y={scheight-2}>')
+    # if 'PET' in conn.mode:
+    #     conn.SendTML(f'<GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
+    # else:
+    #     conn.SendTML(f'<GREY> <RVSON><BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
+    conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'','pages':'&lt; / &gt;','keys':[]}))
+
+
+    conn.SendTML(f'<AT x=0 y={scheight-1}><WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     if conn.T56KVer > 0:
         conn.Sendall(TT.to_Speech() + 'seleksioneunaopsion,')
         # Select screen output
@@ -499,7 +505,7 @@ def SendMenu(conn:Connection):
 #####################################################################
 # Sequentially display all matching files inside a directory
 #####################################################################
-def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
+def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = False):
     # Sends menu options
     files = []	#all files
     slides = []	#filtered list
@@ -519,7 +525,11 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
     for f in files:
         if splitext(f)[1].upper() in pics_e + text_e + bin_e + pet_e + aud_e + chip_e + ('.TML',):
             slides.append(f)
-    slides.sort()	#Sort list
+
+    if shuffle:
+        random.shuffle(slides)
+    else:
+        slides.sort()	#Sort list
 
     turbo = conn.T56KVer > 0
 
@@ -542,10 +552,12 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True):
         elif ext == pet_e[1] and turbo:
             w = FT.SendPETPetscii(conn,path+p)
         elif (ext in aud_e) and (conn.QueryFeature(TT.STREAM) < 0x80):
-            AA.PlayAudio(conn,path+p,None)
+            if AA.PlayAudio(conn,path+p,None):
+                break   #Abort the whole slideshow if an audio is aborted
             w = 1
         elif (ext in chip_e) and (conn.QueryFeature(TT.SIDSTREAM) < 0x80):
-            AA.CHIPStream(conn,path+p,None,False)
+            if AA.CHIPStream(conn,path+p,None,False):
+                break   #Abort the whole slideshow if a chiptune is aborted
             w = 1
         elif ext == '.TML':     #TML script
             with open(path+p,'r') as slide:

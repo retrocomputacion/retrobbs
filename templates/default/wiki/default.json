@@ -116,9 +116,9 @@
         "HlColor"		: "RED",
         "PbColor"		: "BLACK",
         "PtColor"       : "RED",
-        "NBarBG"        : "DKBLUE",
-        "NBarMove"      : "BLUE",
-        "NBarExit"      : "DRED"
+        "NBarBG"        : "GREEN",
+        "NBarMove"      : "GREEN",
+        "NBarExit"      : "RED"
     },
     "ATRSTL":{
         "BgColor"		: "GREY3",
@@ -130,6 +130,16 @@
         "NBarBG"        : "DKBLUE",
         "NBarMove"      : "BLUE",
         "NBarExit"      : "DKRED"
+    },
+    "ANSI":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY2",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "DKRED"
     }
-
 }

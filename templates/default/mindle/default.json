@@ -1,0 +1,49 @@
+{
+    "PET64":{
+        "BgColor"		: "GREY1"
+    },
+    "PET64CG":{
+        "BgColor"		: "GREY1"
+    },
+    "PET64std":{
+        "BgColor"		: "BLACK"
+    },
+    "PET64XG":{
+        "BgColor"		: "BLACK"
+    },
+    "PET264":{
+        "BgColor"		: "GREY1"
+    },
+    "PET264std":{
+        "BgColor"		: "BLACK"
+    },
+    "PET128std":{
+        "BgColor"		: "BLACK"
+    },
+    "MSX1":{
+        "BgColor"		: "GREY2",
+        "ToddColor"     : "DKRED",
+        "OoddBack"      : "BLACK",
+        "TevenColor"    : "BLUE",
+        "OevenBack"     : "BLACK"
+    },
+    "VidTex":{
+        "BgColor"		: "WHITE",
+        "TxtColor"      : "BLUE",
+        "ToddColor"     : "RED",
+        "TevenColor"    : "BLUE"
+    },
+    "ATRSTM":{
+        "BgColor"		: "WHITE",
+        "TxtColor"      : "BLACK",
+        "TevenColor"    : "RED"
+    },
+    "ATRSTL":{
+        "BgColor"		: "GREY3",
+        "TxtColor"      : "GREY2"
+    },
+    "ANSI":{
+        "BgColor"		: "GREY3",
+        "TxtColor"      : "GREY2"
+    }
+}

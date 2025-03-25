@@ -59,7 +59,7 @@ class Connection:
         self.mode = 'ASCII'			#Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
-        self.templates = template(self)
+        self.templates = template(self,self.bbs.Template)
         self.parser = TMLParser(self)				#TML parser
         self.p_running = False
 

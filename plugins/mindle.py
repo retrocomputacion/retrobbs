@@ -67,23 +67,31 @@ def plugFunction(conn:Connection):
         conn.SendTML("<CLR><FORMAT>Mindle needs at least 30 columns to work...</FORMAT><BR><PAUSE n=3>")
         return
     ecolors = conn.encoder.colors
-    mcolors = bbsstyle(ecolors)
+    mcolors = conn.templates.GetStyle('mindle/default') #bbsstyle(ecolors)
     if conn.encoder.features['bgcolor'] == 0:
         if '64' in conn.mode:
             badcolor = ('<ORANGE>','Orange')
         else:
             badcolor = ('<PINK>','Pink')
     else:
-        badcolor = ('<BLACK>','Black')
-    mcolors.OoddBack = ecolors['BLACK']
-    if 'MSX' in conn.mode:
-        mcolors.ToddColor = ecolors['DARK_RED']
-        mcolors.TevenColor = ecolors['BLUE']
-    elif conn.mode in ['VT52','VidTex']:
-        mcolors.TevenColor = ecolors['BLUE']
-        mcolors.ToddColor = ecolors['RED']
-    mcolors.OevenBack = ecolors['BLACK']
-    mcolors.BgColor = ecolors.get('DARK_GREY',ecolors.get('LIGHT_BLUE',ecolors['WHITE']))
+        if conn.mode == 'ATRSTM':
+            badcolor = ('<RED>','Red')
+        else:
+            badcolor = ('<BLACK>','Black')
+
+    if conn.mode == 'ATRSTM':
+        cowcolor = ('<BLACK>','Black')
+    else:
+        cowcolor = ('<YELLOW>','Yellow')
+    # mcolors.OoddBack = ecolors['BLACK']
+    # if 'MSX' in conn.mode:
+    #     mcolors.ToddColor = ecolors['DARK_RED']
+    #     mcolors.TevenColor = ecolors['BLUE']
+    # elif conn.mode in ['VT52','VidTex']:
+    #     mcolors.TevenColor = ecolors['BLUE']
+    #     mcolors.ToddColor = ecolors['RED']
+    # mcolors.OevenBack = ecolors['BLACK']
+    # mcolors.BgColor = ecolors.get('DARK_GREY',ecolors.get('LIGHT_BLUE',ecolors['WHITE']))
     dbase = conn.bbs.database
     table = dbase.db
     dbQ = Query()
@@ -144,7 +152,7 @@ def plugFunction(conn:Connection):
             with open(f"plugins/mindle_words/valid{str(len(xword))}.txt",'r') as wf:
                 xvalid = wf.read().splitlines()
                 xvalid += [word for word in xwords if len(word)== len(xword)]
-            score = mindle(conn, xword, xvalid)
+            score = mindle(conn, xword, xvalid,mcolors)
             if  score >= 0:
                 conn.SendTML('<PAUSE n=5>')
             if window_s:
@@ -159,7 +167,7 @@ def plugFunction(conn:Connection):
                 else:
                     conn.SendTML('<CLR>')
                     header()
-                conn.SendTML(f'<AT x={(scwidth-10)//2} y=7><LTGREEN>Top Scores<GREY3><BR><BR>')
+                conn.SendTML(f'<AT x={(scwidth-10)//2} y=7><LTGREEN>Top Scores<INK c={mcolors.TxtColor}><BR><BR>')
                 ulist = dict(dbase.getUsers())
                 j = len(tops) if len(tops)<=10 else 10
                 for i in range(j):
@@ -178,11 +186,11 @@ def plugFunction(conn:Connection):
             else:
                 conn.SendTML('<CLR>')
                 header()
-            conn.SendTML(f'''<FORMAT><CRSRD><GREY3>Instructions: You have to guess the hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>
+            conn.SendTML(f'''<FORMAT><INK c={mcolors.TxtColor}>Instructions: You have to guess the hidden word, you have 6 tries.<BR>Each try must be a valid word.<BR><BR>
 After each try the color of the characters will change color to show how close you are from guessing the correct word.<BR>
-<BR><GREEN> * <GREY3>Green means the character exists in the hidden word and is in the correct position<BR>
-<YELLOW> * <GREY3>Yellow means the character exists in the hidden word but is in the wrong position<BR>
-{badcolor[0]} * <GREY3>{badcolor[1]} means the character is not present in the hidden word<BR>
+<BR><GREEN> * <INK c={mcolors.TxtColor}>Green means the character exists in the hidden word and is in the correct position<BR>
+{cowcolor[0]} * <INK c={mcolors.TxtColor}>{cowcolor[1]} means the character exists in the hidden word but is in the wrong position<BR>
+{badcolor[0]} * <INK c={mcolors.TxtColor}>{badcolor[1]} means the character is not present in the hidden word<BR>
 <BR>Press any key to continue</FORMAT>''')
             conn.Receive(1)
             conn.SendTML('<CLR><WINDOW>')
@@ -216,7 +224,7 @@ After each try the color of the characters will change color to show how close y
 ###################################
 # Main game
 ###################################
-def mindle(conn:Connection, xword: str, valid):
+def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
 
     scores = [500,400,200,100,50,25,0]
     #_LOG('Mindle - word to guess: '+xword,id=conn.id, v=4)
@@ -252,7 +260,7 @@ def mindle(conn:Connection, xword: str, valid):
     conn.SendTML('<HLINE><LR-CORNER><BR>')
 
     abcoffset = (scwidth-len(string.ascii_uppercase))/2
-    conn.SendTML(f'<AT x={abcoffset} y={scheight-2}><GREY3>{string.ascii_uppercase}<BR><RVSON><BACK>Exit<RVSOFF>')
+    conn.SendTML(f'<AT x={abcoffset} y={scheight-2}><INK c={style.TxtColor}>{string.ascii_uppercase}<BR><RVSON><BACK>Exit<RVSOFF>')
 
     bulls = []
     cows = []
@@ -264,10 +272,13 @@ def mindle(conn:Connection, xword: str, valid):
         else:
             badcolor = '<PINK>'
     else:
-        badcolor = '<BLACK>'
+        if conn.mode == 'ATRSTM':
+            badcolor = '<RED>'
+        else:
+            badcolor = '<BLACK>'
     bullcolor = f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>' if 'MSX' in conn.mode else '<GREEN>'
-    cowcolor =  f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>' if 'MSX' in conn.mode else '<YELLOW>'
-    wincolor = '<GREEN>' if conn.mode in ('VT52','VidTex','ATTRST') else '<WHITE>'
+    cowcolor =  f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>' if 'MSX' in conn.mode else '<YELLOW>' if conn.mode != 'ATRSTM' else '<BLACK>'
+    wincolor = '<GREEN>' if conn.mode in ('VT52','VidTex','ATRSTM') else '<WHITE>'
     back = conn.encoder.decode(conn.encoder.back)
     null = '' if conn.T56KVer == 0 else '<NULL>'
 
@@ -362,7 +373,7 @@ def mindle(conn:Connection, xword: str, valid):
             conn.SendTML(badcolor)
             for c in t_bad:
                 conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
-            conn.SendTML('<YELLOW>')
+            conn.SendTML(cowcolor)
             for c in t_cows:
                 conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
             conn.SendTML('<GREEN>')

@@ -30,7 +30,7 @@ class BBS:
         self.Paths = {'bbsfiles': 'bbsfiles/', 'audio': 'audio/', 'images': 'images/', 'downloads': 'programs/', 'temp': 'tmp/', 'plugins': 'plugins/', 'templates':'templates/'}
         self.PlugOptions = {}	#Plugins options from the config file
         self.BoardOptions = {}	#Message boards options from the config file
-        self.Template = 'default'   #Template in use
+        self.Template = 'default/'   #Template in use
         # self.Paths = {}			#Preset paths WHY WAS THIS HERE???!!!
         self.dateformat = 0		#Date format
         self.database = None	#Database
@@ -179,25 +179,6 @@ SCOLOR = Enum('style_colors',
             'PbColor','PtColor',
             'NBarBG','NBarMove','NBarExit','NBarKeys',
             'OKTxtColor','WRNTxtColor','BADTxtColor'])
-
-# ##### Support class for bbstyle templates #####
-# # safe format(): https://stackoverflow.com/questions/17215400/format-string-unused-named-arguments
-# class Safedict(dict): 
-#     def __missing__(self,key):
-#         return '{'+key+'}'
-
-# ##### Support class for bbstyle templates #####
-# # Truncate with ellipsis: https://discuss.python.org/t/enhanced-string-formatting-for-truncation-with-ellipses/69823
-# class Truncate:
-#     def __init__(self, string, ellipsis):
-#         self.string = string
-#         self.ellipsis = ellipsis
-
-#     def __format__(self, format_spec):
-#         max_length = int(format_spec[1:]) if format_spec.startswith('t') else None
-#         if max_length is not None and len(self.string) > max_length:
-#             return self.string[:max_length-len(self.ellipsis)] + self.ellipsis
-#         return self.string
 
 ############# bbstyle class #############
 # Set default color set

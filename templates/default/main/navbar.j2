@@ -42,7 +42,7 @@
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-NARROW><BACK>:exit<INK c={{st.NBarBG}}><L-NARROW><RVSOFF>
 {# MSX1 #}
-{% elif mode == 'MSX1' %}
+{% elif mode in 'MSX1' %}
 	{% if conn.QueryFeature(177) < 128 %}
 		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=219><AT x=0 y={{barline}}><RVSON>
 	{% else %}
@@ -62,6 +62,27 @@
 		<R-NARROW>
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-NARROW><BACK>:exit<INK c={{st.NBarBG}}><L-NARROW><RVSOFF>
+{# ANSI #}
+{% elif mode in 'ANSI' %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=219><AT x=0 y={{barline}}><RVSON>
+	{% else %}
+		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
+	{% endif %}
+	<R-HALF><INK c={{st.NBarMove}}><PAPER c={{st.BgColor}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><PAPER c={{st.BgColor}}><L-HALF>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<R-HALF>
+		{% endif %}
+	{% else %}
+		<R-HALF>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><PAPER c={{st.BgColor}}><L-HALF><BACK>:exit<RVSOFF><PAPER c={{st.BgColor}}><INK c={{st.NBarBG}}><R-HALF>
 {# Color VidTex #}
 {% elif mode == 'VidTex' and conn.encoder.features['color'] %}
 	{% if conn.encoder.def_gfxmode != None %}

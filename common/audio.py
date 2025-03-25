@@ -85,7 +85,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
         conn.MenuParameters['current'] = 0
 
     fcount = conn.encoder.txt_geo[1]-5
-    scwidth = conn.encoder.txt_geo[0]
+    scwidth,scheight = conn.encoder.txt_geo
     # Start with barebones MenuDic
     MenuDic = { 
                 conn.encoder.decode(conn.encoder.back): (H.MenuBack,(conn,),"Previous Menu",0,False),
@@ -186,11 +186,12 @@ def AudioList(conn:Connection,title,speech,logtext,path):
             for x in range(fcount - lineasimpresas):
                 conn.Sendall(conn.encoder.nl)
 
-    if 'PET' in conn.mode:
-        conn.SendTML(f' <GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
-    else:
-        conn.SendTML(f' <GREY><RVSON> <BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
-    conn.SendTML(f'<WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
+    # if 'PET' in conn.mode:
+    #     conn.SendTML(f' <GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
+    # else:
+    #     conn.SendTML(f' <GREY><RVSON> <BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
+    conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'','pages':'&lt; / &gt;','keys':[]}))
+    conn.SendTML(f'<AT x=0 y={scheight-1}><WHITE> [{conn.MenuParameters["current"]+1}/{pages}]<CYAN> Selection:<WHITE> ')
     if conn.T56KVer > 0:
         conn.Sendall(chr(255) + chr(161) + 'seleksioneunaopsion,')
         # Selects screen output
@@ -289,10 +290,13 @@ def _GetPCMLength(filename):
 
 ######################################################################
 # Send Audio file
+#
+# Returns True if aborted or failed
 ######################################################################
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     if conn.QueryFeature(TT.STREAM) >= 0x80:	#Exit if terminal doesn't support PCM streaming
-        return
+        return True
+    abort = False
     bnoise = b'\x10\x01\x01\x10'
     CHUNK = 1<<int(conn.samplerate*1.4).bit_length()   #16384
     if length == None:
@@ -328,9 +332,9 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             if a_data.tags.getall('APIC') != []:
                 a_meta['apic'] = a_data.tags.getall('APIC')[0].data
         if not _AudioDialog(conn,a_meta):
-            return()
+            return True
         if not conn.connected:
-            return()
+            return True
         conn.SendTML('<SPINNER><CRSRL><NUL><NUL>')
     #Streaming mode
     binario = b'\xFF\x83'
@@ -369,6 +373,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
                 if hs == b'\xff':
                     binario = b''
                     _LOG('USER CANCEL',id=conn.id,v=3)
+                    abort = True
                     streaming = False
                     try:
                         t3 = time.time()
@@ -396,6 +401,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     time.sleep(1)
     conn.socket.settimeout(conn.bbs.TOut)
     conn.SendTML('<CURSOR>')
+    return abort
 
 ############# PcmStream Class ############
 # Receive an audio stream through FFMPEG #
@@ -566,6 +572,8 @@ SIDStream = lambda conn,filename,ptime,dialog=True,_subtune=None:CHIPStream(conn
 
 #############################################################################
 # Stream register writes to the guest's sound chip
+#
+# returns True if aborted
 #############################################################################
 def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 
@@ -591,6 +599,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
     player = ""
     subtune = 1
     order = 0
+    abort = False
 
     if conn.QueryFeature(TT.CHIPSTREAM) >= 0x80:	#Exit if terminal doesn't support chiptune streaming
         conn.SendTML('<CLR><ORANGE>Not supported!<PAUSE n=1>')
@@ -700,14 +709,12 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                 if data != []:
                     conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
                     count = 0
-                    #tt0 = time.time()
                     for frame in data:
                         conn.Sendallbin(frame[0]) #Register count
                         conn.Sendallbin(frame[1]) #Register bitmap
                         conn.Sendallbin(frame[2]) #Register data
                         conn.Sendallbin(b'\xff')	 #Sync byte
                         count += 1
-
                         if count%100 == 0:
                             ack = b''
                             ack = conn.Receive(1)
@@ -715,8 +722,8 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                             if (b'\xff' in ack) or not conn.connected:
                                 #Abort stream
                                 conn.Flush(1)   # Flush receive buffer for 1 second
+                                abort = True
                                 break
-                        
                     conn.Sendall(chr(0))	#End stream
                     #conn.Receive(1)	#Receive last frame ack character
             if isinstance(info,bytes):
@@ -725,11 +732,13 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                 subtune = -1
             if not conn.connected:
                 subtune = -1
+            if abort:
+                break
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         _LOG(f'ChipStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
-
+    return abort
 
 ###########
 # TML tags
