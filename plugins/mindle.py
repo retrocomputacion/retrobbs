@@ -202,7 +202,7 @@ After each try the color of the characters will change color to show how close y
             else:
                 conn.SendTML('<CLR>')
                 header()
-            score = mindle(conn, mdata['daily'],valid)
+            score = mindle(conn, mdata['daily'],valid,mcolors)
             if score != -1:
                 players.append(conn.userid)
                 mdata['players'] = players

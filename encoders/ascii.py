@@ -45,13 +45,23 @@ NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]
 # TML tags
 ###########
 t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
-             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','RVSON':'\x1b[7m','RVSOFF':'\x1b[27m',
+             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','RVSON':'\x1b[7m',
+                     'RVSOFF':(lambda conn:f'\x1b[27m{ASCIIencoder.SetBackground(conn.encoder,conn.encoder.bgcolor)}{ASCIIencoder.SetColor(conn.encoder,conn,conn.encoder.fgcolor)}',[('_R','_C'),('c','_C')]),
                      'FLASHON':'\x1b[5m','FLASHOFF':'\x1b[25m',
                      'CURSOR':(lambda enable: '\x1b[?25h' if enable else '\x1b[?25l',[('_R','_C'),('enable',True)]),
                      'CRSRR':(lambda n:f'\x1b[{n}C',[('_R','_C'),('n',1)]),'CRSRL':(lambda n:f'\x1b[{n}D',[('_R','_C'),('n',1)]),
                      'CRSRU':(lambda n:f'\x1b[{n}A',[('_R','_C'),('n',1)]),'CRSRD':(lambda n:f'\x1b[{n}B',[('_R','_C'),('n',1)]),
                      'AT':(lambda x,y:f'\x1b[{y+1};{x+1}H',[('_R','_C'),('x',0),('y',0)]),
                      'SCROLL':(lambda rows:f'\x1b[{rows}S'if rows > 0 else f'\x1b[{-rows}T',[('_R','_C'),('rows',1)])}}
+# t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
+#              'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','RVSON':'\x1b[7m','RVSOFF':'\x1b[27m',
+#                      'FLASHON':'\x1b[5m','FLASHOFF':'\x1b[25m',
+#                      'CURSOR':(lambda enable: '\x1b[?25h' if enable else '\x1b[?25l',[('_R','_C'),('enable',True)]),
+#                      'CRSRR':(lambda n:f'\x1b[{n}C',[('_R','_C'),('n',1)]),'CRSRL':(lambda n:f'\x1b[{n}D',[('_R','_C'),('n',1)]),
+#                      'CRSRU':(lambda n:f'\x1b[{n}A',[('_R','_C'),('n',1)]),'CRSRD':(lambda n:f'\x1b[{n}B',[('_R','_C'),('n',1)]),
+#                      'AT':(lambda x,y:f'\x1b[{y+1};{x+1}H',[('_R','_C'),('x',0),('y',0)]),
+#                      'SCROLL':(lambda rows:f'\x1b[{rows}S'if rows > 0 else f'\x1b[{-rows}T',[('_R','_C'),('rows',1)])}}
+
 t_multi =	{'ASCII':{'DEL':'\x08 \x08',
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': chr(CHECKMARK),
             'LARROW':'_','UARROW':'^','CBM-U':'','CBM-O':'','CBM-J':'','CBM-L':'',
@@ -65,14 +75,28 @@ Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018
 Urep = dict((re.escape(k), v) for k, v in Urep.items())
 
 ansi_fgidx = ['2;30','2;31','2;32','2;33','2;34','2;35','2;36','2;37','1;30','1;31','1;32','1;33','1;34','1;35','1;36','1;37']
-ansi_bgidx = ['2;40','2;41','2;42','2;43','2;44','2;45','2;46','2;47','1;40','1;31','1;32','1;33','1;34','1;35','1;36','1;37']
+ansi_bgidx = ['2;40','2;41','2;42','2;43','2;44','2;45','2;46','2;47','1;40','1;41','1;42','1;43','1;44','1;45','1;46','1;47']
 
-ansi_colors = { 'BLACK':'\x1b[2;30m','DRED':'\x1b[2;31m','GREEN':'\x1b[2;32m','DYELLOW':'\x1b[2;33m','BLUE':'\x1b[2;34m','PURPLE':'\x1b[2;35m','DCYAN':'\x1b[2;36m','GREY3':'\x1b[2;37m',
-                'GREY2':'\x1b[1;30m','RED':'\x1b[1;31m','LTGREEN':'\x1b[1;32m','YELLOW':'\x1b[1;33m','LTBLUE':'\x1b[1;34m','LTPURPLE':'\x1b[1;35m','CYAN':'\x1b[1;36m','WHITE':'\x1b[1;37m',
-                'GREY':'\x1b[1;30m',
-                'INK':(lambda c:f'\x1b[{ansi_fgidx[c]}m',[('_R','_C'),('c',3)]),
-                'PAPER':(lambda c:f'\x1b[{ansi_bgidx[c]}m',[('_R','_C'),('c',3)]),
-                'TEXT':(lambda page,border,background:f'\x1b[0;{ansi_bgidx[background]}m\x1b[2J',[('_R','_C'),('page',0),('border',15),('background',15)])}
+ansi_colors = { 'BLACK':(lambda c:ASCIIencoder.SetColor(c.encoder,c,0),[('_R','_C'),('c','_C')]),'DRED':(lambda c:ASCIIencoder.SetColor(c.encoder,c,1),[('_R','_C'),('c','_C')]),
+                'GREEN':(lambda c:ASCIIencoder.SetColor(c.encoder,c,2),[('_R','_C'),('c','_C')]),'DYELLOW':(lambda c:ASCIIencoder.SetColor(c.encoder,c,3),[('_R','_C'),('c','_C')]),
+                'BLUE':(lambda c:ASCIIencoder.SetColor(c.encoder,c,4),[('_R','_C'),('c','_C')]),'PURPLE':(lambda c:ASCIIencoder.SetColor(c.encoder,c,5),[('_R','_C'),('c','_C')]),
+                'DCYAN':(lambda c:ASCIIencoder.SetColor(c.encoder,c,6),[('_R','_C'),('c','_C')]),'GREY3':(lambda c:ASCIIencoder.SetColor(c.encoder,c,7),[('_R','_C'),('c','_C')]),
+                'GREY2':(lambda c:ASCIIencoder.SetColor(c.encoder,c,8),[('_R','_C'),('c','_C')]),'RED':(lambda c:ASCIIencoder.SetColor(c.encoder,c,9),[('_R','_C'),('c','_C')]),
+                'LTGREEN':(lambda c:ASCIIencoder.SetColor(c.encoder,c,10),[('_R','_C'),('c','_C')]),'YELLOW':(lambda c:ASCIIencoder.SetColor(c.encoder,c,11),[('_R','_C'),('c','_C')]),
+                'LTBLUE':(lambda c:ASCIIencoder.SetColor(c.encoder,c,12),[('_R','_C'),('c','_C')]),'LTPURPLE':(lambda c:ASCIIencoder.SetColor(c.encoder,c,13),[('_R','_C'),('c','_C')]),
+                'CYAN':(lambda c:ASCIIencoder.SetColor(c.encoder,c,14),[('_R','_C'),('c','_C')]),'WHITE':(lambda c:ASCIIencoder.SetColor(c.encoder,c,15),[('_R','_C'),('c','_C')]),
+                'GREY':(lambda c:ASCIIencoder.SetColor(c.encoder,c,8),[('_R','_C'),('c','_C')]),
+                'INK':(lambda conn,c:ASCIIencoder.SetColor(conn.encoder,conn,c),[('_R','_C'),('conn','_C'),('c',7)]),
+                'PAPER':(lambda conn,c:ASCIIencoder.SetBackground(conn.encoder,c),[('_R','_C'),('conn','_C'),('c',3)]),
+                'TEXT':(lambda conn,page,border,background:f'\x1b[0;{ASCIIencoder.SetBackground(conn.encoder,background)}m\x1b[2J',[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
+
+# ansi_colors = { 'BLACK':'\x1b[2;30m','DRED':'\x1b[2;31m','GREEN':'\x1b[2;32m','DYELLOW':'\x1b[2;33m','BLUE':'\x1b[2;34m','PURPLE':'\x1b[2;35m','DCYAN':'\x1b[2;36m','GREY3':'\x1b[2;37m',
+#                 'GREY2':'\x1b[1;30m','RED':'\x1b[1;31m','LTGREEN':'\x1b[1;32m','YELLOW':'\x1b[1;33m','LTBLUE':'\x1b[1;34m','LTPURPLE':'\x1b[1;35m','CYAN':'\x1b[1;36m','WHITE':'\x1b[1;37m',
+#                 'GREY':'\x1b[1;30m',
+#                 'INK':(lambda c:f'\x1b[{ansi_fgidx[c]}m',[('_R','_C'),('c',3)]),
+#                 'PAPER':(lambda c:f'\x1b[{ansi_bgidx[c]}m',[('_R','_C'),('c',3)]),
+#                 'TEXT':(lambda page,border,background:f'\x1b[0;{ansi_bgidx[background]}m\x1b[2J',[('_R','_C'),('page',0),('border',0),('background',0)])}
+
 
 def toASCII(text:str, full=True):
     pattern = re.compile("|".join(Urep.keys()))
@@ -90,7 +114,7 @@ def asciihandler(e):
         ...
     return (char,e.end)
 
-######### VT52 encoder subclass #########
+######### ASCII encoder subclass #########
 class ASCIIencoder(Encoder):
     def __init__(self, name:str) -> None:
         super().__init__(name)
@@ -115,6 +139,25 @@ class ASCIIencoder(Encoder):
         self.ctrlkeys = {'DELETE':chr(DELETE)}
         self.bgcolor = 39   # current ANSI background color (39 = Default)
         self.fgcolor = 39   # current ANSI foreground color (39 = Default)
+
+    def SetColor(self,conn,c):
+        c &= 15
+        self.fgcolor = c
+        i = 2
+        if c > 7:
+            c -= 8
+            i = 1
+        conn.parser.color = c
+        return f'\x1b[{i};{30+c}m'
+
+    def SetBackground(self,c):
+        c &= 15
+        self.bgcolor = c
+        i = 2
+        if c > 7:
+            c -= 8
+            i = 1
+        return f'\x1b[{i};{40+c}m'
 
     def setup(self, conn, id):
         if id == b'ASC':

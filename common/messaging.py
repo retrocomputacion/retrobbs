@@ -67,7 +67,7 @@ def readMessage(conn:Connection, msg_id:int):
             else:
                 adm = ''
             if dmsg['msg_parent'] != 0:
-                ol.append('<GREY3><RVSON>F<RVSOFF>irst/<RVSON>P<RVSOFF>rev')
+                ol.append(f'<INK c={conn.style.TxtColor}><RVSON>F<RVSOFF>irst/<RVSON>P<RVSOFF>rev')
                 keys += 'fp'
             if (dmsg['msg_next'] != 0) and (dmsg['msg_next'] != msg_id):
                 ol.append('<RVSON>N<RVSOFF>ext/<RVSON>L<RVSOFF>ast')
@@ -564,7 +564,10 @@ Press {_dec(conn.encoder.back)} to continue...'''
                                 else:
                                     _tmp = scwidth-len(fmessage[line+ydisp-1])
                                     if _tmp > 0:
-                                        conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
+                                        if conn.mode in ['ATRSTL','ATRSTM','ATRSTH','ANSI']:
+                                            conn.SendTML(f'<DEL><CRSRU><CRSRR n={scwidth-_tmp+1}><SPC n={_tmp-1}>') # ANSI and Atari ST dont wrap back to the previous line when deleting
+                                        else:
+                                            conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
                                     else:
                                         conn.SendTML('<DEL>')   # Last character was space and the previous line had 'scwidth' characters
                                 conn.SendTML(f'{fmessage[line+ydisp]}')
