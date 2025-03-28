@@ -188,8 +188,8 @@ class ASCIIencoder(Encoder):
             if cursor != '':
                 if cursor[0:2] == '\x1b[' and cursor[-1] == 'R' and ';' in cursor:
                     cursor = cursor.split(';')
-                    _copy.txt_geo= (80,25)  #(int(cursor[1][:-1]),int(cursor[0][2:]))
-                    conn.SendTML('<BR><FORMAT>Detected screen: 80x25</FORMAT><BR><PAUSE n=1>')
+                    _copy.txt_geo= (int(cursor[1][:-1]),int(cursor[0][2:]))
+                    conn.SendTML(f'<BR><FORMAT>Detected screen: {cursor[1][:-1]}x{cursor[0][2:]}</FORMAT><BR><PAUSE n=1>')
             else:
                 conn.SendTML('Screen columns? (80): ')
                 cols = conn.ReceiveInt(32,80,80)
