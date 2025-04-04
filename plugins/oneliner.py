@@ -22,10 +22,11 @@ def setup():
 def plugFunction(conn:Connection):
 
     def header():
-        if title != None:
-            conn.Sendallbin(title)
-        else:
-            S.RenderMenuTitle(conn,'Oneliner')
+        conn.SendTML(conn.templates.GetTemplate('oneliner/title',**{}))
+        # if title != None:
+        #     conn.Sendallbin(title)
+        # else:
+        #     S.RenderMenuTitle(conn,'Oneliner')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             if 'MSX' in conn.mode:
                 conn.SendTML(f'<CURSOR enable=False><PAPER c=13><WHITE><LFILL row=3 code=23><LFILL row={scheight-3} code=23><PAPER c={conn.style.BgColor}><CURSOR>')
@@ -41,16 +42,16 @@ def plugFunction(conn:Connection):
 
     _dec = conn.encoder.decode
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
-    title = None
-    try:
-        if 'PET' in conn.mode and conn.encoder.txt_geo[0] == 40:
-            fname = 'plugins/oneliner.seq'
-        elif 'MSX1' in conn.mode:
-            fname = 'plugins/oneliner.mseq'
-        with open(fname,'rb') as f:
-            title = f.read()
-    except:
-        pass
+    # title = None
+    # try:
+    #     if 'PET' in conn.mode and conn.encoder.txt_geo[0] == 40:
+    #         fname = 'plugins/oneliner.seq'
+    #     elif 'MSX1' in conn.mode:
+    #         fname = 'plugins/oneliner.mseq'
+    #     with open(fname,'rb') as f:
+    #         title = f.read()
+    # except:
+    #     pass
     scwidth,scheight = conn.encoder.txt_geo
     if conn.T56KVer > 0:
         header()

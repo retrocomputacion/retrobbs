@@ -344,7 +344,7 @@ class MSXencoder(Encoder):
         if self.name == 'MSXstd':
             _copy = deepcopy(self)
             conn.SendTML('Screen columns? (37): ')
-            cols = conn.ReceiveInt(30,80,37)
+            cols = conn.ReceiveInt(29,80,37)
             conn.SendTML('<BR>Screen lines? (23): ')
             _copy.txt_geo = (cols,conn.ReceiveInt(20,24,23))
             _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])

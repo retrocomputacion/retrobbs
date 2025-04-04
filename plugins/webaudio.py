@@ -255,7 +255,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
         #draw.text((136,168),"or cancel",c_yellow,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
-        conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR><YELLOW>')
+        conn.SendTML(f'<TEXT border={conn.encoder.colors.get('BLUE',0)} background={conn.encoder.colors.get('BLUE',0)}><CLR><YELLOW>')
         for l in sTitle:
             conn.SendTML(l)
         conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')

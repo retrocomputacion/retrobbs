@@ -14,42 +14,6 @@ def RenderMenuTitle(conn:Connection, title, style:bbsstyle=None):
     if style != None:
         parms['st':style]
     tml = conn.templates.GetTemplate('main/menutitle',**parms)
-    # st = conn.style
-    # # Clear screen
-    # tml = '<CLR><RVSOFF>'
-    # # Get screen width
-    # scwidth = conn.encoder.txt_geo[0]
-    # odd = (scwidth % 2) != 0
-    # if 'MSX' in conn.mode:
-    #     cfill = 0x17
-    #     ucorner = '<B-HALF>'
-    #     bcorner = '<RVSON><B-HALF><RVSOFF>'
-    #     urcorner = f'<INK c={st.MenuTColor2}><B-HALF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><B-HALF>'
-    #     brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-HALF><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-HALF><RVSOFF>'
-    # elif 'PET' in conn.mode:
-    #     cfill = 64
-    #     tml += '<LOWER>'
-    #     ucorner = '<RVSON><U-NARROW><RVSOFF>'
-    #     bcorner = '<RVSON><B-NARROW><RVSOFF>'
-    #     urcorner = f'<INK c={st.MenuTColor2}><RVSON><U-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><U-NARROW><RVSOFF>'
-    #     brcorner = f'<INK c={st.MenuTColor2}><RVSON><B-NARROW><RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON><B-NARROW><RVSOFF>'
-    # else:
-    #     ucorner = '+'
-    #     bcorner = '+'
-    #     urcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
-    #     brcorner = f'<INK c={st.MenuTColor2}><RVSON>+<RVSOFF>' if not odd else f'<INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><RVSON>+<RVSOFF>'
-    # rcolor = f'<INK c={st.MenuTColor1}>' if not odd else f'<INK c={st.MenuTColor2}>'
-
-    # # Send menu title
-    # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-    #     tml += f'''<INK c={st.MenuTColor2}><LFILL row=0 code={cfill}><LFILL row=2 code={cfill}><INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{urcorner}'''
-    # else:
-    #     tml += f'''<INK c={st.MenuTColor1}>{ucorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{urcorner}'''
-    # tml += f'''<RVSON> <RVSOFF><INK c={st.HlColor}> {(conn.bbs.name[:(scwidth//2)-1]+" - "+ title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]} {rcolor}<RVSON> <RVSOFF>'''
-    # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-    #     tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><CRSRR><HLINE><INC></WHILE>{brcorner}'''
-    # else:
-    #     tml += f'''<INK c={st.MenuTColor1}>{bcorner}<LET _R=_I x=0><WHILE c='_I<{(scwidth//2)-1}'><INK c={st.MenuTColor2}><HLINE><INK c={st.MenuTColor1}><HLINE><INC></WHILE>{brcorner}'''
     conn.SendTML(tml)
 
 # Returns '[text]' prompt string in the selected style
@@ -79,30 +43,6 @@ def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=No
     if style != None:
         parms['st'] = style
     tml = conn.templates.GetTemplate('main/keylabel',**parms)
-    # if style == None:
-    #     style = conn.style
-    # c1 = style.OevenColor if toggle else style.OoddColor
-    # c2 = style.TevenColor if toggle else style.ToddColor
-    # if (style.OevenBack != style.BgColor) or (style.OoddBack != style.BgColor):
-    #     bg1 = f'<PAPER c={style.OevenBack if toggle else style.OoddBack}>'
-    #     bg = f'<PAPER c={style.BgColor}>'
-    # else:
-    #     bg = bg1 = ''
-    # tml = ''
-    # if 'MSX' in conn.mode:
-    #     lside = '<RVSON><L-HALF>'
-    #     rside = '<RVSOFF><TRI-LEFT>'
-    # elif 'PET' in conn.mode:
-    #     lside = '<RVSON><L-NARROW>'
-    #     rside = '<R-NARROW><RVSOFF>'
-    # else:
-    #     lside = '['
-    #     rside = ']'
-    # if key >= '\r':
-    #     if key == '_':		# FIXME: Workaround for PETSCII left arrow character
-    #         key = '<BACK>'
-    #     tml += f'<INK c={c1}>{lside}{bg1}{key.lower()}{bg}{rside}'
-    # tml += f'<INK c={c2}>{label}'
     conn.SendTML(tml)
     return not toggle
 

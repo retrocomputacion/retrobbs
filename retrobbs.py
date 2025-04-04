@@ -1327,23 +1327,25 @@ RUNNING UNDER:<BR>
             # Get Turbo56K terminal features and send splash screen if possible
             if conn.T56KVer > 0.4:
                 GetTerminalFeatures(conn)
-                if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
-                    _LOG('Sending intro pic',id=conn.id,v=4)
-                    if conn.mode == 'PET264':
-                        splash = 'splash.boti'
-                    elif conn.mode == 'PET64':
-                        splash = 'splash.art'
-                    else:
-                        splash = 'splash.sc2'
-                    bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
-                    _LOG('Spliting Screen',id=conn.id,v=4)
-                    conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
-                time.sleep(1)
+                # if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
+                #     _LOG('Sending intro pic',id=conn.id,v=4)
+                #     if conn.mode == 'PET264':
+                #         splash = 'splash.boti'
+                #     elif conn.mode == 'PET64':
+                #         splash = 'splash.art'
+                #     else:
+                #         splash = 'splash.sc2'
+                #     bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
+                #     _LOG('Spliting Screen',id=conn.id,v=4)
+                #     conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
+                # time.sleep(1)
+            conn.SendTML(conn.templates.GetTemplate('main/splash'),**{})
+            time.sleep(1)
             Done = False
             tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CLR>'
             # Login and intro slideshow
             while True:
-                r = conn.SendTML(f'<CLR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
+                r = conn.SendTML(f'<INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
                 if not conn.connected:
                     return()
                 t = r['_A']
