@@ -260,6 +260,7 @@ def ConfigRead():
     bbs_instance.GBMess = config['MAIN'].get('goodbye', fallback='Goodbye!')
     bbs_instance.BSYMess = config['MAIN'].get('busy', fallback='BUSY')
     bbs_instance.dateformat = config['MAIN'].getint('dateformat', fallback=1)
+    bbs_instance.Template = config['MAIN'].get('template', fallback='default')+'/'
 
     #Get any paths
     try:

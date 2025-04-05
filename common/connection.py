@@ -98,7 +98,7 @@ class Connection:
             del(self.style)
             self.style = bbsstyle(self.encoder.colors)  #Init default colors
             del(self.templates)
-            self.templates = template(self)
+            self.templates = template(self,self.bbs.Template)
             self.style = self.templates.GetStyle('default') # Set template colors
             self.templates.j2env.globals['st'] = self.style # Update the globals with the new colors
             _LOG(f'Connection mode set to: {mode}', id=self.id, v=2)
