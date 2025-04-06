@@ -406,14 +406,14 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
 ############# PcmStream Class ############
 # Receive an audio stream through FFMPEG #
 class PcmStream:
-    def __init__(self, fn, sr,lineal=True):
+    def __init__(self, fn, sr,lineal=True, ss = 0):
         self.lineal = lineal
         crusher = ["-af","acrusher=bits=4:mode=lin,acontrast=contrast=50"] if lineal else ['-af',"acontrast=contrast=50"]
         if "Linux" in platform.system():
-            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-ss", str(ss), "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, preexec_fn=os.setsid)
         else:
-            self.pcm_stream = subprocess.Popen(["ffmpeg", "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
+            self.pcm_stream = subprocess.Popen(["ffmpeg", "-ss", str(ss), "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
     async def read(self, size):

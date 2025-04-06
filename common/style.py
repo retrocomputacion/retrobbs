@@ -33,7 +33,7 @@ def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
             else:
                 bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
                 tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
-            return(bc+'['+tc+conn.encoder.encode(text,False)+bc+']')
+            return(bc+'['+tc+conn.encoder.encode(str(text),False)+bc+']')
     else:
         return(f'[{text}]')
 

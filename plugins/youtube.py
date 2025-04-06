@@ -45,8 +45,8 @@ def plugFunction(conn:Connection,url, crop):
     # 	video = None
     tmsecs = None
     slsession = streamlink.Streamlink()
-    ydl_opts = {'quiet':True, 'socket_timeout':15}
-    cookies = conn.bbs.PlugOptions.get('wxdefault','')
+    ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
+    cookies = conn.bbs.PlugOptions.get('ytcookies','')
     if cookies != '':
         ydl_opts['cookiefile'] = cookies
     try:

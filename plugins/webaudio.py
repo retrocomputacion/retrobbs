@@ -19,7 +19,7 @@ from html import unescape, escape
 
 from common.bbsdebug import _LOG,bcolors
 from common import connection
-from common.helpers import formatX
+from common.helpers import formatX, crop
 from common import helpers as H
 from common import audio as AA
 from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
@@ -155,6 +155,9 @@ def plugFunction(conn:connection.Connection,url,image,title):
     # Pafy failed, try with streamlink
     # streamlink lacks metadata functionality
 
+    ss = 0  # Start time
+    sChapters = None
+
     if sURL == None:
         try:
             req = urllib.request.Request(url)
@@ -173,7 +176,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
             sURL = None
     if sURL == None and '.m3u' not in url:
         try:
-            sURL,sTitle = ytdlp_resolve(conn,url,title)
+            sURL,sTitle,sChapters = ytdlp_resolve(conn,url,title)
         except:
             sURL = None
     if sURL == None:
@@ -258,14 +261,27 @@ def plugFunction(conn:connection.Connection,url,image,title):
         conn.SendTML(f'<TEXT border={conn.encoder.colors.get("BLUE",0)} background={conn.encoder.colors.get("BLUE",0)}><CLR><YELLOW>')
         for l in sTitle:
             conn.SendTML(l)
-        conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')
-        if 'MSX' in conn.mode:
-            conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
+        if sChapters != None:
+            conn.SendTML('<BR>')
+            for i, chap in enumerate(sChapters):
+                conn.SendTML(f'<KPROMPT t={str(i+1)}> <YELLOW>{crop(chap["title"], conn.encoder.txt_geo[0], conn.encoder.ellipsis)}<BR>')
+            conn.SendTML('<BR>Select chapter or <KPROMPT t=return><YELLOW> to cancel:')
+            entry = conn.ReceiveInt(0,len(sChapters),0)
+            if entry == 0:
+                return
+            ss = sChapters[entry-1]['start_time']
+            if 'MSX' in conn.mode:
+                conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
+            else:
+                conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
         else:
-            conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
-
-    if conn.ReceiveKey('\rx') == 'x':
-        return
+            conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')
+            if 'MSX' in conn.mode:
+                conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
+            else:
+                conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
+            if conn.ReceiveKey('\rx') == 'x':
+                return
 
     if conn.QueryFeature(TT.STREAM) >= 0x80:
         conn.SendTML('<FORMAT>Your terminal does not support audio streaming!</FORMAT><PAUSE n=2>')
@@ -274,7 +290,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
     conn.SendTML('<SPINNER><CRSRL>')
 
     #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
-    pcm_stream = AA.PcmStream(sURL,conn.samplerate,b'RETROTERM-M38' not in conn.TermString)
+    pcm_stream = AA.PcmStream(sURL,conn.samplerate,b'RETROTERM-M38' not in conn.TermString, ss)
     CHUNK = 1<<int(conn.samplerate*1.5).bit_length()
     t0 = time.time()
     streaming = True
@@ -334,8 +350,9 @@ def plugFunction(conn:connection.Connection,url,image,title):
 def ytdlp_resolve(conn,url,title):
     sURL = None
     sTitle = None
-    ydl_opts = {'quiet':False, 'socket_timeout':15}
-    cookies = conn.bbs.PlugOptions.get('wxdefault','')
+    sChapters = None
+    ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
+    cookies = conn.bbs.PlugOptions.get('ytcookies','')
     if cookies != '':
         ydl_opts['cookiefile'] = cookies
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -349,4 +366,5 @@ def ytdlp_resolve(conn,url,title):
             elif f.get('acodec',None) != 'none':
                 sURL = f['url']
                 break
-    return sURL,sTitle
+        sChapters = info.get('chapters',None)
+    return sURL,sTitle,sChapters
