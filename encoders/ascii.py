@@ -46,7 +46,7 @@ NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]
 ###########
 t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
              'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','RVSON':'\x1b[7m',
-                     'RVSOFF':(lambda conn:f'\x1b[27m{ASCIIencoder.SetBackground(conn.encoder,conn.encoder.bgcolor)}{ASCIIencoder.SetColor(conn.encoder,conn,conn.encoder.fgcolor)}',[('_R','_C'),('c','_C')]),
+                     'RVSOFF':'\x1b[27m',
                      'FLASHON':'\x1b[5m','FLASHOFF':'\x1b[25m',
                      'CURSOR':(lambda enable: '\x1b[?25h' if enable else '\x1b[?25l',[('_R','_C'),('enable',True)]),
                      'CRSRR':(lambda n:f'\x1b[{n}C',[('_R','_C'),('n',1)]),'CRSRL':(lambda n:f'\x1b[{n}D',[('_R','_C'),('n',1)]),
@@ -61,6 +61,9 @@ t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
 #                      'CRSRU':(lambda n:f'\x1b[{n}A',[('_R','_C'),('n',1)]),'CRSRD':(lambda n:f'\x1b[{n}B',[('_R','_C'),('n',1)]),
 #                      'AT':(lambda x,y:f'\x1b[{y+1};{x+1}H',[('_R','_C'),('x',0),('y',0)]),
 #                      'SCROLL':(lambda rows:f'\x1b[{rows}S'if rows > 0 else f'\x1b[{-rows}T',[('_R','_C'),('rows',1)])}}
+#
+#  (lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
+                    #  'RVSOFF':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,False),[('_R','_C'),('conn','_C')])
 
 t_multi =	{'ASCII':{'DEL':'\x08 \x08',
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': chr(CHECKMARK),
@@ -87,8 +90,8 @@ ansi_colors = { 'BLACK':(lambda c:ASCIIencoder.SetColor(c.encoder,c,0),[('_R','_
                 'CYAN':(lambda c:ASCIIencoder.SetColor(c.encoder,c,14),[('_R','_C'),('c','_C')]),'WHITE':(lambda c:ASCIIencoder.SetColor(c.encoder,c,15),[('_R','_C'),('c','_C')]),
                 'GREY':(lambda c:ASCIIencoder.SetColor(c.encoder,c,8),[('_R','_C'),('c','_C')]),
                 'INK':(lambda conn,c:ASCIIencoder.SetColor(conn.encoder,conn,c),[('_R','_C'),('conn','_C'),('c',7)]),
-                'PAPER':(lambda conn,c:ASCIIencoder.SetBackground(conn.encoder,c),[('_R','_C'),('conn','_C'),('c',3)]),
-                'TEXT':(lambda conn,page,border,background:f'\x1b[0;{ASCIIencoder.SetBackground(conn.encoder,background)}m\x1b[2J',[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
+                'PAPER':(lambda conn,c:ASCIIencoder.SetBackground(conn.encoder,conn,c),[('_R','_C'),('conn','_C'),('c',3)]),
+                'TEXT':(lambda conn,page,border,background:f'{ASCIIencoder.RVS(conn.encoder, conn, False)}\x1b[0m{ASCIIencoder.SetBackground(conn.encoder,conn,background)}\x1b[2J',[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
 
 # ansi_colors = { 'BLACK':'\x1b[2;30m','DRED':'\x1b[2;31m','GREEN':'\x1b[2;32m','DYELLOW':'\x1b[2;33m','BLUE':'\x1b[2;34m','PURPLE':'\x1b[2;35m','DCYAN':'\x1b[2;36m','GREY3':'\x1b[2;37m',
 #                 'GREY2':'\x1b[1;30m','RED':'\x1b[1;31m','LTGREEN':'\x1b[1;32m','YELLOW':'\x1b[1;33m','LTBLUE':'\x1b[1;34m','LTPURPLE':'\x1b[1;35m','CYAN':'\x1b[1;36m','WHITE':'\x1b[1;37m',
@@ -137,27 +140,49 @@ class ASCIIencoder(Encoder):
         self.tml_mono  = t_mono['ASCII']
         self.tml_multi = t_multi['ASCII']
         self.ctrlkeys = {'DELETE':chr(DELETE)}
-        self.bgcolor = 39   # current ANSI background color (39 = Default)
-        self.fgcolor = 39   # current ANSI foreground color (39 = Default)
+        self.bgcolor = 0   # current ANSI background color (39 = Default)
+        self.fgcolor = 1   # current ANSI foreground color (39 = Default)
+        self.rvs = False   # reverse mode?
 
     def SetColor(self,conn,c):
         c &= 15
-        self.fgcolor = c
-        i = 2
-        if c > 7:
-            c -= 8
-            i = 1
-        conn.parser.color = c
-        return f'\x1b[{i};{30+c}m'
+        if not self.rvs:
+            self.fgcolor = c
+            f = ansi_fgidx[c]
+            b = ansi_bgidx[self.bgcolor]
+            conn.parser.color = c
+        else:
+            self.bgcolor = c
+            b = ansi_bgidx[c]
+            f = ansi_fgidx[self.fgcolor]
+        return f'\x1b[{f}m'
 
-    def SetBackground(self,c):
+    def SetBackground(self,conn,c):
         c &= 15
-        self.bgcolor = c
-        i = 2
-        if c > 7:
-            c -= 8
-            i = 1
-        return f'\x1b[{i};{40+c}m'
+        if not self.rvs:
+            self.bgcolor = c
+            b = ansi_bgidx[c]
+            f = ansi_fgidx[self.fgcolor]
+        else:
+            self.fgcolor = c
+            f = ansi_fgidx[c]
+            conn.parser.color = c
+            b = ansi_bgidx[self.bgcolor]
+        return f'\x1b[{b}m'
+
+    def RVS(self,conn, v=True):
+        if self.RVS != v:
+            bg = self.bgcolor
+            self.bgcolor = self.fgcolor
+            self.fgcolor = bg
+            conn.parser.color = bg
+            cb = ansi_bgidx[self.bgcolor]
+            cf = ansi_fgidx[self.fgcolor]
+            res = f'\x1b[{cf};{cb}m'
+        else:
+            res = ''
+        self.rvs = v
+        return res
 
     def setup(self, conn, id):
         if id == b'ASC':

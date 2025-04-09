@@ -25,6 +25,9 @@ def setup():
 #############################################
 def plugFunction(conn:Connection,url, crop):
 
+    if conn.QueryFeature(TT.BLKTR) >= 0x80:
+        conn.SendTML('<BR>Terminal not compatible...<PAUSE n=3>')
+        return
     conn.SendTML('<YELLOW><SPINNER><CRSRL>')
     best = None
     title = ''
