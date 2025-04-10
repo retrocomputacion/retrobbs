@@ -45,9 +45,11 @@ NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]
 # TML tags
 ###########
 t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
-             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','RVSON':'\x1b[7m',
-                     'RVSOFF':'\x1b[27m',
-                     'FLASHON':'\x1b[5m','FLASHOFF':'\x1b[25m',
+             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H',
+                     'RVSON':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
+                     'RVSOFF':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,False),[('_R','_C'),('conn','_C')]),
+                     'FLASHON':(lambda conn:ASCIIencoder.BLINK(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
+                     'FLASHOFF':(lambda conn:ASCIIencoder.BLINK(conn.encoder,conn,False),[('_R','_C'),('conn','_C')]),
                      'CURSOR':(lambda enable: '\x1b[?25h' if enable else '\x1b[?25l',[('_R','_C'),('enable',True)]),
                      'CRSRR':(lambda n:f'\x1b[{n}C',[('_R','_C'),('n',1)]),'CRSRL':(lambda n:f'\x1b[{n}D',[('_R','_C'),('n',1)]),
                      'CRSRU':(lambda n:f'\x1b[{n}A',[('_R','_C'),('n',1)]),'CRSRD':(lambda n:f'\x1b[{n}B',[('_R','_C'),('n',1)]),
@@ -93,13 +95,6 @@ ansi_colors = { 'BLACK':(lambda c:ASCIIencoder.SetColor(c.encoder,c,0),[('_R','_
                 'PAPER':(lambda conn,c:ASCIIencoder.SetBackground(conn.encoder,conn,c),[('_R','_C'),('conn','_C'),('c',3)]),
                 'TEXT':(lambda conn,page,border,background:f'{ASCIIencoder.RVS(conn.encoder, conn, False)}\x1b[0m{ASCIIencoder.SetBackground(conn.encoder,conn,background)}\x1b[2J',[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)])}
 
-# ansi_colors = { 'BLACK':'\x1b[2;30m','DRED':'\x1b[2;31m','GREEN':'\x1b[2;32m','DYELLOW':'\x1b[2;33m','BLUE':'\x1b[2;34m','PURPLE':'\x1b[2;35m','DCYAN':'\x1b[2;36m','GREY3':'\x1b[2;37m',
-#                 'GREY2':'\x1b[1;30m','RED':'\x1b[1;31m','LTGREEN':'\x1b[1;32m','YELLOW':'\x1b[1;33m','LTBLUE':'\x1b[1;34m','LTPURPLE':'\x1b[1;35m','CYAN':'\x1b[1;36m','WHITE':'\x1b[1;37m',
-#                 'GREY':'\x1b[1;30m',
-#                 'INK':(lambda c:f'\x1b[{ansi_fgidx[c]}m',[('_R','_C'),('c',3)]),
-#                 'PAPER':(lambda c:f'\x1b[{ansi_bgidx[c]}m',[('_R','_C'),('c',3)]),
-#                 'TEXT':(lambda page,border,background:f'\x1b[0;{ansi_bgidx[background]}m\x1b[2J',[('_R','_C'),('page',0),('border',0),('background',0)])}
-
 
 def toASCII(text:str, full=True):
     pattern = re.compile("|".join(Urep.keys()))
@@ -143,46 +138,66 @@ class ASCIIencoder(Encoder):
         self.bgcolor = 0   # current ANSI background color (39 = Default)
         self.fgcolor = 1   # current ANSI foreground color (39 = Default)
         self.rvs = False   # reverse mode?
+        self.blink = False # blink mode?
 
     def SetColor(self,conn,c):
         c &= 15
-        if not self.rvs:
-            self.fgcolor = c
-            f = ansi_fgidx[c]
-            b = ansi_bgidx[self.bgcolor]
-            conn.parser.color = c
-        else:
-            self.bgcolor = c
-            b = ansi_bgidx[c]
-            f = ansi_fgidx[self.fgcolor]
+        # if not self.rvs:
+        self.fgcolor = c
+        f = ansi_fgidx[c]
+        # b = ansi_bgidx[self.bgcolor]
+        conn.parser.color = c
+        # else:
+        #     self.bgcolor = c
+        #     b = ansi_bgidx[c]
+        #     f = ansi_fgidx[self.fgcolor]
         return f'\x1b[{f}m'
 
     def SetBackground(self,conn,c):
         c &= 15
-        if not self.rvs:
-            self.bgcolor = c
-            b = ansi_bgidx[c]
-            f = ansi_fgidx[self.fgcolor]
-        else:
-            self.fgcolor = c
-            f = ansi_fgidx[c]
-            conn.parser.color = c
-            b = ansi_bgidx[self.bgcolor]
+        # if not self.rvs:
+        self.bgcolor = c
+        b = ansi_bgidx[c]
+        # f = ansi_fgidx[self.fgcolor]
+        # else:
+        #     self.fgcolor = c
+        #     f = ansi_fgidx[c]
+        #     conn.parser.color = c
+        #     b = ansi_bgidx[self.bgcolor]
         return f'\x1b[{b}m'
 
     def RVS(self,conn, v=True):
-        if self.RVS != v:
-            bg = self.bgcolor
-            self.bgcolor = self.fgcolor
-            self.fgcolor = bg
-            conn.parser.color = bg
-            cb = ansi_bgidx[self.bgcolor]
-            cf = ansi_fgidx[self.fgcolor]
-            res = f'\x1b[{cf};{cb}m'
-        else:
-            res = ''
+        res = ''
+        if self.rvs != v:
+            if not v:
+            # bg = self.bgcolor
+            # self.bgcolor = self.fgcolor
+            # self.fgcolor = bg
+            # conn.parser.color = bg
+                cb = ansi_bgidx[self.bgcolor]
+                cf = ansi_fgidx[self.fgcolor]
+                res = f'\x1b[27m\x1b[m\x1b[{cf};{cb}{";5" if self.blink else ""}m'
+            else:
+                res = '\x1b[7m'
         self.rvs = v
         return res
+
+    def BLINK(self,conn, v=True):
+        res = ''
+        if self.blink != v:
+            if not v:
+            # bg = self.bgcolor
+            # self.bgcolor = self.fgcolor
+            # self.fgcolor = bg
+            # conn.parser.color = bg
+                cb = ansi_bgidx[self.bgcolor]
+                cf = ansi_fgidx[self.fgcolor]
+                res = f'\x1b[25m\x1b[m\x1b[{cf};{cb}{";7" if self.rvs else ""}m'
+            else:
+                res = '\x1b[5m'
+        self.blink = v
+        return res
+
 
     def setup(self, conn, id):
         if id == b'ASC':
