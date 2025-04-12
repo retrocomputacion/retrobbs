@@ -10,8 +10,10 @@
 - [The PETSCII encoder](#the-petscii-encoder)
 - [The MSX encoder](#the-msx-encoder)
 - [The VT52 encoder](#the-vt52-encoder)
-- The ANSI encoder
+- [The ASCII/ANSI encoder](#the-ansi-encoder)
 - [Appendix](#appendix)
+    - a. [Xgraphics v3 commands](#a-xgraphics-v3-commands)
+    - b. [MSX escape sequences](#b-msx-escape-sequences)
 
 ## Introduction
 
@@ -27,18 +29,29 @@ _PETSCII_ usually consist of two separate character sets, the original uppercase
 It uses the whole 8bit range, with most of the codes above `$80` allocated to graphic characters in both modes.</br>
 A wide range of control codes are provided for controlling the full screen editor present on _Commodore_ 8bit computers, including cursor control, reverse video, texto color and more.
 
+<div align = center>
+
 ![PETSCIImap](petscii-map.png)
+</div>
 
 The figure above shows the _Commodore 64 PETSCII_ character set as decoded by _Retroterm_. With the only differences with the actual _PETSCII_ map being the addition of the `BELL` control code, and the reservation of codes $FE and $FF for _Turbo56K_ command codes.
 
 ### Plus/4 specific codes
 
+<div align = center>
+
 ![Plus/4Petscii](petscii-p4-map.png)
+</div>
+
 For the _Commodore Plus/4_, the map remains the same, with the addition of 2 control codes for turning on and off the text flashing/blinking feature present on this computer.
 
 ### Commodore 128 specific codes
 
+<div align = center>
+
 ![128Petcii](petscii-c128-map.png)
+</div>
+
 The _Commodore 128 PETSCII map_ contains more differences. While the color codes remain the same, the actual colors selected differ when in 80 column mode, as shown here.</br>
 The underline and flash/blink features of the 80 column mode receive their own on/off codes, but the flash codes are different than those used on the _Plus/4_.</br>
 The map now includes both `bell` and `tab` control codes, which requires that the codes used to enable and disable case switching be moved from `$08-$09` to `$0B-$0C`
@@ -122,7 +135,10 @@ When using the `Line Fill` command or `<LFILL>` _TML_ tag, the `code` parameter 
 This raw code is the actual position of the character in the computer's internal _character ROM_. In Commodore literature these codes are referred to as **Screencodes**.
 The first 128 codes are used for normal video characters, and the second 128 for inverse video characters.
 
+<div align = center>
+
 ![PEtSCIIscreencodes](pet-screencodes.png)
+</div>
 
 ## The MSX encoder
 
@@ -140,7 +156,11 @@ Therefore, there are several character sets depending on the region where the co
 At this moment **RetroBBS** only supports the international character set. This set is a variant of ASCII code page 437, with different graphic characters, and with the `graph` control code (`$01`) used to access the extra graphic characters located in positions used by control codes.<br>
 The original MSX encoding include control codes for the screen editor, such as cursor control, TAB, insert, delete, etc. But lacks codes for color and inverse video. Retroterm adds those codes, codes for the function keys, and two new graphic characters.
 
+<div align = center>
+
 ![MSXRTermMap](msx-map.png)
+</div>
+
 The diagram above is the map as decoded by _Retroterm_.</br>
 The left table is the normal _ASCII_ characters plus control codes and graphic characters. The right table contains the color codes and extra graphic characters, these must be prefixed by the `graph` control code (`$01`).
 
@@ -183,7 +203,10 @@ Because _Retroterm_ implements its screen using a graphic mode, it supports pape
 Just like with the PETSCII screencodes, the character map represents all the available characters as found in the computer's character ROM.</br>
 These codes are the ones used as parameter for the `Line Fill` command or `<LFILL>` TML tag
 
+<div align = center>
+
 ![MSXCharmap](msx-charmap.png)
+</div>
 
 ## The VT52 encoder
 This encoder implements the basic _VT52_ escape sequences, and also Compuserve's VidTex, and Atari ST extensions.</br>
@@ -206,7 +229,6 @@ The following table only lists the sequences currently used by RetroBBS
 |`ESC` `H`| Moves the cursor to the _Home_ position
 |`ESC` `J`| Clears to end of the screen
 |`ESC` `Y` `line+32` `column+32`| Position cursor to the given coordinates
-|
 
 ### Compuserve's VidTex extensions
 Compuserve's VidTex is also based on ASCII 7bit, but it adds more sequences to support graphics and file transfers.</br>
@@ -223,7 +245,6 @@ In addition to the basic VT52 sequences, RetroBBS uses the following VidTex addi
 |`ESC` `G` `H`| High Res RLE graphics 256x128px
 |`ESC` `k` `colors`| Changes the text and screen colors (see below)
 |`ESC` `I`| Interrogate remote. Upon receiving this sequence, a compatible terminal should respond with a string containing the supported commands.
-|
 
 #### Semi-graphics mode
 In semi-graphics mode text can be mixed with semigraphic characters.
@@ -265,15 +286,15 @@ The `colors` parameter consist of a single byte, containing the character color 
 The colors are defined as follows:
 | value | color
 |:---:|:---
-|0000| Green
-|0001| Yellow
-|0010| Blue
-|0011| Red
-|0100| White
-|0101| Cyan
-|0110| Magenta/Purple
-|0111| Orange
-|1000| Black*
+|0000| Green</br>![green](https://readme-swatches.vercel.app/588d43)
+|0001| Yellow</br>![yellow](https://readme-swatches.vercel.app/b8c76f)
+|0010| Blue</br>![blue](https://readme-swatches.vercel.app/322879)
+|0011| Red</br>![red](https://readme-swatches.vercel.app/68372b)
+|0100| White</br>![white](https://readme-swatches.vercel.app/fff)
+|0101| Cyan</br>![cyan](https://readme-swatches.vercel.app/70a4b2)
+|0110| Magenta/Purple</br>![purple](https://readme-swatches.vercel.app/6f3d86)
+|0111| Orange</br>![orange](https://readme-swatches.vercel.app/6f4f00)
+|1000| Black*</br>![black](https://readme-swatches.vercel.app/000)
 
 * The official _VidTex_ software always replaces black character color with orange instead
 
@@ -282,7 +303,10 @@ The colors are defined as follows:
 The Atari ST character set is based on code page 437, but with the exchange of all the box drawing characters with the Hebrew alphabet, and other minor differences.
 The backspace character is non-destructive
 
+<div align = center>
+
 ![AtariSTChars](atrst-map.png)
+</div>
 
 The following escape sequences are some additions to standard VT52 set.
 
@@ -300,40 +324,39 @@ The following escape sequences are some additions to standard VT52 set.
 |`ESC` `q`| Reverse off
 |`ESC` `M`| Delete line
 |`ESC` `L`| Insert line
-|
 
 #### Colors
 Foreground and background colors can be selected individually for each character. The number of colors available depends on the screen mode used:
-- HiRes: 80x25 max, 2 colors
+- HiRes: 80x25 max, monochrome (black and white)
 - MedRes: 80x25 max, 4 colors
      
-    0. White
-    1. Red
-    2. Green
-    3. Black
+    0. White</br>![white](https://readme-swatches.vercel.app/fff)
+    1. Red</br>![red](https://readme-swatches.vercel.app/f00)
+    2. Green</br>![green](https://readme-swatches.vercel.app/0f0)
+    3. Black</br>![black](https://readme-swatches.vercel.app/000000)
 - LoRes: 40x25 max, 16 colors
     
-    0. White
-    1. Dark Red
-    2. Green
-    3. Dark Yellow
-    4. Dark Blue
-    5. Dark Purple
-    6. Dark Cyan
-    7. Light Grey
-    8. Grey
-    9. Red
-    10. Light Green
-    11. Yellow
-    12. Blue
-    13. Purple
-    14. Cyan
-    15. Black
+    0. White</br>![white](https://readme-swatches.vercel.app/fff)
+    1. Dark Red</br>![dark red](https://readme-swatches.vercel.app/a00)
+    2. Green</br>![green](https://readme-swatches.vercel.app/0a0)
+    3. Dark Yellow</br>![dark yellow](https://readme-swatches.vercel.app/aa0)
+    4. Dark Blue</br>![dark blue](https://readme-swatches.vercel.app/00a)
+    5. Dark Purple</br>![dark purple](https://readme-swatches.vercel.app/a0a)
+    6. Dark Cyan</br>![dark cyan](https://readme-swatches.vercel.app/0aa)
+    7. Light Grey</br>![lightgrey](https://readme-swatches.vercel.app/bbb)
+    8. Grey</br>![grey](https://readme-swatches.vercel.app/888)
+    9. Red</br>![red](https://readme-swatches.vercel.app/f00)
+    10. Light Green</br>![light green](https://readme-swatches.vercel.app/0f0)
+    11. Yellow</br>![yellow](https://readme-swatches.vercel.app/ff0)
+    12. Blue</br>![blue](https://readme-swatches.vercel.app/00f)
+    13. Purple</br>![purple](https://readme-swatches.vercel.app/f0f)
+    14. Cyan</br>![cyan](https://readme-swatches.vercel.app/0ff)
+    15. Black</br>![black](https://readme-swatches.vercel.app/000000)
 
 ### Supported clients
 
 1. VT52 compatible terminals:
-    - Manual selection:
+    - Manual selection
     - Manual screen size selection
     - Delete in: `\x08`
     - Delete out: `\x08`
@@ -363,6 +386,91 @@ Foreground and background colors can be selected individually for each character
         - `ATRSTL`
         - `ATRSTM`
         - `ATRSTH`
+
+## The ASCII/ANSI encoder
+
+This is the encoder in which each new incoming connection starts by default. The basic ASCII encoder is barebones and only used until a better encoder is autodetected or selected by the user.
+Included with this encoder are the _Extended ASCII (CP437)_ and _ANSI_ modes.
+
+### The extended ASCII (CP437) encoder
+
+This encoder uses the code page 437 character set, it does not support any kind of control codes other than _line break_, _delete_, _bell_ and _cls_ using `$0c` (_Form feed_).
+
+<div align = center>
+
+![CP437map](cp437-map.png)
+</div>
+
+### The ANSI encoder
+_ANSI_ is one of the statndard set of escape sequences for terminals, first popularized by the _DEC VT100_ in 1978.
+The _ANSI_ standard is quite extensive in its scope, but _RetroBBS_ only uses a small subset of it.
+
+While _ANSI_ normally supports 16 foreground and 8 background colores, _RetroBBS_ does not check for this limitation, and can in some cases avoid this limitation by using the inverse video sequence. Altought not every color combination might work as intended.
+
+All ANSI escapes sequences are prefixed by a _Control Sequence Indicator (CIS)_: `'0x1b['`
+
+Sequences used by _RetroBBS_
+
+`CSI` = `'0x1b['`
+
+| Sequence | Description
+|:---|:---
+|`CSI` _`n`_ `A`| Moves cursor up _n_ lines
+|`CSI` _`n`_ `B`| Moves cursor down _n_ lines
+|`CSI` _`n`_ `C`| Moves cursor right _n_ spaces
+|`CSI` _`n`_ `D`| Moves cursor left _n_ spaces
+|`CSI` _`line`_ `;` _`column`_ `H`| Position cursor to the given coordinates. If no coordinates are given, moves the cursor to the _Home_ position
+|`CSI` `2` `J`| Clears the screen
+|`CSI` `6` `n`| Reports the cursor position. Responding with `CSI` _`n`_ `;` _`m`_ `R` where _n_ is the row and _m_ is the column 
+|`CSI` `?` `25` `l`| Hide cursor
+|`CSI` `?` `25` `h`| Show cursor
+|`CSI` _`n`_ `S`| Scroll the screen up _n_ lines
+|`CSI` _`n`_ `T`| Scroll the screen down _n_ lines
+|`CSI` `0` `m`| Reset text attributes
+|`CSI` `1` `m`| Bold/Increase intensity
+|`CSI` `2` `m`| Faint/Decrease intensity
+|`CSI` `5` `m`| Set the blinking attribute
+|`CSI` `7` `m`| Set the reverse video attribute
+|`CSI` `25` `m`| Unset the blinking attribute
+|`CSI` `27` `m`| Unset the reverse video attribute
+|`CSI` `30` `m`| Set foreground color to black</br>![black](https://readme-swatches.vercel.app/00000)
+|`CSI` `31` `m`| Set foreground color to red</br>![red](https://readme-swatches.vercel.app/aa0000)
+|`CSI` `32` `m`| Set foreground color to green</br>![green](https://readme-swatches.vercel.app/00aa00)
+|`CSI` `33` `m`| Set foreground color to orange!</br>![orange](https://readme-swatches.vercel.app/aa5500)
+|`CSI` `34` `m`| Set foreground color to blue</br>![blue](https://readme-swatches.vercel.app/0000aa)
+|`CSI` `35` `m`| Set foreground color to magenta</br>![magenta](https://readme-swatches.vercel.app/aa00aa)
+|`CSI` `36` `m`| Set foreground color to cyan</br>![cyan](https://readme-swatches.vercel.app/00aaaa)
+|`CSI` `37` `m`| Set foreground color to white</br>![white](https://readme-swatches.vercel.app/aaaaaa)
+|`CSI` `40` `m`| Set background color to black
+|`CSI` `41` `m`| Set background color to red
+|`CSI` `42` `m`| Set background color to green
+|`CSI` `43` `m`| Set background color to yellow
+|`CSI` `44` `m`| Set background color to blue
+|`CSI` `45` `m`| Set background color to magenta
+|`CSI` `46` `m`| Set background color to cyan
+|`CSI` `47` `m`| Set background color to white
+
+### Supported clients
+
+1. Extended ASCII (CP437):
+    - Manual selection
+    - Manual screen size selection
+    - Delete in: `\x08`
+    - Delete out: `\x08 \x08`
+    - Line break in: `\r`
+    - Line break out: `\r\n`
+    - BBS mode: `CP437`
+2. ANSI:
+    - Manual selection
+    - Automatic screen size detection, or manual fallback
+    - Delete in: `\x08`
+    - Delete out: `\x08 \x08`
+    - Line break in: `\r`
+    - Line break out: `\r\n`
+    - Support for:
+        - Bi-directional scroll
+        - Cursor enable/disable
+    - BBS mode: `ANSI`
 
 ## Appendix
 ### a. Xgraphics v3 commands
