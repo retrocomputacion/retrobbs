@@ -28,6 +28,23 @@
 {{spc}}
 <UR-QUAD><BLOCK><UL-QUAD> <BLOCK> <L-HALF> <BLOCK><B-HALF><B-HALF> <BLOCK><B-HALF><B-HALF> <BLOCK> <BLOCK> <L-HALF> <BLOCK><B-HALF><B-HALF> <BLOCK> <CHR c=193>
 {{br}}
+{% elif 'ANSI' in mode  and scwidth >= 64 %}
+	{% if scwidth > 64 %}
+		{% set n = (scwidth-64)//2 %}
+		{% set spc = '<BR><SPC n='+n|string+'>'%}
+		{% set br = '<BR>' %}
+		<SPC n={{n}}>
+	{% else %}
+		{% set n = 0 %}
+		{% set spc = '' %}
+		{% set br = '' %}
+	{% endif %}
+	<GREY><B-HALF> <GREY3><B-HALF><WHITE> <B-HALF> <CYAN><B-HALF><BLOCK><BLOCK><BLOCK><BLOCK><B-HALF>  <B-HALF><BLOCK>  <BLOCK><BLOCK>  <B-HALF><BLOCK><U-HALF><U-HALF>  <B-HALF><BLOCK>    <B-HALF><BLOCK>  <B-HALF><BLOCK>  <BLOCK><BLOCK>  <B-HALF><BLOCK><U-HALF><U-HALF>  <B-HALF><BLOCK><U-HALF><U-HALF><BLOCK><B-HALF><WHITE> <B-HALF> <GREY3><B-HALF> <GREY><B-HALF>
+	{{spc}}
+	<GREY><B-HALF> <GREY3><B-HALF><WHITE> <B-HALF> <LTBLUE><BLOCK><BLOCK>  <BLOCK><BLOCK>  <BLOCK><BLOCK><U-HALF><B-HALF><BLOCK><BLOCK>  <BLOCK><BLOCK><U-HALF>   <BLOCK><BLOCK>    <BLOCK><BLOCK>  <BLOCK><BLOCK><U-HALF><B-HALF><BLOCK><BLOCK>  <BLOCK><BLOCK><U-HALF>   <BLOCK><BLOCK><B-HALF><B-HALF><BLOCK><U-HALF><WHITE> <B-HALF> <GREY3><B-HALF> <GREY><B-HALF>
+	{{spc}}
+      <BLUE><U-HALF><BLOCK><BLOCK><BLOCK><BLOCK><U-HALF>  <BLOCK><BLOCK>  <BLOCK><U-HALF>  <BLOCK><BLOCK><BLOCK><U-HALF>  <BLOCK><BLOCK><BLOCK><U-HALF>  <BLOCK><U-HALF>  <BLOCK><BLOCK>  <BLOCK><U-HALF>  <BLOCK><BLOCK><BLOCK><U-HALF>  <BLOCK><BLOCK>  <BLOCK><BLOCK>
+	{{br}}
 {% else %}
     {% set title = 'Oneliner' %}
     {% include 'main/menutitle.j2' %}

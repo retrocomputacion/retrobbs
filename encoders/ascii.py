@@ -14,6 +14,7 @@ ESC = 0x1B
 #--Special chars
 POUND = 0x9C
 PI = 0xE3
+SPINNER = 0x25  # Character to use while waiting
 
 #--Editor
 DELETE = 0x08
@@ -36,7 +37,7 @@ LR_CORNER = 0xD9
 L_HALF  = 0xDD      # Semigraphics
 R_HALF  = 0xDE
 B_HALF  = 0xDC
-T_HALF  = 0xDF
+U_HALF  = 0xDF
 
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]+[127]
@@ -44,8 +45,8 @@ NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]
 ###########
 # TML tags
 ###########
-t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
-             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H',
+t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_','SPINNER':chr(SPINNER)},
+             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','SPINNER':'\xce',
                      'RVSON':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
                      'RVSOFF':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,False),[('_R','_C'),('conn','_C')]),
                      'FLASHON':(lambda conn:ASCIIencoder.BLINK(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
@@ -73,14 +74,14 @@ t_multi =	{'ASCII':{'DEL':'\x08 \x08',
             'UR-CORNER':'+','UL-CORNER':'+','LR-CORNER':'+','LL-CORNER':'+','V-LEFT':'+','V-RIGHT':'+','H-UP':'+','H-DOWN':'+'},
             'CP437':{'DEL':'\x08 \x08',
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': chr(CHECKMARK),
-            'LARROW':'_','UARROW':'^','B-HALF':chr(B_HALF),'T-HALF':chr(B_HALF),'L-HALF':chr(L_HALF),'R-HALF':chr(R_HALF),'BLOCK':'\xDB',
+            'LARROW':'_','UARROW':'^','B-HALF':chr(B_HALF),'U-HALF':chr(U_HALF),'L-HALF':chr(L_HALF),'R-HALF':chr(R_HALF),'BLOCK':'\xDB',
             'UR-CORNER':'\xbf','UL-CORNER':'\xda','LR-CORNER':'\xd9','LL-CORNER':'\xc0','V-LEFT':'\xb4','V-RIGHT':'\xc3','H-UP':'\xc1','H-DOWN':'\xc2'}}
 
 Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*'}
 Urep = dict((re.escape(k), v) for k, v in Urep.items())
 
-ansi_fgidx = ['2;30','2;31','2;32','2;33','2;34','2;35','2;36','2;37','1;30','1;31','1;32','1;33','1;34','1;35','1;36','1;37']
-ansi_bgidx = ['2;40','2;41','2;42','2;43','2;44','2;45','2;46','2;47','1;40','1;41','1;42','1;43','1;44','1;45','1;46','1;47']
+ansi_fgidx = ['22;30','22;31','22;32','22;33','22;34','22;35','22;36','22;37','1;30','1;31','1;32','1;33','1;34','1;35','1;36','1;37']
+ansi_bgidx = ['22;40','22;41','22;42','22;43','22;44','22;45','22;46','22;47','1;40','1;41','1;42','1;43','1;44','1;45','1;46','1;47']
 
 ansi_colors = { 'BLACK':(lambda c:ASCIIencoder.SetColor(c.encoder,c,0),[('_R','_C'),('c','_C')]),'DRED':(lambda c:ASCIIencoder.SetColor(c.encoder,c,1),[('_R','_C'),('c','_C')]),
                 'GREEN':(lambda c:ASCIIencoder.SetColor(c.encoder,c,2),[('_R','_C'),('c','_C')]),'DYELLOW':(lambda c:ASCIIencoder.SetColor(c.encoder,c,3),[('_R','_C'),('c','_C')]),
@@ -231,7 +232,7 @@ class ASCIIencoder(Encoder):
                     _copy.txt_geo= (int(cursor[1][:-1]),int(cursor[0][2:]))
                     conn.SendTML(f'<BR><FORMAT>Detected screen: {cursor[1][:-1]}x{cursor[0][2:]}</FORMAT><BR><PAUSE n=1>')
             else:
-                conn.SendTML('Screen columns? (80): ')
+                conn.SendTML('<BR>Screen columns? (80): ')
                 cols = conn.ReceiveInt(32,80,80)
                 conn.SendTML('<BR>Screen lines? (25): ')
                 _copy.txt_geo = (cols,conn.ReceiveInt(8,25,25))
@@ -241,7 +242,7 @@ class ASCIIencoder(Encoder):
                           'DARK_YELLOW':3,'DARK_CYAN':6,'LIGHT_GREY':7,'DRED':1, 'DCYAN':6, 'DYELLOW':3}
             _copy.palette = {f'\x1b[{c}m':j for j,c in enumerate(ansi_fgidx)}  # Refresh Palette
             _copy.tml_mono.update(ansi_colors)
-
+            conn.SendTML('\x1b[?7h')    # Set Autowrap?
             return _copy
         else:
             return None

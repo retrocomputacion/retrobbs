@@ -39,13 +39,13 @@
 	{% endif %}
 	<BLOCK>
 	{% if conn.QueryFeature(177) < 128 %}
-		<INK c={{st.MenuTColor1}}><RVSON><B-HALF><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><RVSON><B-HALF><RVSOFF>
+		<INK c={{st.MenuTColor1}}><U-HALF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><HLINE><INC></WHILE><INK c={{st.MenuTColor2}}><U-HALF>
 	{% else %}
-		<INK c={{st.MenuTColor1}}><RVSON><B-HALF><RVSOFF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><HLINE><INC></WHILE>
+		<INK c={{st.MenuTColor1}}><U-HALF><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><HLINE><INC></WHILE>
 		{% if scwidth%2 == 0 %}
-			<INK c={{st.MenuTColor2}}><RVSON><B-HALF><RVSOFF>
+			<INK c={{st.MenuTColor2}}><U-HALF>
 		{% else %}
-			<INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><RVSON><B-HALF><RVSOFF>
+			<INK c={{st.MenuTColor2}}><HLINE><INK c={{st.MenuTColor1}}><U-HALF>
 		{% endif %}
 	{% endif %}
 {# MSX comterm #}
