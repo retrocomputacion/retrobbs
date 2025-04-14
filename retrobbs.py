@@ -342,7 +342,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
 
     scwidth,scheight = conn.encoder.txt_geo
 
-    max_e = (scheight-5)*2      # Number of entries per page
+    max_e = min(((scheight-5)*2),40)      # Number of entries per page (hardcoded to 40 maximum, the number of available keys)
     e_width = (scwidth//2)-4    # Max characters per entry
     separator = '  ' if scwidth % 2 == 0 else '   '
 

@@ -114,6 +114,11 @@ GFX_MODES=[{'name':'MSX1 Screen 2','bpp':1,'attr':(8,1),'global_colors':(False,F
 # Load native image format
 ##############################
 def load_Image(filename:str):
+
+    def bitcount(x):
+        return bin(x).count('1')
+
+    colorcnt = [0]*16
     multi = gfxmodes.MSXSC2
     data = [None]*3
     gcolors = [0]*2  # Border, Background
@@ -134,6 +139,19 @@ def load_Image(filename:str):
                 text = 'MSX Screen 2'
             else:
                 return None
+            tmp = b''
+            # Replace transparent color with black
+            for i in range(6144):
+                v = data[2][i]
+                if v&240 == 0:
+                    v |= 16
+                if data[2][i]&15 == 0:
+                    v |= 1
+                tmp = tmp + v.to_bytes(1,'big')
+                colorcnt[v>>4] += bitcount(data[0][i])      #Can be replaced with int.bit_count() for Python 3.10+
+                colorcnt[v&15] += 8-bitcount(data[0][i])
+            data[2] = tmp
+            gcolors[0] = colorcnt.index(max(colorcnt))      #Set most used color as border
     else:
         return None
     #Render image
