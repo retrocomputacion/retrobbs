@@ -25,7 +25,8 @@
         "ToddColor"     : "DKRED",
         "OoddBack"      : "BLACK",
         "TevenColor"    : "BLUE",
-        "OevenBack"     : "BLACK"
+        "OevenBack"     : "BLACK",
+        "TxtColor"      : "BLUE"
     },
     "VidTex":{
         "BgColor"		: "WHITE",

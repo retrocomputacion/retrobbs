@@ -359,9 +359,10 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
             conn.SendTML(cowcolor)
             for c in t_cows:
                 conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
-            conn.SendTML('<GREEN>')
+            conn.SendTML(bullcolor)
             for c in t_bulls:
                 conn.SendTML(f'<AT x={abcoffset+string.ascii_lowercase.index(c)} y={scheight-2}>{c.upper()}')
+            conn.SendTML(f'<PAPER c={style.BgColor}>')
         t += 1
     if t == 6:
         conn.SendTML(f'<AT x={(scwidth-24)//2} y=19><GREY2>Better luck next time...<BR>')
