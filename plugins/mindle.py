@@ -39,24 +39,7 @@ def plugFunction(conn:Connection):
 
     #Render title
     def header():
-        if 'PET' in conn.mode and not 'PET20' in conn.mode:
-            spc = (conn.encoder.txt_geo[0]-36)//2
-            conn.SendTML(f'<WHITE><SPC n={spc}><BOTTOM-HASH n=11><GREEN><LR-QUAD> <LR-QUAD><LTGREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF> <WHITE><BOTTOM-HASH n=11><BR>')
-            conn.SendTML(f'<GREY3><SPC n={spc}> <BOTTOM-HASH n=10><GREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><LTGREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><GREY3><BOTTOM-HASH n=10><BR>')
-            conn.SendTML(f'<GREY2><SPC n={spc}>  <BOTTOM-HASH n=9><GREEN><RVSON><L-HALF><CRSRR><L-HALF><LTGREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><GREY2><BOTTOM-HASH n=9><BR>')
-        elif 'MSX' in conn.mode:
-            conn.SendTML('<PINK>  <LL-QUAD><B-HALF N=6><DGREEN><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><PINK> <B-HALF N=6><LR-QUAD><BR>')
-            conn.SendTML('<RED>   <LL-QUAD><B-HALF N=5><DGREEN><RVSON><L-HALF><RVSOFF><UL-LR-QUAD><RVSON><LL-QUAD><RVSOFF><GREEN><LR-QUAD> <RVSON><LR-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><L-HALF><L-HALF><YELLOW><RVSON><L-HALF><RVSOFF><B-HALF><L-HALF><RED><B-HALF N=5><LR-QUAD><BR>')
-            conn.SendTML('<DRED>    <LL-QUAD><B-HALF N=4><DGREEN><RVSON><L-HALF><CRSRR><L-HALF><GREEN><L-HALF><RVSOFF><LL-QUAD><L-HALF><RVSON><L-HALF><RVSOFF><UR-QUAD><B-HALF><L-HALF><RVSON><UR-QUAD><RVSOFF><YELLOW><UR-QUAD><B-HALF><LL-QUAD><DRED><B-HALF N=4><LR-QUAD><BR>')
-        elif 'VidTex' in conn.mode:
-            spc = (conn.encoder.txt_geo[0]-28)//2
-            conn.SendTML(f'<RED><SPC n={spc}><LL-QUAD><B-HALF N=6><BLUE><LR-QUAD> <LR-QUAD><GREEN><LR-QUAD>     <LL-QUAD><LL-QUAD> <YELLOW><B-HALF><RED> <B-HALF N=6><LR-QUAD><BR>')
-            conn.SendTML(f'<ORANGE><SPC n={spc}> <LL-QUAD><B-HALF N=5><BLUE><R-HALF><UL-LR-QUAD><RVSON><UL-UR-LR-QUAD><GREEN><LR-QUAD> <UL-UR-LL-QUAD><UL-LR-QUAD><LR-QUAD><U-HALF><L-HALF><L-HALF><YELLOW><R-HALF><B-HALF><L-HALF><ORANGE><B-HALF N=5><LR-QUAD><BR>')
-            conn.SendTML(f'<RED><SPC n={spc}>  <LL-QUAD><B-HALF N=4><BLUE><R-HALF><CRSRR><R-HALF><GREEN><R-HALF><LL-QUAD><L-HALF><R-HALF><UR-QUAD><B-HALF><L-HALF><UL-LL-LR-QUAD><YELLOW><UR-QUAD><B-HALF><LL-QUAD><RED><B-HALF N=4><LR-QUAD><BR>')
-        else:
-            conn.SendTML('<BLACK>*   * * ** * **  *   ***<BR>')
-            conn.SendTML(       '** ** * * ** * * *   **<BR>')
-            conn.SendTML(       '* * * * *  * **  *** ***<BR>')
+        conn.SendTML(conn.templates.GetTemplate('mindle/title'))
 
     window_s = conn.QueryFeature(TT.SET_WIN) < 0x80
 
