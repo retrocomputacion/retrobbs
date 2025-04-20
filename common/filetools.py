@@ -22,6 +22,207 @@ from ymodem.Protocol import ProtocolType
 import logging
 
 ########################################################################
+# Show a file browser, call fhandler on user selection
+########################################################################
+# conn: Connection
+# title: Title of the file list
+# logtext: Text to send to the log
+# path: Root path to display
+# ffilter: List of file extensions to show, or None to show all files
+# fhandler: Function to call upon user selection
+# transfer: Boolean, allow file transfers
+# subdirs: Boolean, allow to show and browse subdirectories 
+########################################################################
+def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,subdirs=True):
+
+    st = conn.style
+    scwidth,scheight = conn.encoder.txt_geo
+    win_s = conn.encoder.features['windows'] != 0
+    if win_s:
+        r_offset = 0
+    else:
+        r_offset = 4
+
+    max_e = scheight-7      # Number of entries per page
+    e_width = scwidth-8    # Max characters per entry
+
+    curpath = path  # Current path in use
+    c_page = 0      # Current page
+
+
+    _LOG(logtext,id=conn.id, v=4)
+
+    # Send speech message
+    # Select screen output
+    conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
+    if win_s:
+        S.RenderMenuTitle(conn,title)
+        conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'A/Z','pages':'N/M','keys':[('U','parent')]}))
+        t_path = curpath.replace(path[:-1],'',1)
+        if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+            t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+        conn.SendTML(f'<AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+        conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
+
+
+    # Main loop
+    while conn.connected:
+        programs = []	#filtered list
+        directories = [] # subdirectories
+
+        #Read all files from 'path'
+        for entry in os.scandir(curpath):
+            if entry.is_file():
+                if len(ffilter) > 0:
+                    if os.path.splitext(entry.name)[1].upper() in ffilter:
+                        programs.append([entry.name,entry.stat().st_size])
+                else:
+                    programs.append([entry.name,entry.stat().st_size])
+            elif entry.is_dir():
+                directories.append(entry.name)
+
+        programs = sorted(programs, key= lambda l:l[0]) #programs.sort()     #Sort files
+        directories.sort()  #Sort subdirectories
+
+        pages = int(((len(programs)+(len(directories) if subdirs else 0))-1) / max_e) + 1
+        count = len(programs)+(len(directories) if subdirs else 0)
+        # Page render loop
+        display = True
+        row = 0
+        while conn.connected:
+            if display:
+                conn.SendTML('<CURSOR>')
+                conn.SendTML('<CLR>')
+                if not win_s:
+                    S.RenderMenuTitle(conn,title)
+                    conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'A/Z','pages':'N/M','keys':[('U','parent')]}))
+                    t_path = curpath.replace(path[:-1],'',1)
+                    if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                        t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+                    conn.SendTML(f'<AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+                    conn.SendTML('<AT x=0 y=4>')
+                conn.SendTML('')
+                start = c_page * max_e
+                end = min(start+max_e,count)-1
+                # end = start + (max_e-1)
+                # if end >= count:
+                #     end = count - 1
+                if fhandler == SendFile:
+                    keywait = False
+                else:
+                    keywait = True
+                page_entries = []
+                for x in range(start, end + 1):
+                    ix = x - (len(directories) if subdirs else 0)
+                    if x < len(directories) and subdirs:
+                        if len(directories[x]) > e_width+6:
+                            label = H.crop(directories[x], e_width+6, conn.encoder.ellipsis)+'<BR>'
+                        else:
+                            label = directories[x]+'<BR>'
+                        e_color = f'<INK c={st.TevenColor}>'
+                        page_entries.append([directories[x],True])
+                    else:
+                        if len(programs[ix][0]) > e_width:
+                            fn = os.path.splitext(programs[ix][0])
+                            label = H.crop(fn[0],e_width-len(fn[1])+1, conn.encoder.ellipsis)+fn[1]
+                            # label = fn[0][:e_width-len(fn[1])]+fn[1]
+                        else:
+                            label = programs[ix][0]
+                        e_color = f'<INK c={st.TxtColor}>'
+                        page_entries.append([programs[ix][0],False])
+                        # label += ' ' + format_bytes(programs[ix][1])
+                    conn.SendTML(f'{e_color} {label}')
+                    if not page_entries[-1][1]:
+                        size = H.format_bytes(programs[ix][1])
+                        conn.SendTML(f'<INK c={st.TevenColor}><CRSRR n={(e_width-len(label))+(7-len(size))}>{size}')
+                    
+                conn.SendTML(f'<WINDOW><AT x=0 y={scheight-1}><WHITE> [{c_page+1}/{pages}] <CURSOR enable=False>')
+                conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}><YELLOW>')
+                display = False
+            conn.SendTML(f'<AT x=0 y={row+r_offset}>&gt;<CRSRL>')
+            key = conn.ReceiveKey(['a','z','u','m','n',conn.encoder.back,conn.encoder.nl])
+            if key == conn.encoder.back:
+                conn.SendTML('<CURSOR><WINDOW>')
+                return
+            elif key == 'a':
+                if row > 0:
+                    conn.SendTML(' ')
+                    row -= 1
+                elif pages > 1:
+                    row = 0
+                    if c_page > 0:
+                        c_page -= 1
+                    else:
+                        c_page = pages-1
+                    display = True
+            elif key == 'z':
+                if row < len(page_entries)-1:
+                    conn.SendTML(' ')
+                    row += 1
+                elif pages > 1:
+                    row = 0
+                    if c_page != pages-1:
+                        c_page +=1
+                    else:
+                        c_page = 0
+                    display = True
+            elif key == 'm' and pages > 1:
+                row = 0
+                if c_page != pages-1:
+                    c_page +=1
+                else:
+                    c_page = 0
+                display = True
+            elif key == 'n' and pages > 1:
+                row = 0
+                if c_page > 0:
+                    c_page -= 1
+                else:
+                    c_page = pages-1
+                display = True
+            elif key == 'u' and len(curpath) > len(path):   # Parent dir
+                curpath = '/'.join(curpath.split('/')[:-2])+'/'
+                c_page = 0
+                if win_s:
+                    t_path = curpath.replace(path[:-1],'',1)
+                    if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                        t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+                    conn.SendTML(f'<CLR><WINDOW><AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+                    conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
+                break
+            elif key == conn.encoder.nl:
+                if not page_entries[row][1]:
+                    conn.SendTML('<WINDOW>')
+                    if fhandler == SendFile:
+                        parameters = (conn,curpath+page_entries[row][0],True,transfer,)
+                    else:
+                        parameters = (conn,curpath+page_entries[row][0],True,transfer,)
+                    fhandler(*parameters)
+                    if keywait:
+                        conn.ReceiveKey
+                    conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
+                    if win_s:
+                        S.RenderMenuTitle(conn,title)
+                        t_path = curpath.replace(path[:-1],'',1)
+                        if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                            t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+                        conn.SendTML(f'<AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+                        conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'A/Z','pages':'N/M','keys':[('U','parent')]}))
+                        conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
+                    display = True
+                else:   # Change dir
+                    curpath = curpath + page_entries[row][0] + '/'
+                    c_page = 0
+                    if win_s:
+                        t_path = curpath.replace(path[:-1],'',1)
+                        if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                            t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+                        conn.SendTML(f'<CLR><WINDOW><AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+                        conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
+                    break
+
+
+########################################################################
 # Display image dialog
 ########################################################################
 # conn: Connection
@@ -590,7 +791,7 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
 
     # logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
-    conn.SendTML('<CLR><RVSOFF>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[<BACK>] Abort')
+    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[<BACK>] Abort')
     k = conn.ReceiveKey('ab'+conn.encoder.decode(conn.encoder.back))
     if k == 'a':
         psize = 128

@@ -79,7 +79,7 @@ import sys
 import re
 import platform
 import subprocess
-from os import walk
+from os import walk, scandir
 from os.path import splitext, getmtime, exists
 import datetime
 import signal
@@ -169,7 +169,7 @@ def ConfigRead():
                 else:
                     exts = ()
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
-                parms = [tentry,'','Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
+                parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'subdirs',fallback=False)]
             elif efunc == 'AUDIOLIBRARY':	#Show audio file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound/')
                 parms = [tentry,'','Displaying audio list',p]
@@ -225,9 +225,9 @@ def ConfigRead():
         return(mentry)
     
     #Internal function dictionary
-    func_dic = {'IMAGEGALLERY': FileList,
+    func_dic = {'IMAGEGALLERY': Gallery,
                 'AUDIOLIBRARY': AA.AudioList,
-                'FILES': FileList,
+                'FILES': FT.FileList,
                 'SENDRAW': FT.SendRAWFile,
                 'SWITCHMENU': SwitchMenu,
                 'SLIDESHOW': SlideShow,
@@ -313,6 +313,7 @@ def signal_handler(sig, frame):
 
     for t in range(1,bbs_instance.lines+1):
         if t in conlist:				#Find closed connections
+            conlist[t][1].Close()
             conlist[t][0].join()
     conthread.join()
 
@@ -328,7 +329,7 @@ def signal_handler(sig, frame):
 #########################################################################################
 # Show a menu with a list of files, call fhandler on user selection
 #########################################################################################
-def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=False):
+def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=False):
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
@@ -349,7 +350,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
     # Start with barebones MenuDic
     MenuDic = { 
                 conn.encoder.decode(conn.encoder.back): (MenuBack,(conn,),"Previous Menu",0,False),
-                conn.encoder.nl: (FileList,(conn,title,speech,logtext,path,ffilter,fhandler,transfer),title,0,False)
+                conn.encoder.nl: (Gallery,(conn,title,speech,logtext,path,ffilter,fhandler,transfer),title,0,False)
               }	
     _LOG(logtext,id=conn.id, v=4)
     # Send speech message
@@ -396,7 +397,6 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         keywait = False
     else:
         keywait = True
-    x = 0
     for x in range(start, end + 1):
         if len(ffilter) == 0:
             if len(programs[x]) > e_width:
@@ -427,6 +427,7 @@ def FileList(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer
         # Select screen output
         conn.Sendall(TT.to_Screen())
     return MenuDic
+
 
 ######################################
 # Render Menu from MenuList structure

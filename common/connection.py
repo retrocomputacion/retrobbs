@@ -75,6 +75,7 @@ class Connection:
     def Close(self):
         _LOG("Total bytes sent/received: "+str(self.outbytes)+'/'+str(self.inbytes),id=self.id,v=3)
         try:
+            self.connected = False
             self.socket.close()
         except:
             pass

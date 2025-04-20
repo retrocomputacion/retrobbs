@@ -86,6 +86,7 @@
 {# Color VidTex #}
 {% elif mode == 'VidTex' and conn.encoder.features['color'] %}
 	{% if conn.encoder.def_gfxmode != None %}
+		<AT x=0 y={{barline}}>
 		<G4><INK c={{st.NBarBG}}><L-HALF><INK c={{st.NBarMove}}>{{pages}}
 		{% if crsr|length %}
 			/{{crsr}}

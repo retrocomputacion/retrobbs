@@ -1,0 +1,68 @@
+{# File dialog background template #}
+{#  input: height, title #}
+{# Functions: crop() #}
+<CLR>
+{% if 'PET' in mode %}
+	<GREY3><RVSON>
+	{% if conn.QueryFeature(177) < 128 %}
+		<LFILL row=0 code=192>
+		{% for l in range(1,height)%}
+			<LFILL row={{l}} code=160>
+		{% endfor %}
+		<GREY1>
+		<LFILL row={{height}} code=226>
+		<GREY3>
+	{% else %}
+		<HLINE n={{scwidth-1}}><CRSRL><INS><HLINE><CRSRR>
+		{% for l in range(1,height)%}
+			<SPC n={{scwidth-1}}><CRSRL><INS> <CRSRR>
+		{% endfor %}
+		<GREY1>
+		<B-HALF n={{scwidth-1}}><CRSRL><INS><B-HALF><CRSRR>
+		<GREY3><HOME>
+	{% endif %}
+{% elif mode == 'MSX1' %}
+	<WHITE><RVSON>
+	{% if conn.QueryFeature(177) < 128 %}
+		<LFILL row=0 code=23>
+		{% for l in range(1,height)%}
+			<LFILL row={{l}} code=32>
+		{% endfor %}
+		<GREY>
+		<LFILL row={{height}} code=220>
+		<WHITE>
+	{% else %}
+		<HLINE n={{scwidth-1}}><CRSRL><INS><HLINE><CRSRR>
+		{% for l in range(1,height)%}
+			<SPC n={{scwidth-1}}><CRSRL><INS> <CRSRR>
+		{% endfor %}
+		<GREY>
+		<B-HALF n={{scwidth-1}}><CRSRL><INS><B-HALF><CRSRR>
+		<WHITE><HOME>
+	{% endif %}
+{% elif mode in ['ANSI','ATRSTL'] %}
+	<GREY3><RVSON>
+	<HLINE n={{scwidth}}>
+	<SPC n={{scwidth*(height-1)}}>
+	<RVSOFF><GREY2>
+	<U-HALF n={{scwidth}}>
+	<GREY3><RVSON><HOME>
+{% elif 'ATRST' in mode %}
+	<WHITE><RVSON>
+	<HLINE n={{scwidth}}>
+	<SPC n={{scwidth*(height)}}>
+	<U-HALF n={{scwidth}}>
+	<HOME>
+{% else %}
+	<WHITE>
+	<HLINE n={{scwidth}}>
+	<CRSRD n={{height-1}}>
+	<HLINE n={{scwidth}}>
+	<HOME>
+{% endif %}
+
+{# Title #}
+{% if title != None %}
+	{% set ctt = crop(title,scwidth-1,conn.encoder.ellipsis) %}
+	<AT x={{1+((scwidth-1)-ctt|length)/2}} y=0>{{ctt}}<BR><RVSOFF>
+{% endif %}
