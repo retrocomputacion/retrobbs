@@ -44,7 +44,7 @@ class DBase:
         table = self.db.table('USERS')
         ul = []
         for u in table.all():
-            ul.append((u.doc_id,u['uname']))
+            ul.append((u.doc_id,u['uname'],u['uclass']))
         return ul
 
     #Check if user exists

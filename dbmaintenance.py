@@ -8,22 +8,26 @@ import common.dbase as DB
 from tinydb.table import Document
 from tinydb import Query
 import re
+from os import get_terminal_size
 
 
 
-def update():
+def update(un=None):
     global data
 
     change = False
-    while True:
-        un = input("User Name (Enter to cancel):")
-        if un == '':
-            return
+    if un == None:
+        while True:
+            un = input("User Name (Enter to cancel):")
+            if un == '':
+                return
+            ud = data.chkUser(un)
+            if ud != None:
+                break
+            else:
+                print("----- User not found -----")
+    else:
         ud = data.chkUser(un)
-        if ud != None:
-            break
-        else:
-            print("----- User not found -----")
 
     print("Username:",ud['uname'])
     while True:
@@ -154,7 +158,7 @@ def adduser():
         if len(country) < 17:
             break
     while True:
-        uclass = input("New class 1-10 (enter 1):")
+        uclass = input("New class 1-10 (enter=1):")
         if uclass == '':
             uclass = 1
             break
@@ -167,11 +171,46 @@ def adduser():
     data.newUser(uname,pw,fname,lname,bday,country,uclass)
     print("\n----- New user added -----\n")
 
+def listusers():
+    global data
+
+    users = data.getUsers()
+    users = sorted(users, key= lambda l:l[0])
+    page_l = t_size[1]-3
+    start = 0
+    while True:
+        ids = []
+        names = []
+        end = min(len(users),start+t_size[1])
+        print('\nUser list\nid   Username            Class')
+        print('==============================')
+        for i in range(start,end):
+            print(f'{users[i][0]:<4} {users[i][1]:<21} {users[i][2]:>2}')
+            ids.append(users[i][0])
+            names.append(users[i][1])
+        while True:
+            ii = input("\nEnter id to edit, enter for more, x to exit: ")
+            if ii == '':
+                start += t_size[1]
+                if start > len(users):
+                    return
+                break
+            elif ii == 'x':
+                return
+            elif ii.isnumeric():
+                e = int(ii)
+                if e in ids:
+                    update(names[ids.index(e)])
+                    break
+            
+        ...
+
 
 ### MAIN ###
 
 print("----RetroBBS Database maintenance tool----\n")
 
+t_size =  get_terminal_size()
 data = DB.DBase('bbsfiles/')
 print("Database open...")
 print("Checking database integrity...")
@@ -251,7 +290,7 @@ if len(table)>0:
                 break
 
 mtable = data.db.table('MESSAGES')
-print('Total messages:',len(mtable))
+print('Total messages: ',len(mtable))
 if len(mtable) > 0:
     Q = Query()
     threads = mtable.search(Q.msg_parent == 0)
@@ -296,21 +335,25 @@ if len(mtable) > 0:
 
 
 while True:
-    print("---------------------\nPlease select action:\n---------------------")
+    print("\n\n---------------------\nPlease select action:\n---------------------")
     if len(table) > 0:
-        print("1: Update user data")
-        print("2: Delete user")
-    print("3: Add user")
+        print("1: List users")
+        print("2: Update user data")
+        print("3: Delete user")
+    print("4: Add user")
     print("0: Quit\n")
-    ii = input("Your selection:")
+    ii = input("Your selection: ")
     #### QUIT ####
     if ii == '0':
         break
+    #### LIST ####
+    if ii == '1':
+        listusers()
     #### UPDATE ####
-    if ii == '1' and len(table) > 0:
+    if ii == '2' and len(table) > 0:
         update()
     #### DELETE ####
-    if ii == '2' and len(table) > 0:
+    if ii == '3' and len(table) > 0:
         while True:
             un = input("User Name:")
             ud = data.chkUser(un)
@@ -329,7 +372,7 @@ while True:
             mtable.update({'msg_from':un}, Q.msg_from == uid)
 
     #### ADD NEW USER ####
-    if ii == '3':
+    if ii == '4':
         adduser()
 print("Closing database")
 data.closeDB()
