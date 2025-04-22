@@ -55,7 +55,7 @@ def readMessage(conn:Connection, msg_id:int):
             else:
                 user = dmsg['msg_from']
             # build option string
-            ol = []
+            ol = [f'<INK c={conn.style.TxtColor}>']
             if win:
                 keys = ''
             else:
@@ -66,8 +66,9 @@ def readMessage(conn:Connection, msg_id:int):
                 adm = ' <RVSON>D<RVSOFF>elete'
             else:
                 adm = ''
+            # ol.append(f'<INK c={conn.style.TxtColor}>')
             if dmsg['msg_parent'] != 0:
-                ol.append(f'<INK c={conn.style.TxtColor}><RVSON>F<RVSOFF>irst/<RVSON>P<RVSOFF>rev')
+                ol.append('<RVSON>F<RVSOFF>irst/<RVSON>P<RVSOFF>rev')
                 keys += 'fp'
             if (dmsg['msg_next'] != 0) and (dmsg['msg_next'] != msg_id):
                 ol.append('<RVSON>N<RVSOFF>ext/<RVSON>L<RVSOFF>ast')
@@ -98,7 +99,7 @@ def readMessage(conn:Connection, msg_id:int):
                             f'<AT x=0 y={scheight-2}><GREY3>')
                 for i,o in enumerate(ol):
                     conn.SendTML(o)
-                    if (i+1) < len(ol):
+                    if i > 0 and (i+1) < len(ol):
                         conn.Sendall('/')
                 conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
             else:
@@ -127,7 +128,7 @@ def readMessage(conn:Connection, msg_id:int):
                     conn.SendTML(f'<YELLOW><HLINE n={scwidth}><GREY3>')
                     for i,o in enumerate(ol):
                         conn.SendTML(o)
-                        if (i+1) < len(ol):
+                        if i > 0 and (i+1) < len(ol):
                             conn.Sendall('/')
                     conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
                     k = conn.ReceiveKey(keys)
@@ -205,17 +206,17 @@ def writeMessage(conn:Connection, destination = 1, thread:int = 0):
         def dialog1(): # Send or cancel message
             nonlocal message
             conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}>')
-            ond = True
-            while ond:
+            k = ''
+            while conn.connected:
                 conn.SendTML('<CLR>Send/Edit/Quit(S/E/Q)?')
                 k = conn.ReceiveKey('seq')
                 if k == 's':
                     if sum(len(l) for l in fmessage) == 0:
                         conn.SendTML('<BR>EMPTY MESSAGE<PAUSE n=1.5>')
                     else:
-                        ond = False
+                        break
                 else:
-                    ond = False
+                    break
             return(k)
         
         def help(): #Display help
@@ -264,9 +265,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
         def updMsg(startline=0,scroll=0,rline=0):   #Update message display
             nonlocal fmessage, lines
 
-            # print('before ',fmessage)
             tfmessage,tlines = formatMsg(message,scwidth)
-            # print('after ',tfmessage)
             if win:
                 # Compare new and old formatted message
                 # Find which line range differ after the edit.
@@ -372,7 +371,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
         fmessage,lines = formatMsg(message,scwidth)
         conn.SendTML(f'<PAUSE n=1><WINDOW top={scheight-2} bottom={scheight-1}>{tcolor}')
         line = 0
-        while topic == '': # Get message topic if none provided
+        while topic == '' and conn.connected: # Get message topic if none provided
             if not win:
                 conn.SendTML('<BR>')
             conn.SendTML('Topic title:<BR>')
@@ -542,6 +541,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
                             tline = tline[0:column-1] + i_char + tline[column:]
                         else:
                             tline += i_char
+                        # print([message[0:lines[line+ydisp][0]]+tline])
                         conn.Sendall(_enc(i_char))
                         if column == scwidth+1:
                             message = message[0:lines[line+ydisp][0]]+tline+(' ' if lines[line+ydisp][2] else '')+message[lines[line+ydisp][1]:]  # Insert edited line into original message
@@ -563,13 +563,16 @@ Press {_dec(conn.encoder.back)} to continue...'''
                                     conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
                                 else:
                                     _tmp = scwidth-len(fmessage[line+ydisp-1])
-                                    if _tmp > 0:
+                                    if _tmp > 0 and lines[line+ydisp-1][1]-lines[line+ydisp-1][0]<scwidth:
                                         if conn.mode in ['ATRSTL','ATRSTM','ATRSTH','ANSI']:
                                             conn.SendTML(f'<DEL><CRSRU><CRSRR n={scwidth-_tmp+1}><SPC n={_tmp-1}>') # ANSI and Atari ST dont wrap back to the previous line when deleting
                                         else:
                                             conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
                                     else:
                                         conn.SendTML('<DEL>')   # Last character was space and the previous line had 'scwidth' characters
+                                        # if line+ydisp >= len(fmessage):
+                                            # fmessage.append('')
+                                            # lines.append([0,0,False])
                                 conn.SendTML(f'{fmessage[line+ydisp]}')
                             else:   # Past character limit
                                 option = dialog1()
@@ -1012,7 +1015,9 @@ def formatMsg(text, columns = 40):
                 output.append(i)
                 output.append('')
             else:
-              output.extend(textwrap.wrap(i,width=columns))  
+              output.extend(textwrap.wrap(i,width=columns))
+              if i[-1] == ' ':
+                  output.append('')
             # cols = columns+1 if (len(i) == columns+1 and i[-1]=='\b') else columns
             # output.extend(textwrap.wrap(i,width=cols))
             # if len(i) == columns+1 and i[-1] in [' ','\b']:
@@ -1026,11 +1031,13 @@ def formatMsg(text, columns = 40):
         lwrap = False
         output[i] = output[i].replace('\b','\n')
         op = ip+len(output[i])
-        if op < len(text)-1:
+        if op < len(text):
             if text[op-1] != '\n':
                 while text[op] == ' ':
                     op +=1
                     lwrap = True        # trailing space word-wrapped
+                    if  op == len(text):
+                        break
         lines.extend([[ip,op,lwrap]])
         ip = op
         # if len(output[i])<columns:

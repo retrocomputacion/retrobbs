@@ -175,8 +175,11 @@ __New features__:
     - VicTerm (VIC-20 color PETSCII terminal)
     - MSX RS232 ROM built in terminal (CALL COMTERM)
     - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal)
+    - ANSI
  - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
  - Added non-blocking receive function to the _connection_ class
+ - Added templating system, based on Jinja2 templates
+ - New FileList() file browser, old version now called Gallery()
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming
@@ -274,6 +277,7 @@ Python modules:
   * geopy (For the weather plugin)
   * hitherdither (https://www.github.com/hbldh/hitherdither)
   * irc (For IRC client plug-in)
+  * jinja2 (Templates)
   * lhafile (For .YM and .VTX file support)
   * mutagen
   * numpy
@@ -287,6 +291,7 @@ Python modules:
   * tinydb
   * validators
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)**
+  * ymodem (x/y modem file transfers)
   * yt_dlp
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
@@ -1141,8 +1146,6 @@ Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation
 For this purpose a new `Encoder` class has been created.</br>
 This class provides platform specific encoding/decoding of strings, as well as defining the basic control codes and color palette.
 
-Currently, the `PET64`, `PET264` and `MSX1` encoders are implemented, corresponding to the _Commodore 64_, _Commodore Plus/4_ PETSCII and _MSX1_ encodings respectively.
-
 Encoders implement the following functionality:
 - Encoding/Decoding to and from a client's native text format.
 - List of graphic modes
@@ -1150,6 +1153,8 @@ Encoders implement the following functionality:
 - Native word wrapping, maintaining control codes
 - Check if a file fits in the client's available RAM for memory transfer
 - Get a file's load/start address 
+
+For an extensive description of the currently supported encoders check the dedicated [documentation](docs/encoders.md)
 
 ---
 # 6 Installation/Usage

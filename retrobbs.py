@@ -79,14 +79,13 @@ import sys
 import re
 import platform
 import subprocess
-from os import walk, scandir
+from os import walk
 from os.path import splitext, getmtime, exists
 import datetime
 import signal
 import string
 import configparser #INI file parser
 import threading
-from math import ceil
 from html import unescape
 import random
 
@@ -754,7 +753,7 @@ def Stats(conn:Connection):
 #############################
 def SignIn(conn:Connection):
     _dec = conn.encoder.decode
-
+    st = conn.style
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
     conn.SendTML('<CLR><CYAN>Username:')
     Done = False
@@ -838,13 +837,13 @@ def SignIn(conn:Connection):
                     _LOG('NEW USER: '+name,v=3)
                     conn.userclass = 1
                     conn.SendTML(f'<BR>Registration complete, welcome!<PAUSE n=1>'
-                                f'<YELLOW><BR>Your user data:<BR><GREEN><HLINE n=14><BR>'
-                                f'<ORANGE>User name: <WHITE>{_dec(name)}<BR>'
-                                f'<ORANGE>Password: <WHITE>{"*"*len(pw)}<BR>'
-                                f'<ORANGE>First name: <WHITE>{_dec(fname)}<BR>'
-                                f'<ORANGE>Last name: <WHITE>{_dec(lname)}<BR>'
-                                f'<ORANGE>Birthdate: <WHITE>{bday.strftime(datestr)}<BR>'
-                                f'<ORANGE>Country: <WHITE>{_dec(country)}<BR><PAUSE n=1>'
+                                f'<INK c={st.WRNTxtColor}><BR>Your user data:<BR><INK c={st.OKTxtColor}><HLINE n=14><BR>'
+                                f'<INK c={st.HlColor}>User name: <INK c={st.TxtColor}>{_dec(name)}<BR>'
+                                f'<INK c={st.HlColor}>Password: <INK c={st.TxtColor}>{"*"*len(pw)}<BR>'
+                                f'<INK c={st.HlColor}>First name: <INK c={st.TxtColor}>{_dec(fname)}<BR>'
+                                f'<INK c={st.HlColor}>Last name: <INK c={st.TxtColor}>{_dec(lname)}<BR>'
+                                f'<INK c={st.HlColor}>Birthdate: <INK c={st.TxtColor}>{bday.strftime(datestr)}<BR>'
+                                f'<INK c={st.HlColor}>Country: <INK c={st.TxtColor}>{_dec(country)}<BR><PAUSE n=1>'
                                 f'<BR><YELLOW>Do you want to edit your data (Y/N)?')
                     if conn.ReceiveKey('yn') == 'y':
                         if not conn.connected:
@@ -1145,6 +1144,7 @@ def UserList(conn:Connection):
     # Select screen output
     conn.SendTML(f'<SETOUTPUT><NUL n=2><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t="User list">')
     users = conn.bbs.database.getUsers()
+    users = sorted(users, key= lambda l:l[0])
     digits = len(str(max(users[:])[0]))
     tml = '<WHITE> ID         Username<BR><BR><LTGREEN>'
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
@@ -1232,9 +1232,9 @@ def BBSLoop(conn:Connection):
         # Sync
         conn.SendTML('<NUL n=2>')
         if conn.bbs.lang == 'es':
-            pt = "intentando detectar terminal,<BR>presione ENTER/RETURN...<BR>"
+            pt = "intentando detectar terminal,<BR>presione BACKSPACE/DELETE...<BR>"
         else:
-            pt = "trying to detect terminal,<BR>press ENTER/RETURN...<BR>"
+            pt = "trying to detect terminal,<BR>press BACKSPACE/DELETE...<BR>"
 
         welcome = f'''<FORMAT>{conn.bbs.WMess.upper()}<BR>
 RETROBBS V{conn.bbs.version:.2f}<BR>
@@ -1245,7 +1245,31 @@ RUNNING UNDER:<BR>
         conn.SendTML(welcome)
         # Connected, wait for the user to press RETURN
         # TODO: Accept any valid RETURN/ENTER character
-        WaitRETURN(conn)
+        backspaces = []
+        for encoder in conn.bbs.encoders:
+            if conn.bbs.encoders[encoder].bs not in backspaces:
+                backspaces.append(conn.bbs.encoders[encoder].bs)
+
+        n = 0
+        backspace = ''
+        while conn.connected:
+           data = conn.NBReceive(1,10)
+           if len(data) == 0:
+               conn.SendTML('\nTIMEOUT - DISCONNECTED\n')
+               conn.connected = False
+               return
+           elif chr(data[0]) in backspaces:
+               backspace = chr(data[0])
+               break
+           n += 1
+           if n < 3:
+               conn.SendTML(pt.upper())
+           else:
+               conn.SendTML('SORRY, UNKNOWN TERMINAL - DISCONNECTED')
+               conn.connected = False
+               return
+
+        # WaitRETURN(conn)
         conn.Flush(0.5) # Flush for 0.5 seconds
 
         # Ask for ID and supported TURBO56K version
@@ -1296,15 +1320,15 @@ RUNNING UNDER:<BR>
                             'FOR THE LATEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
             # time.sleep(1)
             conn.Flush(1)
-            conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')
-            time.sleep(1)
+            # conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')
+            # time.sleep(1)
 
-            datos = conn.NBReceive(1,10)
-            if len(datos) == 0:
-                datos = b'\x00'
+            # datos = conn.NBReceive(1,10)
+            # if len(datos) == 0:
+            #     datos = b'\x00'
             encoders = []
             for encoder in conn.bbs.encoders:       # Get encoders which use the same backspace character
-                if conn.bbs.encoders[encoder].bs == chr(datos[0]) and conn.bbs.encoders[encoder].minT56Kver == 0:
+                if conn.bbs.encoders[encoder].bs == backspace and conn.bbs.encoders[encoder].minT56Kver == 0:
                     encoders.append(conn.bbs.encoders[encoder])
             if encoders != []:
                 conn.SetMode(b'temp-'+next(iter(encoders[0].clients.keys())),0)  # Temporarily set the first valid encoder
@@ -1329,25 +1353,13 @@ RUNNING UNDER:<BR>
             # Get Turbo56K terminal features and send splash screen if possible
             if conn.T56KVer > 0.4:
                 GetTerminalFeatures(conn)
-                # if conn.QueryFeature(129) < 0x80 and conn.QueryFeature(130) < 0x80 and conn.QueryFeature(179) < 0x80:
-                #     _LOG('Sending intro pic',id=conn.id,v=4)
-                #     if conn.mode == 'PET264':
-                #         splash = 'splash.boti'
-                #     elif conn.mode == 'PET64':
-                #         splash = 'splash.art'
-                #     else:
-                #         splash = 'splash.sc2'
-                #     bg = FT.SendBitmap(conn,conn.bbs.Paths['bbsfiles']+splash,lines=12,display=False)
-                #     _LOG('Spliting Screen',id=conn.id,v=4)
-                #     conn.Sendall(TT.split_Screen(12,False,ord(bg),conn.encoder.colors.get('BLACK',0),mode=conn.mode))
-                # time.sleep(1)
             conn.SendTML(conn.templates.GetTemplate('main/splash'),**{})
             time.sleep(1)
             Done = False
-            tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CLR>'
+            tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode">{"<CLR>" if conn.encoder.features["windows"]!= 0 else ""}'
             # Login and intro slideshow
             while True:
-                r = conn.SendTML(f'<INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
+                r = conn.SendTML(f'<BR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
                 if not conn.connected:
                     return()
                 t = r['_A']

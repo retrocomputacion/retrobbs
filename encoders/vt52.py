@@ -313,6 +313,7 @@ class VT52encoder(Encoder):
             _copy.encode = toATRST
             _copy.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
             _copy.ctrlkeys.update({'CRSRU':'\x1bA','CRSRD':'\x1bB','CRSRR':'\x1bC','CRSRL':'\x1bD'})
+            _copy.tml_multi['CHECKMARK']='\xfb'
             if _copy.txt_geo[0] > 40:   #Assume hi/medres
                 conn.SendTML('<BR>(M)edium or (H)i-Res?')
                 if conn.ReceiveKey('mhMH').lower() == 'm':
