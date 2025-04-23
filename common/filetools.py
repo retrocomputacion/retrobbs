@@ -791,18 +791,23 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
 
     # logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
-    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[<BACK>] Abort')
-    k = conn.ReceiveKey('ab'+conn.encoder.decode(conn.encoder.back))
+    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[c] YModem<BR>[<BACK>] Abort')
+    k = conn.ReceiveKey('abc'+conn.encoder.decode(conn.encoder.back))
     if k == 'a':
         psize = 128
+        proto = ProtocolType.XMODEM
     elif k == 'b':
         psize = 1024
+        proto = ProtocolType.XMODEM
+    elif k == 'c':
+        psize = 128
+        proto = ProtocolType.YMODEM
     else:
         return False
     conn.SendTML('<BR>Transferring file...<BR>')
     conn.Sendall(savename)
-
-    tmodem = ModemSocket(xread, xwrite, ProtocolType.XMODEM,packet_size=psize)
+    print(file)
+    tmodem = ModemSocket(xread, xwrite, proto,packet_size=psize)
     result = tmodem.send([file], callback=xcallback)
     conn.SendTML('<BR><PAUSE n=1>')
     return tbytes - okbytes == 0

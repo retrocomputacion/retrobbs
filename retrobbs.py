@@ -637,6 +637,7 @@ def LogOff(conn:Connection, confirmation=True):
                 with open(conn.bbs.Paths['bbsfiles']+'logoff.tml','r') as slide:
                     tml = slide.read()
                     conn.SendTML(tml)
+                    time.sleep(1)
             conn.connected = False	#break
             return True
         else:
@@ -1242,6 +1243,7 @@ RUNNING UNDER:<BR>
 {conn.bbs.OSText.upper()}<BR>
 {pt.upper()}<BR></FORMAT>'''
 
+        conn.Flush(0.5) # Flush for 0.5 seconds
         conn.SendTML(welcome)
         # Connected, wait for the user to press RETURN
         # TODO: Accept any valid RETURN/ENTER character
@@ -1389,7 +1391,7 @@ RUNNING UNDER:<BR>
             if exists(conn.bbs.Paths['bbsfiles']+'newsession.tml'):
                 with open(conn.bbs.Paths['bbsfiles']+'newsession.tml','r') as slide:
                     tml = slide.read()
-                    conn.SendTML(tml)
+                    conn.SendTML(f'<CLR>{tml}')
             # Display the main menu
             conn.menu = 0		# Starting at the main menu
             conn.MenuDefs = GetKeybindings(conn,0)
