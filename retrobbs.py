@@ -756,7 +756,7 @@ def SignIn(conn:Connection):
     _dec = conn.encoder.decode
     st = conn.style
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
-    conn.SendTML('<CLR><CYAN>Username:')
+    conn.SendTML('<CYAN>Username:')
     Done = False
     while not Done:
         name = conn.ReceiveStr(keys, 16, False)
@@ -1361,7 +1361,7 @@ RUNNING UNDER:<BR>
             tml = f'<NUL n=2><SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode">{"<CLR>" if conn.encoder.features["windows"]!= 0 else ""}'
             # Login and intro slideshow
             while True:
-                r = conn.SendTML(f'<BR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs">')
+                r = conn.SendTML(f'<BR><INK c={conn.style.TxtColor}>(L)ogin OR (G)uest?<PAUSE n=1><INKEYS k="lgs"><BR>')
                 if not conn.connected:
                     return()
                 t = r['_A']

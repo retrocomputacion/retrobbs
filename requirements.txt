@@ -8,7 +8,7 @@ mutagen
 numpy
 opencv_python
 geopy
-jinja2
+jinja2>=3.0.0
 # youtube-dl
 # pafy @ git+https://github.com/Cupcakus/pafy
 Pillow>=8.0.0

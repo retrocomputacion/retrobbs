@@ -19,7 +19,10 @@ from common.bbsdebug import _LOG, bcolors
 from crc import Calculator, Configuration
 from ymodem.Socket import ModemSocket
 from ymodem.Protocol import ProtocolType
-import logging
+# import logging
+import zipfile
+import lhafile
+from d64 import DiskImage
 
 ########################################################################
 # Show a file browser, call fhandler on user selection
@@ -49,6 +52,35 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
     curpath = path  # Current path in use
     c_page = 0      # Current page
 
+    if type(path) is not str:
+        curpath = '/'
+        if type(path) == zipfile.ZipFile:
+            filelist = path.infolist()
+        elif type(path) == lhafile.lhafile.LhaFile:
+            filelist = path.infolist()
+            depth = -1
+            dix = ''
+            for i,f in enumerate(filelist):
+                c = f.filename.count('\\')
+                if c > 0:
+                    if c > depth:
+                        depth = c
+                        dix = f.filename
+                filelist[i].directory = False
+                filelist[i].filename = f.filename.replace('\\','/')
+            if dix != '':
+                dirs = dix.split('\\')[:-1]
+                for i in range(1,len(dirs)+1):
+                    linfo = lhafile.LhaInfo()
+                    linfo.filename = '/'.join(dirs[:i])+'/'
+                    linfo.directory = True
+                    filelist.append(linfo)
+        else:
+            # print(type(path))
+            return
+        realpath = False
+    else:
+        realpath = True
 
     _LOG(logtext,id=conn.id, v=4)
 
@@ -58,9 +90,12 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
     if win_s:
         S.RenderMenuTitle(conn,title)
         conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'A/Z','pages':'N/M','keys':[('U','parent')]}))
-        t_path = curpath.replace(path[:-1],'',1)
-        if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
-            t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+        if realpath:
+            t_path = curpath.replace(path[:-1],'',1)
+            if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+        else:
+            tpath = '/'
         conn.SendTML(f'<AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
         conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
 
@@ -71,15 +106,35 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
         directories = [] # subdirectories
 
         #Read all files from 'path'
-        for entry in os.scandir(curpath):
-            if entry.is_file():
-                if len(ffilter) > 0:
-                    if os.path.splitext(entry.name)[1].upper() in ffilter:
-                        programs.append([entry.name,entry.stat().st_size])
+        if type(path) in [zipfile.ZipFile,lhafile.lhafile.LhaFile]:
+            for entry in filelist:
+                # print(entry.filename)
+                if len(curpath) != 1:
+                    tname = entry.filename.replace(curpath[1:],'',1)
+                    if tname == entry.filename:
+                        continue
                 else:
-                    programs.append([entry.name,entry.stat().st_size])
-            elif entry.is_dir():
-                directories.append(entry.name)
+                    tname = entry.filename
+                # print(tname)
+                if type(path) == zipfile.ZipFile:
+                    isdir = entry.is_dir()
+                else:
+                    isdir = entry.directory
+                if isdir:
+                    if tname.count('/') == 1:
+                        directories.append(tname)
+                elif tname.count('/') == 0:
+                        programs.append([tname,entry.file_size])
+        else:
+            for entry in os.scandir(curpath):
+                if entry.is_file():
+                    if len(ffilter) > 0:
+                        if os.path.splitext(entry.name)[1].upper() in ffilter:
+                            programs.append([entry.name,entry.stat().st_size])
+                    else:
+                        programs.append([entry.name,entry.stat().st_size])
+                elif entry.is_dir():
+                    directories.append(entry.name)
 
         programs = sorted(programs, key= lambda l:l[0]) #programs.sort()     #Sort files
         directories.sort()  #Sort subdirectories
@@ -96,7 +151,10 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 if not win_s:
                     S.RenderMenuTitle(conn,title)
                     conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'A/Z','pages':'N/M','keys':[('U','parent')]}))
-                    t_path = curpath.replace(path[:-1],'',1)
+                    if realpath:
+                        t_path = curpath.replace(path[:-1],'',1)
+                    else:
+                        t_path = curpath
                     if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
                         t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
                     conn.SendTML(f'<AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
@@ -143,6 +201,8 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
             key = conn.ReceiveKey(['a','z','u','m','n',conn.encoder.back,conn.encoder.nl])
             if key == conn.encoder.back:
                 conn.SendTML('<CURSOR><WINDOW>')
+                if type(path) == zipfile.ZipFile:
+                    path.close()
                 return
             elif key == 'a':
                 if row > 0:
@@ -180,30 +240,70 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 else:
                     c_page = pages-1
                 display = True
-            elif key == 'u' and len(curpath) > len(path):   # Parent dir
-                curpath = '/'.join(curpath.split('/')[:-2])+'/'
-                c_page = 0
-                if win_s:
-                    t_path = curpath.replace(path[:-1],'',1)
-                    if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
-                        t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
-                    conn.SendTML(f'<CLR><WINDOW><AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
-                    conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
-                break
+            elif key == 'u':   # Parent dir
+                if realpath:
+                    if len(curpath) > len(path):
+                        curpath = '/'.join(curpath.split('/')[:-2])+'/'
+                        c_page = 0
+                        if win_s:
+                            if realpath:
+                                t_path = curpath.replace(path[:-1],'',1)
+                            else:
+                                t_path = curpath
+                            if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                                t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+                            conn.SendTML(f'<CLR><WINDOW><AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+                            conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
+                        break
+                else:
+                    if len(curpath) > 1:
+                        curpath = '/'.join(curpath.split('/')[:-2])+'/'
+                        c_page = 0
+                        if win_s:
+                            if realpath:
+                                t_path = curpath.replace(path[:-1],'',1)
+                            else:
+                                t_path = curpath
+                            if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
+                                t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
+                            conn.SendTML(f'<CLR><WINDOW><AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
+                            conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
+                        break
+                    else:   # We can exit the image/archive
+                        conn.SendTML('<CURSOR><WINDOW>')
+                        if type(path) == zipfile.ZipFile:
+                            path.close()
+                        return
             elif key == conn.encoder.nl:
                 if not page_entries[row][1]:
                     conn.SendTML('<WINDOW>')
+                    filename = curpath+page_entries[row][0]
+                    if not realpath:   # Extract file to temp folder
+                        filename = conn.bbs.Paths['temp']+page_entries[row][0]
+                        arcname = (curpath+page_entries[row][0])[1:]
+                        print(arcname)
+                        if type(path) == lhafile.lhafile.LhaFile:
+                            # filename = filename.replace('/','\\')
+                            arcname = arcname.replace('/','\\')
+                            data = path.read(arcname)
+                            with open(filename,'wb') as tf:
+                                tf.write(data)
+                        else:
+                            path.extract(arcname,conn.bbs.Paths['temp'])
                     if fhandler == SendFile:
-                        parameters = (conn,curpath+page_entries[row][0],True,transfer,)
+                        parameters = (conn,filename,True,transfer,)
                     else:
-                        parameters = (conn,curpath+page_entries[row][0],True,transfer,)
+                        parameters = (conn,filename,True,transfer,)
                     fhandler(*parameters)
                     if keywait:
                         conn.ReceiveKey
                     conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
                     if win_s:
                         S.RenderMenuTitle(conn,title)
-                        t_path = curpath.replace(path[:-1],'',1)
+                        if realpath:
+                            t_path = curpath.replace(path[:-1],'',1)
+                        else:
+                            t_path = curpath
                         if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
                             t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
                         conn.SendTML(f'<AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
@@ -211,10 +311,13 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                         conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
                     display = True
                 else:   # Change dir
-                    curpath = curpath + page_entries[row][0] + '/'
+                    curpath = curpath + page_entries[row][0] + ('/' if realpath else '')
                     c_page = 0
                     if win_s:
-                        t_path = curpath.replace(path[:-1],'',1)
+                        if realpath:
+                            t_path = curpath.replace(path[:-1],'',1)
+                        else:
+                            t_path = curpath
                         if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
                             t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
                         conn.SendTML(f'<CLR><WINDOW><AT x=0 y=3><SPC n=39><AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
@@ -599,25 +702,35 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
             with open(filename,'r') as slide:
                 tml = slide.read()
                 conn.SendTML(tml)
-        #Default -> download to disk
-        elif save:
-            if dialog:
-                res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Download file to disk', prompt='save to disk', save = False)
-            else:
-                res = 1
-            if res == 1:
-                if len(os.path.basename(filename)) > 16:
-                    fn = os.path.splitext(os.path.basename(filename))
-                    savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
+        # Default -> check if compressed archive -> download to disk
+        else:
+            arc = HandleArchives(conn,filename)
+            if save:
+                if dialog:
+                    if arc == None:
+                        res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'Download file to disk', prompt='save to disk', save = False)
+                    else:
+                        res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), arc[1], prompt='open', save = save)
+                        if res == 1:
+                            FileList(conn, os.path.basename(filename), 'Browsing Image/Archive', arc[0], None, SendFile, True, True)
+                            res = 0
+                        elif res == 2:
+                            res = 1
                 else:
-                    savename = os.path.basename(filename).upper()
-                savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-                if TransferFile(conn,filename,savename[:16]):
-                    conn.SendTML(fok)
-                else:
-                    conn.SendTML(fabort)
-                conn.SendTML('<KPROMPT t=RETURN>')
-                conn.ReceiveKey()
+                    res = 1
+                if res == 1:
+                    if len(os.path.basename(filename)) > 16:
+                        fn = os.path.splitext(os.path.basename(filename))
+                        savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
+                    else:
+                        savename = os.path.basename(filename).upper()
+                    savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                    if TransferFile(conn,filename,savename[:16]):
+                        conn.SendTML(fok)
+                    else:
+                        conn.SendTML(fabort)
+                    conn.SendTML('<KPROMPT t=RETURN>')
+                    conn.ReceiveKey()
 
 #################################################################################
 # Sends program file into the client memory at the correct address in turbo mode
@@ -806,7 +919,7 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
         return False
     conn.SendTML('<BR>Transferring file...<BR>')
     conn.Sendall(savename)
-    print(file)
+    # print(file,os.path.isfile(file))
     tmodem = ModemSocket(xread, xwrite, proto,packet_size=psize)
     result = tmodem.send([file], callback=xcallback)
     conn.SendTML('<BR><PAUSE n=1>')
@@ -964,6 +1077,31 @@ def SendPETPetscii(conn:Connection,filename):
     else:
         conn.SendTML('<LOWER>')
     return 0
+
+###################################################
+# Handle compressed archives and disk/tape images
+###################################################
+def HandleArchives(conn, filename):
+    # Check if it is a ZIP compressed file
+    if zipfile.is_zipfile(filename):
+        try:
+            return((zipfile.ZipFile(filename,'r'),'ZIP Archive'))
+        except:
+            return None
+    # Check if it is a ZIP compressed file
+    if lhafile.is_lhafile(filename):
+        try:
+            return((lhafile.Lhafile(filename,'r'),'LHA Archive'))
+        except:
+            return None
+    ext = os.path.splitext(filename)[1].upper()
+    if ext in ['.D64','.D71','.D81']:
+        try:
+            return((DiskImage(filename,'r'),'Commodore Disk Image'))
+        except:
+            return None
+    return None
+    ...
 
 ###########
 # TML tags
