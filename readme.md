@@ -174,12 +174,13 @@ __New features__:
     - Other Commodore 64 CG terminals
     - VicTerm (VIC-20 color PETSCII terminal)
     - MSX RS232 ROM built in terminal (CALL COMTERM)
-    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal)
+    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
     - ANSI
  - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
  - Added non-blocking receive function to the _connection_ class
  - Added templating system, based on Jinja2 templates
  - New FileList() file browser, old version now called Gallery()
+ - Browse and transfer the contents of ZIP and LHA archives
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming

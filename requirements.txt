@@ -4,6 +4,7 @@ hitherdither @ git+https://www.github.com/hbldh/hitherdither
 irc
 jaraco.util
 audioread
+d64
 mutagen
 numpy
 opencv_python
