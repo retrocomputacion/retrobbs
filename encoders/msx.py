@@ -309,6 +309,40 @@ class MSXencoder(Encoder):
                 return True            # Correct ID
         return False
 
+    # Sanitize a given filename for compatibility with the client's filesystem
+    # Input and output strings are not encoded
+    # outout 8.3 filename
+    def sanitize_filename(self, filename):
+        def find_ext():
+            nonlocal tmp,ext
+            tl = len(tmp)-1
+            for i in range(tl):
+                tp = tmp.pop()
+                if len(tp.replace(' ','')) > 0:
+                    t_ext = tp.split(' ')
+                    for j in range(len(t_ext)+1):
+                        if len(t_ext[-j]) > 0:
+                            ext = t_ext[-j][:3]
+                            break
+                    break
+
+        filename = (unicodedata.normalize('NFKD',filename).encode('ascii','replace')).decode('ascii')
+        filename = filename.translate({ord(i): '_' for i in ':*?"$,+;<=>/\\[]|'})
+        tmp = filename.split('.')
+        ext = ''
+        if len(tmp) > 1:
+            find_ext()
+        else:
+            tmp = tmp[0].split(' ')
+            if len(tmp) > 1:
+                find_ext()
+        filename = '_'.join(tmp).replace(' ','_')[:8]
+        if ext != '':
+            filename += '.'+ext
+        print(filename)
+        return filename
+
+
     def get_exec(self, filename):
         size = os.stat(filename).st_size
         la = 0

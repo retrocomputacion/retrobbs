@@ -308,6 +308,14 @@ class PETencoder(Encoder):
                 bin = f.read(-1)
         return (la,bin)
 
+    # Sanitize a given filename for compatibility with the client's filesystem
+    # Input and output strings are not encoded
+    def sanitize_filename(self, filename):
+        filename = filename[:16]
+        filename = (unicodedata.normalize('NFKD',filename).encode('ascii','replace')).decode('ascii')
+        filename = re.sub(':*?#"$','-',filename)
+        return filename
+
     # Given a color control code, returns it's index in the color palette
     # or -1 if not found
     def color_index(self, code):
@@ -395,6 +403,8 @@ def toPETSCII(text:str,full=True):
 # Convert PETSCII to ASCII/Unicode
 ###################################
 def toASCII(text):
+    text = ''.join(c if ord(c) < 160 or ord(c) >= 192 else chr(ord(c)-64) for c in text)  # transpose 160-191 for now
+    text = ''.join(c if c not in NONPRINTABLE else '' for c in text)
     text = ''.join(chr(ord(c)-96) if ord(c)>192 else c for c in text)
     text = ''.join(c.lower() if c.isupper() else c.upper() for c in text)
     text = text.replace('_','\u2190')   # Left Arrow

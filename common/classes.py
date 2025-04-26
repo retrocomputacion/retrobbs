@@ -129,6 +129,11 @@ class Encoder:
     def get_exec(self, filename):
         return (0,None)
     
+    # Sanitize a given filename for compatibility with the client's filesystem
+    # Input and output strings are not encoded
+    def sanitize_filename(self, filename):
+        return filename
+
     # Wordwrap to the encoder/connection screen width
     # preserving control codes
     # text input must be already encoded

@@ -51,6 +51,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
 
     curpath = path  # Current path in use
     c_page = 0      # Current page
+    backslash = False   # LHA file uses backslashes?
 
     if type(path) is not str:
         curpath = '/'
@@ -58,23 +59,32 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
             filelist = path.infolist()
         elif type(path) == lhafile.lhafile.LhaFile:
             filelist = path.infolist()
-            depth = -1
-            dix = ''
+            dirs = []
             for i,f in enumerate(filelist):
-                c = f.filename.count('\\')
-                if c > 0:
-                    if c > depth:
-                        depth = c
-                        dix = f.filename
+                if not backslash and f.filename.count('\\'):
+                    backslash = True
                 filelist[i].directory = False
                 filelist[i].filename = f.filename.replace('\\','/')
-            if dix != '':
-                dirs = dix.split('\\')[:-1]
-                for i in range(1,len(dirs)+1):
-                    linfo = lhafile.LhaInfo()
-                    linfo.filename = '/'.join(dirs[:i])+'/'
-                    linfo.directory = True
-                    filelist.append(linfo)
+                c = f.filename.count('/')
+                if c > 0:
+                    # Build directory tree
+                    parts = f.filename.split('/')[:-1] # split in the different path parts, remove filename
+                    for j in range(1,len(parts)+1):
+                        dname = '/'.join(parts[:j])+'/'
+                        if dname not in dirs:
+                            dirs.append(dname)
+            # Add directories to the filelist
+            for i in dirs:
+                linfo = lhafile.LhaInfo()
+                linfo.filename = i
+                linfo.directory = True
+                filelist.append(linfo)
+        elif type(path) == DiskImage:
+            filelist = []
+            with path as image:
+                for fp in image.iterdir():
+                    if fp.entry.file_type in ['PRG','SEQ','CBM'] and fp.size_blocks != 0:
+                        filelist.append((conn.bbs.encoders['PET64'].decode(fp.entry.name.replace(b'\x7f',b'-').decode('latin1')),fp.entry.file_type,fp.entry.file_type=='CBM',fp.size_bytes,fp.entry.name))    # Name, file type, is_dir, size, original name
         else:
             # print(type(path))
             return
@@ -95,7 +105,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
             if len(t_path) > (scwidth-len(conn.encoder.ellipsis)-8):
                 t_path = conn.encoder.ellipsis+t_path[-scwidth-len(conn.encoder.ellipsis)-8:]
         else:
-            tpath = '/'
+            t_path = '/'
         conn.SendTML(f'<AT x=0 y=3><RVSON><INK c={st.RvsColor}> Path: {t_path}<RVSOFF>')
         conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}>')
 
@@ -108,14 +118,12 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
         #Read all files from 'path'
         if type(path) in [zipfile.ZipFile,lhafile.lhafile.LhaFile]:
             for entry in filelist:
-                # print(entry.filename)
                 if len(curpath) != 1:
                     tname = entry.filename.replace(curpath[1:],'',1)
                     if tname == entry.filename:
                         continue
                 else:
                     tname = entry.filename
-                # print(tname)
                 if type(path) == zipfile.ZipFile:
                     isdir = entry.is_dir()
                 else:
@@ -124,15 +132,21 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                     if tname.count('/') == 1:
                         directories.append(tname)
                 elif tname.count('/') == 0:
-                        programs.append([tname,entry.file_size])
+                        programs.append([tname,entry.file_size,b''])
+        elif type(path) == DiskImage:
+            for entry in filelist:
+                if entry[2]:
+                    directories.append(entry[0])
+                else:
+                    programs.append([f'{entry[0]:<16} {entry[1]}',entry[3],entry[4]])
         else:
             for entry in os.scandir(curpath):
                 if entry.is_file():
                     if len(ffilter) > 0:
                         if os.path.splitext(entry.name)[1].upper() in ffilter:
-                            programs.append([entry.name,entry.stat().st_size])
+                            programs.append([entry.name,entry.stat().st_size,b''])
                     else:
-                        programs.append([entry.name,entry.stat().st_size])
+                        programs.append([entry.name,entry.stat().st_size,b''])
                 elif entry.is_dir():
                     directories.append(entry.name)
 
@@ -187,7 +201,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                         else:
                             label = programs[ix][0]
                         e_color = f'<INK c={st.TxtColor}>'
-                        page_entries.append([programs[ix][0],False])
+                        page_entries.append([programs[ix][0],False,programs[ix][2]])
                         # label += ' ' + format_bytes(programs[ix][1])
                     conn.SendTML(f'{e_color} {label}')
                     if not page_entries[-1][1]:
@@ -199,12 +213,12 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 display = False
             conn.SendTML(f'<AT x=0 y={row+r_offset}>&gt;<CRSRL>')
             key = conn.ReceiveKey(['a','z','u','m','n',conn.encoder.back,conn.encoder.nl])
-            if key == conn.encoder.back:
+            if key == conn.encoder.back:    # EXIT
                 conn.SendTML('<CURSOR><WINDOW>')
                 if type(path) == zipfile.ZipFile:
                     path.close()
                 return
-            elif key == 'a':
+            elif key == 'a':    # Up
                 if row > 0:
                     conn.SendTML(' ')
                     row -= 1
@@ -215,7 +229,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                     else:
                         c_page = pages-1
                     display = True
-            elif key == 'z':
+            elif key == 'z':    # Down
                 if row < len(page_entries)-1:
                     conn.SendTML(' ')
                     row += 1
@@ -226,14 +240,14 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                     else:
                         c_page = 0
                     display = True
-            elif key == 'm' and pages > 1:
+            elif key == 'm' and pages > 1:  # Next page
                 row = 0
                 if c_page != pages-1:
                     c_page +=1
                 else:
                     c_page = 0
                 display = True
-            elif key == 'n' and pages > 1:
+            elif key == 'n' and pages > 1:  # Prev page
                 row = 0
                 if c_page > 0:
                     c_page -= 1
@@ -274,20 +288,25 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                         if type(path) == zipfile.ZipFile:
                             path.close()
                         return
-            elif key == conn.encoder.nl:
+            elif key == conn.encoder.nl:    # Select
                 if not page_entries[row][1]:
                     conn.SendTML('<WINDOW>')
                     filename = curpath+page_entries[row][0]
                     if not realpath:   # Extract file to temp folder
-                        filename = conn.bbs.Paths['temp']+page_entries[row][0]
+                        filename = conn.bbs.Paths['temp']+conn.encoder.sanitize_filename(page_entries[row][0]).translate({ord(i): '-' for i in '/\\'})
                         arcname = (curpath+page_entries[row][0])[1:]
-                        print(arcname)
                         if type(path) == lhafile.lhafile.LhaFile:
                             # filename = filename.replace('/','\\')
-                            arcname = arcname.replace('/','\\')
+                            if backslash:
+                                arcname = arcname.replace('/','\\')
                             data = path.read(arcname)
                             with open(filename,'wb') as tf:
                                 tf.write(data)
+                        elif type(path) == DiskImage:
+                            with path as image:
+                                with image.path(page_entries[row][2]).open() as in_f:
+                                    with open(filename,'wb') as tf:
+                                        tf.write(in_f.read())
                         else:
                             path.extract(arcname,conn.bbs.Paths['temp'])
                     if fhandler == SendFile:
@@ -579,7 +598,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     else:
         savename = os.path.splitext(os.path.basename(filename))[0]
         if cmode in ['PET64','PET264']:
-            savename = savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+            savename = conn.encoder.sanitize_filename(savename) # savename.upper().translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
         binaryout, savename = build_File(data,gcolors,savename, gfxmode)
         if conn.T56KVer > 0:
             if TransferFile(conn, binaryout, savename):
@@ -627,7 +646,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 SendProgram(conn,filename)
             elif res == 2:
                 savename = os.path.splitext(os.path.basename(filename))[0].upper()
-                savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                savename = conn.encoder.sanitize_filename(savename) # savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
                 if TransferFile(conn,filename, savename[:16]):
                     conn.SendTML(fok)
                 else:
@@ -652,7 +671,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 SendProgram(conn,filename)
             elif res == 2:
                 savename = os.path.splitext(os.path.basename(filename))[0].upper()
-                savename = savename.translate({ord(i): None for i in '"*+,/:;<=>?\[]|'})	#Remove MSX-DOS reserved characters
+                savename = conn.encoder.sanitize_filename(savename) #savename.translate({ord(i): None for i in '"*+,/:;<=>?\[]|'})	#Remove MSX-DOS reserved characters
                 if TransferFile(conn,filename, savename[:16]):
                     conn.SendTML(fok)
                 else:
@@ -678,8 +697,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                         savename = os.path.basename(filename).upper()
                 else:
                     savename = os.path.splitext(os.path.basename(filename))[0].upper()
-                savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-                if TransferFile(conn,filename, savename[:16],True):
+                savename = conn.encoder.sanitize_filename(savename) #savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                if TransferFile(conn,filename, savename,True):
                     conn.SendTML(fok)
                 else:
                     conn.SendTML(fabort)
@@ -690,10 +709,10 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
         elif ext in ['.JPG','.GIF','.PNG']+im_extensions:    #,'.OCP','.KOA','.KLA','.ART','.DD','.DDL']:
             if type(SendBitmap(conn,filename,dialog,save)) != bool:
                 conn.SendTML('<INKEYS><NUL><CURSOR>')
-        elif ext == '.C':
-            ...
-        elif ext == '.PET':
-            ...
+        # elif ext == '.C':
+        #     ...
+        # elif ext == '.PET':
+        #     ...
         # Audio
         elif ext in ['.MP3','.WAV'] and not save:
             AA.PlayAudio(conn,filename,None,dialog)
@@ -724,8 +743,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                         savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
                     else:
                         savename = os.path.basename(filename).upper()
-                    savename = savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
-                    if TransferFile(conn,filename,savename[:16]):
+                    savename = conn.encoder.sanitize_filename(savename) #savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                    if TransferFile(conn,filename,savename):
                         conn.SendTML(fok)
                     else:
                         conn.SendTML(fabort)
@@ -1097,7 +1116,11 @@ def HandleArchives(conn, filename):
     ext = os.path.splitext(filename)[1].upper()
     if ext in ['.D64','.D71','.D81']:
         try:
-            return((DiskImage(filename,'r'),'Commodore Disk Image'))
+            DImg = DiskImage(filename,'r')
+            if DImg.is_valid_image(DImg.filepath):
+                return((DiskImage(filename,'r'),'Commodore Disk Image'))
+            else:
+                return
         except:
             return None
     return None
