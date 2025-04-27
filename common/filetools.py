@@ -7,6 +7,7 @@ import os
 import time
 import socket
 import errno
+from html import escape
 from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
@@ -23,6 +24,7 @@ from ymodem.Protocol import ProtocolType
 import zipfile
 import lhafile
 from d64 import DiskImage
+import common.fat12img as fat12
 
 ########################################################################
 # Show a file browser, call fhandler on user selection
@@ -85,6 +87,11 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 for fp in image.iterdir():
                     if fp.entry.file_type in ['PRG','SEQ','CBM'] and fp.size_blocks != 0:
                         filelist.append((conn.bbs.encoders['PET64'].decode(fp.entry.name.replace(b'\x7f',b'-').decode('latin1')),fp.entry.file_type,fp.entry.file_type=='CBM',fp.size_bytes,fp.entry.name))    # Name, file type, is_dir, size, original name
+        elif type(path) == fat12.FAT12Image:
+            filelist = []
+            for fi in path.file_info:
+                if fi.name[0] != 'σ' and not (fi.is_hidden() or fi.is_volume()):   # Filter deleted files, volumes, and hidden files
+                    filelist.append([fi.name,fi.is_dir(),fi.size])
         else:
             # print(type(path))
             return
@@ -138,7 +145,13 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 if entry[2]:
                     directories.append(entry[0])
                 else:
-                    programs.append([f'{entry[0]:<16} {entry[1]}',entry[3],entry[4]])
+                    programs.append([f'{entry[0]}.{entry[1]}',entry[3],entry[4]])
+        elif type(path) == fat12.FAT12Image:
+            for entry in filelist:
+                if entry[1]:
+                    directories.append(entry[0])
+                else:
+                    programs.append([entry[0],entry[2],b''])
         else:
             for entry in os.scandir(curpath):
                 if entry.is_file():
@@ -188,26 +201,27 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                     ix = x - (len(directories) if subdirs else 0)
                     if x < len(directories) and subdirs:
                         if len(directories[x]) > e_width+6:
-                            label = H.crop(directories[x], e_width+6, conn.encoder.ellipsis)+'<BR>'
+                            label = H.crop(directories[x], e_width+6, conn.encoder.ellipsis)
                         else:
-                            label = directories[x]+'<BR>'
+                            label = directories[x]
                         e_color = f'<INK c={st.TevenColor}>'
                         page_entries.append([directories[x],True])
                     else:
                         if len(programs[ix][0]) > e_width:
                             fn = os.path.splitext(programs[ix][0])
-                            label = H.crop(fn[0],e_width-len(fn[1])+1, conn.encoder.ellipsis)+fn[1]
+                            label = H.crop(fn[0],e_width-len(fn[1]), conn.encoder.ellipsis)+fn[1]
                             # label = fn[0][:e_width-len(fn[1])]+fn[1]
                         else:
                             label = programs[ix][0]
                         e_color = f'<INK c={st.TxtColor}>'
                         page_entries.append([programs[ix][0],False,programs[ix][2]])
                         # label += ' ' + format_bytes(programs[ix][1])
-                    conn.SendTML(f'{e_color} {label}')
+                    conn.SendTML(f'{e_color} {escape(label)}')
                     if not page_entries[-1][1]:
                         size = H.format_bytes(programs[ix][1])
                         conn.SendTML(f'<INK c={st.TevenColor}><CRSRR n={(e_width-len(label))+(7-len(size))}>{size}')
-                    
+                    else:
+                        conn.SendTML('<BR>')
                 conn.SendTML(f'<WINDOW><AT x=0 y={scheight-1}><WHITE> [{c_page+1}/{pages}] <CURSOR enable=False>')
                 conn.SendTML(f'<WINDOW top=4 bottom={scheight-3}><YELLOW>')
                 display = False
@@ -307,6 +321,11 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                                 with image.path(page_entries[row][2]).open() as in_f:
                                     with open(filename,'wb') as tf:
                                         tf.write(in_f.read())
+                        elif type(path) == fat12.FAT12Image:
+                            in_f = path.read(arcname)
+                            if len(in_f) > 0:
+                                with open(filename,'wb') as tf:
+                                    tf.write(in_f)
                         else:
                             path.extract(arcname,conn.bbs.Paths['temp'])
                     if fhandler == SendFile:
@@ -1012,7 +1031,7 @@ def SendText(conn:Connection, filename, title='', lines=25):
 
     if filename.endswith(('.txt','.TXT')):
         #Convert format text to the client's screen width and display with More
-        with open(filename,"r") as tf:
+        with open(filename,"r",encoding='cp437') as tf:
             ot = tf.read()
         text = H.formatX(ot,conn.encoder.txt_geo[0])
     elif filename.endswith(('.seq','.SEQ')):
@@ -1118,9 +1137,18 @@ def HandleArchives(conn, filename):
         try:
             DImg = DiskImage(filename,'r')
             if DImg.is_valid_image(DImg.filepath):
-                return((DiskImage(filename,'r'),'Commodore Disk Image'))
+                return((DImg,'Commodore Disk Image'))
             else:
-                return
+                return None
+        except:
+            return None
+    if ext in ['.DSK','.IMG']:
+        try:
+            DImg = fat12.FAT12Image(filename)
+            if len(DImg.directory) > 0:
+                return((DImg,'FAT12 Disk Image'))
+            else:
+                return None
         except:
             return None
     return None
