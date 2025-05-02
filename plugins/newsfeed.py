@@ -60,7 +60,9 @@ def plugFunction(conn:Connection,url):
         title = H.formatX(nfeed.feed.get('title','No title'),scwidth)
         for t in title:
             conn.SendTML(t)
-        conn.SendTML('<BR>')
+            if len(t)<scwidth:
+                conn.SendTML('<BR>')
+        # conn.SendTML('<BR>')
         lines +=len(title)
         i = 1
         for e in nfeed.entries:

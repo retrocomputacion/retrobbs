@@ -229,7 +229,6 @@ class ASCIIencoder(Encoder):
         filename = '_'.join(tmp).replace(' ','_')[:8]
         if ext != '':
             filename += '.'+ext
-        print(filename)
         return filename
 
 
@@ -258,12 +257,23 @@ class ASCIIencoder(Encoder):
             conn.SendTML('...<BR>')
             conn.Sendallbin(b'\x1b[999;999H')    # Move cursor to the extreme lower right
             conn.Sendallbin(b'\x1b[6n')          # Device status report
-            cursor = conn.NBReceive(10,3.5).decode('latin1')
+            cursor = conn.NBReceive(10,2.5).decode('latin1')
             if cursor != '':
                 if cursor[0:2] == '\x1b[' and cursor[-1] == 'R' and ';' in cursor:
+                    l = len(cursor)
                     cursor = cursor.split(';')
                     _copy.txt_geo= (int(cursor[1][:-1]),int(cursor[0][2:]))
                     conn.SendTML(f'<BR><FORMAT>Detected screen: {cursor[1][:-1]}x{cursor[0][2:]}</FORMAT><BR><PAUSE n=1>')
+                    # Try to detect support for margin setting
+                    # SyncTerm supports this, but cannot be detected by moving the cursor outside the scroll margins
+                    conn.Sendall(f'\x1b[1;5r\x1b[H\x1b[10B\x1b[6n')
+                    cursor = conn.NBReceive(l,2.5).decode('latin1')
+                    cursor = cursor.split(';')
+                    if int(cursor[0][2:]) == 5:
+                        # Margins supported
+                        conn.Sendall(f'\x1b[1;{int(_copy.txt_geo[1])}r')    # Reset margins
+                        #TODO: Add window area support
+
             else:
                 conn.SendTML('<BR>Screen columns? (80): ')
                 cols = conn.ReceiveInt(32,80,80)

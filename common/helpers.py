@@ -119,7 +119,7 @@ def More(conn:Connection, text, lines, colors=None):
             l+=1
             if l==(lines-1):
                 k= conn.SendTML(f'''<INK c={colors.PbColor}>[<INK c={colors.PtColor}>RETURN or <BACK><INK c={colors.PbColor}>]
-<INKEYS k="&#13;_" _R=_S><IF c="_S=='&#13;'"><DEL n=13><INK c={tcolor}></IF>''')
+<INKEYS k="&#13;&backsim;" _R=_S><IF c="_S=='&#13;'"><DEL n=13><INK c={tcolor}></IF>''')
                 if conn.connected == False:
                     return(-1)
                 if k['_S'] == conn.encoder.decode(conn.encoder.back):
@@ -181,8 +181,8 @@ def More(conn:Connection, text, lines, colors=None):
                 if cc !=0:
                     conn.SendTML('<BR>')
                 conn.SendTML(KeyPrompt(conn,prompt+' OR <BACK>',TML=True))
-                k = conn.ReceiveKey(bytes([ord(conn.encoder.back),ord(conn.encoder.nl)]))
-                if (conn.connected == False) or (k[0] == ord(conn.encoder.back)):
+                k = conn.ReceiveKey([conn.encoder.back,conn.encoder.nl])
+                if (conn.connected == False) or (k == conn.encoder.back):
                     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
                     return -1
                 conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}>') #<AT x={cc} y={(22-lines)+ll-(lines*page)}>')

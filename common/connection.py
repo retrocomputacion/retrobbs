@@ -62,6 +62,7 @@ class Connection:
         self.templates = template(self,self.bbs.Template)
         self.parser = TMLParser(self)				#TML parser
         self.p_running = False
+        self.user_prefs = {'datef':bbs.dateformat}
 
         _LOG('Incoming connection from', addr,id=id,v=3)
     

@@ -782,6 +782,7 @@ def SignIn(conn:Connection):
                         conn.username = _dec(name)
                         conn.userid = uentry.doc_id
                         conn.userclass = uentry['uclass']
+                        conn.prefs.update(uentry.get('preferences',{}))
                         Done = True
                     else:
                         retries -= 1

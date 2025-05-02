@@ -307,7 +307,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                     conn.SendTML('<WINDOW>')
                     filename = curpath+page_entries[row][0]
                     if not realpath:   # Extract file to temp folder
-                        filename = conn.bbs.Paths['temp']+conn.encoder.sanitize_filename(page_entries[row][0]).translate({ord(i): '-' for i in '/\\'})
+                        filename = conn.bbs.Paths['temp']+page_entries[row][0].translate({ord(i): '-' for i in '/\\'})
                         arcname = (curpath+page_entries[row][0])[1:]
                         if type(path) == lhafile.lhafile.LhaFile:
                             # filename = filename.replace('/','\\')
@@ -328,6 +328,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                                     tf.write(in_f)
                         else:
                             path.extract(arcname,conn.bbs.Paths['temp'])
+                            filename = conn.bbs.Paths['temp']+arcname
                     if fhandler == SendFile:
                         parameters = (conn,filename,True,transfer,)
                     else:
@@ -957,7 +958,6 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
         return False
     conn.SendTML('<BR>Transferring file...<BR>')
     conn.Sendall(savename)
-    # print(file,os.path.isfile(file))
     tmodem = ModemSocket(xread, xwrite, proto,packet_size=psize)
     result = tmodem.send([file], callback=xcallback)
     conn.SendTML('<BR><PAUSE n=1>')

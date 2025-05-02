@@ -26,3 +26,4 @@ pyradios
 validators
 yt_dlp
 ymodem
+xmltodict
