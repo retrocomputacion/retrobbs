@@ -103,9 +103,9 @@ def plugFunction(conn:Connection):
                 onelines.append([nick,line])
                 if len(onelines) > 9:
                     onelines.pop(0) #If there's more than 9 onelines, remove the oldest.
-                olf = open('plugins/oneliners.json','w')        
-                json.dump(onelines,olf)
-                olf.close()
+                with open('plugins/oneliners.json','w') as olf:
+                    json.dump(onelines,olf,indent=4)
+                    olf.flush()
                 refr = True
     conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
 
