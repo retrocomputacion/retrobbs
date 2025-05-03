@@ -1,5 +1,6 @@
 import json
 import string
+import os
 from math import ceil
 
 from common import style as S
@@ -106,6 +107,7 @@ def plugFunction(conn:Connection):
                 with open('plugins/oneliners.json','w') as olf:
                     json.dump(onelines,olf,indent=4)
                     olf.flush()
+                    os.fsync(olf.fileno())
                 refr = True
     conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
 
