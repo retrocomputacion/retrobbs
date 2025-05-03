@@ -262,7 +262,6 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
     bullcolor = f'<PAPER c={conn.encoder.colors["GREEN"]}><BLACK>' if 'MSX' in conn.mode else '<GREEN>'
     cowcolor =  f'<PAPER c={conn.encoder.colors["YELLOW"]}><BLACK>' if 'MSX' in conn.mode else '<YELLOW>' if conn.mode != 'ATRSTM' else '<BLACK>'
     wincolor = '<GREEN>' if conn.mode in ('VT52','VidTex','ATRSTM') else '<WHITE>'
-    back = conn.encoder.decode(conn.encoder.back)
     null = '' if conn.T56KVer == 0 else '<NULL>'
 
     t = 0   # Attempt number
@@ -277,11 +276,11 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
         t_bad   = []
         conn.SendTML(f'<AT x={column} y={line}>{"<GREY3>" if "PET" in conn.mode else "<PURPLE>"}')
         while conn.connected:   # Receive guess word
-            keys = conn.encoder.bs + conn.encoder.nl + back
+            keys = [conn.encoder.bs, conn.encoder.nl, conn.encoder.back]
             if len(guess) < wlen:
-                keys += string.ascii_letters
+                keys.extend(list(string.ascii_letters))
             rec = conn.ReceiveKey(keys)
-            if rec == back: # Quit game
+            if rec == conn.encoder.back: # Quit game
                 return -1*(t+1)
             if (len(guess) == wlen) and (rec == conn.encoder.nl):   # A word has been received and return/enter pressed
                 break
