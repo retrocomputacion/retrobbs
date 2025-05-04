@@ -266,13 +266,14 @@ class ASCIIencoder(Encoder):
                     conn.SendTML(f'<BR><FORMAT>Detected screen: {cursor[1][:-1]}x{cursor[0][2:]}</FORMAT><BR><PAUSE n=1>')
                     # Try to detect support for margin setting
                     # SyncTerm supports this, but cannot be detected by moving the cursor outside the scroll margins
-                    conn.Sendall(f'\x1b[1;5r\x1b[H\x1b[10B\x1b[6n')
-                    cursor = conn.NBReceive(l,2.5).decode('latin1')
-                    cursor = cursor.split(';')
-                    if int(cursor[0][2:]) == 5:
-                        # Margins supported
-                        conn.Sendall(f'\x1b[1;{int(_copy.txt_geo[1])}r')    # Reset margins
-                        #TODO: Add window area support
+                    # conn.Sendall(f'\x1b[1;5r\x1b[H\x1b[10B\x1b[6n')
+                    # cursor = conn.NBReceive(l,2.5).decode('latin1')
+                    # cursor = cursor.split(';')
+                    # if int(cursor[0][2:]) == 5:
+                    #     # Margins supported
+                    #     conn.Sendall(f'\x1b[1;{int(_copy.txt_geo[1])}r')    # Reset margins
+                    ## NComm (Amiga) doesnt seem to correcly reset the margins
+                    #     #TODO: Add window area support
 
             else:
                 conn.SendTML('<BR>Screen columns? (80): ')

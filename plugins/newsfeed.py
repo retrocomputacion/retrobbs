@@ -48,11 +48,6 @@ def plugFunction(conn:Connection,url):
     # Text mode
     conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER><CRSRL>')
     nfeed = feedparser.parse(url)
-    # if conn.mode in ['VidTex','VT52']:
-    #     kdeco = ('[',']')
-    # else:
-    #     kdeco = ('<L-NARROW>','<R-NARROW>')
-    kdeco = kdecos.get(conn.mode,kdecos['default'])
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
@@ -62,27 +57,23 @@ def plugFunction(conn:Connection,url):
             conn.SendTML(t)
             if len(t)<scwidth:
                 conn.SendTML('<BR>')
-        # conn.SendTML('<BR>')
         lines +=len(title)
-        i = 1
-        for e in nfeed.entries:
+        for i,e in enumerate(nfeed.entries):
             text = textwrap.shorten(e.get('title','No title'),width=72,placeholder='...')
             text = H.formatX(text,columns=scwidth-3)
             lines+=len(text)
             if lines>scheight-3:
-                continue
-            # conn.SendTML(f'<INK c={menucolors[i%2][0]}>{kdeco[0]}{H.valid_keys[i-1]}{kdeco[1]}<INK c={menucolors[i%2][1]}>')
-            conn.SendTML(conn.templates.GetTemplate('main/keylabel',**{'key':H.valid_keys[i-1],'label':'','toggle':i%2==0}))
+                break
+            conn.SendTML(conn.templates.GetTemplate('main/keylabel',**{'key':H.valid_keys[i],'label':'','toggle':i%2==0}))
             x = 0
             for t in text:
                 conn.SendTML(f'<SPC n={3*x}>{t}')
                 x=1
-            MenuDic[H.valid_keys[i-1]] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i-1],0,False)
-            i+=1
+            MenuDic[H.valid_keys[i]] = (feedentry,(conn,e,nfeed.feed.get('title','No title')),H.valid_keys[i],0,False)
+            if i == len(H.valid_keys)-1:
+                break
         conn.SendTML(conn.templates.GetTemplate('main/keylabel',**{'key':conn.encoder.back,'label':'Back','toggle':i%2==0})+
                      '<BR><WHITE><BR>Your choice: ')
-        # conn.SendTML(f'<RVSON><INK c={menucolors[i%2][0]}>{kdeco[0]}<BACK>{kdeco[1]}<INK c={menucolors[i%2][1]}>Back<BR>'
-        #              f'<WHITE><BR>Your choice: ')
         return MenuDic
     except:
         _LOG('Newsfeed - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)
@@ -95,14 +86,9 @@ def feedentry(conn:Connection,entry,feedname):
     mtitle = textwrap.shorten(feedname,width=38-(len(conn.bbs.name)+7),placeholder='...')
     scwidth,scheight = conn.encoder.txt_geo
     if webarticle(conn,entry.link,mtitle) == False:
-        if 'MSX' in conn.mode:
-            bcode = 0xDB
-        else:
-            bcode = 0xA0
         e_title = entry.get('title','')
         S.RenderMenuTitle(conn,mtitle)
         renderBar(conn)
-        # conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-2-25}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
         conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         e_text = ''
         content = entry.get('content',[]) #Atom
@@ -122,7 +108,6 @@ def feedentry(conn:Connection,entry,feedname):
         title.append('<BR>')
         text = title + body
         H.text_displayer(conn,text,scheight-4)
-        #H.More(conn,text,22)
     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
 
 #############################################################
@@ -141,10 +126,6 @@ def webarticle(conn:Connection,url, feedname):
     top_url = purl.scheme + '://' + purl.netloc
     if resp.status_code == 200:
         scwidth,scheight = conn.encoder.txt_geo
-        if 'MSX' in conn.mode:
-            bcode = 0xDB
-        else:
-            bcode = 0xA0        
         soup= BeautifulSoup(resp.content, "html.parser")
         # Remove unwanted sections
         for div in soup.find_all(['div','nav','aside','header'],
@@ -231,7 +212,6 @@ def webarticle(conn:Connection,url, feedname):
                 conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
         S.RenderMenuTitle(conn,feedname)
         renderBar(conn)
-        # conn.SendTML(f'<CYAN><LFILL row={scheight-1} code={bcode}><AT x=1 y={scheight-1}><RVSON><R-NARROW><LTBLUE>F1/F3/crsr:move<CYAN><L-NARROW><CRSRR n={scwidth-27}><R-NARROW><YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
         conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         title = H.formatX(a_title,scwidth)
         title[0] = '<WHITE>'+title[0]
@@ -280,17 +260,6 @@ def renderBar(conn:Connection):
     else:
         pages = 'p/n'
     conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':barline,'pages':pages,'crsr':crsr}))
-    # if 'MSX' in conn.mode:
-    #     bcode = 0xDB
-    #     rcrsr = '<CRSRR n=6><R-NARROW>'
-    # else:
-    #     bcode = 0xA0
-    #     rcrsr = '<CRSRR n=14><R-NARROW>'
-    # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-    #     conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
-    # else:
-    #     conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
-    # conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<CYAN><L-NARROW>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
     if conn.QueryFeature(TT.SET_WIN) >= 0x80:
         conn.SendTML('<BR>')
 

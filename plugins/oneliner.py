@@ -107,7 +107,7 @@ def plugFunction(conn:Connection):
                 with open('plugins/oneliners.json','w') as olf:
                     json.dump(onelines,olf,indent=4)
                     olf.flush()
-                    os.fsync(olf.fileno())
+                    os.fsync(olf.fileno())  # Make sure the file is updated on disk
                 refr = True
     conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
 
