@@ -15,6 +15,7 @@ import time
 from common.parser import TMLParser
 import errno
 import string
+from itertools import cycle
 
 # Dictionary of client variant -> Encoder
 clients = {'default':'PET64', 'SL':'PET64', 'SLU':'PET64', 'P4':'PET264', 'M1':'MSX1'}
@@ -41,8 +42,8 @@ class Connection:
 
         self.samplerate = 11520		# PCM audio stream samplerate 
 
-        self.outbytes = 0			#Total bytes sent
-        self.inbytes = 0			#Total bytes received
+        self.outbytes = 0			# Total bytes sent
+        self.inbytes = 0			# Total bytes received
 
         self.username = '_guest_'
         self.userid	= 0
@@ -50,19 +51,21 @@ class Connection:
 
         self.stime = time.time()	# Session start timestamp
 
-        self.TermString = '' 		#Terminal identification string
-        self.T56KVer = 0			#Terminal Turbo56K version
-        self.TermFt = {i:None for i in range(128,256)}	#Terminal features
+        self.TermString = '' 		# Terminal identification string
+        self.T56KVer = 0			# Terminal Turbo56K version
+        self.TermFt = {i:None for i in range(128,256)}	# Terminal features
         self.TermFt[0xFF] = b'\x00'
         self.TermFt[0xFE] = b'\x00'
 
-        self.mode = 'ASCII'			#Connection mode -> type of client
-        self.encoder:Encoder = self.bbs.encoders[self.mode]	#Encoder for this connection
+        self.mode = 'ASCII'			                        # Connection mode -> type of client
+        self.encoder:Encoder = self.bbs.encoders[self.mode]	# Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
         self.templates = template(self,self.bbs.Template)
-        self.parser = TMLParser(self)				#TML parser
+        self.parser = TMLParser(self)				        # TML parser
         self.p_running = False
         self.user_prefs = {'datef':bbs.dateformat}
+        self.spinner = None                                 # Spinner cycle iterator
+        self.on_hold = False                                # Is spinner on display?
 
         _LOG('Incoming connection from', addr,id=id,v=3)
     
@@ -103,6 +106,15 @@ class Connection:
             self.templates = template(self,self.bbs.Template)
             self.style = self.templates.GetStyle('default') # Set template colors
             self.templates.j2env.globals['st'] = self.style # Update the globals with the new colors
+            if self.encoder.spinner['loop'] != None:
+                print(self.encoder.spinner['loop'])
+                self.spinner = cycle(self.encoder.spinner['loop'])
+                print(next(self.spinner))
+                print(next(self.spinner))
+                print(next(self.spinner))
+                print(next(self.spinner))
+            else:
+                self.spinner = None
             _LOG(f'Connection mode set to: {mode}', id=self.id, v=2)
             return True
         else:
@@ -135,8 +147,30 @@ class Connection:
             self.TermFt[cmd] = TT.T56Kold[cmd-128][0]
         return self.TermFt[cmd]
 
-    #Converts string to binary string and sends it via socket
+    # set the connection into hold mode (display spinner)
+    def SetHold(self):
+        if not self.on_hold:
+            self.SendTML(self.encoder.spinner['start'])
+            self.on_hold = True
+
+    # clear the hold mode (stop displaying the spinner)
+    def ClearHold(self):
+        if self.on_hold:
+            self.on_hold = False
+            self.SendTML(self.encoder.spinner['stop'])
+            if self.encoder.spinner['loop'] != None:
+                self.spinner = cycle(self.encoder.spinner['loop'])  # Make a new iterator so it starts always on the same place
+
+    # update spinner state
+    # No safety checks, this method is only called from the connection management thread
+    def _HoldUpdate(self):
+        self.on_hold = False
+        self.SendTML(next(self.spinner))
+        self.on_hold = True
+
+    # Converts string to binary string and sends it via socket
     def Sendall(self, cadena):
+        self.ClearHold()
         if self.connected == True:
             _bytes = bytes(cadena,'latin1')
             try:
@@ -146,8 +180,9 @@ class Connection:
                 self.connected = False
                 _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Sendall'+bcolors.ENDC, id=self.id,v=2)
 
-    #Send binary string via socket
+    # Send binary string via socket
     def Sendallbin(self, cadena=b''):
+        self.ClearHold()
         if self.connected == True:
             try:
                 self.socket.sendall(cadena)
@@ -170,7 +205,7 @@ class Connection:
         self.socket.settimeout(self.bbs.TOut)
 
 
-    #Receive (count) binary chars from socket
+    # Receive (count) binary chars from socket
     def Receive(self, count):
         cadena = b''
         if self.connected == True:
@@ -186,7 +221,7 @@ class Connection:
                     break
         return cadena
 
-    #Non-blocking receive up to (count) binary chars from socket, within (timeout) seconds
+    # Non-blocking receive up to (count) binary chars from socket, within (timeout) seconds
     def NBReceive(self, count:int=1, timeout:float=3):
         data = b""
         # conn.socket.settimeout(5.0)
@@ -207,7 +242,7 @@ class Connection:
         self.inbytes += len(data)
         return data
 
-    #Receive single binary char from socket
+    # Receive single binary char from socket
     def ReceiveKey(self, lista=b''):
         if type(lista) != list:
             if lista == b'':
@@ -286,7 +321,7 @@ class Connection:
             else:
                 return received
 
-    #Receive single binary char from socket - NO LOG
+    # Receive single binary char from socket - NO LOG
     def ReceiveKeyQuiet(self, lista=b''):
         if lista == b'':
             lista = bytes(self.encoder.nl,'latin1')
@@ -320,9 +355,9 @@ class Connection:
                 t = False
         return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
 
-    #Interactive string reception with echo
-    #maxlen = max number of characters to receive
-    #pw = True for password entry
+    # Interactive string reception with echo
+    # maxlen = max number of characters to receive
+    # pw = True for password entry
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
         if type(keys) == str:
             keys  = bytes(self.encoder.encode(keys,True),'latin1')
@@ -357,12 +392,12 @@ class Connection:
                 done = True
         return(cadena.decode('latin1'))
 
-    #Interactive positive integer reception with echo
-    #min = minimun value
-    #max = maximun value
-    #default = default value returned when pressing return
-    #auto = if True entry can be canceled by pressing delete with no value entered,
-    #		and is completed if the number of digits matches the limits
+    # Interactive positive integer reception with echo
+    # min = minimun value
+    # max = maximun value
+    # default = default value returned when pressing return
+    # auto = if True entry can be canceled by pressing delete with no value entered,
+    #		 and is completed if the number of digits matches the limits
     def ReceiveInt(self, minv, maxv, defv, auto = False):
         cr = bytes(self.encoder.nl,'ascii')
         bs = bytes(self.encoder.bs,'ascii')
@@ -570,6 +605,7 @@ class Connection:
 
     # Send TML script
     def SendTML(self, data, registers: dict = {'_A':None,'_S':'','_I':0}):
+        self.ClearHold()
         if self.p_running:				# If original parser is in use
             parser = TMLParser(self)	# create new TML parser for each call, to allow for nested calls
             ret = parser.process(data,registers)

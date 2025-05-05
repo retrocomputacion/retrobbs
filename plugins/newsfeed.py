@@ -46,7 +46,7 @@ def plugFunction(conn:Connection,url):
                 conn.encoder.nl: (plugFunction,(conn,url),"",0,False)
               }
     # Text mode
-    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER><CRSRL>')
+    conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER>')
     nfeed = feedparser.parse(url)
     try:
         lines = 5
@@ -115,7 +115,7 @@ def feedentry(conn:Connection,entry,feedname):
 # returns False if entry title or body cannot be found
 #############################################################
 def webarticle(conn:Connection,url, feedname):
-    conn.SendTML('<SPINNER><CRSRL>')
+    conn.SendTML('<SPINNER>')
     resp = requests.get(url, allow_redirects = False, headers = hdrs)
     r = 0   # Redirect loop disconnector
     while resp.status_code == 301 or resp.status_code == 302 and r < 10:

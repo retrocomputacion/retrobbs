@@ -249,7 +249,7 @@ Accepted commands:
         channel = '#'+_dec(conn.ReceiveStr(keys,20)).translate({ord(i): None for i in '#@/"'}) #Get channel
     if win:
         conn.SendTML('<CLR>')
-    conn.SendTML(f'<SPINNER><CRSRL>{"<GREY3>" if "PET" in conn.mode else "<GREY>"}')
+    conn.SendTML(f'{"<GREY3>" if "PET" in conn.mode else "<GREY>"}<SPINNER>')
     reactor = irc.client.Reactor()
     #reactor.server().buffer_class = buffer.LenientDecodingLineBuffer
     irc.client.ServerConnection.buffer_class.errors = "replace"

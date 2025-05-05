@@ -89,7 +89,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 return()
         termino = conn.encoder.decode(termino)
-        conn.SendTML('<SPINNER><CRSRL>')
+        conn.SendTML('<SPINNER>')
         try:
             results = wikipedia.search(termino, results = scheight-10)
             conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the SPINNER wait character
@@ -109,7 +109,7 @@ def plugFunction(conn:Connection):
             loop = False
         elif sel != conn.encoder.nl:
             conn.Sendall(sel)
-            conn.SendTML('<SPINNER><CRSRL>')
+            conn.SendTML('<SPINNER>')
             i = options.index(sel)
             page = wiki.page(results[i])#wikipedia.page(results[i])
             try:

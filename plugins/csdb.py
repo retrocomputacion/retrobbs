@@ -67,7 +67,7 @@ def plugFunction(conn:Connection):
             if conn.encoder.features['windows'] > 0:
                 conn.SendTML('<CLR>')
             if entries == []:
-                conn.SendTML('<SPINNER><CRSRL>')
+                conn.SendTML('<SPINNER>')
                 nfeed = feedparser.parse(url)
                 title = H.formatX(nfeed.feed.get('title','No title'),scwidth)
                 lines = scheight-(8+len(title))
@@ -107,7 +107,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<WINDOW top=3 bottom={scheight-3}><CLR>')
             conn.SendTML('<BR><YELLOW>Search CSDb: <WHITE>')
             term = conn.ReceiveStr(string.ascii_letters + string.digits + ' +-_,.$%&')
-            conn.SendTML('<SPINNER><CRSRL>')
+            conn.SendTML('<SPINNER>')
             resp = requests.get(search_url+quote(term,safe=''), allow_redirects = True, headers = hdrs)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.content,'html.parser')
@@ -172,7 +172,7 @@ def plugFunction(conn:Connection):
 # Show release info
 #############################################################
 def showrelease(conn:Connection,id):
-    conn.SendTML('<SPINNER><CRSRL>')
+    conn.SendTML('<SPINNER>')
     st = conn.style
     top_url = f'https://csdb.dk/webservice/?type=release&id={id}&depth=2'
     # top_url = f'https://csdb.dk/webservice/?type=release&id=251393&depth=2'    #251393
@@ -274,7 +274,7 @@ def showrelease(conn:Connection,id):
         while conn.connected:
             key = conn.ReceiveKey(keys)
             if key.isnumeric():
-                conn.SendTML('<BLUE><SPINNER><CRSRL>')
+                conn.SendTML('<BLUE><SPINNER>')
                 d_resp = requests.get(dlinks[int(key)-1][0], allow_redirects = True, headers = hdrs)
                 if d_resp.status_code == 200:
                     # Save tmp file

@@ -65,7 +65,7 @@ def plugFunction(conn:Connection):
             if termino == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
-        conn.SendTML('<BR><BR>Searching...<SPINNER><CRSRL>')
+        conn.SendTML('<BR><BR>Searching...<SPINNER>')
         searchRes = searchPodcast(termino)
         if searchRes == False:
             conn.SendTML('<ORANGE>Service unavailable...<PAUSE n=2>')
@@ -182,7 +182,7 @@ def plugFunction(conn:Connection):
                             conn.SendTML('<YELLOW>Invalid Stream...<PAUSE n=2>')
                         else:
                             fullname = episodes[int(epsel)]['title']
-                            conn.SendTML('<SPINNER><CRSRL>')
+                            conn.SendTML('<SPINNER>')
                             AA.PlayAudio(conn, url, None)
                             conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
                 PodcastTitle(conn)

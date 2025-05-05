@@ -73,6 +73,9 @@ class Encoder:
         self.nl_out = '\n'      #   New line string/character (Out)
         self.bs = '\x08'		#	Backspace string/character
         self.back = '_'         #   Caracter used to go back in the BBS
+        self.spinner = {'start':'-',
+                        'loop':['<DEL>\\','<DEL>|','<DEL>/','<DEL>-'],
+                        'stop':'<DEL>'}                          # Spinner sequence
         self.ellipsis = '...'   #   Ellipsis representation
         self.txt_geo = (40,25)  #   Text screen dimensions
         self.def_gfxmode = None	#	Default graphic mode (gfxmodes enum)

@@ -129,9 +129,11 @@ t_mono = 	{'MSX1':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF
             'GREEN':chr(1)+chr(GREEN),'BLUE':chr(1)+chr(BLUE),'YELLOW':chr(1)+chr(YELLOW),'PINK':chr(1)+chr(PINK),'GREY':chr(1)+chr(GREY),
             'LTGREEN':chr(1)+chr(LT_GREEN),'LTBLUE':chr(1)+chr(LT_BLUE),'DRED':chr(1)+chr(DARK_RED),'DGREEN':chr(1)+chr(DARK_GREEN),
             'LTYELLOW':chr(1)+chr(LT_YELLOW),
+            'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),'BACK':chr(BACK),
             'PAPER':(lambda c:'\x01'+chr(c+0x10),[('_R','_C'),('c',1)])},
             'MSXSTD':{'CLR':chr(CLEAR),'HOME':chr(HOME),'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),
-                      'CURSOR':(lambda enable: '\x1by5' if enable else '\x1bx5',[('_R','_C'),('enable',True)])}}
+                      'CURSOR':(lambda enable: '\x1by5' if enable else '\x1bx5',[('_R','_C'),('enable',True)]),
+                      'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),'BACK':chr(BACK)}}
 t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(1)+chr(HLINE),'VLINE':chr(1)+chr(VLINE),'CROSS':chr(1)+chr(CROSS),'UARROW':'^',
             'UL-CORNER':chr(1)+chr(UL_CORNER),'UR-CORNER':chr(1)+chr(UR_CORNER),'LL-CORNER':chr(1)+chr(LL_CORNER),'LR-CORNER':chr(1)+chr(LR_CORNER),
@@ -139,8 +141,7 @@ t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_
             'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
             'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
             'U-HALF':'\xDF','R-HALF':'\xDE',
-            'TRI-LEFT':chr(TRI_LEFT),'TRI-RIGHT':chr(TRI_RIGHT),'TRI-UP':chr(TRI_UP),'TRI-DOWN':chr(TRI_DOWN),
-            'SPINNER':chr(SPINNER),'BACK':chr(BACK)}}
+            'TRI-LEFT':chr(TRI_LEFT),'TRI-RIGHT':chr(TRI_RIGHT),'TRI-UP':chr(TRI_UP),'TRI-DOWN':chr(TRI_DOWN)}}
 
 
 ######### MSX encoder subclass #########
@@ -156,6 +157,9 @@ class MSXencoder(Encoder):
         self.txt_geo = (32,24)  #   Text screen dimensions
         self.ellipsis = '\u00bb'   # Ellipsis representation
         self.back = chr(BACK)
+        self.spinner = {'start':f'<CHR c={SPINNER}><CRSRL>',
+                        'loop':None,
+                        'stop':' <DEL>'}                          # Spinner sequence
         self.features = {'color':       True,  # Encoder supports color
                          'bgcolor':     2,      # Per character background color
                          'charsets':    1,      # Number if character sets supported
@@ -382,6 +386,9 @@ class MSXencoder(Encoder):
             conn.SendTML('<BR>Screen lines? (23): ')
             _copy.txt_geo = (cols,conn.ReceiveInt(20,24,23))
             _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',0)])
+            _copy.spinner = {'start':f'<UL-CORNER>',
+                'loop':['<DEL><UR-CORNER>','<DEL><LR-CORNER>','<DEL><LL-CORNER>','<DEL><UL-CORNER>'],
+                'stop':'<DEL>'}                          # Spinner sequence
             return _copy
         else:
             return None

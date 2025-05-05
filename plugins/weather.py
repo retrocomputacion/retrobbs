@@ -130,7 +130,7 @@ def plugFunction(conn:Connection):
         geoLoc = Nominatim(user_agent="RetroBBS-Weather")
     back = conn.encoder.decode(conn.encoder.back)
     while conn.connected and not done:
-        conn.SendTML('<SPINNER><CRSRL>')
+        conn.SendTML('<SPINNER>')
         img = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
             if conn.QueryFeature(TT.PRADDR) < 0x80:

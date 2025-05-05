@@ -17,7 +17,7 @@ from common.connection import Connection
 ######################################################################
 def Grabframe(conn:Connection,path, crop, length = None, pos = None):
 
-    conn.SendTML('<YELLOW><SPINNER><CRSRL>')
+    conn.SendTML('<YELLOW><SPINNER>')
     if length == None:
         try:
             process = subprocess.run(['ffprobe', path, '-v', 'quiet', '-show_entries' ,'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1'], 

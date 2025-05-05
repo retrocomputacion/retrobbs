@@ -1460,18 +1460,23 @@ def ConnTask():
                 _semaphore = False
 
         for t in range(1,bbs_instance.lines+1):
-            if t in conlist:				#Find closed connections
+            if t in conlist:                        # Find closed connections
+                conn = conlist[t][1]
                 if not conlist[t][0].is_alive():
-                    conlist[t][1].Close()
-                    if conlist[t][1].userclass != 0:
-                        bbs_instance.database.logoff(conlist[t][1].userid,conlist[t][1].outbytes,conlist[t][1].inbytes)
-                    del conlist[t][1]
+                    conn.Close()
+                    if conn.userclass != 0:
+                        bbs_instance.database.logoff(conn.userid,conn.outbytes,conn.inbytes)
+                    del conn
                     try:
                         conlist[t][0].join()
                     except:
                         pass
                     conlist.pop(t)
                     _LOG('Slot freed - Awaiting a connection',v=3)
+                else:                               # Do housekeeping tasks (just updating spinners for now)
+                    if conn.on_hold:
+                        if conn.spinner != None:
+                            conn._HoldUpdate()
 
 
 #######################################################

@@ -45,8 +45,8 @@ NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]
 ###########
 # TML tags
 ###########
-t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_','SPINNER':chr(SPINNER)},
-             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','SPINNER':'\xce',
+t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_','SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')])},
+             'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),
                      'RVSON':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
                      'RVSOFF':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,False),[('_R','_C'),('conn','_C')]),
                      'FLASHON':(lambda conn:ASCIIencoder.BLINK(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
@@ -56,17 +56,6 @@ t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_','SPINNER':chr(SP
                      'CRSRU':(lambda n:f'\x1b[{n}A',[('_R','_C'),('n',1)]),'CRSRD':(lambda n:f'\x1b[{n}B',[('_R','_C'),('n',1)]),
                      'AT':(lambda x,y:f'\x1b[{y+1};{x+1}H',[('_R','_C'),('x',0),('y',0)]),
                      'SCROLL':(lambda rows:f'\x1b[{rows}S'if rows > 0 else f'\x1b[{-rows}T',[('_R','_C'),('rows',1)])}}
-# t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_'},
-#              'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','RVSON':'\x1b[7m','RVSOFF':'\x1b[27m',
-#                      'FLASHON':'\x1b[5m','FLASHOFF':'\x1b[25m',
-#                      'CURSOR':(lambda enable: '\x1b[?25h' if enable else '\x1b[?25l',[('_R','_C'),('enable',True)]),
-#                      'CRSRR':(lambda n:f'\x1b[{n}C',[('_R','_C'),('n',1)]),'CRSRL':(lambda n:f'\x1b[{n}D',[('_R','_C'),('n',1)]),
-#                      'CRSRU':(lambda n:f'\x1b[{n}A',[('_R','_C'),('n',1)]),'CRSRD':(lambda n:f'\x1b[{n}B',[('_R','_C'),('n',1)]),
-#                      'AT':(lambda x,y:f'\x1b[{y+1};{x+1}H',[('_R','_C'),('x',0),('y',0)]),
-#                      'SCROLL':(lambda rows:f'\x1b[{rows}S'if rows > 0 else f'\x1b[{-rows}T',[('_R','_C'),('rows',1)])}}
-#
-#  (lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
-                    #  'RVSOFF':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,False),[('_R','_C'),('conn','_C')])
 
 t_multi =	{'ASCII':{'DEL':'\x08 \x08',
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS), 'CHECKMARK': chr(CHECKMARK),

@@ -144,7 +144,7 @@ def plugFunction(conn:Connection):
     if locqry == '_':
         conn.SendTML(f'<SPLIT bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CURSOR>')
         return
-    conn.SendTML('<SPINNER><CRSRL>')
+    conn.SendTML('<SPINNER>')
     tloc = do_geocode(locqry)
     if tloc == None:
         conn.SendTML('<CLR>ERROR!<PAUSE n=0.5>')
@@ -282,7 +282,7 @@ def plugFunction(conn:Connection):
             if locqry == back:
                 conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}><CURSOR>')
                 break
-            conn.SendTML('<SPINNER><CRSRL>')
+            conn.SendTML('<SPINNER>')
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
             if tloc == None:
                 conn.SendTML('<CLR>ERROR!><PAUSE n=0.5>')

@@ -66,11 +66,11 @@ PALETTE = {'\x1bk'+chr((j*16)+i):j for i in range(9) for j in range(9)}
 # TML tags
 ###########
 t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'H'+chr(ESC)+'J','HOME':chr(ESC)+'H',
-                     'BACK':chr(BACK),'SPINNER':chr(SPINNER)},
+                     'BACK':chr(BACK),'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')])},
              'VidTex':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'j','HOME':chr(ESC)+'H',
                        'BACK':chr(BACK),
                        'TEXT':(lambda conn,page,border,background:VT52encoder.SetVTMode(conn.encoder,'N'),[('_R','_C'),('conn','_C'),('page',0),('border',0),('background',0)]),
-                       'SPINNER':chr(SPINNER)},
+                       'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')])},
              'ST':{'RVSON':'\x1bp','RVSOFF':'\x1bq','CLR':'\x1bE','WROFF':'\x1bw','WRON':'\x1bv',
                    'PAPER':(lambda c:'\x1bc'+chr(32+c),[('_R','_C'),('c',0)]),
                    'CURSOR':(lambda enable: '\x1be' if enable else '\x1bf',[('_R','_C'),('enable',True)])}}

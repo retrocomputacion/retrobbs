@@ -161,7 +161,7 @@ def AudioList(conn:Connection,title,speech,logtext,path):
         afunc = PlayAudio
         bname = os.path.splitext(os.path.basename(audios[x]))[0]
         KeyLabel(conn, H.valid_keys[x-start],H.crop(bname,scwidth-10,conn.encoder.ellipsis)+' ', x % 2)
-        tml = f'<AT x={scwidth-6} y={row}><SPINNER><CRSRL>'
+        tml = f'<AT x={scwidth-6} y={row}><SPINNER>'
         if (wavs == True) and (audios[x].lower().endswith(wext)):   #PCM file
             conn.SendTML(tml)
             tsecs = _GetPCMLength(path+audios[x])
@@ -267,7 +267,7 @@ def _AudioDialog(conn:Connection, data):
         conn.SendTML(tml)
     back = conn.encoder.decode(conn.encoder.back)
     if conn.ReceiveKey(conn.encoder.nl+back) == back:
-        conn.SendTML('<CURSOR><SPINNER><CRSRL>')
+        conn.SendTML('<CURSOR><SPINNER>')
         return False
     return True
 
@@ -335,7 +335,7 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             return True
         if not conn.connected:
             return True
-        conn.SendTML('<SPINNER><CRSRL><NUL><NUL>')
+        conn.SendTML('<SPINNER>')
     #Streaming mode
     binario = b'\xFF\x83'
     pcm_stream = PcmStream(filename,conn.samplerate)    #,b'RETROTERM-M138' not in conn.TermString)
@@ -666,7 +666,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
         while subtune > 0:
             if dialog == True:
                 subtune = _DisplayCHIPInfo(conn, info)
-            conn.SendTML('<SPINNER><CRSRL>')
+            conn.SendTML('<SPINNER>')
             if player != "" and subtune > 0:
                 _LOG("Playing "+filename+" subtune "+str(subtune-1)+" for "+str(ptime[subtune-1])+" seconds",id=conn.id,v=4)
                 if ext.lower() == '.sid':

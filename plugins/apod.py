@@ -36,29 +36,29 @@ def plugFunction(conn:Connection):
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER><CRSRL>",
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER>",
                     f"<CLR><LTGREEN><FORMAT>A Turbo56K compatible terminal is required to view this image</FORMAT><BR>"\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER><CRSRL>"],
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER>"],
                 'es':['Conectando con la NASA',f"<CLR><BR><LTGREEN>Convirtiendo...<BR>presione <INK c={conn.style.PbColor}>"	\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> para mostrar otra imagen al azar<BR>O "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER><CRSRL>",
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER>",
                     f"<CLR><FORMAT><LTGREEN>Se requiere una terminal compatible con Turbo56K para ver ésta imagen</FORMAT><BR>"\
                     + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
                     + f"<LTGREEN> para una nueva imagen al azar<BR>O "	\
                     + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
-                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER><CRSRL>"]}
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER>"]}
     loop = True
     rdate = datetime.today()
     while loop == True:
         # Text mode
         conn.SendTML(f'<NUL n=2><TEXT page=0 border={conn.style.BoColor} background={conn.style.BoColor}><CURSOR>')
         RenderMenuTitle(conn,'APOD')
-        conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<SPINNER><CRSRL>')
+        conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<SPINNER>')
         i = 0
         idata = None
         _LOG("Receiving APOD info",id=conn.id,v=4)

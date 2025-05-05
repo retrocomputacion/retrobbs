@@ -133,7 +133,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
     #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'
-    conn.SendTML('<PAUSE n=1><SPINNER><CRSRL>')
+    conn.SendTML('<PAUSE n=1><SPINNER>')
 
     #Streaming mode
     binario = b'\xFF\x83'
@@ -287,7 +287,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
         conn.SendTML('<FORMAT>Your terminal does not support audio streaming!</FORMAT><PAUSE n=2>')
         return
 
-    conn.SendTML('<SPINNER><CRSRL>')
+    conn.SendTML('<SPINNER>')
 
     #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
     pcm_stream = AA.PcmStream(sURL,conn.samplerate,b'RETROTERM-M38' not in conn.TermString, ss)

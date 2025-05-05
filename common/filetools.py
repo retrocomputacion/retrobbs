@@ -507,7 +507,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         convert = True
 
     if convert:
-        conn.SendTML('<SPINNER><CRSRL>')
+        conn.SendTML('<SPINNER>')
         if Source == None:
             if type(filename)==str:
                 Source = Image.open(filename)
@@ -520,7 +520,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
             mode = ImageDialog(conn,text,Source.size[0],Source.size[1],save)
             if mode < 0:
                 return False
-            conn.SendTML('<SPINNER><CRSRL>')
+            conn.SendTML('<SPINNER>')
         else:
             mode = 1 if (gfxmode == gfxmulti) else 0
         gfxmode = gfxmulti if (mode & 0x7f) == 1 else gfxhi

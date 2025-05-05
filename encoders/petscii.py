@@ -130,11 +130,13 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
             'CBMSHIFT-D':chr(DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(ENABLE_CBMSHIFT),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
             'ORANGE':chr(ORANGE),'BROWN':chr(BROWN),'PINK':chr(PINK),'GREY1':chr(GREY1),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3),
-            'LTGREY':chr(GREY3),'MGREY':chr(GREY2),'GREY':chr(GREY2),'DGREY':chr(GREY1)},
+            'LTGREY':chr(GREY3),'MGREY':chr(GREY2),'GREY':chr(GREY2),'DGREY':chr(GREY1),
+            'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),'BACK':chr(BACK)},
             
             'PET264':{'FLASHON':chr(FLASH_ON),'FLASHOFF':chr(FLASH_OFF)},
             
             'PET20':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r','UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
+            'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),'BACK':chr(BACK),
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW)},
             
             'PET128':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r',
@@ -142,7 +144,8 @@ t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOF
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
             'DPURPLE':chr(DK_PURPLE),'BROWN':chr(BROWN),'PINK':chr(PINK),'DCYAN':chr(DK_CYAN),'GREY2':chr(GREY2),'LTGREEN':chr(LT_GREEN),'LTBLUE':chr(LT_BLUE),'GREY3':chr(GREY3),
             'LTGREY':chr(GREY3),'MGREY':chr(GREY2),'GREY':chr(GREY2),'DARK_CYAN':chr(DK_CYAN),'DARK_PURPLE':chr(DK_PURPLE),
-            'FLASHON':'\x0f','FLASHOFF':'\x8f','ULINEON':'\x02','ULINEOFF':'\x82'}}
+            'FLASHON':'\x0f','FLASHOFF':'\x8f','ULINEON':'\x02','ULINEOFF':'\x82',
+            'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),'BACK':chr(BACK)}}
 
 t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),'INS':chr(INSERT),
             'POUND':chr(POUND),'PI':chr(PI),'HASH':chr(HASH),'HLINE':chr(HLINE),'VLINE':chr(VLINE),'CROSS':chr(CROSS),'LEFT-HASH':chr(LEFT_HASH), 'CHECKMARK': chr(CHECKMARK),
@@ -150,8 +153,7 @@ t_multi =	{'PET64':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR
             'UL-CORNER':chr(UL_CORNER),'UR-CORNER':chr(UR_CORNER),'LL-CORNER':chr(LL_CORNER),'LR-CORNER':chr(LR_CORNER),
             'V-RIGHT':chr(V_RIGHT),'V-LEFT':chr(V_LEFT),'H-UP':chr(H_UP),'H-DOWN':chr(H_DOWN),
             'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
-            'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
-            'SPINNER':chr(SPINNER),'BACK':chr(BACK)}}
+            'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW)}}
 
 t_mono['PET264'].update(t_mono['PET64'])
 t_multi['PET264'] = t_multi['PET64']
@@ -191,6 +193,9 @@ class PETencoder(Encoder):
         self.nl_out	= '\r'		#	New line string/character (out)
         self.bs = chr(DELETE)	#	Backspace string/character
         self.back = chr(BACK)
+        self.spinner = {'start':f'<CHR c={SPINNER}><CRSRL>',
+                        'loop':None,
+                        'stop':' <DEL>'}                          # Spinner sequence
         self.features = {'color':       True,   # Encoder supports color
                          'bgcolor':     1,      # Global background color
                          'charsets':    2,      # Number if character sets supported
@@ -332,6 +337,9 @@ class PETencoder(Encoder):
             _copy = deepcopy(self)
             _copy.features['windows'] = 0
             _copy.features['scrollback'] = False
+            _copy.spinner = {'start':'<UL-QUAD>',
+                            'loop':['<DEL><UR-QUAD>','<DEL><LR-QUAD>','<DEL><LL-QUAD>','<DEL><UL-QUAD>'],
+                            'stop':'<DEL>'}                          # Spinner sequence
             if id in sch:
                 _copy.name = 'PET64CG'  # CCGMS compatible
                 _copy.tml_mono['TEXT'] =(lambda page,border,background:'\x02'+ [k for k,v in PALETTE.items() if v == background][0] if len([k for k,v in PALETTE.items() if v == background])>0 else '',[('_R','_C'),('page',0),('border',0),('background',0)])

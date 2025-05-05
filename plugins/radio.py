@@ -59,7 +59,7 @@ def plugFunction(conn:Connection):
             if termino == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={lines}>')
                 return()
-        conn.SendTML('<BR><BR>Searching...<SPINNER><CRSRL>')
+        conn.SendTML('<BR><BR>Searching...<SPINNER>')
         searchRes = searchRadio(termino)
         if searchRes == False:
             conn.SendTML('<ORANGE>Service unavailable...<PAUSE n=2>')
