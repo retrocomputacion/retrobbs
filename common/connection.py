@@ -107,12 +107,7 @@ class Connection:
             self.style = self.templates.GetStyle('default') # Set template colors
             self.templates.j2env.globals['st'] = self.style # Update the globals with the new colors
             if self.encoder.spinner['loop'] != None:
-                print(self.encoder.spinner['loop'])
                 self.spinner = cycle(self.encoder.spinner['loop'])
-                print(next(self.spinner))
-                print(next(self.spinner))
-                print(next(self.spinner))
-                print(next(self.spinner))
             else:
                 self.spinner = None
             _LOG(f'Connection mode set to: {mode}', id=self.id, v=2)

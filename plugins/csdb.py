@@ -1,4 +1,5 @@
 import requests
+import os
 from bs4 import BeautifulSoup
 import string
 import feedparser
@@ -282,6 +283,7 @@ def showrelease(conn:Connection,id):
                     with open(filename,'wb') as tf:
                         tf.write(d_resp.content)
                     FT.SendFile(conn,filename,True,True)
+                    os.remove(filename)
                     break
                     ...
                 else:

@@ -334,6 +334,8 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                     else:
                         parameters = (conn,filename,True,transfer,)
                     fhandler(*parameters)
+                    if not realpath:    # Delete temp file
+                        os.remove(filename)
                     if keywait:
                         conn.ReceiveKey
                     conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
@@ -736,6 +738,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
         # Audio
         elif ext in ['.MP3','.WAV'] and not save:
             AA.PlayAudio(conn,filename,None,dialog)
+        elif ext in ['.SID','.MUS','.YM','.VTX','.VGZ']:
+            AA.CHIPStream(conn,filename,None,dialog=dialog)
         # TML script
         elif ext == '.TML': 
             with open(filename,'r') as slide:
@@ -770,6 +774,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                         conn.SendTML(fabort)
                     conn.SendTML('<KPROMPT t=RETURN>')
                     conn.ReceiveKey()
+    else:
+        _LOG('SendFile: file not found!',id=conn.id,v=1)
 
 #################################################################################
 # Sends program file into the client memory at the correct address in turbo mode

@@ -699,6 +699,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                         data = sd.SIDParser(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
                     elif 'MSX' in conn.mode:
                         data = ym.SIDtoYM(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid',math.ceil(ptime[0]*1.2), order)
+                        os.remove(conn.bbs.Paths['temp']+'tmp0'+str(conn.id)+'.sid')
                 elif ext.lower() in ['.ym','.vtx','.vgz']:
                     if 'MSX' in conn.mode:
                         data = ym.YMParser(filename)

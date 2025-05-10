@@ -47,12 +47,6 @@ def plugFunction(conn:Connection):
         if conn.T56KVer == 0 and refr:
             header()
         if refr == True:
-            # try:
-            #     olf = open('plugins/oneliners.json','r')
-            #     onelines = json.load(olf)
-            #     olf.close()
-            # except:
-            #     onelines = []
             onelines = getOneliners()
             sendOneliners(conn, onelines)
             refr = False
@@ -88,21 +82,11 @@ def plugFunction(conn:Connection):
                 conn.SendTML('<GREEN>Message:<BR><WHITE>')
                 line = _dec(conn.ReceiveStr(keys, scwidth-1))
                 if line != '':
-                    # try:    # Refresh oneliners in case another user posted in the meanwhile
-                    #     olf = open('plugins/oneliners.json','r')
-                    #     onelines = json.load(olf)
-                    #     olf.close()
-                    # except:
-                    #     onelines = []
                     onelines = getOneliners()
                     onelines.append([nick,line])
                     if len(onelines) > 9:
                         onelines.pop(0) #If there's more than 9 onelines, remove the oldest.
                     saveOneliners(onelines)
-                    # with open('plugins/oneliners.json','w') as olf:
-                    #     json.dump(onelines,olf,indent=4)
-                    #     olf.flush()
-                    #     os.fsync(olf.fileno())  # Make sure the file is updated on disk
                     refr = True
                 elif conn.encoder.features['windows'] == 0:
                     refr = True
