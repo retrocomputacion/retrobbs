@@ -160,6 +160,7 @@ __Changes/Bug fixes__:
 __New features__:
  - MSX support
  - *Radio* and *Podcast* plugins by __Emanuele Laface__
+ - New CSDb plugin, browse, search and download files from CSDb.dk
  - SID to AY music conversion.
  - New &lt;END&gt; TML statement
  - New &lt;FORMAT&gt; TML block instruction
@@ -181,6 +182,7 @@ __New features__:
  - Added templating system, based on Jinja2 templates
  - New FileList() file browser, old version now called Gallery()
  - Browse and transfer the contents of ZIP and LHA archives
+ - Sysop can now delete ONELINER messages
 
 __Changes/Bug fixes__:
  - Fixed filter cutoff low nibble in SID chiptune streaming
@@ -198,6 +200,7 @@ __Changes/Bug fixes__:
  - MSX-ASCII art header for the *Oneliner* plugin
  - Fix to support Python-Weather >= 2.0.0
  - Fixed menu item descriptions with special characters resulting on misaligned menu screen
+ - Delete temporal files after use
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -362,7 +365,7 @@ Directory paths to different BBS files, some are used internally, others are ref
 | `audio` | Path to files for the audio library
 | `images` | Path to pictures for the Image gallery
 | `downloads` | Path to files for the program library
-| `temp` | Path to temporary files created by the BBS or it's plugins
+| `temp` | Path to temporal files created by the BBS or it's plugins
 
 Custom paths can be added here as needed
 
@@ -1275,7 +1278,7 @@ Next you have to mount your new RAM disk:
 ```
 sudo mount -t tmpfs -o rw,size=1M tmpfs /mnt/ramdisk
 ```
-Here the "1M" means the RAM disk will have a size of 1 Megabyte, this is more than enough for current use by the BBS, but this can change in the future.
+Here the "1M" means the RAM disk will have a size of 1 Megabyte, this is more than enough for most use cases, but take into account that files downloaded from CSDb can be larger than this limit and will be saved here if the user decided to browse a .zip archive instead of direct download.
 
 To make this change permanent you'll need to add the previous command to your fstab file.
 

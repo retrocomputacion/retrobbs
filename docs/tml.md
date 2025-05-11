@@ -303,7 +303,7 @@ Parameter:
 
 #### **&lt;FORMAT&&gt;**
 All text inside the block is formatted to fit inside the client's screen width, wordwrapping where necessary.</br>
-All code and text inside the block is parsed once and send to the client once the end of the block is reached, functions/statements that return *Turbo56K* commands are ignored, do not use &lt;PAUSE&gt; and functions that require user input like &lt;INKEYS&gt; inside the block.
+All code and text inside the block is parsed and send to the client once the end of the block is reached, functions/statements that return *Turbo56K* commands are ignored, do not use &lt;PAUSE&gt; and functions that require user input like &lt;INKEYS&gt; inside the block.
 
 
 ---

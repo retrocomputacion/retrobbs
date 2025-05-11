@@ -90,7 +90,7 @@ At this time RetroBBS does not support any of those escape codes.
     - Line break in: `\r`
     - Line break out: `\r`
     - BBS mode: `PET64std`
-4. XGraphic compatible terminals (currently only EdgeTerm know to support this):
+4. XGraphic compatible terminals (currently only EdgeTerm known to support this):
     - Auto detected after selecting _'Other Commodore 64 color terminals'_
     - 24 screen lines
     - Delete in: `\x14`
@@ -300,7 +300,7 @@ The colors are defined as follows:
 
 ### Atari ST character set and VT52 extensions
 
-The Atari ST character set is based on code page 437, but with the exchange of all the box drawing characters with the Hebrew alphabet, and other minor differences.
+The Atari ST character set is based on code page 437, but replaces all the box drawing characters with the Hebrew alphabet, and other minor differences.
 The backspace character is non-destructive
 
 <div align = center>
@@ -402,10 +402,10 @@ This encoder uses the code page 437 character set, it does not support any kind 
 </div>
 
 ### The ANSI encoder
-_ANSI_ is one of the statndard set of escape sequences for terminals, first popularized by the _DEC VT100_ in 1978.
+_ANSI_ is one of the standard set of escape sequences for terminals, first popularized by the _DEC VT100_ in 1978.
 The _ANSI_ standard is quite extensive in its scope, but _RetroBBS_ only uses a small subset of it.
 
-While _ANSI_ normally supports 16 foreground and 8 background colores, _RetroBBS_ does not check for this limitation, and can in some cases avoid this limitation by using the inverse video sequence. Altought not every color combination might work as intended.
+While _ANSI_ normally supports 16 foreground and 8 background colors, _RetroBBS_ does not check for this limitation, and can in some cases avoid this limitation by using the inverse video sequence. Although not every color combination might work as intended.
 
 All ANSI escapes sequences are prefixed by a _Control Sequence Indicator (CIS)_: `'0x1b['`
 
@@ -487,7 +487,6 @@ Only the commands used by _RetroBBS_ are listed below
 |`ESC` `V`| Moves all text up one line while leaving cursor in place.
 |`ESC` `W`| Moves all text down one line while leaving cursor in place.
 |`ESC` `ESC`| Handshake, if this sequence is received a compatible terminal will respond with the PETSCII uptick character (`$BA`)
-|
 
 ### b. MSX escape sequences
 
