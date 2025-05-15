@@ -241,7 +241,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
         keys = [CursorDown,CursorUp,PageUp,PageDown]
     else:
         keys = [PageUp,PageDown]
-    #eliminate problematic control codes
+    # eliminate problematic control codes
     for i,t in enumerate(text):
         text[i] = pattern.sub(lambda m: rep[re.escape(m.group(0))], t)
     if isinstance(lines,tuple):
@@ -257,7 +257,6 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
         lcount = conn.encoder.txt_geo[1]-1
     else:
         tline = 0
-    # tline = 0
     bline = i+1
     #scroll loop
     ldir = True	#Last scroll down?
@@ -295,7 +294,6 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             bline = _page(tline,lcount)+1
             ldir = True
         elif (k == PageDown) and (bline < len(text)):	#Page down
-            # bline += lcount
             if bline + lcount > len(text):
                 tline = bline
                 bline = len(text)
@@ -305,10 +303,8 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             _page(tline,lcount)
             ldir = True
         elif k in ekeys:
-            ret = k #conn.encoder.decode(k.decode('latin1'))
+            ret = k
             break
-    # else:
-    #     conn.ReceiveKey(b'_')
     return ret
 
 #############################################################
@@ -361,7 +357,6 @@ def catalog(path, dirs=False, full=True):
 ##########################################
 # Check if a file is local or an URL
 ##########################################
-
 def is_local(url):
     url_parsed = urlparse(url)
     if url_parsed.scheme in ('file', ''): # Possibly a local file

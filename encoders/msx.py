@@ -172,10 +172,6 @@ class MSXencoder(Encoder):
                          }
 
     def color_index(self, code):
-        # if type(code) == str:
-        #     print(bytearray(code,'latin1'))
-        #     if len(code) == 2 and code[0] == '\x01':
-        #         code = ord(code[1])
         return self.palette.get(code,-1)
 
     ### Wordwrap text preserving control codes

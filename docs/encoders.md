@@ -500,3 +500,4 @@ When the BBS is in `MSXstd` mode, it makes use of some escape sequences supporte
 |`ESC` `x5`| Disable (hide) cursor
 |`ESC` `M`| Delete line
 |`ESC` `L`| Insert line
+|`ESC` `Y` `line+32` `column+32`| Position cursor to the given coordinates

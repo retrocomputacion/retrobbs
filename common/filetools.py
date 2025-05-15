@@ -119,7 +119,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
 
     # Main loop
     while conn.connected:
-        programs = []	#filtered list
+        programs = []	# filtered list
         directories = [] # subdirectories
 
         #Read all files from 'path'
@@ -163,8 +163,8 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 elif entry.is_dir():
                     directories.append(entry.name)
 
-        programs = sorted(programs, key= lambda l:l[0]) #programs.sort()     #Sort files
-        directories.sort()  #Sort subdirectories
+        programs = sorted(programs, key= lambda l:l[0]) # Sort files
+        directories.sort()  # Sort subdirectories
 
         pages = int(((len(programs)+(len(directories) if subdirs else 0))-1) / max_e) + 1
         count = len(programs)+(len(directories) if subdirs else 0)
@@ -189,9 +189,6 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                 conn.SendTML('')
                 start = c_page * max_e
                 end = min(start+max_e,count)-1
-                # end = start + (max_e-1)
-                # if end >= count:
-                #     end = count - 1
                 if fhandler == SendFile:
                     keywait = False
                 else:
@@ -310,7 +307,6 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
                         filename = conn.bbs.Paths['temp']+page_entries[row][0].translate({ord(i): '-' for i in '/\\'})
                         arcname = (curpath+page_entries[row][0])[1:]
                         if type(path) == lhafile.lhafile.LhaFile:
-                            # filename = filename.replace('/','\\')
                             if backslash:
                                 arcname = arcname.replace('/','\\')
                             data = path.read(arcname)
@@ -493,7 +489,6 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                     preproc = PreProcess()
                 cropmode = cropmodes.BIG_FILL
                 if gfxmode == None:
-                    # print(mode_conv, cmode, pimg[1])
                     gfxmode = mode_conv[cmode][pimg[1]]
                 th = 3
             else:
@@ -530,9 +525,8 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
             preproc = PreProcess(1,1.5,1.5)
         cvimg,data,gcolors = convert_To(Source, gfxmode, preproc, cropmode=cropmode,dither=dither, threshold=th)
         Source.close()
-        bgcolor = bytes([gcolors[0]])	#Convert[4].to_bytes(1,'little')
+        bgcolor = bytes([gcolors[0]])
         gcolors = [gcolors[0]]+gcolors # Border color = bgcolor
-        #
         border = bgcolor if border == None else bytes([border])
     elif pimg != None and dialog:
         mode = ImageDialog(conn,text,save=save)
@@ -549,11 +543,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     # Bitmap byte count
     tbytes = GFX_MODES[gfxmode]['out_size'][0]*GFX_MODES[gfxmode]['bpp']*lines    # <<<< This assumes a text line is 8 pixels tall
 
-    # tchars = 40*lines
-    # tbytes = 320*lines
-
     if mode & 0x80 == 0:	# Transfer to memory
-
         if conn.T56KVer > 0:    #Turbo56K memory transfer
             # Sync
             binaryout = b'\x00'
@@ -607,8 +597,6 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
                     binaryout += border
             # Exit command mode
             binaryout += b'\xFE'
-            # if display:
-            #     conn.Sendall(TT.disable_CRSR())	#Disable cursor blink
             conn.Sendallbin(binaryout)
             return bgcolor
         else:   #Other image transfers
@@ -668,7 +656,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 SendProgram(conn,filename)
             elif res == 2:
                 savename = os.path.splitext(os.path.basename(filename))[0].upper()
-                savename = conn.encoder.sanitize_filename(savename) # savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                savename = conn.encoder.sanitize_filename(savename) # Remove CBMDOS reserved characters
                 if TransferFile(conn,filename, savename[:16]):
                     conn.SendTML(fok)
                 else:
@@ -693,7 +681,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 SendProgram(conn,filename)
             elif res == 2:
                 savename = os.path.splitext(os.path.basename(filename))[0].upper()
-                savename = conn.encoder.sanitize_filename(savename) #savename.translate({ord(i): None for i in '"*+,/:;<=>?\[]|'})	#Remove MSX-DOS reserved characters
+                savename = conn.encoder.sanitize_filename(savename) # Remove MSX-DOS reserved characters
                 if TransferFile(conn,filename, savename[:16]):
                     conn.SendTML(fok)
                 else:
@@ -719,7 +707,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                         savename = os.path.basename(filename).upper()
                 else:
                     savename = os.path.splitext(os.path.basename(filename))[0].upper()
-                savename = conn.encoder.sanitize_filename(savename) #savename.translate({ord(i): None for i in ':#$*?'})	#Remove CBMDOS reserved characters
+                savename = conn.encoder.sanitize_filename(savename) # Remove CBMDOS reserved characters
                 if TransferFile(conn,filename, savename,True):
                     conn.SendTML(fok)
                 else:
@@ -784,16 +772,10 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 # filename: name+path of the file to be sent
 #################################################################################
 def SendProgram(conn:Connection,filename):
-    # Verify .prg extension
     ext = os.path.splitext(filename)[1].upper()
-    # if ext == '.PRG' and conn.encoder.check_fit(filename):
     if conn.encoder.check_fit(filename):
         _LOG('Memory transfer, filename: '+filename, id=conn.id,v=3)
-        # Open file
-        # archivo=open(filename,"rb")
         # Read load address
-        # binario=archivo.read(2)
-        # staddr = binario[0]+(binario[1]*256)
         staddr,bin = conn.encoder.get_exec(filename)
         if bin == None:
             return
@@ -801,29 +783,19 @@ def SendProgram(conn:Connection,filename):
         binaryout = b'\x00'
         # Enter command mode
         binaryout += b'\xFF'
-
         # Set the transfer pointer to load address (low:high)
-        filesize = len(bin)     #os.path.getsize(filename) - 2
+        filesize = len(bin)
         endaddr = staddr + filesize
         binaryout += b'\x80'
         binaryout += staddr.to_bytes(2,'little')
-        # if isinstance(binario[0],str) == False:
-        #     binaryout += binario[0].to_bytes(1,'big')
-        #     binaryout += binario[1].to_bytes(1,'big')
-        # else:
-        #     binaryout += binario[0]
-        #     binaryout += binario[1]
         # Setup transfer pointer + program size (low:high)
         binaryout += b'\x82'
         binaryout += filesize.to_bytes(2,'little')
         _LOG('Load Address: '+bcolors.OKGREEN+str(staddr)+bcolors.ENDC, '/ Bytes: '+bcolors.OKGREEN+str(filesize)+bcolors.ENDC,id=conn.id,v=4)
         # Program data
-        binaryout += bin    #archivo.read(filesize)
-
+        binaryout += bin
         # Exit command mode
         binaryout += b'\xFE'
-        # Close file
-        # archivo.close()
         # Send the data
         conn.Sendallbin(binaryout)
         if 'PET' in conn.mode:
@@ -948,7 +920,6 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
         okbytes = spackets
 
     # logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-
     conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[c] YModem<BR>[<BACK>] Abort')
     k = conn.ReceiveKey('abc'+conn.encoder.decode(conn.encoder.back))
     if k == 'a':
@@ -1043,7 +1014,6 @@ def SendText(conn:Connection, filename, title='', lines=25):
     elif filename.endswith(('.seq','.SEQ')):
         with open(filename,"rb") as tf:
             ot = tf.read()
-        tf.close()
         text = ot.decode('latin1')
     H.More(conn,text,l)
 
@@ -1158,7 +1128,6 @@ def HandleArchives(conn, filename):
         except:
             return None
     return None
-    ...
 
 ###########
 # TML tags

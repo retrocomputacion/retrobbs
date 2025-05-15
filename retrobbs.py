@@ -111,13 +111,13 @@ from common.imgcvt import im_extensions
 _version = 0.60
 ##################################
 
-#Threads running flag
+# Threads running flag
 _run = True
 
-#Timeout default value (secs)
+# Timeout default value (secs)
 _tout = 60.0*5
 
-#Configuration file
+# Configuration file
 config_file = 'config.ini'
 
 ###########################
@@ -132,17 +132,17 @@ def ConfigRead():
         nchar = 0   # LABEL (no associated key) entries use chars 0x00 to 0x0c
         for e in range(0,sentry['entries']):
             try:
-                tentry = cfg[key]['entry'+str(e+1)+'title']	#Entry Title
+                tentry = cfg[key]['entry'+str(e+1)+'title']	# Entry Title
             except:
                 raise Exception(f'Configuration file error:\n entry{str(e+1)}title not found')
             if sentry['columns'] < 2:
                 dentry = cfg.get(key,'entry'+str(e+1)+'desc', fallback = '')
                 if dentry != '':
                     tentry = (tentry,dentry)
-            efunc = cfg.get(key,'entry'+str(e+1)+'func', fallback ='LABEL')		#Entry Internal function
+            efunc = cfg.get(key,'entry'+str(e+1)+'func', fallback ='LABEL')		# Entry Internal function
             if efunc != 'LABEL':
                 try:
-                    ekey = cfg[key]['entry'+str(e+1)+'key']		#Entry Key binding
+                    ekey = cfg[key]['entry'+str(e+1)+'key']		# Entry Key binding
                 except:
                     raise Exception('Configuration file error:\n Menu entry missing associated key')
             else:
@@ -152,16 +152,16 @@ def ConfigRead():
                     raise Exception('Configuration file - Too many LABEL entries')
             if ekey not in sentry['entrydefs']:
                 sentry['entrydefs'][ekey] = {}
-            emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    #Entry connection mode
+            emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    # Entry connection mode
             level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
-            #Parse parameters
+            # Parse parameters
             parms = []
-            if efunc == 'IMAGEGALLERY':		#Show image file list
+            if efunc == 'IMAGEGALLERY':		# Show image file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
                 parms= [tentry,'','Displaying image list',p,tuple(['.GIF','.JPG','.PNG']+im_extensions),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
-            elif efunc == 'SWITCHMENU':		#Switch menu
+            elif efunc == 'SWITCHMENU':		# Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
-            elif efunc == 'FILES':			#Show file list
+            elif efunc == 'FILES':			# Show file list
                 te = cfg.get(key,'entry'+str(e+1)+'ext', fallback='')
                 if te != '':
                     exts = tuple(te.split(','))
@@ -169,16 +169,16 @@ def ConfigRead():
                     exts = ()
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
                 parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'subdirs',fallback=False)]
-            elif efunc == 'AUDIOLIBRARY':	#Show audio file list
+            elif efunc == 'AUDIOLIBRARY':	# Show audio file list
                 p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound/')
                 parms = [tentry,'','Displaying audio list',p]
-            elif efunc == 'PCMPLAY':		#Play PCM audio
+            elif efunc == 'PCMPLAY':		# Play PCM audio
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
-            elif efunc == 'GRABFRAME':		#Grab video frame
+            elif efunc == 'GRABFRAME':		# Grab video frame
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),None]
             elif efunc == 'SIDPLAY' or efunc == 'CHIPPLAY':        #Play SID/MUS
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
-            elif efunc == 'SLIDESHOW':		#Iterate through and show all supported files in a directory
+            elif efunc == 'SLIDESHOW':		# Iterate through and show all supported files in a directory
                 parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures'),1,True,cfg.getboolean(key,'entry'+str(e+1)+'shuffle', fallback=False)]
             elif efunc == 'SENDFILE':
                 parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),cfg.getboolean(key,'entry'+str(e+1)+'dialog', fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'save', fallback=False)]
@@ -191,9 +191,9 @@ def ConfigRead():
             # functions without parameters
             elif efunc in ['BACK','EXIT','USEREDIT','USERLIST','MESSAGE','LABEL','STATS']:
                 parms = []
-            elif efunc in PlugDict:			#Plugin function
+            elif efunc in PlugDict:			# Plugin function
                 parms = []
-                for p in PlugDict[efunc][1]:	#Iterate parameters
+                for p in PlugDict[efunc][1]:	# Iterate parameters
                     ep = cfg.get(key, 'entry'+str(e+1)+p[0], fallback=p[1])
                     if isinstance(p[1],tuple) == True and isinstance(ep,tuple) == False:
                         ep = tuple([int(e) if e.isdigit() else 0 for e in ep.split(',')])
@@ -249,7 +249,7 @@ def ConfigRead():
     config.read(config_file)
     bbs_instance.cfgmts = getmtime(config_file) # Set latest configuration file modify datestamp
 
-    #MAIN variables
+    # MAIN variables
     bbs_instance.name = config['MAIN']['bbsname']
     bbs_instance.ip = config['MAIN']['ip']
     bbs_instance.port = config['MAIN'].getint('port')
@@ -261,24 +261,23 @@ def ConfigRead():
     bbs_instance.dateformat = config['MAIN'].getint('dateformat', fallback=1)
     bbs_instance.Template = config['MAIN'].get('template', fallback='default')+'/'
 
-    #Get any paths
+    # Get any paths
     try:
         bbs_instance.Paths.update(dict(config.items('PATHS')))
     except:
         pass
-        # bbs_instance.Paths = {'temp':'tmp/','bbsfiles':'bbsfiles/'}
-    #Get any message boards options
+    # Get any message boards options
     try:
         bbs_instance.BoardOptions = dict(config.items('BOARDS'))
     except:
         bbs_instance.BoardOptions = {}
-    #Get any plugin config options
+    # Get any plugin config options
     try:
         bbs_instance.PlugOptions = dict(config.items('PLUGINS'))
     except:
         bbs_instance.PlugOptions = {}
 
-    #Parse Menues
+    # Parse Menues
     mcount = config['MAIN'].getint('menues')								#Number of menues
     _bbs_menues = [None] * mcount
 
@@ -355,18 +354,17 @@ def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=
     # Send speech message
     if conn.T56KVer > 0:
         conn.Sendall(TT.to_Speech() + speech)
-    #time.sleep(1)
     # Select screen output
     conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
     RenderMenuTitle(conn,title)
     # Send menu options
-    files = []	#all files
-    programs = []	#filtered list
-    #Read all files from 'path'
+    files = []	# all files
+    programs = []	# filtered list
+    # Read all files from 'path'
     for entries in walk(path):
         files.extend(entries[2])
         break
-    #Filter out all files not matching 'filter'
+    # Filter out all files not matching 'filter'
     if len(ffilter) > 0:
         for f in files:
             if splitext(f)[1].upper() in ffilter:
@@ -380,7 +378,7 @@ def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=
     end = start + (max_e-1)
     if end >= count:
         end = count - 1
-    #Add pagination keybindings to MenuDic
+    # Add pagination keybindings to MenuDic
     if pages > 1:
         if conn.MenuParameters['current'] == 0:
             page = pages-1
@@ -406,17 +404,12 @@ def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=
         else:
             label = splitext(programs[x])[0]
         KeyLabel(conn, valid_keys[x-start], (label+' '*e_width)[:e_width]+(''if x%2 else separator), (x % 4)<2)
-        #Add keybinding to MenuDic
+        # Add keybinding to MenuDic
         if fhandler == FT.SendFile:
             parameters = (conn,path+programs[x],True,transfer,)
         else:
             parameters = (conn,path+programs[x],True,transfer,)
         MenuDic[valid_keys[x-start]] = (fhandler,parameters,valid_keys[x-start],0,keywait)
-    # conn.SendTML(f'<AT x=1 y={scheight-2}>')
-    # if 'PET' in conn.mode:
-    #     conn.SendTML(f'<GREY3><RVSON><BACK> <LTGREEN>Prev. Menu <GREY3>&lt; <LTGREEN>Prev.Page <GREY3>&gt; <LTGREEN>Next Page  <RVSOFF><BR>')
-    # else:
-    #     conn.SendTML(f'<GREY> <RVSON><BACK> <LTGREEN>Go Back <GREY>&lt; <LTGREEN> P.Page <GREY>&gt; <LTGREEN>N.Page <RVSOFF><BR>')
     conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'','pages':'&lt; / &gt;','keys':[]}))
 
 
@@ -449,58 +442,6 @@ def SendMenu(conn:Connection):
             conn.SendTML(conn.templates.GetTemplate('main/menusection1col',**parms))
         elif s['columns'] == 2:
             conn.SendTML(conn.templates.GetTemplate('main/menusection2col',**parms))
-
-        # if len(s['title'])>0 or scount > 0:
-        #     conn.SendTML(f' <WHITE>{s["title"]}<BR>')
-        # conn.SendTML(f'<LTGREEN><UL-CORNER><HLINE n={scwidth-2}><UR-CORNER>')
-        # #Items
-        # count = 0
-        # toggle = False
-        # separator = ' ' if scwidth % 2 == 0 else '  '
-        # if s['columns'] < 2:
-        #     sw = 1
-        #     tw = scwidth-3
-        # else:
-        #     sw = 2
-        #     tw = (scwidth//2)-3
-        # for i in s['entrydefs']:
-        #     if conn.mode in s['entrydefs'][i]:
-        #         mode = conn.mode
-        #     elif '' in s['entrydefs'][i]:
-        #         mode = ''
-        #     else:
-        #         continue
-        #     if i == conn.encoder.nl:
-        #         continue
-        #     xw = (2 if i<'\r' else 0)    # Extra width if LABEL item
-        #     if isinstance(s['entrydefs'][i][mode][2],tuple):
-        #         t = s['entrydefs'][i][mode][2][0]
-        #         dw = scwidth-2 if len(t) == 0 and i<'\r' else scwidth-4
-        #         desc = formatX(s['entrydefs'][i][mode][2][1],columns=dw)
-        #     else:
-        #         t = s['entrydefs'][i][mode][2]
-        #         desc =''
-        #     title = crop(t,tw+xw-1,conn.encoder.ellipsis)
-        #     if len(title) > 0 or count > (sw-1) or i >= '\r':
-        #         if i < '\r' and count % sw == 0:    #NULL entry
-        #                 conn.SendTML('<LTGREEN><VLINE>')
-        #         KeyLabel(conn,i,title, toggle)
-        #         if count % sw == 0:
-        #             toggle = not toggle
-        #             line = ' '*((tw+xw)-1-len(title))+(separator if sw == 2 else '<GREEN><VLINE>')
-        #             conn.SendTML(line)
-        #         else:
-        #             conn.SendTML(f'<SPC n={((scwidth//2)-1)-(len(title)+(3-int(xw*1.5)))}><GREEN><VLINE>')
-        #     if desc != '':
-        #         tdesc = ''
-        #         for l in desc:
-        #             l = l.replace('<BR>','')    # We dont need them line breaks here
-        #             tdesc += f'<LTGREEN><VLINE><WHITE><SPC n={scwidth-2-dw}>{l}<SPC n={dw-len(unescape(l))}><GREEN><VLINE>'
-        #         conn.SendTML(tdesc)
-        #     count += 1
-        # if (count % sw == 1) and (sw == 2):
-        #     conn.SendTML(f'<SPC n={(scwidth//2)-1}><GREEN><VLINE>')
-        # conn.SendTML(f'<LL-CORNER><HLINE n={scwidth-2}><LR-CORNER>')
     conn.SendTML(f'<AT x=0 y={scheight-1}><WHITE> {tmenu["prompt"]} ')
 
 #####################################################################
@@ -554,11 +495,11 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = Fa
             w = FT.SendPETPetscii(conn,path+p)
         elif (ext in aud_e) and (conn.QueryFeature(TT.STREAM) < 0x80):
             if AA.PlayAudio(conn,path+p,None):
-                break   #Abort the whole slideshow if an audio is aborted
+                break   # Abort the whole slideshow if an audio is aborted
             w = 1
         elif (ext in chip_e) and (conn.QueryFeature(TT.SIDSTREAM) < 0x80):
             if AA.CHIPStream(conn,path+p,None,False):
-                break   #Abort the whole slideshow if a chiptune is aborted
+                break   # Abort the whole slideshow if a chiptune is aborted
             w = 1
         elif ext == '.TML':     #TML script
             with open(path+p,'r') as slide:
@@ -773,7 +714,6 @@ def SignIn(conn:Connection):
                 retries = 3
                 if uentry['online'] == 1:
                     Done = True
-                    #conn.Sendall('\ruSER ALREADY LOGGED IN\r')
                     conn.SendTML('<BR>User already logged in<BR>>')
                 while (not Done) and (retries > 0):
                     conn.SendTML('<BR>Password:')
@@ -796,15 +736,6 @@ def SignIn(conn:Connection):
                 if conn.ReceiveKey('yn') == 'y':
                     datestr = date_strings[conn.bbs.dateformat][0]
                     dout = date_strings[conn.bbs.dateformat][1]
-                    # if conn.bbs.dateformat == 1:
-                    #     datestr = "%m/%d/%Y"
-                    #     dout = "mm/dd/yyyy"
-                    # elif conn.bbs.dateformat == 2:
-                    #     datestr = "%Y/%m/%d"
-                    #     dout = "yyyy/mm/dd"
-                    # else:
-                    #     datestr = "%d/%m/%Y"
-                    #     dout = "dd/mm/yyyy"
                     if not conn.connected:
                         return
                     if conn.QueryFeature(179) < 0x80:
@@ -850,7 +781,7 @@ def SignIn(conn:Connection):
                     if conn.ReceiveKey('yn') == 'y':
                         if not conn.connected:
                             return
-                        #Edit user data
+                        # Edit user data
                         EditUser(conn)
                     Done = True
                 else:
@@ -870,15 +801,6 @@ def EditUser(conn:Connection):
     _dec = conn.encoder.decode
     _LOG('Editing user '+conn.username, v=3)
     keys = string.ascii_letters + string.digits + ' +-_,.$%&'
-    # if conn.bbs.dateformat == 1:
-    #     datestr = "%m/%d/%Y"
-    #     dout = "mm/dd/yyyy"
-    # elif conn.bbs.dateformat == 2:
-    #     datestr = "%Y/%m/%d"
-    #     dout = "yyyy/mm/dd"
-    # else:
-    #     datestr = "%d/%m/%Y"
-    #     dout = "dd/mm/yyyy"
     scwidth = conn.encoder.txt_geo[0]
     if conn.userid == 0:
         return
@@ -911,7 +833,7 @@ def EditUser(conn:Connection):
         k = conn.ReceiveKey('abcdefg' + back)
         if k == back:
             done = True
-        elif k == 'a': #Username
+        elif k == 'a': # Username
             n = False
             conn.SendTML('<BR><CRSRU>')
             while not n:
@@ -947,9 +869,9 @@ def EditUser(conn:Connection):
                         conn.bbs.database.updateUser(uentry.doc_id,name,None,None,None,None,None,None)
                         conn.username = name
                         n = True
-                else:   #Same old username
+                else:   # Same old username
                     n = True
-        elif k == 'b': #First name
+        elif k == 'b': # First name
             conn.SendTML('<BR><CRSRU>')
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                 conn.Sendall(TT.Fill_Line(14,32))
@@ -960,7 +882,7 @@ def EditUser(conn:Connection):
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,fname,None,None,None,None)
-        elif k == 'c': #Last name
+        elif k == 'c': # Last name
             conn.SendTML('<BR><CRSRU>')
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                 conn.Sendall(TT.Fill_Line(14,32))
@@ -971,7 +893,7 @@ def EditUser(conn:Connection):
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,None,lname,None,None,None)
-        elif k == 'd': #Birthdate
+        elif k == 'd': # Birthdate
             conn.SendTML('<BR><CRSRU>')
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                 conn.Sendall(TT.Fill_Line(14,32))
@@ -981,7 +903,7 @@ def EditUser(conn:Connection):
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,None,None,bday.strftime("%d/%m/%Y"),None,None)
-        elif k == 'e': #Country
+        elif k == 'e': # Country
             conn.SendTML('<BR><CRSRU>')
             if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                 conn.Sendall(TT.Fill_Line(14,32))
@@ -992,7 +914,7 @@ def EditUser(conn:Connection):
             if not conn.connected:
                 return
             conn.bbs.database.updateUser(uentry.doc_id,None,None,None,None,None,country,None)
-        elif k == 'f': #Password
+        elif k == 'f': # Password
             n = 0
             conn.SendTML('<BR><CRSRU>')
             while n < 3:
@@ -1033,7 +955,7 @@ def EditUser(conn:Connection):
                     else:
                         conn.SendTML(f'<AT x=0 y=15><SPC n={scwidth*2}><CRSRU n=3>')
                     n += 1
-        elif k == 'g': #Preferences
+        elif k == 'g': # Preferences
             EditPrefs(conn)
 
 
@@ -1160,7 +1082,7 @@ def UserList(conn:Connection):
     end = start + 17
     if end >= count:
         end = count - 1
-    #Add pagination keybindings to MenuDic
+    # Add pagination keybindings to MenuDic
     if pages > 1:
         if conn.MenuParameters['current'] == 0:
             page = pages-1
@@ -1211,10 +1133,6 @@ def GetTerminalFeatures(conn:Connection, display = True):
         conn.samplerate = conn.ReceiveInt(1200,115200,57600)//5
         conn.SendTML('<BR>')
     grey = f'<INK c={conn.style.TxtColor}>'
-    # if conn.mode == 'MSX1':
-    #     grey = '<GREY>'
-    # else:
-    #     grey = '<GREY3>'
     if conn.T56KVer > 0.5:
         good = f"<INK c={conn.style.OKTxtColor}>+" if "MSX" in conn.mode else f"<INK c={conn.style.OKTxtColor}><CHECKMARK>"
         conn.SendTML(f'<LTBLUE>{conn.encoder.nl.join(formatX("Checking some terminal features...",conn.encoder.txt_geo[0]),)}<BR>')
@@ -1246,8 +1164,6 @@ RUNNING UNDER:<BR>
 
         conn.Flush(0.5) # Flush for 0.5 seconds
         conn.SendTML(welcome)
-        # Connected, wait for the user to press RETURN
-        # TODO: Accept any valid RETURN/ENTER character
         backspaces = []
         for encoder in conn.bbs.encoders:
             if conn.bbs.encoders[encoder].bs not in backspaces:
@@ -1309,8 +1225,6 @@ RUNNING UNDER:<BR>
                     t_mode = (b'UNKNOWN-'+clist[sel][1]) if clist[sel][1] !='default' else b'RETROTERM'
                     conn.SendTML('<BR>')
                     conn.SetMode(t_mode,t56kver)
-                    # conn.mode = mode    # Restore real client ID
-                    ...
                 else:
                     conn.SetMode(datos,t56kver)
 
@@ -1321,14 +1235,7 @@ RUNNING UNDER:<BR>
         else:
             conn.SendTML(   '<FORMAT><BR>FOR THE BEST EXPERIENCE, THIS BBS REQUIRES A TERMINAL COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
                             'FOR THE LATEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
-            # time.sleep(1)
             conn.Flush(1)
-            # conn.SendTML('<FORMAT>TO CONTINUE PRESS YOUR BACKSPACE/DELETE KEY...<BR></FORMAT>')
-            # time.sleep(1)
-
-            # datos = conn.NBReceive(1,10)
-            # if len(datos) == 0:
-            #     datos = b'\x00'
             encoders = []
             for encoder in conn.bbs.encoders:       # Get encoders which use the same backspace character
                 if conn.bbs.encoders[encoder].bs == backspace and conn.bbs.encoders[encoder].minT56Kver == 0:
@@ -1375,19 +1282,19 @@ RUNNING UNDER:<BR>
                         if prefs['intro']:
                             SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
                         conn.SendTML('<CURSOR>')
-                        break   #Done = True
+                        break
                 elif t == 'g':
                     conn.SendTML(tml)
                     SlideShow(conn,'',conn.bbs.Paths['bbsfiles']+'intro/')
                     conn.SendTML('<CURSOR>')
-                    break   #Done = True
+                    break
                 else:
                     conn.SendTML(tml)
-                    break   #Done = True
+                    break
 
             # Increment visit counters
-            conn.bbs.visits += 1            #Session counter
-            conn.bbs.database.newVisit(conn.username)    #Total counter
+            conn.bbs.visits += 1                        # Session counter
+            conn.bbs.database.newVisit(conn.username)   # Total counter
             # Execute session startup TML
             if exists(conn.bbs.Paths['bbsfiles']+'newsession.tml'):
                 with open(conn.bbs.Paths['bbsfiles']+'newsession.tml','r') as slide:
@@ -1496,7 +1403,7 @@ if AA.meta != True:
 args = parser.parse_args()
 set_verbosity(args.verb)
 
-#Set configuration file
+# Set configuration file
 config_file = args.config
 
 _semaphore = False  #
