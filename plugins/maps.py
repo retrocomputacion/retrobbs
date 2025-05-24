@@ -285,7 +285,7 @@ def plugFunction(conn:Connection):
             conn.SendTML('<SPINNER>')
             tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
             if tloc == None:
-                conn.SendTML('<CLR>ERROR!><PAUSE n=0.5>')
+                conn.SendTML('<CLR>ERROR!<PAUSE n=0.5>')
                 #Default to user location or Greenwich observatory otherwise
                 response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
                 result = response.content.decode()
