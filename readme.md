@@ -185,6 +185,7 @@ __New features__:
  - Sysop can now delete ONELINER messages
 
 __Changes/Bug fixes__:
+ - Minimum Python version required is now 3.9
  - Fixed filter cutoff low nibble in SID chiptune streaming
  - Fixed PCMPLAY support for non-local files
  - *Webaudio* plugin now supports non-live sources
@@ -270,7 +271,7 @@ Included plug-ins:
 ---
 # 1.5 Requirements
 
-Python version 3.7 or above
+Python version 3.9 or above
 
 Python modules:
 
@@ -287,7 +288,7 @@ Python modules:
   * numpy
   * opencv-python
   * ~~pafy (For the YouTube plug-in) (use this version: https://github.com/Cupcakus/pafy)~~
-  * python_weather (For the weather plugin)
+  * ~~python_weather (For the weather plugin)~~
   * pyradios (For *Radio* plugin)
   * scikit-image
   * soundfile
@@ -297,6 +298,10 @@ Python modules:
   * wikipedia and wikipedia-api (For the Wikipedia plug-in)**
   * ymodem (x/y modem file transfers)
   * yt_dlp
+  * HersheyFonts
+  * openmeteo-requests (Rewritten weather plugin)
+  * requests-cache
+  * retry-requests
 
   A basic `requirements.txt` file is available for quick installation of the required modules. Use:
   

@@ -1152,9 +1152,9 @@ def BBSLoop(conn:Connection):
         # Sync
         conn.SendTML('<NUL n=2>')
         if conn.bbs.lang == 'es':
-            pt = "intentando detectar terminal,<BR>presione BACKSPACE/DELETE...<BR>"
+            pt = "intentando detectar terminal,<BR>presione su tecla BACKSPACE (INS/DEL en Commodore)...<BR>"
         else:
-            pt = "trying to detect terminal,<BR>press BACKSPACE/DELETE...<BR>"
+            pt = "trying to detect terminal,<BR>press your BACKSPACE key, (INS/DEL on Commodore)...<BR>"
 
         welcome = f'''<FORMAT>{conn.bbs.WMess.upper()}<BR>
 RETROBBS V{conn.bbs.version:.2f}<BR>

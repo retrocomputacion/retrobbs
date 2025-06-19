@@ -27,3 +27,7 @@ validators
 yt_dlp
 ymodem
 xmltodict
+Hershey-Fonts
+openmeteo-requests
+requests-cache
+retry-requests
