@@ -369,7 +369,6 @@ Foreground and background colors can be selected individually for each character
     - Delete out: `\x08`
     - Line break in: `\r`
     - Line break out: `\r\n`
-    - BBS mode: `VT52`
     - RLE image support
     - Screen color is fixed. Usually black.
     - BBS mode: `VidTex`
