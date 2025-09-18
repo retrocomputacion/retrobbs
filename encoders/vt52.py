@@ -13,11 +13,6 @@ STOP = 0x03
 RETURN = 0x0D
 ESC = 0x1B
 
-# #--Special chars
-# POUND = 0x9C
-# LEFT_ARROW = 0x5F
-# PI = 0xE3
-
 #--Editor
 DELETE = 0x08
 
@@ -25,21 +20,6 @@ DELETE = 0x08
 HLINE = 0x2D
 CROSS = 0x2B
 VLINE = 0x7C
-# HASH  = 0xB2
-# COMM_U = 0xDF
-# COMM_O = 0xDC
-# COMM_J = 0xDD
-# COMM_L = 0xDE
-# CHECKMARK = 0xFB
-
-# UL_CORNER = 0xDA     # Box corners
-# UR_CORNER = 0xBF
-# LL_CORNER = 0xC0
-# LR_CORNER = 0xD9
-# L_HALF  = 0xDD      # Semigraphics
-# R_HALF  = 0xDE
-# B_HALF  = 0xDF
-# T_HALF  = 0xDC
 
 #--Characters used by the BBS
 SPINNER = 0x25  # Character to use while waiting

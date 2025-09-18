@@ -280,8 +280,9 @@ def plugFunction(conn:connection.Connection,url,image,title):
                 conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
             else:
                 conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
-            if conn.ReceiveKey('\rx') == 'x':
-                return
+
+    if conn.ReceiveKey('\rx') == 'x':
+        return
 
     if conn.QueryFeature(TT.STREAM) >= 0x80:
         conn.SendTML('<FORMAT>Your terminal does not support audio streaming!</FORMAT><PAUSE n=2>')
