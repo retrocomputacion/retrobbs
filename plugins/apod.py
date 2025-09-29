@@ -1,81 +1,108 @@
-#Based on apod.py by Rajat Goyal
 #Retrieves an APOD and converts it to c64 gfx format
 
-import sys
 import requests
-import urllib.request
-import ctypes
 import random
-from datetime import datetime,timedelta
+from datetime import datetime
 from PIL import Image
 from io import BytesIO
 
-from common.c64cvt import c64imconvert
-import common.petscii as P
-import common.turbo56k as TT
-from common.style import default_style, RenderMenuTitle
-import common.filetools as FT
-from common.helpers import formatX, More
+from common import turbo56k as TT
+from common.style import RenderMenuTitle
+from common import filetools as FT
+from common.helpers import formatX, More, text_displayer
 from common.bbsdebug import _LOG,bcolors
-
+from common.connection import Connection
+from common.imgcvt import gfxmodes
 
 url = 'https://api.nasa.gov/planetary/apod'
-key = 'DGOkUrjIeLMTJhL4ZzAVZmKgkjLNixHJAiYpfust'    #'TRUeFmW0K72G8JRKOYfhZymkQUFM9bGxF05QrbNo'
 
-#############################
-#Plugin setup
+###############
+# Plugin setup
+###############
 def setup():
     fname = "APOD"
     parpairs= []
     return(fname,parpairs)
-#############################
 
 start_date = datetime.today().replace(day=16, month=6, year=1995).toordinal()
 end_date = datetime.today().toordinal()
 
-##########################################
-#Plugin callable function
-def plugFunction(conn):
+###################################
+# Plugin function
+###################################
+def plugFunction(conn:Connection):
 
-
-
-    apod_lang = {'en':['cONNECTING WITH nasa',"\r"+chr(P.LT_GREEN)+"pRESS "+chr(P.PALETTE[default_style.PbColor])	\
-                    +"["+chr(P.PALETTE[default_style.PtColor])+"return"+chr(P.PALETTE[default_style.PbColor])+"]"	\
-                    +chr(P.LT_GREEN)+" TO DISPLAY IMAGE\rpRESS "+chr(P.YELLOW)+"["+chr(P.PALETTE[default_style.PtColor])	\
-                    +"return"+chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)+" AGAIN FOR A NEW\rRANDOM IMAGE\roR "	\
-                    +chr(P.PALETTE[default_style.PbColor])+"["+chr(P.PALETTE[default_style.PtColor])+"_"	\
-                    +chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)+" TO GO BACK"],
-                'es':['cONNECTANDO CON LA nasa',"\r"+chr(P.LT_GREEN)+"pRESIONE "+chr(P.PALETTE[default_style.PbColor])	\
-                    +"["+chr(P.PALETTE[default_style.PtColor])+"return"+chr(P.PALETTE[default_style.PbColor])+"]"	\
-                    +chr(P.LT_GREEN)+" PARA MOSTRAR IMAGEN\rpRESIONE "+chr(P.YELLOW)+"["+chr(P.PALETTE[default_style.PtColor])	\
-                    +"return"+chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)	\
-                    +" DE NUEVO\rPARA OTRA IMAGE AL AZAR\ro "+chr(P.PALETTE[default_style.PbColor])+"["	\
-                    +chr(P.PALETTE[default_style.PtColor])+"_"+chr(P.PALETTE[default_style.PbColor])+"]"+chr(P.LT_GREEN)	\
-                    +" PARA VOLVER"]}
-
-    #conn.Sendall("apod")
-    #time.sleep(1)
+    apod_lang = {'en':['Connecting with NASA',f"<CLR><BR><LTGREEN>Converting...<BR>press <INK c={conn.style.PbColor}>"	\
+                    + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
+                    + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER>",
+                    f"<CLR><LTGREEN><FORMAT>A Turbo56K compatible terminal is required to view this image</FORMAT><BR>"\
+                    + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
+                    + f"<LTGREEN> for a new<BR>random image<BR>Or "	\
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> to exit<YELLOW><SPINNER>"],
+                'es':['Conectando con la NASA',f"<CLR><BR><LTGREEN>Convirtiendo...<BR>presione <INK c={conn.style.PbColor}>"	\
+                    + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
+                    + f"<LTGREEN> para mostrar otra imagen al azar<BR>O "	\
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER>",
+                    f"<CLR><FORMAT><LTGREEN>Se requiere una terminal compatible con Turbo56K para ver ésta imagen</FORMAT><BR>"\
+                    + f"[<INK c={conn.style.PtColor}>RETURN<INK c={conn.style.PbColor}>]"	\
+                    + f"<LTGREEN> para una nueva imagen al azar<BR>O "	\
+                    + f"<INK c={conn.style.PbColor}>[<INK c={conn.style.PtColor}><BACK>"	\
+                    + f"<INK c={conn.style.PbColor}>]<LTGREEN> para volver<YELLOW><SPINNER>"]}
     loop = True
     rdate = datetime.today()
     while loop == True:
-        # # Text mode
-        conn.Sendall(TT.to_Text(0,0,0))
-        RenderMenuTitle(conn,'apod')
-        conn.Sendall(apod_lang.get(conn.bbs.lang,'en')[0]+chr(P.YELLOW)+"..."+chr(P.COMM_B)+chr(P.CRSR_LEFT))
+        # Text mode
+        conn.SendTML(f'<NUL n=2><TEXT page=0 border={conn.style.BoColor} background={conn.style.BoColor}><CURSOR>')
+        RenderMenuTitle(conn,'APOD')
+        conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[0]+'<YELLOW>...<SPINNER>')
         i = 0
         idata = None
-        _LOG("Receiving APOD info",id=conn.id)
+        _LOG("Receiving APOD info",id=conn.id,v=4)
         while idata == None and i<5:
-            idata = apod_info(rdate,conn.bbs.PlugOptions.get('nasakey','DEMO_KEY')) #<<<< Change this to custom ini
+            idata = apod_info(rdate,conn.bbs.PlugOptions.get('nasakey','DEMO_KEY'))
             rdate = datetime.fromordinal(random.randint(start_date, end_date))
             if idata == None:
-                _LOG(bcolors.OKBLUE+"Retrying..."+bcolors.ENDC,id=conn.id)
+                _LOG(bcolors.OKBLUE+"APOD Retrying..."+bcolors.ENDC,id=conn.id,v=3)
             i += 1
             conn.Sendall(".")
-        conn.Sendall('\a'+chr(P.DELETE)*(23+i))
+        conn.SendTML(f'<BELL><DEL n={23+i}>')
         if idata != None:
+            scwidth,scheight = conn.encoder.txt_geo
+            if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+                barline = 3
+            else:
+                barline = scheight-1
+            if conn.QueryFeature(TT.SCROLL) >= 0x80 and not conn.encoder.features['scrollback']:
+                crsr = ''
+            else:
+                if set(('CRSRU','CRSRD')) <= conn.encoder.ctrlkeys.keys():
+                    crsr = 'crsr'
+                else:
+                    crsr = 'a/z'
+            if set(('F1','F3')) <= conn.encoder.ctrlkeys.keys():
+                pages = 'F1/F3'
+            else:
+                pages = 'p/n'
+            conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':barline,'crsr':crsr,'pages':pages,'keys':[('v','view')]}))
+            # if 'MSX' in conn.mode:
+            #     bcode = 0xDB
+            #     rcrsr = ''
+            # else:
+            #     bcode = 0xA0
+            #     rcrsr = '<CRSRR n=7><R-NARROW>'
+            # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+            #     conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
+            # else:
+            #     conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
+            # conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
+            if conn.QueryFeature(TT.SET_WIN) >= 0x80:
+                conn.SendTML('<BR>')
             date = idata["date"]
-            _LOG("Showing APOD info for "+date,id=conn.id)
+            _LOG("Showing APOD info for "+date,id=conn.id,v=4)
             imurl = idata["url"]
             title = idata["title"]
             desc = idata["explanation"]
@@ -83,88 +110,88 @@ def plugFunction(conn):
                 autor = idata["copyright"]
             else:
                 autor = ''
-
-            texto = formatX(title) #textwrap.wrap(''.join(c.lower() if c.isupper() else c.upper() for c in title),40)
-            #Prints date
-            texto += formatX("\n"+chr(P.LT_BLUE)+P.toPETSCII(date)+chr(P.WHITE)+"\n\n",convert=False)
+            texto = formatX(title,scwidth)
+            #Date
+            tdate = formatX('\n'+date+'\n\n',scwidth)
+            tdate[0] = f'<INK c={conn.style.HlColor}>'+tdate[0]
+            texto += tdate
+            #Author
             if autor != '':
-                autor = chr(P.ORANGE)+"bY:"+P.toPETSCII(autor)+chr(P.PALETTE[default_style.TxtColor])+'\r'
-                at = formatX(autor,convert=False) #textwrap.wrap(''.join(c.lower() if c.isupper() else c.upper() for c in autor),40)
+                at = formatX(autor,scwidth)
+                at[0] = f'<INK c={conn.style.TevenColor}>'+at[0]
             else:
-                at = ['\r']
-            texto += at+formatX(desc)
-
-            if More(conn,texto,25) == 0:
-                conn.Sendall(chr(P.DELETE)*8)
-            else:
-                conn.Sendall(chr(P.DELETE)*13)
-            conn.Sendall(apod_lang.get(conn.bbs.lang,'en')[1])
-            tecla = conn.ReceiveKey(b'\r_')
+                at = ['<BR>']
+            #Description
+            tdesc = formatX(desc,scwidth)
+            tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
+            texto += at+tdesc
+            conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
+            tecla = text_displayer(conn,texto,scheight-4,ekeys='v')
+            conn.SendTML('<WINDOW>')
+            back = conn.encoder.back
             if conn.connected == False:
                 return()
-            if tecla == b'_' or tecla == b'':
+            if tecla == back or tecla == '':
                 loop = False
             if loop == True:
-                conn.Sendall("\rcONVERTING IMAGE"+chr(P.YELLOW)+chr(P.COMM_B)+chr(P.CRSR_LEFT))
-                _LOG("Downloading and generating image",id=conn.id)
-                try:
-                    img = apod_img(imurl) #img, bm, scr, cram, bg
-                    FT.SendBitmap(conn, img)
-                except:
-                    _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id)
-                    conn.Sendall("\rerror, UNABLE TO RECEIVE IMAGE")
-
-                tecla = conn.ReceiveKey(b'\r_')
-                conn.Sendall(TT.enable_CRSR())
+                if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
+                    conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[1])
+                    _LOG("Downloading and converting image",id=conn.id,v=4)
+                    try:
+                        img = apod_img(conn, imurl)
+                        FT.SendBitmap(conn, img)
+                    except:
+                        _LOG(bcolors.WARNING+"Error receiving APOD image"+bcolors.ENDC,id=conn.id,v=2)
+                        conn.SendTML("<BR>ERROR, unable to receive image")
+                else:
+                    conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[2])
+                tecla = conn.ReceiveKey([conn.encoder.nl,back])
+                conn.SendTML('<CURSOR>')
                 if conn.connected == False:
-                    _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id)
+                    _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id,v=1)
                     return()
-                if tecla == b'_' or tecla == b'':
+                if tecla == back or tecla == '':
                     loop = False
-            #else:
-            #	rdate = datetime.datetime.fromordinal(random.randint(apod.start_date, apod.end_date))
         else:
-            conn.Sendall("\rerror, UNABLE TO CONNECT WITH nasa")
-            _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id)
+            conn.SendTML("<BR>ERROR, unable to connect with NASA")
+            _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id,v=2)
             loop = False
-##########################################
 
-
+#####################################################
+# Retrieve APOD data
+#####################################################
 def apod_info(idate, key='DEMO_KEY', retry = False):
-
     global url
-    #global key
 
     date = idate.strftime("%Y-%m-%d")
     resp = None
     while resp == None:
         try :
             param = {'api_key': key, 'date': date}
-            resp = requests.get(url, params=param).json()
+            resp = requests.get(url, params=param, timeout=8).json()
             #apod_url = resp["hdurl"]
             if "media_type" in resp:
                 m_type = resp["media_type"]
             else:
                 m_type = ''
             if m_type != 'image' and retry == True:
-                print(datetime.now(),'APOD - Not an image, retrying...', file=sys.stderr)
+                _LOG('APOD - Not an image, retrying...')
                 resp = None
                 date = datetime.fromordinal(random.randint(start_date, end_date)).strftime("%Y-%m-%d")
         except :
             if retry == True:
-                print(datetime.now(),'APOD - Error, retrying...', file=sys.stderr)
+                _LOG('APOD - Error, retrying...')
             else:
                 m_type = ''
                 resp = -1
     if m_type != 'image':
         resp = None
-
     return(resp)
 
-#apod_link = f'https://apod.nasa.gov/apod/ap{date.replace("-", "")[2:]}.html'
-
-def apod_img(url):
-
+###################################
+# Retrieve APOD image
+###################################
+def apod_img(conn:Connection,url):
     cv_img = None
     bitmap = None
     screen = None
@@ -172,20 +199,14 @@ def apod_img(url):
     background = 0
     try:
         apod_im = requests.get(url, allow_redirects=True)
-        print(datetime.now(),'APOD - Image retrieved', file=sys.stderr)
-
+        _LOG('APOD - Image retrieved', id=conn.id, v=4)
     except:
-        print(datetime.now(),'APOD - Error retreiving image', file=sys.stderr)
+        _LOG('APOD - Error retreiving image', id=conn.id, v=2)
         return(cv_img, bitmap, screen, colorRAM, background)
     try:
         img = Image.open(BytesIO(apod_im.content))
-
         img = img.convert("RGB")
-
-        #cv_img, bitmap, screen, colorRAM, background = c64imconvert(img,1)
-
     except:
-        print(datetime.now(),'APOD - Error converting image', file=sys.stderr)
-
+        _LOG('APOD - Error converting image', id=conn.id, v=1)
     return (img)
 

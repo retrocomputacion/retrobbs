@@ -1,0 +1,27 @@
+{# CSDb plugin menu title template #}
+<CLR>
+{% if scwidth > 40 %}
+	{% set br = '<BR>' %}
+{% else %}
+	{% set br = '' %}
+{% endif %}
+{% if 'PET' in mode %}
+	{% if scwidth > 40 %}
+		{% set br = '<BR>' %}
+	{% else %}
+		{% set br = '' %}
+	{% endif %}
+	<LOWER><WHITE><RVSON><UL-QUAD><RVSOFF><UL-LR-QUAD><LR-QUAD><RVSON><B-HALF><RVSOFF><LL-QUAD><RVSON> <RVSOFF><UL-LR-QUAD><RVSON><L-HALF><RVSOFF><L-HALF><GREY2>:::::::<GREY1>The C-64 Scene Database<GREY2>:
+	{{ br }}
+	<WHITE><RVSON> <RVSOFF>  <UL-LR-QUAD> <RVSON> <L-HALF><L-HALF><LR-QUAD><RVSOFF><LL-QUAD><GREY2>::::::<LTBLUE>The C-64 Scene Database<GREY2>:
+	{{ br }}
+	<WHITE><RVSON><LL-QUAD><UL-LR-QUAD><RVSOFF><UR-QUAD><B-HALF><UL-QUAD><RVSON> <UL-LR-QUAD><L-HALF><UR-QUAD><RVSOFF><UL-QUAD><GREY2>::::::<GREY1>The C-64 Scene Database<GREY2>:
+	{{ br }}
+{% elif 'MSX1' in mode %}
+	 <BLACK><PAPER c=15><UL-QUAD><WHITE><PAPER c=1><CHR c=193><LR-QUAD><U-HALF><LL-QUAD><BLOCK><CHR c=193><R-HALF><L-HALF><GREY>             <LTBLUE>The<GREY> <BLUE>C=64<BR>
+	 <WHITE><BLOCK>  <CHR c=193> <BLOCK><R-HALF><R-HALF><BLACK><PAPER c=15><LR-QUAD><WHITE><PAPER c=1><LL-QUAD><GREY><BR>
+	 <BLACK><PAPER c=15><LL-QUAD><WHITE><PAPER c=1><CHR c=199><UR-QUAD><B-HALF><UL-QUAD><BLOCK><CHR c=199><R-HALF><BLACK><PAPER c=15><UR-QUAD><WHITE><PAPER c=1><UL-QUAD><GREY>      <LTBLUE>Scene Database<BR>
+{% else %}
+    {% set title = 'CSDb' %}
+    {% include 'main/menutitle.j2' %}
+{% endif%}

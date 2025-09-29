@@ -1,43 +1,94 @@
 ########### Style ############
 # Quite lean for now
 from common.connection import Connection
-from common import petscii as P
 from common import turbo56k as TT
+from common import helpers as H
+from common.classes import bbsstyle
 
-class bbsstyle:
-	def __init__(self):
-		pass
+# default_style = bbsstyle()
 
-default_style = bbsstyle()
+def RenderMenuTitle(conn:Connection, title, style:bbsstyle=None):
+    if type(title) == tuple:
+        title = title[0]
+    parms = {'title':title}
+    if style != None:
+        parms['st':style]
+    tml = conn.templates.GetTemplate('main/menutitle',**parms)
+    conn.SendTML(tml)
 
-	# Default colors (in c64 palette index)
-default_style.BgColor		= 0		#Background color
-default_style.BoColor		= 0		#Border color
-default_style.TxtColor		= 15	#Main text color
-default_style.HlColor		= 1		#Highlight text color
+# Returns '[text]' prompt string in the selected style
+# TML: True to return TML sequence
+def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
+    if style == None:
+        style = conn.style
+    pal = conn.encoder.palette
+    if pal != {}:
+        if TML:
+            return(f'<INK c={style.PbColor}>[<INK c={style.PtColor}>{text}<INK c={style.PbColor}>]')
+        else:
+            if conn.QueryFeature(TT.INK) >= 0x80:																			# Update INK command
+                tmp = pal.items()
+                bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
+                tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
+            else:
+                bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
+                tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
+            return(bc+'['+tc+conn.encoder.encode(str(text),False)+bc+']')
+    else:
+        return(f'[{text}]')
 
-default_style.OoddColor		= 14	#Odd option key color
-default_style.ToddColor		= 15	#Odd option text color
-default_style.OevenColor	= 3		#Even option key color
-default_style.TevenColor	= 7		#Even option text color
+# Renders a menu option in the selected style  
+def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=None):
+    parms = {'key':key, 'label':label, 'toggle':toggle}
+    if style != None:
+        parms['st'] = style
+    tml = conn.templates.GetTemplate('main/keylabel',**parms)
+    conn.SendTML(tml)
+    return not toggle
 
-	### [Prompt] ###
-default_style.PbColor		= 7		#Key prompt brackets color
-default_style.PtColor		= 14	#Key prompt text color
+#####################################################
+# Render 'file dialog' background
+#####################################################
+def RenderDialog(conn:Connection,height,title=None):
+    tml = conn.templates.GetTemplate('main/dialog',**{'title':title,'height':height,'crop':H.crop})
+    conn.SendTML(tml)
+    # if 'MSX' in conn.mode:
+    #     grey1 = '<GREY>'
+    #     grey3 = '<WHITE>'
+    # else:
+    #     grey1 = '<GREY1>'
+    #     grey3 = '<GREY3>'
+    # conn.SendTML(f'<CLR>{grey3}<RVSON>')
+    # scwidth = conn.encoder.txt_geo[0]
+    # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+    #     if 'MSX' in conn.mode:
+    #         cfill = 0x17
+    #     else:
+    #         cfill = 192
+    #     conn.SendTML(f'<LFILL row=0 code={cfill}>')
+    #     conn.Sendall(chr(TT.CMDON))
+    #     if 'MSX' in conn.mode:
+    #         cfill = 0x20
+    #     else:
+    #         cfill = 160
+    #     for y in range(1,height):
+    #         conn.Sendall(chr(TT.LINE_FILL)+chr(y)+chr(cfill))
+    #     conn.Sendall(chr(TT.CMDOFF))
+    #     if 'MSX' in conn.mode:
+    #         conn.SendTML(f'{grey1}<LFILL row={height} code={0xdc}>{grey3}')
+    #     else:
+    #         conn.SendTML(f'{grey1}<LFILL row={height} code={226}>{grey3}')        
+    # else:
+    #     conn.SendTML(f'<HLINE n={scwidth-1}><CRSRL><INS><HLINE><CRSRR>')
+    #     conn.SendTML(f'<LET x=0><WHILE c="_I!={height-1}"><SPC n={scwidth-1}><CRSRL><INS> <CRSRR><INC></WHILE>{grey1}<B-HALF n={scwidth}><HOME>{grey3}')
+    #     # conn.SendTML(f'<HLINE n={scwidth}><SPC n={scwidth*(height-1)}>{grey1}<B-HALF n={scwidth}><HOME>{grey3}')
+    # if title != None:
+    #     ctt = H.crop(title,scwidth-2,conn.encoder.ellipsis)
+    #     conn.SendTML(f'<AT x={1+((scwidth-2)-len(ctt))/2} y=0>{ctt}<BR>')
 
-
-def RenderMenuTitle(conn,title):
-
-	# Clear screen
-	conn.Sendall(chr(P.CLEAR))
-	# Lower/uppercase charset
-	conn.Sendall(chr(P.TOLOWER))
-	# Send menu title
-	conn.Sendall(chr(P.LT_GREEN)+chr(TT.CMDON)+chr(TT.LINE_FILL)+chr(0)+chr(64)+chr(TT.LINE_FILL)+chr(2)+chr(64)+chr(TT.CMDOFF))
-	conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_U)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_U))
-	conn.Sendall(" "+chr(P.RVS_OFF)+chr(P.WHITE)+" "+(conn.bbs.name[:19]+" - "+title+(" "*33)[:37]+"  ")[:36]+" "+chr(P.RVS_ON)+chr(P.CYAN)+" ")
-	conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+chr(P.CYAN)+(chr(P.CRSR_RIGHT)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
-	#conn.Sendall(chr(P.RVS_ON)+chr(P.CYAN)+chr(P.COMM_O)+chr(P.RVS_OFF)+(chr(P.LT_GREEN)+chr(P.HLINE)+chr(P.CYAN)+chr(P.HLINE))*19+chr(P.LT_GREEN)+chr(P.RVS_ON)+chr(P.COMM_O)+chr(P.RVS_OFF))
-
-def KeyPrompt(text,style=default_style):
-	return(chr(P.PALETTE[style.PbColor])+'['+chr(P.PALETTE[style.PtColor])+text+chr(P.PALETTE[style.PbColor])+']')
+###########
+# TML tags
+###########
+t_mono = {	'MTITLE':(lambda c,t:RenderMenuTitle(c,t),[('c','_C'),('t','')]),
+              'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('style',None),('tml','False')]),
+            'DIALOG':(lambda c,h,t:RenderDialog(c,h,t),[('c','_C'),('h',4),('t','')])}

@@ -1,0 +1,19 @@
+<MODE m='PET64'>
+    <UPPER>
+    <SENDRAW file='bbsfiles/intro/intro_map/bbsmap.seq'>
+</MODE>
+<MODE m='PET64std'>
+    <UPPER>
+    <SENDRAW file='bbsfiles/intro/intro_map/bbsmap.seq'>
+</MODE>
+<MODE m='PET264'>
+    <UPPER>
+    <SENDRAW file='bbsfiles/intro/intro_map/bbsmap.seq'>
+</MODE>
+<MODE m='PET264std'>
+    <UPPER>
+    <SENDRAW file='bbsfiles/intro/intro_map/bbsmap.seq'>
+</MODE>
+<MODE m='MSX1'>
+    <SENDRAW file='bbsfiles/intro/intro_map/bbsmap.mseq'>
+</MODE>

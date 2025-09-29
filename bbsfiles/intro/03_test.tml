@@ -1,0 +1,33 @@
+<CAT path='bbsfiles/intro/intro_pics'>
+<MODE m=PET264>
+	<CAT path='bbsfiles/intro/intro_pics/pet264'>
+</MODE>
+<MODE m=MSX1>
+	<CAT path='bbsfiles/intro/intro_pics/msx1'>
+</MODE>
+<LEN x='_A'>
+<IF c='_I>0'>
+	<RND e=_I>
+	<SENDFILE file='_A[_I]'>
+</IF>
+<TEXT><CLR><USER>
+<IF c='_S!="_guest_"'>
+	<CLR>
+	<UNREAD>
+	<LOWER>
+	<YELLOW>
+	Welcome back <WHITE><OUT x=_S>!<BR>
+	<IF c='_A[0]!=0'>
+		<LTGREEN>You have <YELLOW><OUT x=_A[0]><LTGREEN> unread message
+		<IF c='_A[0]>1'>s</IF>
+		<BR>
+	</IF>
+	<IF c='_A[1]!=0'>
+		<LTGREEN>You have <YELLOW><OUT x=_A[1]><LTGREEN> unread private message
+		<IF c='_A[1]>1'>s</IF>
+		<BR>
+	</IF>
+	<BR>
+	<KPROMPT t=RETURN>
+	<CURSOR>
+</IF>

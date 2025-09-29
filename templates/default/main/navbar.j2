@@ -1,0 +1,153 @@
+{# NavBar template#}
+{# barline: screen row #}
+{# pages: Page up/down keys #}
+{# crsr: Cursor keys #}
+{# keys: (key, function) list #}
+{% set spleft = scwidth - (crsr|length + pages|length + 16 + (2 if crsr|length > 0 else 2)) %}
+{% if keys|length > 0 and (keys|length/2)-1 < spleft+1 %}
+	{% set ns = namespace(kdef = '')%}
+	{% for k,d in keys %}
+		{% set ns.kdef = ns.kdef + k + ':' + d + ' ' %}
+	{% endfor %}
+	{% if ns.kdef|length-1 > spleft+1 %}
+		{% set ns.kdef = '' %}
+		{% for k,d in keys %}
+			{% set ns.kdef = ns.kdef + k + ',' %}
+		{% endfor %}
+	{% endif %}
+	{% set kdef = ns.kdef[:-1] %}
+	{% set spleft = spleft-kdef|length %}
+{% else %}
+	{% set kdef = '' %}
+{% endif %}
+{# Commodore #}
+{% if 'PET' in mode %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=160><AT x=0 y={{barline}}><RVSON>
+	{% else %}
+		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth-1}}><CRSRL><INS> <AT x=0 y={{barline}}>
+	{% endif %}
+	<R-NARROW><INK c={{st.NBarMove}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><L-NARROW>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<R-NARROW>
+		{% endif %}
+	{% else %}
+		<R-NARROW>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-NARROW><BACK>:exit<INK c={{st.NBarBG}}><L-NARROW><RVSOFF>
+{# MSX1 #}
+{% elif mode in 'MSX1' %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=219><AT x=0 y={{barline}}><RVSON>
+	{% else %}
+		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth-1}}><CRSRL><INS> <AT x=0 y={{barline}}>
+	{% endif %}
+	<R-NARROW><INK c={{st.NBarMove}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><L-NARROW>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<R-NARROW>
+		{% endif %}
+	{% else %}
+		<R-NARROW>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-NARROW><BACK>:exit<INK c={{st.NBarBG}}><L-NARROW><RVSOFF>
+{# ANSI #}
+{% elif mode in 'ANSI' %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=219><AT x=0 y={{barline}}><RVSON>
+	{% else %}
+		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
+	{% endif %}
+	<R-HALF><INK c={{st.NBarMove}}><PAPER c={{st.BgColor}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><PAPER c={{st.BgColor}}><L-HALF>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<R-HALF>
+		{% endif %}
+	{% else %}
+		<R-HALF>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><PAPER c={{st.BgColor}}><L-HALF><BACK>:exit<RVSOFF><PAPER c={{st.BgColor}}><INK c={{st.NBarBG}}><R-HALF>
+{# Color VidTex #}
+{% elif mode == 'VidTex' and conn.encoder.features['color'] %}
+	{% if conn.encoder.def_gfxmode != None %}
+		<AT x=0 y={{barline}}>
+		<G4><INK c={{st.NBarBG}}><L-HALF><INK c={{st.NBarMove}}>{{pages}}
+		{% if crsr|length %}
+			/{{crsr}}
+		{% endif%}
+		:move
+		{% if kdef|length > 0 %}
+			<INK c={{st.NBarBG}}><L-HALF><INK c={{st.NBarKeys}}>{{kdef}}
+			{% if kdef|length-1 < spleft+1 %}
+				<INK c={{st.NBarBG}}><R-HALF>
+			{% endif %}
+		{% else %}
+			<INK c={{st.NBarBG}}><R-HALF>
+		{% endif %}
+		<CRSRR n={{spleft}}><L-HALF><INK c={{st.NBarExit}}><BACK>:exit<INK c={{st.NBarBG}}><R-HALF><GN>
+	{% else %}
+		<INK c={{st.NBarBG}}><VLINE><INK c={{st.NBarMove}}>{{pages}}
+		{% if crsr|length %}
+			/{{crsr}}
+		{% endif%}
+		:move
+		{% if kdef|length > 0 %}
+			<INK c={{st.NBarBG}}><VLINE><INK c={{st.NBarKeys}}>{{kdef}}
+			{% if kdef|length-1 < spleft+1 %}
+				<INK c={{st.NBarBG}}><VLINE>
+			{% endif %}
+		{% else %}
+			<INK c={{st.NBarBG}}><VLINE>
+		{% endif %}
+		<CRSRR n={{spleft}}><VLINE><INK c={{st.NBarExit}}><BACK>:exit<INK c={{st.NBarBG}}><VLINE>
+	{% endif %}
+{# Atari ST #}
+{% elif 'ATRST' in mode %}
+	<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
+	<VLINE><INK c={{st.NBarMove}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><VLINE>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<VLINE>
+		{% endif %}
+	{% else %}
+		<VLINE>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><VLINE><BACK>:exit<INK c={{st.NBarBG}}><VLINE><RVSOFF>
+{# Default #}
+{% else %}
+	<VLINE>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<VLINE>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<VLINE>
+		{% endif %}
+	{% else %}
+		<VLINE>
+	{% endif %}
+	<CRSRR n={{spleft}}><VLINE><BACK>:exit<VLINE>
+{% endif%}

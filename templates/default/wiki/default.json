@@ -1,0 +1,145 @@
+{
+    "PET64":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY1",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET64CG":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY1",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET64std":{
+        "BgColor"		: "BLACK",
+        "BoColor"		: "BLACK",
+        "TxtColor"		: "GREY1",
+        "HlColor"		: "YELLOW",
+        "PbColor"		: "GREY3",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET64XG":{
+        "BgColor"		: "BLACK",
+        "BoColor"		: "BLACK",
+        "TxtColor"		: "GREY1",
+        "HlColor"		: "YELLOW",
+        "PbColor"		: "GREY3",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET264":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY1",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET264std":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY1",
+        "HlColor"		: "YELLOW",
+        "PbColor"		: "GREY3",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET128std":{
+        "BgColor"		: "BLACK",
+        "BoColor"		: "BLACK",
+        "TxtColor"		: "GREY2",
+        "HlColor"		: "YELLOW",
+        "PbColor"		: "YELLOW",
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "ORANGE"
+    },
+    "PET20std":{
+        "BgColor"		: "BLACK",
+        "BoColor"		: "BLACK",
+        "TxtColor"		: "WHITE",
+        "HlColor"		: "YELLOW",
+        "PbColor"		: "YELLOW",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "CYAN",
+        "NBarExit"      : "RED"
+    },
+    "MSX1":{
+        "BgColor"		: "WHITE",
+        "BoColor"		: "WHITE",
+        "TxtColor"		: "BLUE",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "PINK"
+    },
+    "VidTex":{
+        "BgColor"		: "WHITE",
+        "BoColor"		: "WHITE",
+        "TxtColor"		: "BLUE",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "RED",
+        "NBarExit"      : "ORANGE"
+    },
+    "ATRSTM":{
+        "BgColor"		: "WHITE",
+        "BoColor"		: "WHITE",
+        "TxtColor"		: "BLACK",
+        "HlColor"		: "RED",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "RED",
+        "NBarBG"        : "GREEN",
+        "NBarMove"      : "GREEN",
+        "NBarExit"      : "RED"
+    },
+    "ATRSTL":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY2",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "DKBLUE",
+        "NBarMove"      : "BLUE",
+        "NBarExit"      : "DKRED"
+    },
+    "ANSI":{
+        "BgColor"		: "GREY3",
+        "BoColor"		: "GREY3",
+        "TxtColor"		: "GREY2",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "LTBLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "LTBLUE",
+        "NBarExit"      : "DKRED"
+    }
+}

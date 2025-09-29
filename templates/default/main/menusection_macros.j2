@@ -1,0 +1,36 @@
+{# Menu Section template macros #}
+{% macro s_title(title) -%}
+	<SPC><INK c={{st.HlColor}}>{{title}}<BR>
+{%- endmacro %}
+
+{% macro s_top() -%}
+	{% if mode == 'VidTex' and conn.encoder.features['color'] and conn.encoder.def_gfxmode != None %}
+		<INK c={{st.SBorderColor1}}><G4><R-HALF><U-HALF n={{scwidth-2}}><UL-UR-LR-QUAD><GN>
+	{% else %}	
+		<INK c={{st.SBorderColor1}}><UL-CORNER><HLINE n={{scwidth-2}}><UR-CORNER>
+	{% endif %}
+{%- endmacro %}
+
+{% macro s_bottom() -%}
+	{% if mode == 'VidTex' and conn.encoder.features['color'] and conn.encoder.def_gfxmode != None %}
+		<G4><R-HALF><B-HALF n={{scwidth-2}}><LL-LR-UR-QUAD><GN>
+	{% else %}	
+		<LL-CORNER><HLINE n={{scwidth-2}}><LR-CORNER>
+	{% endif %}
+{%- endmacro %}
+
+{% macro s_right() -%}
+	{% if mode == 'VidTex' and conn.encoder.features['color'] and conn.encoder.def_gfxmode != None %}
+		<G4><INK c={{st.SBorderColor2}}><R-HALF><GN>
+	{% else %}
+		<INK c={{st.SBorderColor2}}><VLINE>
+	{% endif %}
+{%- endmacro%}
+
+{% macro s_left() -%}
+	{% if mode == 'VidTex' and conn.encoder.features['color'] and conn.encoder.def_gfxmode != None %}
+		<G4><INK c={{st.SBorderColor1}}><R-HALF><GN>
+	{% else %}
+		<INK c={{st.SBorderColor1}}><VLINE>
+	{% endif %}
+{%- endmacro%}

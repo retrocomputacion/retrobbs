@@ -1,0 +1,49 @@
+{# Menu section template, 2 columns #}
+{# Parameters: section, scount #}
+{# Functions: formatX(), crop(), unescape() #}
+{% import 'main/menusection_macros.j2' as msm %}
+{% if scount > 0 or section.title|length > 0 %}
+	{{ msm.s_title(section.title) }}
+{% endif %}
+{{ msm.s_top() }}
+{% set tw = scwidth-3 %}
+{% set ns = namespace(toggle = False, count= 0) %}
+{% for key in section.entrydefs %}
+	{% set toggle = ns.toggle %}
+	{% set count = ns.count %}
+	{% if mode in section.entrydefs[key] %}
+		{% set smode = mode %}
+	{% elif '' in section.entrydefs[key] %}
+		{% set smode = '' %}
+	{% else %}
+		{% set smode = None %}
+	{% endif %}
+	{% if smode != None and key != conn.encoder.nl %}
+		{% set xw = 2 if key < '\r' else 0 %}{# Extra width if a LABEL item #}
+		{% if section.entrydefs[key][smode][2] is not string %}
+			{% set t=section.entrydefs[key][smode][2][0] %}
+			{% set dw = scwidth-2 if t|length == 0 and key<'\r' else scwidth-4 %}
+			{% set desc = formatX(section.entrydefs[key][smode][2][1],columns=dw) %}
+		{% else %}
+			{% set t=section.entrydefs[key][smode][2] %}
+			{% set desc ='' %}
+		{% endif %}
+		{% set label = crop(t,tw+xw-1,conn.encoder.ellipsis) %}
+		{% if label|length>0 or count>1 or key>='\r' %}
+			{% if key<'\r' %}{# NULL entry #}
+				{{ msm.s_left() }}
+			{% endif %}
+			{% include 'main/keylabel.j2' %}
+			{% set toggle = not toggle %}
+			<SPC n={{(tw+xw)-1-(label|length)}}>{{ msm.s_right() }}
+		{% endif %}
+		{% for l in desc %}
+			{% set l=l.replace('<BR>','') %}
+			{{ msm.s_left() }}<INK c={{st.HlColor}}><SPC n={{scwidth-2-dw}}>{{l}}<SPC n={{dw-(unescape(l)|length)}}>{{ msm.s_right() }}
+		{% endfor %}
+		{% set count = count + 1 %}
+	{% endif %}
+	{% set ns.toggle = toggle %}
+	{% set ns.count = count%}
+{% endfor %}
+{{ msm.s_bottom()}}
