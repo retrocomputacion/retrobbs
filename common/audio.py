@@ -398,7 +398,7 @@ class PcmStream:
     def __init__(self, fn, sr,lineal=True, ss = 0):
         self.lineal = lineal
         crusher = ["-af","acrusher=bits=4:mode=lin,acontrast=contrast=50"] if lineal else ['-af',"acontrast=contrast=50"]
-        if "Linux" in platform.system():
+        if platform.system() in ["Linux","Darwin"]:
             self.pcm_stream = subprocess.Popen(["ffmpeg", "-ss", str(ss), "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, preexec_fn=os.setsid)
         else:
@@ -425,7 +425,7 @@ class PcmStream:
     
     def stop(self):
         self.pcm_stream.stdout.flush()
-        if "Linux" in platform.system():
+        if platform.system() in ["Linux","Darwin"]:
             self.pcm_stream.send_signal(signal.SIGINT)
             self.pcm_stream.terminate()
         else:
