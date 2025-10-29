@@ -45,10 +45,11 @@ INK         = 0xB7  # Set ink color - Parameter: Color index
 TURBO56K_LCMD = 0xB7 # Highest CMD number implemented
 
 # Command descriptors
-T56K_CMD = {128+0:'Custom transfer address', 128+1:'Preset transfer address', 128+2:'Block transfer', 128+3:'PCM audio stream', 128+4:'SID stream', 128+5:'SID register write order', 128+6:'File transfer',
-            128+16:'Set text mode', 128+17:'Set Hi-Res bitmap mode', 128+18:'Set multicolor bitmap mode',
-            128+32:'Set screen as output', 128+33:'Set voice synth as output', 128+34:'Terminal ID', 128+35:'Command query',
-            128+48:'Set cursor', 128+49:'Line fill', 128+50:'Cursor enable', 128+51:'Split screen', 128+52:'Get cursor', 128+53:'Set window', 128+54:'Scroll window', 128+55:'Set ink color'}
+T56K_CMD = {0x80:'Custom transfer address', 0x81:'Preset transfer address', 0x82:'Block transfer', 0x83:'PCM audio stream', 0x84:'Chiptune stream', 0x85:'SID register write order', 0x86:'File transfer',
+            0x90:'Set text mode', 0x91:'Set Hi-Res bitmap mode', 0x92:'Set multicolor bitmap mode',
+            0x98:'Clear graphic screen',0x99:'Set pen color',0x9A:'Plot point',0x9B:'Line',0x9C:'Box',0x9D:'Circle/Ellipse',0x9E:'Fill',
+            0xA0:'Set screen as output', 0xA1:'Set voice synth as output', 0xA2:'Terminal ID', 0xA3:'Command query', 0xA4:'Query setup',
+            0xB0:'Set cursor', 0xB1:'Line fill', 0XB2:'Cursor enable', 0xB3:'Split screen', 0xB4:'Get cursor', 0xB5:'Set window', 0xB6:'Scroll window', 0xB7:'Set ink color'}
 
 # Old Turbo56K <v0.6 feature matrix
 T56Kold =  [b'\x02',b'\x01',b'\x02',b'\x00',b'\x00',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',b'\x80',

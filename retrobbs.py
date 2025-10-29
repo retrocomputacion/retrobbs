@@ -239,6 +239,7 @@ def ConfigRead():
                 'BACK': MenuBack,
                 'USEREDIT': EditUser,
                 'USERLIST': UserList,
+                'RTERMSETUP': RTermSetup,
                 'BOARD': MM.inbox,
                 'INBOX': MM.inbox,
                 'GRABFRAME': VV.Grabframe,
@@ -957,6 +958,60 @@ def EditUser(conn:Connection):
                     n += 1
         elif k == 'g': # Preferences
             EditPrefs(conn)
+
+def RTermSetup(conn:Connection):
+
+    def print_features():
+        if b'-' in conn.TermString:
+            client = conn.encoder.clients.get(conn.TermString.split(b' ')[0].split(b'-')[1],'Retroterm compatible')
+        else:
+            client = 'Retroterm 64'
+        conn.SendTML(f'<YELLOW> Client:<GREY> {client}<BR><YELLOW> Turbo56K version:<GREY> {conn.T56KVer}<BR><BR>')
+        conn.SendTML('<YELLOW> Current detected features:<BR><BR>')
+        for i in T56Groups:
+            conn.SendTML(f'<YELLOW>{T56Groups[i][0]}:<BR>')
+            # conn.SendTML(f'<WHITE>${i:1X}x')
+            for j in range(T56Groups[i][1]):
+                cmd = (i+j)
+                conn.SendTML(f'<WHITE>{TT.T56K_CMD[cmd]}: ')
+                feature = conn.TermFt[cmd]
+                if feature != None:
+                    if feature < 128:
+                        conn.SendTML('<GREEN><CHECKMARK>')
+                        if cmd == TT.STREAM:
+                            conn.SendTML(f'<BR><GREY>(4-bit/{conn.samplerate}Hz)')
+                    else:
+                        conn.SendTML('<RED>x')
+                elif cmd in TT.T56K_CMD:
+                    conn.SendTML('<GREY>?')
+                else:
+                    conn.SendTML('<GREY>.')
+                conn.SendTML('<BR>')
+            if cmd != TT.TURBO56K_LCMD:
+                conn.SendTML('<BR><KPROMPT><INKEYS><DEL n=8>')
+
+
+    T56Groups = {0x80:['Data Transfer',7], 0x90:['Graphics mode',3], 0x98:['Drawing primitives',7], 0xA0:['Connection management',5], 0xB0:['Screen management',8]}
+
+    conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>') # Cancel any split screen/window
+    if conn.T56KVer > 0:
+        RenderMenuTitle(conn,"RetroTerm Info")
+        print_features()
+        conn.SendTML('<KPROMPT t=x><GREY> to exit <KPROMPT t=r> to reescan')
+        if conn.ReceiveKey(['x','r']) == 'r':
+            conn.SendTML('<BR>Please wait')
+            for cmd in TT.T56K_CMD:
+                conn.QueryFeature(cmd)
+                time.sleep(0.5)
+                conn.SendTML('.')
+            conn.SendTML('<BR><BR>')
+            print_features()
+        else:
+            return
+        conn.SendTML('<KPROMPT> to exit <INKEYS>')
+    else:
+        conn.SendTML('<CLR><ORANGE>This section is only available for RetroTerm users<PAUSE n=5>')
+    ...
 
 
 ###############################

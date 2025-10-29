@@ -54,8 +54,8 @@ class Connection:
         self.TermString = '' 		# Terminal identification string
         self.T56KVer = 0			# Terminal Turbo56K version
         self.TermFt = {i:None for i in range(128,256)}	# Terminal features
-        self.TermFt[0xFF] = b'\x00'
-        self.TermFt[0xFE] = b'\x00'
+        self.TermFt[0xFF] = 0
+        self.TermFt[0xFE] = 0
 
         self.mode = 'ASCII'			                        # Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	# Encoder for this connection
@@ -114,6 +114,12 @@ class Connection:
             return True
         else:
             return False
+        
+    # Reset feature dictionary
+    def ResetFeatures(self):
+        self.TermFt = {i:None for i in range(128,256)}
+        self.TermFt[0xFF] = 0
+        self.TermFt[0xFE] = 0
 
     # Query if the client terminal supports a feature
     def QueryFeature(self, cmd:int):
