@@ -212,30 +212,32 @@ def load_Image(filename:str):
         with open(filename,'rb') as ifile:
             if ifile.read(2) == b'\x00\x78':
                 # Luminance data
-                data[2] = ifile.read(1000)
+                data[2] = ifile.read(1000)  # Offset $0002 : Luminance data
                 # Skip
-                ifile.read(18)
+                ifile.read(17)              # Offset $03EA : Unused 17 bytes
+                tmp = ifile.read(1)[0]      # Offset $03FB : Custom border color *** NOT STANDARD on Botticelli format!!! ***
+                gcolors[0] = ((tmp&240)>>4)+((tmp&15)<<4)
                 # Multicolor ID
-                tmp = ifile.read(4)
+                tmp = ifile.read(4)         # Offset $03FC : Multi-Botticelli ID string
                 if tmp == b'MULT':
                     # Multicolor 3
-                    tmp = ifile.read(1)[0]
+                    tmp = ifile.read(1)[0]  # Offset $0400 : Multicolor 3
                     gcolors[4] = ((tmp&240)>>4)+((tmp&15)<<4)
                     # Background
-                    tmp = ifile.read(1)[0]
+                    tmp = ifile.read(1)[0]  # Offset $0401 : Background color
                     gcolors[1] = ((tmp&240)>>4)+((tmp&15)<<4)
                     multi = gfxmodes.P4MULTI
                     text = 'Multi-Botticelli'
                 else:
                     # Skip
-                    ifile.read(2)
+                    ifile.read(2)           # Offset $0400 : Unused 2 bytes
                     text = 'Botticelli'
                 # Color data
-                data[1] = ifile.read(1000)
+                data[1] = ifile.read(1000)  # Offset $0402 : Color data
                 # Skip
-                ifile.read(24)
+                ifile.read(24)              # Offset $07EA : Unused 24 bytes
                 # Bitmap data
-                data[0] = ifile.read(8000)
+                data[0] = ifile.read(8000)  # Offset $0802 : Bitmap
     else:
         return None
     #Render image
@@ -276,4 +278,36 @@ def load_Image(filename:str):
             nimg[sr:er,sc:ec] = ncell.reshape(8,4)
         tmpI = Image.fromarray(nimg,mode='P').resize((320,200),Image.NEAREST)
         tmpI.putpalette(fsPal)
+    if gcolors[0] == 0:
+        # Select border color
+        # Get color counts of the border-adyacent cells
+        im_top = dict(tmpI.crop((0,0,319,7)).getcolors())
+        im_top = dict(zip(im_top.values(),im_top.keys()))
+        im_left = dict(tmpI.crop((0,0,7,199)).getcolors())
+        im_left = dict(zip(im_left.values(),im_left.keys()))
+        im_bottom = dict(tmpI.crop((0,192,319,199)).getcolors())
+        im_bottom = dict(zip(im_bottom.values(),im_bottom.keys()))
+        im_right = dict(tmpI.crop((312,0,319,199)).getcolors())
+        im_right = dict(zip(im_right.values(),im_right.keys()))
+        for i in im_right:
+            if i not in im_top:
+                im_top[i] = 0
+        for i in im_bottom:
+            if i not in im_top:
+                im_top[i] = 0
+        for i in im_left:
+            if i not in im_top:
+                im_top[i] = 0
+
+        for i in im_top:
+            # Add color counts
+            if i in im_left:
+                im_top[i] += im_left[i]
+            if i in im_bottom:
+                im_top[i] += im_bottom[i]
+            if i in im_right:
+                im_top[i] += im_right[i]
+        ccount = list(im_top.values())
+        gcolors[0] = list(im_top.keys())[ccount.index(max(ccount))]
+
     return [tmpI,multi,data,gcolors,text]
