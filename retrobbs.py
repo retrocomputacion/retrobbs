@@ -966,26 +966,26 @@ def RTermSetup(conn:Connection):
             client = conn.encoder.clients.get(conn.TermString.split(b' ')[0].split(b'-')[1],'Retroterm compatible')
         else:
             client = 'Retroterm 64'
-        conn.SendTML(f'<YELLOW> Client:<GREY> {client}<BR><YELLOW> Turbo56K version:<GREY> {conn.T56KVer}<BR><BR>')
-        conn.SendTML('<YELLOW> Current detected features:<BR><BR>')
+        conn.SendTML(f'<HLCOLOR> Client:<TXTCOLOR> {client}<BR><HLCOLOR> Turbo56K version:<TXTCOLOR> {conn.T56KVer}<BR><BR>')
+        conn.SendTML('<WRNCOLOR> Current detected features:<BR><BR>')
         for i in T56Groups:
-            conn.SendTML(f'<YELLOW>{T56Groups[i][0]}:<BR>')
+            conn.SendTML(f'<WRNCOLOR>{T56Groups[i][0]}:<BR>')
             # conn.SendTML(f'<WHITE>${i:1X}x')
             for j in range(T56Groups[i][1]):
                 cmd = (i+j)
-                conn.SendTML(f'<WHITE>{TT.T56K_CMD[cmd]}: ')
+                conn.SendTML(f'<TXTCOLOR>{TT.T56K_CMD[cmd]}: ')
                 feature = conn.TermFt[cmd]
                 if feature != None:
                     if feature < 128:
-                        conn.SendTML('<GREEN><CHECKMARK>')
+                        conn.SendTML('<OKCOLOR><CHECKMARK>')
                         if cmd == TT.STREAM:
-                            conn.SendTML(f'<BR><GREY>(4-bit/{conn.samplerate}Hz)')
+                            conn.SendTML(f'<BR><TXTCOLOR>(4-bit/{conn.samplerate}Hz)')
                     else:
-                        conn.SendTML('<RED>x')
+                        conn.SendTML('<BADCOLOR>x')
                 elif cmd in TT.T56K_CMD:
-                    conn.SendTML('<GREY>?')
+                    conn.SendTML('<TXTCOLOR>?')
                 else:
-                    conn.SendTML('<GREY>.')
+                    conn.SendTML('<TXTCOLOR>.')
                 conn.SendTML('<BR>')
             if cmd != TT.TURBO56K_LCMD:
                 conn.SendTML('<BR><KPROMPT><INKEYS><DEL n=8>')
@@ -997,8 +997,9 @@ def RTermSetup(conn:Connection):
     if conn.T56KVer > 0:
         RenderMenuTitle(conn,"RetroTerm Info")
         print_features()
-        conn.SendTML('<KPROMPT t=x><GREY> to exit <KPROMPT t=r> to reescan')
+        conn.SendTML('<KPROMPT t=x><TXTCOLOR> to exit <KPROMPT t=r><TXTCOLOR> to reescan')
         if conn.ReceiveKey(['x','r']) == 'r':
+            conn.ResetFeatures()
             conn.SendTML('<BR>Please wait')
             for cmd in TT.T56K_CMD:
                 conn.QueryFeature(cmd)

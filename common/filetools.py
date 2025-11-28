@@ -664,7 +664,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 conn.SendTML('<KPROMPT t=RETURN>')
                 conn.ReceiveKey()
             return
-        elif ext == '.ROM' and 'MSX' in conn.mode:  # MSX ROM
+        elif ext == '.ROM' and 'MSX1' in conn.mode:  # MSX ROM
             if conn.encoder.check_fit(filename):
                 if dialog:
                     res = FileDialog(conn,os.path.basename(filename), os.path.getsize(filename), 'MSX ROM', save = save)

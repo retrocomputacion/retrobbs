@@ -1,7 +1,7 @@
 <div align = center>
 
 
-# RetroBBS - supported encoders
+# RetroBBS - supported character encodings
 </div>
 
 ## Contents

@@ -302,12 +302,13 @@ class MSXencoder(Encoder):
         return out
 
     def check_fit(self, filename):
-        size = os.stat(filename).st_size
-        if size <= 32768:
-            with open(filename,'rb') as f:
-                header = f.read(16)
-            if header[0:2] == b'AB':
-                return True            # Correct ID
+        if self.name != 'MSXstd':
+            size = os.stat(filename).st_size
+            if size <= 32768:
+                with open(filename,'rb') as f:
+                    header = f.read(16)
+                if header[0:2] == b'AB':
+                    return True            # Correct ID
         return False
 
     # Sanitize a given filename for compatibility with the client's filesystem
@@ -340,7 +341,6 @@ class MSXencoder(Encoder):
         filename = '_'.join(tmp).replace(' ','_')[:8]
         if ext != '':
             filename += '.'+ext
-        print(filename)
         return filename
 
 

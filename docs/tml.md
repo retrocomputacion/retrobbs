@@ -120,7 +120,7 @@ Integer register, any value stored into this register will be typecast to a Pyth
 #### **_BACK Read only 'back key' register**:
 This special register contains the decoded '_back key_' character for the current connection.
 Use this register when testing a variable for the '_back key_'.
-##### Example: Wait for Return/Enter or the back key, and act accordinly:
+##### Example: Wait for either Return/Enter or the back key, and act accordinly:
 ```html
 <INKEY k='&backsim;&#13;'>
 <IF c='_A=="&#13;"'>
@@ -413,7 +413,7 @@ Reset the client's terminal screen to the default state.
 Scroll the client's text screen in the required amount and direction.</br>
 Parameter:
 
-`rows`: Ammount of rows to scroll. Positive number will scroll up, negative will scroll down. Default `0`
+`rows`: Amount of rows to scroll. Positive number will scroll up, negative will scroll down. Default `0`
 
 ---
 #### **&lt;SETOUTPUT&gt;**
@@ -525,6 +525,30 @@ Grab a frame from a video file/stream and display it as a graphic screen on the 
 
 ---
 </br>
+
+### **Style colors ***:
+
+<br>
+
+Some of the style system preset colors are accessible with _TML_ tags, these tags only affect the text ink color, but not inverse video or other text attributes.
+
+#### **&lt;TXTCOLOR&gt;**
+Default text color
+
+####  **&lt;HLCOLOR&gt;**
+Highlight text color
+
+#### **&lt;RVSCOLOR&gt;**
+Reverse video text color
+
+#### **&lt;OKCOLOR&gt;**
+Color for text indicating a successful action
+
+#### **&lt;WRNCOLOR&gt;**
+Color for text indicating warning
+
+#### **&lt;BADCOLOR&gt;**
+Color for text indicating an error or failure
 
 ### **Plugin functions**:
 
