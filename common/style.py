@@ -26,11 +26,15 @@ def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
         if TML:
             return(f'<INK c={style.PbColor}>[<INK c={style.PtColor}>{text}<INK c={style.PbColor}>]')
         else:
-            if conn.QueryFeature(TT.INK) >= 0x80:																			# Update INK command
-                tmp = pal.items()
-                bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
-                tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
-            else:
+            tmp = pal.items()
+            bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
+            tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
+            if (bc == '' or tc == '') and conn.QueryFeature(TT.INK) < 0x80:
+            # if conn.QueryFeature(TT.INK) >= 0x80:																			# Update INK command
+            #     tmp = pal.items()
+            #     bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
+            #     tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
+            # else:
                 bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
                 tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
             return(bc+'['+tc+conn.encoder.encode(str(text),False)+bc+']')
@@ -80,7 +84,7 @@ def StyleTag(conn:Connection, color:SCOLOR, style:bbsstyle=None):
 # TML tags
 ###########
 t_mono = {	'MTITLE':(lambda c,t:RenderMenuTitle(c,t),[('c','_C'),('t','')]),
-              'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('style',None),('tml','False')]),
+            'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('style',None),('tml','False')]),
             'DIALOG':(lambda c,h,t:RenderDialog(c,h,t),[('c','_C'),('h',4),('t','')]),
             'TXTCOLOR':(lambda c:StyleTag(c,SCOLOR.TxtColor),[('c','_C')]),
             'HLCOLOR':(lambda c:StyleTag(c,SCOLOR.HlColor),[('c','_C')]),

@@ -1011,7 +1011,7 @@ def RTermSetup(conn:Connection):
             return
         conn.SendTML('<KPROMPT> to exit <INKEYS>')
     else:
-        conn.SendTML('<CLR><ORANGE>This section is only available for RetroTerm users<PAUSE n=5>')
+        conn.SendTML('<CLR><ORANGE><FORMAT>This section is only available for RetroTerm users</FORMAT><PAUSE n=5>')
     ...
 
 
@@ -1181,7 +1181,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
         if b'M138' in conn.TermString:
             _LOG('MSX 38K mode, audio streaming at 7680Hz',id=conn.id,v=3)
             conn.samplerate = 7680
-        else:
+        elif b'M1BD' not in conn.TermString:
             _LOG('Plus/4 / MSX mode, audio streaming at 3840Hz',id=conn.id,v=3)
             conn.samplerate = 3840
     elif b'UNKNOWN-' in conn.TermString:   # Unknown Turbo56k terminal

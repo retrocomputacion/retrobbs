@@ -45,22 +45,12 @@ def plugFunction(conn:Connection):
     scwidth,scheight = conn.encoder.txt_geo
 
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
-    ecolors = conn.encoder.colors
     wcolors = conn.templates.GetStyle('wiki/default')   #bbsstyle(ecolors)
-    # wcolors.TxtColor = ecolors.get('DARK_GREY',0) if '64' in conn.mode else ecolors.get('GREY',0) if 'PET128' in conn.mode else ecolors.get('BLUE',0)
     TxTtag = f'<INK c={wcolors.TxtColor}>'   #'<GREY1>' if '64' in conn.mode else '<GREY2>' if 'PET128' in conn.mode else '<BLUE>'
-    # wcolors.PbColor = ecolors.get('BLACK',0)
-    # wcolors.PtColor = ecolors.get('BLUE',0)
     if 'MSX' in conn.mode:
         hcode = 0x17
-        bcode = 0x20
     else:
         hcode = 0x40
-        bcode = 0xA0
-    # if conn.encoder.features['bgcolor'] == 0:
-    #     hlcolor = '<YELLOW>'
-    # else:
-    #     hlcolor = '<BLACK>'
 
 
     wikipedia.set_lang(conn.bbs.lang)
@@ -69,7 +59,6 @@ def plugFunction(conn:Connection):
     else:
         wiki = wikipediaapi.Wikipedia(user_agent='RetroBBS/0.60',language=conn.bbs.lang, extract_format=wikipediaapi.ExtractFormat.HTML)
 
-    # sccolors = 'WHITE' if conn.mode in ['MSX1','VT52','VidTex'] else 'LIGHT_GREY'
     conn.SendTML(f'<TEXT page=0 border={wcolors.BoColor} background={wcolors.BgColor}>')
     loop = True
     while loop == True:
@@ -113,7 +102,7 @@ def plugFunction(conn:Connection):
             i = options.index(sel)
             page = wiki.page(results[i])#wikipedia.page(results[i])
             try:
-                resp = requests.get(page.fullurl)
+                resp = requests.get(page.fullurl,  allow_redirects=True, headers = hdrs)
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.content, "html.parser")
                     if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
@@ -177,26 +166,8 @@ def plugFunction(conn:Connection):
                     pages = 'p/n'
 
                 conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'pages':pages,'crsr':crsr,'barline':barline,'st':wcolors}))
-                # if 'MSX' in conn.mode:
-                #     bcode = 0xDB
-                #     rcrsr = '<CRSRR n=6><R-NARROW>'
-                # else:
-                #     bcode = 0xA0
-                #     if 'PET20' in conn.mode:
-                #         rcrsr = ''
-                #     else:
-                #         rcrsr = '<CRSRR n=14><R-NARROW>'
-                # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-                #     conn.SendTML(f'<BLUE><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
-                # else:
-                #     conn.SendTML(f'<BLUE><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
-                # conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<BLUE><L-NARROW>{rcrsr}<ORANGE><BACK>:exit<BLUE><L-NARROW><RVSOFF><WINDOW top=2 bottom={scheight-2}>')
-                conn.SendTML(f'<WINDOW top=2 bottom={scheight-2}>')
+                conn.SendTML(f'<WINDOW top=2 bottom={scheight-2}><CLR>')
 
-                # if conn.QueryFeature(TT.SCROLL) < 0x80:
-                #     conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [crsr/F1/F3] scroll  [<BACK>] exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
-                # else:
-                #     conn.SendTML(f'<WINDOW top={scheight-1} bottom={scheight}><RVSON><BLUE><LFILL row={scheight-1} code={bcode}> [F1/F3] to scroll  [<BACK>] to exit<RVSOFF><WINDOW top=2 bottom={scheight-2}>')
                 if conn.QueryFeature(TT.SET_WIN) >= 0x80:
                     conn.SendTML('<BR>')
                 text_displayer(conn,tt,scheight-3,wcolors)

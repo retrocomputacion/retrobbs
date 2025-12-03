@@ -73,6 +73,17 @@
 		<PAPER c={{ bg }}>
 	{% endif %}
 	<SPC><RVSOFF><INK c={{ c2 }}>{{ label }}
+{# ZX Spectrum/TS2068 #}
+{% elif mode in ['ZXstd','TSstd'] %}
+	<INK c={{ c1 }}><RVSON><SPC>
+	{% if bg1 >= 0 %}
+		<PAPER c={{ bg1 }}>
+	{% endif %}
+	{{ key.lower() }}
+	{% if bg >= 0 %}
+		<PAPER c={{ bg }}>
+	{% endif %}
+	<SPC><RVSOFF><INK c={{ c2 }}>{{ label }}
 {# Generic fallback #}
 {% else %}
 	[{{ key.lower() }}]{{ label }}

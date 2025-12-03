@@ -141,5 +141,27 @@
         "NBarBG"        : "BLUE",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "DKRED"
+    },
+    "ZXstd":{
+        "BgColor"		: "WHITE",
+        "BoColor"		: "WHITE",
+        "TxtColor"		: "BLUE",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "CYAN",
+        "NBarExit"      : "RED"
+    },
+    "TSstd":{
+        "BgColor"		: "WHITE",
+        "BoColor"		: "WHITE",
+        "TxtColor"		: "BLUE",
+        "HlColor"		: "BLACK",
+        "PbColor"		: "BLACK",
+        "PtColor"       : "BLUE",
+        "NBarBG"        : "BLUE",
+        "NBarMove"      : "CYAN",
+        "NBarExit"      : "RED"
     }
 }

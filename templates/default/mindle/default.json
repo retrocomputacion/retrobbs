@@ -46,5 +46,21 @@
     "ANSI":{
         "BgColor"		: "GREY3",
         "TxtColor"      : "GREY2"
+    },
+    "ZXstd":{
+        "BgColor"		: "WHITE",
+        "ToddColor"     : "DKRED",
+        "OoddBack"      : "BLACK",
+        "TevenColor"    : "BLUE",
+        "OevenBack"     : "BLACK",
+        "TxtColor"      : "BLUE"
+    },
+    "TSstd":{
+        "BgColor"		: "WHITE",
+        "ToddColor"     : "DKRED",
+        "OoddBack"      : "BLACK",
+        "TevenColor"    : "BLUE",
+        "OevenBack"     : "BLACK",
+        "TxtColor"      : "BLUE"
     }
 }

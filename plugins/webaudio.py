@@ -265,11 +265,12 @@ def plugFunction(conn:connection.Connection,url,image,title):
             conn.SendTML('<BR>')
             for i, chap in enumerate(sChapters):
                 conn.SendTML(f'<KPROMPT t={str(i+1)}> <YELLOW>{crop(chap["title"], conn.encoder.txt_geo[0], conn.encoder.ellipsis)}<BR>')
-            conn.SendTML('<BR>Select chapter or <KPROMPT t=return><YELLOW> to cancel:')
+            conn.SendTML('<BR><FORMAT>Select chapter or <KPROMPT t=return><YELLOW> to cancel:</FORMAT>')
             entry = conn.ReceiveInt(0,len(sChapters),0)
             if entry == 0:
                 return
             ss = sChapters[entry-1]['start_time']
+            conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')
             if 'MSX' in conn.mode:
                 conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
             else:

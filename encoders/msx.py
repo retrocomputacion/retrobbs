@@ -426,7 +426,7 @@ def toASCII(text):
 ###################################
 def _Register():
     e0 = MSXencoder('MSX1')
-    e0.clients = {b'M1':'Retroterm MSX1',b'M138':'Retroterm MSX1-38K'}
+    e0.clients = {b'M1':'Retroterm MSX1',b'M1BD':'Retroterm MSX1-BadCat',b'M138':'Retroterm MSX1-38K'}
     e0.tml_mono  = t_mono['MSX1']
     e0.tml_multi = t_multi['MSX1']
     e0.bbuffer = 0x02ed #Bottom of the buffer

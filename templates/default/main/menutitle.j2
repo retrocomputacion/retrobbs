@@ -73,6 +73,11 @@
 	<CHR c=240><PAPER c= {{st.BgColor}}><INK c={{st.HlColor}}> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <PAPER c={{st.MenuTColor1}}><WHITE><CHR c=240>
 	<CHR c=240><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><PAPER c={{st.MenuTColor2}}><CHR c=240><PAPER c={{st.MenuTColor1}}><CHR c=240><INC></WHILE><PAPER c={{st.MenuTColor2}}><CHR c=240>
 	<PAPER c={{st.BgColor}}>
+{# ZX Spectrum/TS2068 #}
+{% elif mode in ['ZXstd','TSstd'] %}
+	<INK c={{st.MenuTColor1}}><UL-UR-LL-QUAD><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><U-HALF><INK c={{st.MenuTColor1}}><U-HALF><INC></WHILE><INK c={{st.MenuTColor2}}><UL-UR-LR-QUAD>
+	<L-HALF><INK c={{st.HlColor}}> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <INK c={{st.MenuTColor1}}><R-HALF>
+	<INK c={{st.MenuTColor1}}><UL-LL-LR-QUAD><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><B-HALF><INK c={{st.MenuTColor1}}><B-HALF><INC></WHILE><INK c={{st.MenuTColor2}}><LL-LR-UR-QUAD>
 {# Generic fallback #}
 {% else %}
 		+<HLINE n={{scwidth-2}}>+
