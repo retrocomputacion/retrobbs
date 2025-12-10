@@ -63,7 +63,10 @@ def plugFunction(conn:Connection):
     loop = True
     while loop == True:
         WikiTitle(conn)
-        conn.SendTML('<BR>Search: <BR>(<BACK> to exit)<CRSRU><CRSRL n=3>')
+        if conn.encoder.features['cursor'] == True:
+            conn.SendTML('<BR>Search: <BR>(<BACK> to exit)<CRSRU><CRSRL n=3>')
+        else:
+            conn.SendTML('<BR>Search (<BACK> to exit):')
         keys = string.ascii_letters + string.digits + ' +-_,.$%&'
         back = conn.encoder.decode(conn.encoder.back)
         if back not in keys:
@@ -166,7 +169,7 @@ def plugFunction(conn:Connection):
                     pages = 'p/n'
 
                 conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'pages':pages,'crsr':crsr,'barline':barline,'st':wcolors}))
-                conn.SendTML(f'<WINDOW top=2 bottom={scheight-2}><CLR>')
+                conn.SendTML(f'<WINDOW top=2 bottom={scheight-2}>')
 
                 if conn.QueryFeature(TT.SET_WIN) >= 0x80:
                     conn.SendTML('<BR>')
@@ -185,7 +188,6 @@ def plugFunction(conn:Connection):
 def WikiSection(conn:Connection, sections, level = 0, lines = 0, style:bbsstyle= None):
     tt = []
     scwidth = conn.encoder.txt_geo[0]
-    # TxTtag = '<GREY1>' if 'PET' in conn.mode else '<BLUE>'
     for s in sections:
         title = ('-'*level)+WikiParseTitles(s.title)
         ts = formatX(normalize('NFKC',title),scwidth)

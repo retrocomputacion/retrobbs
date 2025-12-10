@@ -118,12 +118,15 @@ def plugFunction(conn:Connection,server,port,channel):
         printchat(txt)
 
     def on_connect(connection, event):
-        printchat(f'<CYAN>Connected to: {server}<BR>')
-        txt = H.formatX(event.arguments[0],scwidth)
-        txt[0] = '<CYAN>'+txt[0]
-        printchat(txt)
-        if irc.client.is_channel(channel):
+        # if irc.client.is_channel(channel):
+        try:
             connection.join(channel)
+            printchat(f'<CYAN>Connected to: {server}<BR>')
+            txt = H.formatX(event.arguments[0],scwidth)
+            txt[0] = '<CYAN>'+txt[0]
+            printchat(txt)
+        except:
+            pass
         #main_loop(connection)
 
     def on_names(connection, event):

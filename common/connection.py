@@ -56,7 +56,7 @@ class Connection:
         self.TermFt = {i:None for i in range(128,256)}	# Terminal features
         self.TermFt[0xFF] = 0
         self.TermFt[0xFE] = 0
-
+        self.ClientSetup = {0:[1,{'Platform':None,'Refresh':None}],1:[2,{'Text':None}],2:[1,{'Bitrate':None}],3:[2,{'RAM':None}],4:[2,{'VRAM':None}],5:[1,{'GFXModes':None}],6:[2,{'Synths':None,'PCM':None}]}
         self.mode = 'ASCII'			                        # Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	# Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
@@ -101,7 +101,7 @@ class Connection:
             del(self.parser)
             self.parser = TMLParser(self)
             del(self.style)
-            self.style = bbsstyle(self.encoder.colors)  #Init default colors
+            self.style = bbsstyle(self.encoder.colors)  # Init default colors
             del(self.templates)
             self.templates = template(self,self.bbs.Template)
             self.style = self.templates.GetStyle('default') # Set template colors
@@ -130,15 +130,6 @@ class Connection:
             if self.TermFt[cmd] == None:
                 if self.T56KVer < 0.7:	#Try to avoid retroterm0.14 bug
                     self.Flush(0.5)
-                    # self.socket.setblocking(0)	# Change socket to non-blocking
-                    # t0 = time.time()
-                    # while time.time()-t0 < 0.5:   # Flush receive buffer for 1/2 second
-                    #     try:
-                    #         self.socket.recv(10)
-                    #     except Exception as e:
-                    #         pass
-                    # self.socket.setblocking(1)	# Change socket to blocking
-                    # self.socket.settimeout(self.bbs.TOut)
                     time.sleep(0.5)
                 self.Sendall(chr(TT.CMDON))
                 self.Sendall(chr(TT.QUERYCMD)+chr(cmd))
@@ -147,6 +138,70 @@ class Connection:
         elif self.TermFt[cmd] == None:
             self.TermFt[cmd] = TT.T56Kold[cmd-128][0]
         return self.TermFt[cmd]
+
+    # Query the client's setup
+    def QueryClient(self,subsystem:int):
+        platforms = ['Commodore 64','Commodore Plus/4','MSX','Commodore 128','Commodore VIC-20','ZX Spectrum','Atari','Apple ][','Amstrad','Amiga','Commodore PET']
+        bitrates = [0,300,600,1200,1800,2400,4800,9600,19200,28800,38400,57600,76800,115200]
+        spb = [8,2,1,0.5]   # samples per byte
+        samplerates = [11050,16000,22050]   # fixed sample rates
+
+        if self.QueryFeature(TT.QUERYCMD) < 128:
+            if subsystem < 7:
+                if None in self.ClientSetup[subsystem][1].values():
+                    self.Sendall(chr(TT.CMDON)+chr(TT.QUERYCLIENT)+chr(subsystem)+chr(TT.CMDOFF))
+                    count = self.Receive(1)
+                    if count[0] >= self.ClientSetup[subsystem][0]:
+                        qdata = self.Receive(count[0])
+                        if subsystem == 0:  # Platform / refresh rate
+                            if qdata[0] & 0x7F < len(platforms):
+                                self.ClientSetup[subsystem][1]['Platform'] = platforms[qdata[0] & 0x7F]
+                            else:
+                                self.ClientSetup[subsystem][1]['Platform'] = 'unknown'
+                            if qdata[0] & 0x80 == 0:
+                                self.ClientSetup[subsystem][1]['Refresh'] = 50
+                            else:
+                                self.ClientSetup[subsystem][1]['Refresh'] = 60
+                        if subsystem == 1:  # Text screen size
+                            self.ClientSetup[subsystem][1]['Text'] = [qdata[0],qdata[1]]    # TODO: Update encoder with these values
+                        if subsystem == 2:  # Bit rate
+                            if qdata[0] < len(bitrates):
+                                self.ClientSetup[subsystem][1]['Bitrate'] = bitrates[qdata[0]]
+                            else:
+                                self.ClientSetup[subsystem][1]['Bitrate'] = 57600
+                        if subsystem == 3:  # RAM
+                            self.ClientSetup[subsystem][1]['RAM'] = (qdata[1]*256)+qdata[0]
+                        if subsystem == 4:  # VRAM
+                            self.ClientSetup[subsystem][1]['VRAM'] = (qdata[1]*256)+qdata[0]
+                        if subsystem == 5:  # Graphic modes
+                            self.ClientSetup[subsystem][1]['GFXModes'] = qdata[0]   # Platform dependent - In the future the encoder should be configured here
+                        if subsystem == 6:  # Graphic modes
+                            self.ClientSetup[subsystem][1]['Synths'] = qdata[0]   # Platform dependent - In the future the encoder should be configured here
+                            self.ClientSetup[subsystem][1]['PCM'] = qdata[1]
+                            if qdata[1] & 0b01111000 > 0:
+                                tmp_s = spb[qdata[1] & 0b11]
+                                # tmp_s *= 1 if qdata[1] & 0b100 == 0 else 2
+                                tmp = (qdata[1] & 0b01111000) >> 3
+                                for i in range(4):  # Get lowest available samplerate (or dependent on connection speed)
+                                    if tmp & 1 == 1:
+                                        if i == 0:
+                                            if self.ClientSetup[2][1]['Bitrate'] != None:
+                                                tmp_sr = (self.ClientSetup[2][1]['Bitrate']/10)*tmp_s
+                                            else:
+                                                tmp_sr = self.samplerate
+                                            break
+                                        tmp = tmp >> 1
+                                self.samplerate = tmp_sr
+                        ...
+                    else:       # Response size is too small
+                        _LOG(f"QueryClient: Response size too small / Subsystem {subsystem} not implemented", id = self.id,v=3)
+                ...
+            else:
+                return None
+        if subsystem < 7:
+            return self.ClientSetup[subsystem][1]
+        else:
+            return None
 
     # set the connection into hold mode (display spinner)
     def SetHold(self):
@@ -215,7 +270,6 @@ class Connection:
                     cadena += self.socket.recv(1)
                     self.inbytes += 1
                 except socket.error:
-                    #if e.errno == errno.ECONNRESET:
                     _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Receive'+bcolors.ENDC, id=self.id,v=2)
                     self.connected = False
                     cadena = b''
@@ -225,7 +279,6 @@ class Connection:
     # Non-blocking receive up to (count) binary chars from socket, within (timeout) seconds
     def NBReceive(self, count:int=1, timeout:float=3):
         data = b""
-        # conn.socket.settimeout(5.0)
         self.socket.setblocking(False)
         tmp = time.time()
         while ((time.time()-tmp) < timeout) and (len(data) < count):

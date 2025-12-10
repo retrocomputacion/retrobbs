@@ -32,6 +32,7 @@ SPEECH      = 0xA1  # Set the speech synthetizer as output device, exits command
 
 VERSION     = 0xA2  # Queries de client for ID and version
 QUERYCMD    = 0xA3  # Queries the client if a given command exists
+QUERYCLIENT = 0xA4  # Queries the client's setup
 
 SET_CRSR    = 0xB0  # Sets cursor position, exits command mode: Parameters: column, row
 LINE_FILL   = 0xB1

@@ -176,7 +176,7 @@ Reply length: 3 bytes
 | 2 | Rows
 |
 
-##### `$02`: Connection speed
+##### `$02`: Bit rate
 
 Reply length: 2 bytes
 
@@ -193,7 +193,7 @@ Reply length: 3 bytes
 | Position | Value
 |:---:|:---
 | 0 | 2
-| 1-2 | RAM size in Kilobytes (big-endian)
+| 1-2 | RAM size in Kilobytes (little-endian)
 |
 
 ##### `$04`: VRAM size
@@ -203,7 +203,7 @@ Reply length: 3 bytes
 | Position | Value
 |:---:|:---
 | 0 | 2
-| 1-2 | VRAM size in Kilobytes (big-endian)
+| 1-2 | VRAM size in Kilobytes (little-endian)
 |
 
 ##### `$05`: Graphic modes (platform dependent)

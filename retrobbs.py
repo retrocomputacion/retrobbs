@@ -959,6 +959,10 @@ def EditUser(conn:Connection):
         elif k == 'g': # Preferences
             EditPrefs(conn)
 
+#################################
+# Retroterm Setup display/reset
+#################################
+
 def RTermSetup(conn:Connection):
 
     def print_features():
@@ -987,8 +991,41 @@ def RTermSetup(conn:Connection):
                 else:
                     conn.SendTML('<TXTCOLOR>.')
                 conn.SendTML('<BR>')
-            if cmd != TT.TURBO56K_LCMD:
-                conn.SendTML('<BR><KPROMPT><INKEYS><DEL n=8>')
+            # if cmd != TT.TURBO56K_LCMD:
+            conn.SendTML('<BR><KPROMPT><INKEYS><DEL n=8>')
+        if conn.QueryFeature(TT.QUERYCLIENT) < 128:    # Check client subsystems if available
+            conn.SendTML('<WRNCOLOR>Your system:<BR>')
+            p = None
+            for sub in range(7):
+                resp = conn.QueryClient(sub)
+                if resp != None:
+                    for i in resp:
+                        rval = resp[i]
+                        if i == 'Platform':
+                            p = rval
+                        if i == 'Refresh':
+                            rval = f'{rval}Hz'
+                        elif 'RAM' in i:
+                            rval = f'{rval}KBytes'
+                        elif i == 'Text':
+                            rval = f'{rval[0]}x{rval[1]}'
+                        elif i == 'Bitrate':
+                            rval = f'{rval}bps'
+                        elif i == 'GFXModes':
+                            if p != None:
+                                if p == 'Commodore 64':
+                                    rval = f'<BR> FLI {"<OKCOLOR><CHECKMARK>" if rval & 1 != 0 else "<BADCOLOR>x"}<BR><TXTCOLOR> AFLI {"<OKCOLOR><CHECKMARK>" if rval & 2 != 0 else "<BADCOLOR>x"}'
+                                elif p == 'MSX':
+                                    tmp = ''
+                                    for j in range(8):
+                                        tmp += f'<BR> Screen{j+3 if j < 6 else 10 if j == 6 else 12} {"<OKCOLOR>+" if rval & 2**j != 0 else "<BADCOLOR>x"}<TXTCOLOR>'
+                                    rval = tmp
+                                else:
+                                    continue
+                            else:
+                                continue
+                        conn.SendTML(f'<WRNCOLOR>{i}: <TXTCOLOR>{rval}<BR>')
+            ...
 
 
     T56Groups = {0x80:['Data Transfer',7], 0x90:['Graphics mode',3], 0x98:['Drawing primitives',7], 0xA0:['Connection management',5], 0xB0:['Screen management',8]}
