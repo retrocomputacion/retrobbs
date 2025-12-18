@@ -6,7 +6,7 @@ import os
 import codecs
 from copy import deepcopy
 
-#PETSCII constants
+# PETSCII constants
 
 #--Control codes
 STOP = 0x03
@@ -123,9 +123,9 @@ PALETTE128 ={chr(BLACK):0,chr(GREY2):1,chr(BLUE):2,chr(LT_BLUE):3,chr(GREEN):4,c
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,13)]+[chr(i) for i in range(14,32)]+[chr(i) for i in range(128,160)]
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono = 	{'PET64':{'CLR':chr(CLEAR),'HOME':chr(HOME),'RVSON':chr(RVS_ON),'RVSOFF':chr(RVS_OFF),'BR':'\r',
             'CBMSHIFT-D':chr(DISABLE_CBMSHIFT),'CBMSHIFT-E':chr(ENABLE_CBMSHIFT),'UPPER':chr(TOUPPER),'LOWER':chr(TOLOWER),
             'BLACK':chr(BLACK),'WHITE':chr(WHITE),'RED':chr(RED),'CYAN':chr(CYAN),'PURPLE':chr(PURPLE),'GREEN':chr(GREEN),'BLUE':chr(BLUE),'YELLOW':chr(YELLOW),
@@ -165,8 +165,10 @@ t_multi['PET128'] = t_multi['PET64']
 Urep = {'\u00d7':'x','\u00f7':'/','\u2014':'-','\u2013':'-','\u2019':"'",'\u2018':"'",'\u201c':'"','\u201d':'"','\u2022':'*'}
 Urep = dict((re.escape(k), v) for k, v in Urep.items())
 
-######### Petscii ASCII codec error handler #########
+#######################################
+# Petscii ASCII codec error handler
 # Replace unknowns with a space
+#######################################
 def pethandler(e):
     char = b''
     if type(e) == UnicodeEncodeError:
@@ -207,7 +209,9 @@ class PETencoder(Encoder):
                          'windows':     1       # Encoder support full width screen slice windows
                          }
 
-    ### Wordwrap text preserving control codes
+    ############################################
+    # Wordwrap text preserving control codes
+    ############################################
     def wordwrap(self,text,split=False):
         codes = '\x05\x11\x12\x13\x14\x1c\x1d\x1e\x1f\x81\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f'
 
@@ -313,24 +317,30 @@ class PETencoder(Encoder):
                 bin = f.read(-1)
         return (la,bin)
 
+    ##############################################################################
     # Sanitize a given filename for compatibility with the client's filesystem
     # Input and output strings are not encoded
+    ##############################################################################
     def sanitize_filename(self, filename):
         filename = filename[:16]
         filename = (unicodedata.normalize('NFKD',filename).encode('ascii','replace')).decode('ascii')
         filename = re.sub(':*?#"$','-',filename)
         return filename
 
+    #########################################################################
     # Given a color control code, returns it's index in the color palette
     # or -1 if not found
+    #########################################################################
     def color_index(self, code):
         return self.palette.get(code,-1)
    
+    ###########################################################
     ### Encoder setup routine
     # Setup the required parameters for the given client id
     # Either automatically or by enquiring the user
     # Return None if no setup is necessary, or a customized
     # copy of the encoder object
+    ###########################################################
     def setup(self, conn, id):
         sch = {b'C64CG':25,b'C64NT':24,b'C64HT':22}
         if self.name == 'PET64std':
@@ -372,7 +382,9 @@ class PETencoder(Encoder):
         else:
             return None
 
-    ### Xgraphic SCROLL replacement
+    #################################
+    # Xgraphic SCROLL replacement
+    #################################
     def _scrollX(self,rows):
         if rows > 0:
             return (chr(0x80)+'V')*rows
@@ -381,8 +393,10 @@ class PETencoder(Encoder):
         else:
             return ''
     
-    ### C128 SCROLL replacement
+    ##########################################################
+    # C128 SCROLL replacement
     # Do not use, unreliable due to expanded logical lines 
+    ##########################################################
     def _scroll128(self,rows):
         if rows > 0:
             return ('\x13\x1bD')*rows
@@ -489,7 +503,7 @@ def _Register():
     e3.palette = PALETTE
     e3.colors  = e0.colors
     e3.def_gfxmode = gfxmodes.C64MULTI
-    e3.gfxmodes = ()#(gfxmodes.C64HI, gfxmodes.C64MULTI)
+    e3.gfxmodes = ()
 
     e4 = PETencoder('PET264std')
     e4.minT56Kver = 0
@@ -503,7 +517,7 @@ def _Register():
     e4.palette = PALETTE
     e4.colors  = e0.colors
     e4.def_gfxmode = gfxmodes.P4HI
-    e4.gfxmodes = ()#(gfxmodes.P4HI,gfxmodes.P4MULTI)
+    e4.gfxmodes = ()
     e4.features['bgcolor'] = 0
     e4.features['blink'] = True
     e4.features['scrollback'] = False
@@ -521,7 +535,7 @@ def _Register():
                  'LIGHT_GREY':14, 'MEDIUM_GREY':1, 'GREY':1,
                  'LIGHT_GREEN':5, 'LIGHT_BLUE':3}
     e5.def_gfxmode = gfxmodes.C64MULTI
-    e5.gfxmodes = ()#(gfxmodes.C64HI, gfxmodes.C64MULTI)
+    e5.gfxmodes = ()
     return [e0,e1,e2,e3,e4,e5]  #Each encoder module can return more than one encoder object.
 
 #####

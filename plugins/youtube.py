@@ -2,7 +2,6 @@
 #          YouTube Plugin          #
 ####################################
 
-#import pafy
 import cv2
 import numpy as np
 from common.bbsdebug import _LOG,bcolors
@@ -12,17 +11,17 @@ from common import video as VV
 import streamlink
 import yt_dlp
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
-    fname = "GRABYT" #UPPERCASE function name for config.ini
-    parpairs = [('url',"https://www.youtube.com/watch?v=46kn3thI-Mo"),('crop',None)] #config.ini Parameter pairs (name,defaultvalue)
+    fname = "GRABYT"    # UPPERCASE function name for config.ini
+    parpairs = [('url',"https://www.youtube.com/watch?v=46kn3thI-Mo"),('crop',None)]    # config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
 
-#############################################
+#####################
 # Plugin function
-#############################################
+#####################
 def plugFunction(conn:Connection,url, crop):
 
     if conn.QueryFeature(TT.BLKTR) >= 0x80:
@@ -34,18 +33,6 @@ def plugFunction(conn:Connection,url, crop):
     if crop != None:
         crop = tuple([int(e) if e.isdigit() else 0 for e in crop.split(',')])
 
-    # PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
-    # try:
-    # 	video = pafy.new(url)
-    # 	tmsecs = video.length*1000
-    # 	best = video.getbestvideo()
-    # 	if best == None:
-    # 		best = video.getbest()
-    # except:
-    # 	_LOG(bcolors.WARNING+"YouTube: PAFY failed trying with Streamlinks"+bcolors.ENDC,id=conn.id,v=1)
-    # 	#conn.Sendall('...error'+chr(TT.CMDON)+chr(TT.CURSOR_EN)+chr(1)+chr(TT.CMDOFF)) #Enable cursor
-    # 	#return()
-    # 	video = None
     tmsecs = None
     slsession = streamlink.Streamlink()
     ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
@@ -53,13 +40,11 @@ def plugFunction(conn:Connection,url, crop):
     if cookies != '':
         ydl_opts['cookiefile'] = cookies
     try:
-        # stl = slsession.resolve_url(url)
-        # source = stl[0]
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats',None)
             if formats != None:
-                crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
+                crop = None # Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
                 try:
                     res = 320*200   # Hardcoded pixel count
                     for f in formats:
@@ -77,15 +62,15 @@ def plugFunction(conn:Connection,url, crop):
             stl = slsession.resolve_url(url)
             source = stl[0]
             if source != "":
-                crop = None #Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
+                crop = None # Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
                 tmsecs = None
-                plug = stl[1](slsession,url)	#Create plugin object
+                plug = stl[1](slsession,url)	# Create plugin object
                 pa = plug.streams()
                 for k in ['240p','360p','480p','720p','1080p','144p']:
                     s = pa.get(k,None)
                     if s != None:
                         if type(s) == streamlink.stream.MuxedStream:
-                            best = s.substreams[0].url #Index 0 seems to always be the video stream
+                            best = s.substreams[0].url # Index 0 seems to always be the video stream
                             break
                         elif type(s) == streamlink.stream.HLSStream:
                             best = s.url_master
@@ -107,9 +92,9 @@ def plugFunction(conn:Connection,url, crop):
         return
     return(VV.Grabframe(conn,best,crop,tmsecs))
 
-####################################
+#######################
 # Adjust image gamma
-####################################
+#######################
 def adjust_gamma(image, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to
     # their adjusted gamma values

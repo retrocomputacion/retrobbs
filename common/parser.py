@@ -4,14 +4,12 @@
 
 from html.parser import HTMLParser, starttagopen, charref, entityref, incomplete, endendtag, endtagfind, tagfind_tolerant
 import re
-#import _markupbase
 from html import unescape
 from html.entities import name2codepoint
 from collections import deque
 from encoders import petscii as P
 from common import extensions as EX
 from common.bbsdebug import _LOG
-#from common.connection import Connection
 import time
 from random import randrange
 from common.turbo56k import turbo_tags
@@ -62,8 +60,9 @@ t_gen_multi = {'SPC':' ','NUL':chr(0)}
 
 t_gen_block = {}
 
-########################
+##########################
 # INKEYS glue function
+##########################
 def _inkeys(conn,k):
     k = k.replace('\u223d',conn.encoder.decode(conn.encoder.back))
     return conn.ReceiveKey(k)
@@ -86,7 +85,7 @@ class TMLParser(HTMLParser):
         ###
         self.t_mono['OUT'] = (lambda x: self.t_conv(str(x)),[('_R','_C'),('x','_I')])								# Update OUT command
         self.t_mono['INKEYS'] = (_inkeys,[('_R','_A'),('c','_C'),('k',conn.encoder.nl,False)])	                # Update INKEYS command
-        # self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k',conn.encoder.nl,False)])	                # Update INKEYS command
+        # self.t_mono['INKEYS'] = (lambda k:self.conn.ReceiveKey(k),[('_R','_A'),('k',conn.encoder.nl,False)])	     # Update INKEYS command
         self.t_mono['USER'] = (lambda: self.conn.username,[('_R','_S')])											# Update USER command
         if conn.QueryFeature(0xb7) >= 0x80:																			# Update INK command
             # if terminal doesnt support the ink command, try to replace it with a text color control code
@@ -538,6 +537,7 @@ class TMLParser(HTMLParser):
         data[1] = data[1].strip('"\'')
         ...
     
+    ############################
     # Set internal registers
     ############################
     def set_I(self,data):

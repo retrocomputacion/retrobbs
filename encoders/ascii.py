@@ -42,9 +42,9 @@ U_HALF  = 0xDF
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]+[127]
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_','SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')])},
              'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),
                      'RVSON':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
@@ -92,7 +92,9 @@ def toASCII(text:str, full=True):
     text = (unicodedata.normalize('NFKD',text).encode('cp437','asciispc')).decode('latin1')
     return text
 
+###################################
 # Replace unknowns with a space
+###################################
 def asciihandler(e):
     char = b''
     if type(e) == UnicodeEncodeError:
@@ -107,13 +109,13 @@ class ASCIIencoder(Encoder):
     def __init__(self, name:str) -> None:
         super().__init__(name)
         self.minT56Kver = 0
-        self.encode = toASCII   #	Function to encode from ASCII/Unicode
-        self.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
+        self.encode = toASCII   # Function to encode from ASCII/Unicode
+        self.decode = lambda t:t.encode('latin1').decode('cp437')	# Function to decode from CP437 to Unicode
         self.non_printable = NONPRINTABLE	#	List of non printable characters
-        self.nl	= '\r'			#	New line string/character
-        self.nl_out = '\r\n'      #   New line string/character (out)
-        self.bs = chr(DELETE)	#	Backspace string/character
-        self.txt_geo = (32,24)  #   Text screen dimensions
+        self.nl	= '\r'			# New line string/character
+        self.nl_out = '\r\n'      # New line string/character (out)
+        self.bs = chr(DELETE)	# Backspace string/character
+        self.txt_geo = (32,24)  # Text screen dimensions
         self.ellipsis = '...'   # Ellipsis representation
         self.clients = {b'_default_':'ASCII', b'ASC':'Extended ASCII (CP437)',b'ANS':'ANSI'}
         self.back = '_'
@@ -132,38 +134,21 @@ class ASCIIencoder(Encoder):
 
     def SetColor(self,conn,c):
         c &= 15
-        # if not self.rvs:
         self.fgcolor = c
         f = ansi_fgidx[c]
-        # b = ansi_bgidx[self.bgcolor]
         conn.parser.color = c
-        # else:
-        #     self.bgcolor = c
-        #     b = ansi_bgidx[c]
-        #     f = ansi_fgidx[self.fgcolor]
         return f'\x1b[{f}m'
 
     def SetBackground(self,conn,c):
         c &= 15
-        # if not self.rvs:
         self.bgcolor = c
         b = ansi_bgidx[c]
-        # f = ansi_fgidx[self.fgcolor]
-        # else:
-        #     self.fgcolor = c
-        #     f = ansi_fgidx[c]
-        #     conn.parser.color = c
-        #     b = ansi_bgidx[self.bgcolor]
         return f'\x1b[{b}m'
 
     def RVS(self,conn, v=True):
         res = ''
         if self.rvs != v:
             if not v:
-            # bg = self.bgcolor
-            # self.bgcolor = self.fgcolor
-            # self.fgcolor = bg
-            # conn.parser.color = bg
                 cb = ansi_bgidx[self.bgcolor]
                 cf = ansi_fgidx[self.fgcolor]
                 res = f'\x1b[27m\x1b[m\x1b[{cf};{cb}{";5" if self.blink else ""}m'
@@ -176,10 +161,6 @@ class ASCIIencoder(Encoder):
         res = ''
         if self.blink != v:
             if not v:
-            # bg = self.bgcolor
-            # self.bgcolor = self.fgcolor
-            # self.fgcolor = bg
-            # conn.parser.color = bg
                 cb = ansi_bgidx[self.bgcolor]
                 cf = ansi_fgidx[self.fgcolor]
                 res = f'\x1b[25m\x1b[m\x1b[{cf};{cb}{";7" if self.rvs else ""}m'
@@ -188,9 +169,11 @@ class ASCIIencoder(Encoder):
         self.blink = v
         return res
 
+    ##############################################################################
     # Sanitize a given filename for compatibility with the client's filesystem
     # Input and output strings are not encoded
     # outout 8.3 filename
+    ##############################################################################
     def sanitize_filename(self, filename):
         def find_ext():
             nonlocal tmp,ext
@@ -281,11 +264,11 @@ class ASCIIencoder(Encoder):
             return None
 
 
-###################################
+######################################
 # Register with the encoder module
-###################################
+######################################
 def _Register():
     codecs.register_error('asciispc',asciihandler)  # Register encoder error handler. 
     e0 = ASCIIencoder('ASCII')
     e0.minT56Kver = 0
-    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return ANSI.
+    return [e0]  # Each encoder module can return more than one encoder object. For example here it could also return ANSI.

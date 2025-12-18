@@ -5,8 +5,10 @@ from common import turbo56k as TT
 from common import helpers as H
 from common.classes import bbsstyle,SCOLOR
 
-# default_style = bbsstyle()
 
+########################
+# Render a title bar
+########################
 def RenderMenuTitle(conn:Connection, title, style:bbsstyle=None):
     if type(title) == tuple:
         title = title[0]
@@ -16,8 +18,10 @@ def RenderMenuTitle(conn:Connection, title, style:bbsstyle=None):
     tml = conn.templates.GetTemplate('main/menutitle',**parms)
     conn.SendTML(tml)
 
+##########################################################
 # Returns '[text]' prompt string in the selected style
 # TML: True to return TML sequence
+##########################################################
 def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
     if style == None:
         style = conn.style
@@ -30,18 +34,15 @@ def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
             bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
             tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
             if (bc == '' or tc == '') and conn.QueryFeature(TT.INK) < 0x80:
-            # if conn.QueryFeature(TT.INK) >= 0x80:																			# Update INK command
-            #     tmp = pal.items()
-            #     bc = [k for k,v in tmp if v == style.PbColor][0] if len([k for k,v in tmp if v == style.PbColor])>0 else ''
-            #     tc = [k for k,v in tmp if v == style.PtColor][0] if len([k for k,v in tmp if v == style.PtColor])>0 else ''
-            # else:
                 bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
                 tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
             return(bc+'['+tc+conn.encoder.encode(str(text),False)+bc+']')
     else:
         return(f'[{text}]')
 
+#################################################
 # Renders a menu option in the selected style  
+#################################################
 def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=None):
     parms = {'key':key, 'label':label, 'toggle':toggle}
     if style != None:
@@ -50,17 +51,17 @@ def KeyLabel(conn:Connection, key:str, label:str, toggle:bool, style:bbsstyle=No
     conn.SendTML(tml)
     return not toggle
 
-#####################################################
+#####################################
 # Render 'file dialog' background
-#####################################################
+#####################################
 def RenderDialog(conn:Connection,height,title=None):
     tml = conn.templates.GetTemplate('main/dialog',**{'title':title,'height':height,'crop':H.crop})
     conn.SendTML(tml)
 
 
-#####################################################
+####################
 # Style TML tags
-#####################################################
+####################
 def StyleTag(conn:Connection, color:SCOLOR, style:bbsstyle=None):
     if color == SCOLOR.TxtColor:
         ink = conn.style.TxtColor
@@ -80,9 +81,9 @@ def StyleTag(conn:Connection, color:SCOLOR, style:bbsstyle=None):
     conn.SendTML(f'<INK c={ink}>')
 
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono = {	'MTITLE':(lambda c,t:RenderMenuTitle(c,t),[('c','_C'),('t','')]),
             'KPROMPT':(KeyPrompt,[('_R','_C'),('c','_C'),('t','RETURN'),('style',None),('tml','False')]),
             'DIALOG':(lambda c,h,t:RenderDialog(c,h,t),[('c','_C'),('h',4),('t','')]),

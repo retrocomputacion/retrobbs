@@ -3,7 +3,7 @@
 #                                                                             #
 # This plugin requires feedpareser to work and it is a Python                 #
 # implementation of https://performance-partners.apple.com/search-api         #
-# #############################################################################
+###############################################################################
 
 from common import turbo56k as TT
 from common import filetools as FT
@@ -19,17 +19,17 @@ import io
 from PIL import Image
 import numpy
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
     fname = "PODCAST"
     parpairs = []
     return(fname,parpairs)
 
-###################################
+##############################
 # Plugin callable function
-###################################
+##############################
 def plugFunction(conn:Connection):
 
     _dec = conn.encoder.decode
@@ -45,7 +45,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML('<GREEN><LFILL row=1 code=64>')
         else:
             conn.SendTML(f'<GREEN><HLINE n={conn.encoder.txt_geo[0]}>')
-        conn.SendTML(f'<WINDOW top=2 bottom={lines-1}>') 	#Set Text Window
+        conn.SendTML(f'<WINDOW top=2 bottom={lines-1}>') 	# Set Text Window
     ecolors = conn.encoder.colors
     conn.SendTML(f'<TEXT page=0 border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
     loop = True
@@ -57,7 +57,7 @@ def plugFunction(conn:Connection):
         if back not in keys:
             keys += back
         termino = ''
-        #Receive search term
+        # Receive search term
         while termino == '':
             termino = _dec(conn.ReceiveStr(keys, columns-10, False))
             if conn.connected == False :

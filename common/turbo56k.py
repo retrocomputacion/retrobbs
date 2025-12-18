@@ -99,7 +99,9 @@ def to_Screen(bin = False):
     else:
         return chr(CMDON)+chr(SCREEN)
 
+##########################################################################
 # Reset some Turbo56K parameters: cursor, split screen and text window
+##########################################################################
 def reset_Turbo56K(bin = False):
     if bin == True:
         return bytes([CMDON,CURSOR_EN,1,CMDOFF,CMDON,SPLIT_SCR,0,0,CMDOFF,CMDON,SET_WIN,0,24,CMDOFF,CMDON,SCREEN])
@@ -254,9 +256,9 @@ def fill(pen,x,y,bin = False):
     else:
         return chr(CMDON)+chr(FILL)+chr(pen)+x.decode('latin1')+y.decode('latin1')+chr(CMDOFF)
 
-#################################################################################
+###################################################################################
 # TML tags (Added at TML parser creation time only if the client supports them)
-#################################################################################
+###################################################################################
 turbo_tags = {'SETOUTPUT':(lambda o: to_Screen() if o else to_Speech(),[('_R','_C'),('o',True)]),
           'TEXT':(to_Text,[('_R','_C'),('page',0),('border',0),('background',0)]),
           'GRAPHIC':(lambda mode,page,border,background: to_Multi(page,border,background) if mode else to_Hires(page,border),[('_R','_C'),('mode',False),('page',0),('border',0),('background',0)]),

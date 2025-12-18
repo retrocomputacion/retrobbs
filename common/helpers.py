@@ -37,29 +37,29 @@ date_strings = [["%d/%m/%Y","dd/mm/yyyy"],["%m/%d/%Y","mm/dd/yyyy"],["%Y/%m/%d",
 # convert int to Byte
 _byte = lambda i: i.to_bytes(1,'little')
 
-###################################
+###########################
 # Paginate current menu
-###################################
+###########################
 def SetPage(conn:Connection,page):
     if conn.MenuParameters != {}:
         conn.MenuParameters['current'] = page
 
 
-################################
+###################################
 # Go back to previous/main menu
-################################
+###################################
 def MenuBack(conn:Connection):
-    conn.MenuDefs,conn.menu = conn.MenuStack[-1]#0
+    conn.MenuDefs,conn.menu = conn.MenuStack[-1]
     conn.MenuStack.pop()
     conn.waitkey = False
-    #reset menuparameters
+    # reset menuparameters
     conn.MenuParameters = {}
 
-#########################################################################
+############################################################
 # Format text to X columns with wordwrapping
 # Returns a list of text lines
 # New in v0.5:	No encoding conversion is ever performed
-#########################################################################
+############################################################
 def formatX(text, columns = 40, convert = True):
     output = []
     text = unescape(text)
@@ -75,7 +75,7 @@ def formatX(text, columns = 40, convert = True):
             output[i] += '<BR>'
     return(output)
 
-#################################################
+###################################################
 # Wordwrap to the client's screen width
 # preserving control codes
 # split: False = return a string
@@ -83,7 +83,7 @@ def formatX(text, columns = 40, convert = True):
 # encode: False = input text is already encoded
 #         True = input text is ASCII/UNICODE
 #                and may contain TML tags
-#################################################
+###################################################
 # >>>>>>>>>>>>>>>  UNFINISHED  <<<<<<<<<<<<<<<<<
 # >>>>>>>>>>> UNTESTED, DO NOT USE! <<<<<<<<<<<<
 def wordwrap(conn:Connection, text:str, split = False, encode = False):
@@ -97,9 +97,9 @@ def wordwrap(conn:Connection, text:str, split = False, encode = False):
         del(dummy)
         return conn.encoder.wordwrap(_text, split)
 
-#####################################################
+#####################
 # Text pagination
-#####################################################
+#####################
 def More(conn:Connection, text, lines, colors=None):
 
     if conn.QueryFeature(TT.SPLIT_SCR) >= 0x80:
@@ -137,8 +137,8 @@ def More(conn:Connection, text, lines, colors=None):
         for char in text:
             pp = False
             conn.Sendall(char)
-            #Keep track of cursor position
-            if ord(char) in itertools.chain(range(32,128),range(160,256)): #Printable chars
+            # Keep track of cursor position
+            if ord(char) in itertools.chain(range(32,128),range(160,256)): # Printable chars
                 cc += 1
             elif char == ckeys.get('CRSRR',0):
                 cc += 1
@@ -157,7 +157,7 @@ def More(conn:Connection, text, lines, colors=None):
                 page = 0
                 cc = 0
             elif char in conn.encoder.palette:
-                color = conn.encoder.palette[char]	#char
+                color = conn.encoder.palette[char]	# char
             elif char == ckeys.get('RVSON',0):
                 rvs = '<RVSON>'
             elif char == ckeys.get('RVSOFF',0):
@@ -185,7 +185,7 @@ def More(conn:Connection, text, lines, colors=None):
                 if (conn.connected == False) or (k == conn.encoder.back):
                     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
                     return -1
-                conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}>') #<AT x={cc} y={(22-lines)+ll-(lines*page)}>')
+                conn.SendTML(f'<DEL n=13>{rvs}<INK c={color}>')
                 page += 1
                 pp = True
         if cc !=0:
@@ -195,22 +195,22 @@ def More(conn:Connection, text, lines, colors=None):
             conn.ReceiveKey()
     return(0)
 
-##########################################################################################
+#############################################################################################
 # Bidirectional scroll text display
 # needs Turbo56K >= 0.7 for single line scroll up/down. Otherwise just whole page up/down
-##########################################################################################
+#############################################################################################
 def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
 
     if colors == None:
         colors = conn.style
-    #initialize line color list
+    # initialize line color list
     lcols = [colors.TxtColor]*len(text)
     tcolor = lcols[0]
 
     ekeys = list(ekeys)
-    #Problematic TML tags
+    # Problematic TML tags
     rep = {'<HOME>':'','<CLR>':'','<CRSRL>':'','<CRSRU>':''}
-    #This connection ctrl keys
+    # This connection ctrl keys
     ckeys = conn.encoder.ctrlkeys
 
     CursorUp = ckeys.get('CRSRU','a')
@@ -220,7 +220,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
 
     firstrun = True
 
-    #Display a whole text page
+    # Display a whole text page
     def _page(start,l):
         nonlocal tcolor, lcols, firstrun
 
@@ -258,15 +258,15 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
     else:
         tline = 0
     bline = i+1
-    #scroll loop
-    ldir = True	#Last scroll down?
+    # scroll loop
+    ldir = True	# Last scroll down?
     back = conn.encoder.back
     while conn.connected:
         k = conn.ReceiveKey([back]+keys+ekeys)
         if k == back:
-            ret = k     #conn.encoder.decode(k.decode('latin1'))
+            ret = k
             break
-        elif (k == CursorUp) and (tline > 0):	#Scroll up
+        elif (k == CursorUp) and (tline > 0):	# Scroll up
             tline -= 1
             bline -= 1
             if tline > 0:
@@ -275,7 +275,7 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 tcolor = colors.TxtColor
             conn.SendTML(f'<SCROLL rows=-1><HOME><INK c={tcolor}>{text[tline]}')
             ldir = False
-        elif (k == CursorDown) and (bline < len(text)):	#Scroll down
+        elif (k == CursorDown) and (bline < len(text)):	# Scroll down
             tline += 1
             if bline > 0:
                 tcolor = lcols[bline-1]
@@ -287,13 +287,13 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
                 lcols[bline] = conn.parser.color
             bline += 1
             ldir = True
-        elif (k == PageUp) and (tline > 0):	#Page up
+        elif (k == PageUp) and (tline > 0):	# Page up
             tline -= lcount
             if tline < 0:
                 tline = 0
             bline = _page(tline,lcount)+1
             ldir = True
-        elif (k == PageDown) and (bline < len(text)):	#Page down
+        elif (k == PageDown) and (bline < len(text)):	# Page down
             if bline + lcount > len(text):
                 tline = bline
                 bline = len(text)
@@ -307,15 +307,15 @@ def text_displayer(conn:Connection, text, lines, colors=None, ekeys=''):
             break
     return ret
 
-#############################################################
+################################################################
 # Crop text to the desired length, adding ellipsis if needed
-#############################################################
+################################################################
 def crop(text, length, ellipsis='...'):
     return text[:length-len(ellipsis)] + ellipsis if len(text) > length else text
 
-##################################################################
+#####################################################################
 # Crop text to the desired pixel width, adding ellipsis if needed
-##################################################################
+#####################################################################
 def gfxcrop(text, width, font = font_text):
     x = 2
     while font.getlength(text) > width:
@@ -323,10 +323,10 @@ def gfxcrop(text, width, font = font_text):
         x = 4
     return text
 
-##########################################################################################################
+#############################################################################################################
 # Convert an int depicting a size in bytes to a rounded up to B/KB/MB/GB or TB (base 2) string
 # https://stackoverflow.com/questions/12523586/python-format-size-application-converting-b-to-kb-mb-gb-tb
-##########################################################################################################
+#############################################################################################################
 def format_bytes(b:int):
     p = 2**10
     n = 0
@@ -336,12 +336,12 @@ def format_bytes(b:int):
         n += 1
     return str(round(b,1))+pl[n]+'B'
 
-#############################################################################
+################################################################################
 # Return a list of files (and subdirectories) in the specified top directory
 # path: top directory path
 # dirs: include subdirectories in list?
 # full: add the full path to the resulting list
-#############################################################################
+################################################################################
 def catalog(path, dirs=False, full=True):
     files = []
     for entries in os.walk(path):
@@ -354,18 +354,18 @@ def catalog(path, dirs=False, full=True):
             files[i] = os.path.join(path,files[i])
     return files
 
-##########################################
+########################################
 # Check if a file is local or an URL
-##########################################
+########################################
 def is_local(url):
     url_parsed = urlparse(url)
     if url_parsed.scheme in ('file', ''): # Possibly a local file
         return exists(url_parsed.path)
     return False
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono = {'CAT':(catalog,[('_R','_A'),('path','.'),('d',False),('f',True)])}
 
 t_block = {'FORMAT':(lambda c,text:wordwrap(c,text),[('c','_C'),('text','_A')])}

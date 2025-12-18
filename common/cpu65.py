@@ -12,7 +12,7 @@ mem:list = [0]*65536
 cpucycles:int = 0
 watchp:int = 0
 
-#Status register bits
+# Status register bits
 FN:int = 0x80
 FV:int = 0x40
 FB:int = 0x10
@@ -20,7 +20,7 @@ FD:int = 0x08
 FI:int = 0x04
 FZ:int = 0x02
 FC:int = 0x01
-#Negated versions
+# Negated versions
 _FN:int = 0x7f
 _FV:int = 0xbf
 _FB:int = 0xef
@@ -51,8 +51,8 @@ def POP():
     sp +=1
     return mem[0x100+sp]
 
-#real	0m3,109s < all lambdas
-#real	0m2,975s < no LO() HI()
+# real	0m3,109s < all lambdas
+# real	0m2,975s < no LO() HI()
 
 IMMEDIATE   = lambda: mem[pc] #lambda: LO()
 ABSOLUTE    = lambda: mem[pc] | (mem[pc+1] << 8)
@@ -83,12 +83,6 @@ def BRANCH():
   temp = temp if temp < 0x80 else temp-256
   cpucycles += EVALPAGECROSSING(pc, pc + temp)
   SETPC(pc + temp)
-  # if (temp < 0x80):
-  #   cpucycles += EVALPAGECROSSING(pc, pc + temp)
-  #   SETPC(pc + temp)
-  # else:
-  #   cpucycles += EVALPAGECROSSING(pc, pc + temp - 0x100)
-  #   SETPC(pc + temp - 0x100)
 
 def SETFLAGS(data):
   global flags
@@ -154,7 +148,6 @@ def ADC(data):
 def SBC(data):
     global flags,a
 
-    #tempval = data
     temp = (a - data - ((flags & FC) ^ FC))&0x1ff
     if (flags & FD):
         tempval2 = (a & 0xf) - (data & 0xf) - ((flags & FC) ^ FC)
@@ -240,15 +233,7 @@ def ROR(data):
   data >>= 1
   return ASSIGNSETFLAGS(data)
 
-# def DEC(data):
-#   temp = (data - 1)&0xff
-#   return ASSIGNSETFLAGS(temp)
-
 DEC = lambda data: ASSIGNSETFLAGS((data - 1)&0xff)
-
-# def INC(data):
-#   #temp = (data + 1)&0xff
-#   return ASSIGNSETFLAGS((data + 1)&0xff)
 
 INC = lambda data: ASSIGNSETFLAGS((data + 1)&0xff)
 
@@ -871,8 +856,4 @@ def runcpu():
     _LOG(f"CPU65 Error: Unknown opcode {op:#0{4}x} at {pc-1:#0{6}x}", op, pc-1)
     return 0
   return 1
-
-# def setpc(newpc):
-#   global pc
-#   pc = newpc
 

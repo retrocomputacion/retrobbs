@@ -1,6 +1,6 @@
 #########################################3
 # Plus4 Routines
-#
+#########################################3
 import numpy as np
 import os
 from PIL import Image
@@ -31,9 +31,9 @@ Plus4Palettes = [['Plus/4',Palette_TED]]
 
 Native_Ext = ['.BOTI']
 
-################################################
+##########################
 # Get 2 closest colors
-################################################
+##########################
 def plus4_get2closest(colors,p_in,p_out,fixed):
     cd = [[197000 for j in range(len(p_in))] for i in range(len(colors))]
     closest = []
@@ -57,9 +57,9 @@ def plus4_get2closest(colors,p_in,p_out,fixed):
         _indexes = tix
     return(_indexes,Palette.Palette(closest))
 
-#####################################################
+##########################
 # Get 4 closest colors
-#####################################################
+##########################
 def plus4_get4closest(colors, p_in, p_out, bgcolor):
     cd = [[0 for j in range(len(p_in))] for i in range(len(colors))]
     brgb = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[0]))
@@ -89,9 +89,9 @@ def plus4_get4closest(colors, p_in, p_out, bgcolor):
             break
     return(_indexes,Palette.Palette(closest))
 
-#######################################
+############################
 # Pack Hires bitmap cell
-#######################################
+############################
 def bmpackhi(column,row,cell,buffers):
     if len(buffers)<4:
         offset = (column*8)+(row*320)
@@ -100,9 +100,9 @@ def bmpackhi(column,row,cell,buffers):
         offset = ((column+3)*8)+(row//8)*320+(row&7)
         buffers[0][offset]=list(np.packbits(np.asarray(cell,dtype='bool')))[0]
 
-##########################################
+#################################
 # Pack multicolor bitmap cell
-##########################################
+#################################
 def bmpackmulti(column,row,cell,buffers):
     cell_a = np.asarray(cell)
     offset = (column*8)+(row*320)
@@ -112,26 +112,26 @@ def bmpackmulti(column,row,cell,buffers):
             tbyte += int(cell_a[y,x])<<((3-x)*2)
         buffers[0][offset+y] = tbyte
 
-#######################################
+###############################
 # Pack Hires attribute cell
-#######################################
+###############################
 def attrpack(column,row,attr,buffers):
     offset = column+(row*40)    #Normal
     buffers[1][offset]=(attr[0]&15)+((attr[1]&15)<<4)   #Color Table
     buffers[2][offset]=((attr[1]&112)>>4)+(attr[0]&112) #Luminance Table
 
-############################################
+####################################
 # Pack multicolor attribute cell
-############################################
+####################################
 def attrpackmulti(column,row,attr,buffers):
     offset = column+(row*40)    #Normal
     buffers[1][offset]=(attr[2]&15)+((attr[1]&15)<<4)   #Color Table
     buffers[2][offset]=((attr[1]&112)>>4)+(attr[2]&112) #Luminance Table
 
-################################
+###################################
 # Get buffers to store raw data
 # Returns a list of lists
-################################
+###################################
 def get_buffers(mode:int):
     x = 1 
     buffers=[]
@@ -140,12 +140,12 @@ def get_buffers(mode:int):
     buffers.append([0]*1000) # Luminance table
     return buffers
 
-##############################################
+#################################################
 # Build a native image file from the raw data
-##############################################
+#################################################
 def buildfile(buffers,bg,baseMode, filename):
-    t_data = b'\x00\x78'    #Load Address
-    t_data += bytes(buffers[2])#luminance table
+    t_data = b'\x00\x78'    # Load Address
+    t_data += bytes(buffers[2]) # luminance table
     t_data += bytes(18)
     if baseMode == 0:
         t_data += bytes(6)
@@ -155,11 +155,11 @@ def buildfile(buffers,bg,baseMode, filename):
         t_data += bytes([((bg[4]&112)>>4)+((bg[4]&15)<<4)])
         t_data += bytes([((bg[1]&112)>>4)+((bg[1]&15)<<4)])
         filename = 'M.'+filename[:14]
-    #Color table
-    t_data += bytes(buffers[1])#color table
+    # Color table
+    t_data += bytes(buffers[1])
     t_data += bytes(24)
-    #Bitmap
-    t_data += bytes(buffers[0])#bitmap
+    # Bitmap
+    t_data += bytes(buffers[0])
     return(t_data,filename)
 
 #####################################################################################################################
@@ -169,7 +169,7 @@ def buildfile(buffers,bg,baseMode, filename):
 # attr: attribute size in pixels
 # global_colors: a boolean tuple of 2^bpp elements, True if the color for that index is global for the whole screen
 # palettes: a list of name/palette pairs
-
+#
 # This field is for the planned rewrite of the conversion routine(s), unused right now.
 # attributes: list of attributes:
 #               dim: dimension this/these attributes cover
@@ -177,7 +177,7 @@ def buildfile(buffers,bg,baseMode, filename):
 #               bm_pack:  function call to pack the bitmap from 8bpp into the native format order (optional)
 #               attr_pack: function call to pack the individual cell color(s) into attribute byte(s) (optional)
 #               Need more fields to set GUI options -> name and get best color    
-
+#
 # in_size: input image dimensions, converted image will also be displayed with these dimensions
 # out_size: native image dimensions
 # get_attr: function call to get closest colors for an attribute cell
@@ -185,7 +185,7 @@ def buildfile(buffers,bg,baseMode, filename):
 # attr_pack: function call to pack the individual cell colors into attribute byte(s)
 # get_buffers: function call returns the native bitmap and attribute buffers
 # save_output: a list of lists in the format ['name','extension',save_function]
-
+#####################################################################################################################
 GFX_MODES=[{'name':'Plus/4 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False),'palettes':Plus4Palettes,
             'global_names':[],
             'attributes':[{'dim':(8,8),'get_attr':plus4_get2closest,'bm_pack':bmpackhi,'attr_pack':attrpack}],
@@ -207,7 +207,7 @@ def load_Image(filename:str):
     gcolors = [0]*5 # Border, Background, MC1, MC2, MC3
     extension = os.path.splitext(filename)[1].upper()
     fsize = os.stat(filename).st_size
-    #Read file
+    # Read file
     if (extension == '.BOTI') and (fsize == 10050):  # Botticelli
         with open(filename,'rb') as ifile:
             if ifile.read(2) == b'\x00\x78':
@@ -240,7 +240,7 @@ def load_Image(filename:str):
                 data[0] = ifile.read(8000)  # Offset $0802 : Bitmap
     else:
         return None
-    #Render image
+    # Render image
     # Generate palette(s)
     rgb_in = []
     for c in Palette_TED: # iterate colors
@@ -309,5 +309,4 @@ def load_Image(filename:str):
                 im_top[i] += im_right[i]
         ccount = list(im_top.values())
         gcolors[0] = list(im_top.keys())[ccount.index(max(ccount))]
-
     return [tmpI,multi,data,gcolors,text]

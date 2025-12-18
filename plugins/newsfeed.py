@@ -17,18 +17,17 @@ from common import filetools as FT
 ### User Agent string used for some stingy content sources
 hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
-    fname = "NEWSFEED" #UPPERCASE function name for config.ini
-    parpairs = [('url','')] #config.ini Parameter pairs (name,defaultvalue)
+    fname = "NEWSFEED"  # UPPERCASE function name for config.ini
+    parpairs = [('url','')] # config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
-#############################
 
-#######################################
+##############################
 # Plugin callable function
-#######################################
+##############################
 def plugFunction(conn:Connection,url):
 
     kdecos = {'VT52':('[',']'),'VidTex':('[',']'),'ASCII':('[',']'),
@@ -40,7 +39,6 @@ def plugFunction(conn:Connection,url):
         conn.menu = -1
     colors = conn.encoder.colors
     scwidth,scheight = conn.encoder.txt_geo
-    menucolors = [[colors.get('LIGHT_BLUE',colors.get('BLUE',colors.get('WHITE',0))),colors.get('LIGHT_GREY',colors.get('WHITE',0))],[colors.get('CYAN',colors.get('GREEN',colors.get('WHITE',0))),colors.get('YELLOW',colors.get('WHITE',0))]]
     MenuDic = {
                 conn.encoder.decode(conn.encoder.back): (H.MenuBack,(conn,),"Previous menu",0,False),
                 conn.encoder.nl: (plugFunction,(conn,url),"",0,False)
@@ -78,9 +76,9 @@ def plugFunction(conn:Connection,url):
     except:
         _LOG('Newsfeed - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)
 
-###############################################
+##################################
 # Parse an RSS/Atom feed entry
-###############################################
+##################################
 def feedentry(conn:Connection,entry,feedname):
     _LOG('NewsFeeds - Entry: '+entry.get('title','-no title-'),id=conn.id,v=4)
     mtitle = textwrap.shorten(feedname,width=38-(len(conn.bbs.name)+7),placeholder='...')
@@ -91,13 +89,13 @@ def feedentry(conn:Connection,entry,feedname):
         renderBar(conn)
         conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
         e_text = ''
-        content = entry.get('content',[]) #Atom
+        content = entry.get('content',[]) # Atom
         for c in content:
-            if 'html' in c['type']: #Get first (x)html content entry
+            if 'html' in c['type']: # Get first (x)html content entry
                 e_text = c['value']
                 continue
         if len(e_text) == 0:
-            e_text = entry.get('description','') #RSS
+            e_text = entry.get('description','') # RSS
         soup= BeautifulSoup(e_text, "html.parser")
         texts = soup.find_all(text=True)
         e_text = " ".join(t.strip() for t in texts)
@@ -110,10 +108,10 @@ def feedentry(conn:Connection,entry,feedname):
         H.text_displayer(conn,text,scheight-4)
     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
 
-#############################################################
+################################################################
 # Try to scrap data from wordpress and some other CMS sites,
 # returns False if entry title or body cannot be found
-#############################################################
+################################################################
 def webarticle(conn:Connection,url, feedname):
     conn.SendTML('<SPINNER>')
     resp = requests.get(url, allow_redirects = False, headers = hdrs)
@@ -229,9 +227,9 @@ def webarticle(conn:Connection,url, feedname):
         return(False)
     return(True)
 
-#######################
+#####################
 # Get entry image
-#######################
+#####################
 def getImg(url,img_t):
     src = img_t['src']
     src = urljoin(url, src)

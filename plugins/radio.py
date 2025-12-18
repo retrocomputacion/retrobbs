@@ -14,17 +14,17 @@ from pyradios import RadioBrowser
 
 rb = RadioBrowser()
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
     fname = "RADIO"
     parpairs = []
     return(fname,parpairs)
 
-###################################
+##############################
 # Plugin callable function
-###################################
+##############################
 def plugFunction(conn:Connection):
 
     columns,lines = conn.encoder.txt_geo
@@ -51,7 +51,7 @@ def plugFunction(conn:Connection):
         if back not in keys:
             keys += back
         termino = ''
-        #Receive search term
+        # Receive search term
         while termino == '':
             termino = _dec(conn.ReceiveStr(keys, columns-10, False))
             if conn.connected == False :
@@ -75,7 +75,6 @@ def plugFunction(conn:Connection):
         else:
             grey = '<GREY1>'
         while True:
-            #RadioTitle(conn)
             conn.SendTML('<CLR><BR>Results:<BR><BR>')
             for i in range(pcount*page, min(pcount*(page+1),nradios)):
                 if i > 9:
@@ -112,7 +111,7 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<NUL><CURSOR><TEXT border={ecolors["BLACK"]} background={ecolors["BLACK"]}>')
                 RadioTitle(conn)
 
-    conn.SendTML(f'<WINDOW top=0 bottom={lines}>')	#Set Text Window
+    conn.SendTML(f'<WINDOW top=0 bottom={lines}>')	# Set Text Window
 
 def searchRadio(termino):
     urls = []

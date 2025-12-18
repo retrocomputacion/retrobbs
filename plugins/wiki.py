@@ -16,17 +16,17 @@ from unicodedata import normalize
 import requests
 import sys, os
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
     fname = "WIKI"
     parpairs = []
     return(fname,parpairs)
 
-###################################
+##############################
 # Plugin callable function
-###################################
+##############################
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
@@ -40,18 +40,17 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'{TxTtag}<HLINE n={scwidth-1}><CRSRL><INS><HLINE>')
             else:
                 conn.SendTML(f'{TxTtag}<HLINE n={scwidth}>')
-        conn.SendTML(f'<WINDOW top=2 bottom={scheight-1}>')	#Set Text Window
+        conn.SendTML(f'<WINDOW top=2 bottom={scheight-1}>')	# Set Text Window
 
     scwidth,scheight = conn.encoder.txt_geo
 
     hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
-    wcolors = conn.templates.GetStyle('wiki/default')   #bbsstyle(ecolors)
-    TxTtag = f'<INK c={wcolors.TxtColor}>'   #'<GREY1>' if '64' in conn.mode else '<GREY2>' if 'PET128' in conn.mode else '<BLUE>'
+    wcolors = conn.templates.GetStyle('wiki/default')
+    TxTtag = f'<INK c={wcolors.TxtColor}>'
     if 'MSX' in conn.mode:
         hcode = 0x17
     else:
         hcode = 0x40
-
 
     wikipedia.set_lang(conn.bbs.lang)
     if wikipediaapi.__version__[1]<6:
@@ -71,20 +70,20 @@ def plugFunction(conn:Connection):
         back = conn.encoder.decode(conn.encoder.back)
         if back not in keys:
             keys += back
-        termino = ''
-        #Receive search term
-        while termino == '':
-            termino = conn.encoder.decode(conn.ReceiveStr(keys, 30, False))
+        s_term = ''
+        # Receive search term
+        while s_term == '':
+            s_term = conn.encoder.decode(conn.ReceiveStr(keys, 30, False))
             if conn.connected == False :
                 return()
-            if termino == back:
+            if s_term == back:
                 conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
                 return()
-        termino = conn.encoder.decode(termino)
+        s_term = conn.encoder.decode(s_term)
         conn.SendTML('<SPINNER>')
         try:
-            results = wikipedia.search(termino, results = scheight-10)
-            conn.SendTML(' <BR><BR>Results:<BR><BR>')		#<-Note the white space at the start to erase the SPINNER wait character
+            results = wikipedia.search(s_term, results = scheight-10)
+            conn.SendTML(' <BR><BR>Results:<BR><BR>')		# <-Note the white space at the start to erase the SPINNER wait character
             i = 0
             options = ''
             for r in results:
@@ -103,7 +102,7 @@ def plugFunction(conn:Connection):
             conn.Sendall(sel)
             conn.SendTML('<SPINNER>')
             i = options.index(sel)
-            page = wiki.page(results[i])#wikipedia.page(results[i])
+            page = wiki.page(results[i])
             try:
                 resp = requests.get(page.fullurl,  allow_redirects=True, headers = hdrs)
                 if resp.status_code == 200:
@@ -118,12 +117,12 @@ def plugFunction(conn:Connection):
                                 _LOG(f'Wikipedia: attempting to load image: {src}',id=conn.id, v=4)
                                 scrap_im = requests.get(src, allow_redirects=True, headers = hdrs)
                                 w_image = Image.open(BytesIO(scrap_im.content))
-                                if w_image.mode == 'P':	#Check if indexed mode with transparency
+                                if w_image.mode == 'P':	# Check if indexed mode with transparency
                                     if w_image.info.get("transparency",-1) != -1:
                                         w_image = w_image.convert('RGBA')
-                                if w_image.mode == 'LA': #Grayscale + alpha
+                                if w_image.mode == 'LA': # Grayscale + alpha
                                     w_image = w_image.convert('RGBA')
-                                if w_image.mode == 'RGBA':	#Possible SVG/logo, fill white
+                                if w_image.mode == 'RGBA':	# Possible SVG/logo, fill white
                                     if (w_image.size[0]/w_image.size[1]) > (4/3):
                                         timg = Image.new("RGBA", (w_image.size[0],w_image.size[0]*3//4),"WHITE")
                                     elif (w_image.size[0]/w_image.size[1]) < (4/3):
@@ -182,16 +181,16 @@ def plugFunction(conn:Connection):
                 _LOG(fname+'|'+str(exc_tb.tb_lineno),id=conn.id,v=1)
     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')	#Set Text Window
 
-##################################################################
+###################################
 # Parse a wiki article sections
-##################################################################
+###################################
 def WikiSection(conn:Connection, sections, level = 0, lines = 0, style:bbsstyle= None):
     tt = []
     scwidth = conn.encoder.txt_geo[0]
     for s in sections:
         title = ('-'*level)+WikiParseTitles(s.title)
         ts = formatX(normalize('NFKC',title),scwidth)
-        ts[0] = f'<INK c={style.HlColor}>{ts[0]}' #hlcolor+ts[0]
+        ts[0] = f'<INK c={style.HlColor}>{ts[0]}'
         tt += ts
         if 'PET' in conn.mode:
             tt.append(f'<HLINE n={scwidth-1}><BR><INK c={style.TxtColor}>')
@@ -201,13 +200,13 @@ def WikiSection(conn:Connection, sections, level = 0, lines = 0, style:bbsstyle=
         tt += WikiParseParas(s.text,scwidth,0,style)	#<+
         tt.append('<BR>')
         tt += WikiSection(conn, s.sections, level + 1, lines, style)
-    return(tt) #lines
+    return(tt)
 
-##################################################################################################
+#####################################################################################################
 # Get plain text,
 # replace <p> and <br>with new lines
 # based on: https://stackoverflow.com/questions/10491223/how-can-i-turn-br-and-p-into-line-breaks
-##################################################################################################
+#####################################################################################################
 def WikiParseParas(text, width = 40, level = 0,style:bbsstyle = None):
     def replace_with_newlines(element):
         text = ''
@@ -225,7 +224,7 @@ def WikiParseParas(text, width = 40, level = 0,style:bbsstyle = None):
     else:
         soup = text
     plain_text = []
-    for elem in soup.children:	#soup.findAll('p'):
+    for elem in soup.children:
         if elem.name == 'p':
             elem = replace_with_newlines(elem)
             plain_text+= elem
@@ -270,9 +269,9 @@ def WikiParseParas(text, width = 40, level = 0,style:bbsstyle = None):
         plain_text == formatX(normalize('NFKC',soup.get_text()),width)
     return(plain_text)
 
-############################
+###############################
 # Parse wiki article titles
-############################
+###############################
 def WikiParseTitles(text):
     soup = BeautifulSoup(text, "html.parser")
     return(soup.get_text())

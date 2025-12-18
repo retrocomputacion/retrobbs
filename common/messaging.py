@@ -16,7 +16,7 @@ import textwrap
 import sys
 import os
 
-###########################################
+###################################################################################################
 # Message db fields
 # msg_id:       automatic from tinydb (doc_id)
 # msg_from:     sender user id
@@ -29,11 +29,11 @@ import os
 # msg_prev:     prev message in thread, if first message in thread this points to the last one
 # msg_topic:    message topic
 # msg_text:     message text
-###########################################
+###################################################################################################
 
-##############################################
+####################
 # Read a message
-##############################################
+####################
 def readMessage(conn:Connection, msg_id:int):
     scwidth,scheight = conn.encoder.txt_geo
     if 'MSX' in conn.mode:
@@ -61,12 +61,11 @@ def readMessage(conn:Connection, msg_id:int):
             else:
                 keys = conn.encoder.back
 
-            if conn.userclass == 10:    #Admin reading
+            if conn.userclass == 10:    # Admin reading
                 keys += 'd'
                 adm = ' <RVSON>D<RVSOFF>elete'
             else:
                 adm = ''
-            # ol.append(f'<INK c={conn.style.TxtColor}>')
             if dmsg['msg_parent'] != 0:
                 ol.append('<RVSON>F<RVSOFF>irst/<RVSON>P<RVSOFF>rev')
                 keys += 'fp'
@@ -161,7 +160,7 @@ def readMessage(conn:Connection, msg_id:int):
                     if r_id != 0:
                         msg_id = r_id
                     break
-                elif k == 'd': #Delete:
+                elif k == 'd': # Delete:
                     tml = ''
                     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
                         tml += f'<RED><LFILL row=10 code={hcode}><LFILL row=14 code={hcode}>'
@@ -173,7 +172,7 @@ def readMessage(conn:Connection, msg_id:int):
                         tml += f'<AT x=0 y=11><SPC n={scwidth-1}><DEL> <BR><SPC n={scwidth-1}><DEL> <BR><SPC n={scwidth-1}><DEL> <BR><CRSRU n=2>'
                     conn.SendTML(tml+f'<WHITE><SPC n={(scwidth-20)//2}>Delete message?(Y/N)')
                     if conn.ReceiveKey('yn') == 'y':
-                        if dmsg['msg_parent'] == 0: #delete whole thread
+                        if dmsg['msg_parent'] == 0: # delete whole thread
                             deleteThread(conn,msg_id)
                             done = True
                             break
@@ -187,13 +186,13 @@ def readMessage(conn:Connection, msg_id:int):
             conn.SendTML('ERROR - Invalid message<PAUSE n=1>')
             done = True
 
-####################################################################
+###########################################################
 # Write a message
 # destination = int for a public board
 #               string for username PM
 # thread = message id for this thread, 0 for new thread
 # returns msg_id or 0 if unsuccessful
-####################################################################
+###########################################################
 def writeMessage(conn:Connection, destination = 1, thread:int = 0):
 
     _dec = conn.encoder.decode
@@ -262,7 +261,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
             if not win:
                 conn.SendTML('<CRSRU>')
 
-        def updMsg(startline=0,scroll=0,rline=0):   #Update message display
+        def updMsg(startline=0,scroll=0,rline=0):   # Update message display
             nonlocal fmessage, lines
 
             tfmessage,tlines = formatMsg(message,scwidth)
@@ -344,8 +343,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
             hcode = 0x40
             tcolor = '<GREY3>'
             hlcolor = '<WHITE>'
-        # vfilter = bytes(string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34),'ascii')    #Valid input characters
-        vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)    #Valid input characters
+        vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)    # Valid input characters
         ckeys = conn.encoder.ctrlkeys
         if win:
             if conn.mode == 'PET64':
@@ -356,7 +354,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
                 help_k = (ckeys['HELP'],'HELP')
                 line_k = (ckeys['F3'],'F3')
                 quit_k = (ckeys['ESC'],'ESC')
-            else: #MSX
+            else: # MSX
                 help_k = (ckeys['F1'],'F1')
                 line_k = (ckeys['F5'],'F5')
                 quit_k = (ckeys['F10'],'F10')
@@ -378,7 +376,6 @@ Press {_dec(conn.encoder.back)} to continue...'''
             topic = _dec(conn.ReceiveStr(vfilter, maxlen = 32))
             if win:
                 conn.SendTML('<PAUSE n=0.5><CLR>')
-            # topic = _dec(topic)
         dispMsg()
         hl_line()
         _LOG('Composing message',id=conn.id,v=4)
@@ -397,10 +394,7 @@ Press {_dec(conn.encoder.back)} to continue...'''
         cursors += [ckeys.get('HOME',chr(0)),ckeys.get('INSERT',chr(0)),ckeys.get('CLEAR',chr(0)),ckeys.get('DELETE',chr(0))]
         while running and conn.connected:
             try:
-                # print(len(tline), column)
-                # i_char = conn.ReceiveKey(bytes([ord(c) for c in vfilter]+[ord(conn.encoder.nl),ckeys['CRSRD'],ckeys['HOME'],ckeys['DELETE'],ckeys['CRSRR'],help_k[0],line_k[0],quit_k[0],ckeys['CRSRU'],ckeys['CLEAR'],ckeys['INSERT'],ckeys['CRSRL']]))
                 i_char = conn.ReceiveKey([c for c in vfilter]+cursors+[conn.encoder.nl]+[help_k[0],line_k[0],quit_k[0]])
-                # i_char = chr(i_char[0])
                 if edit :   # Editing text
                     if i_char == conn.encoder.nl:   # New line
                         # check commands for non-turbo mode
@@ -436,7 +430,6 @@ Press {_dec(conn.encoder.back)} to continue...'''
                                     column = 0
                                     tline = ''
                                 continue
-                        # column += 1
                         if column < len(tline):
                             if tline[column] != '\n':
                                 tline = tline[0:column] + '\n' + tline[column:]
@@ -445,7 +438,6 @@ Press {_dec(conn.encoder.back)} to continue...'''
                         if not win:
                             spc = scwidth - column
                             conn.SendTML(f'<SPC n={spc}>')
-                        # print('messlen:',len(message),'\nline+ydisp[0]:',lines[line+ydisp][0],'\nline+ydisp[1]:',lines[line+ydisp][1])
                         message = message[0:lines[line+ydisp][0]]+tline+(' ' if lines[line+ydisp][2] else '')+message[lines[line+ydisp][1]:]  # Insert edited line into original message
                         rline = line
                         if not lines[line+ydisp-1][2] or column != 0: # New line not at the start of a wordwrapped line
@@ -534,14 +526,12 @@ Press {_dec(conn.encoder.back)} to continue...'''
                         conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>Select line (CRSR UP/DWN)<WINDOW top=3 bottom={scheight-4}><AT x=0 y={line}>')
                         edit = False
                     elif i_char in vfilter:
-                        # i_char = _dec(i_char)
                         # Alphanumeric characters
                         column += 1
                         if column <= len(tline):
                             tline = tline[0:column-1] + i_char + tline[column:]
                         else:
                             tline += i_char
-                        # print([message[0:lines[line+ydisp][0]]+tline])
                         conn.Sendall(_enc(i_char))
                         if column == scwidth+1:
                             message = message[0:lines[line+ydisp][0]]+tline+(' ' if lines[line+ydisp][2] else '')+message[lines[line+ydisp][1]:]  # Insert edited line into original message
@@ -570,9 +560,6 @@ Press {_dec(conn.encoder.back)} to continue...'''
                                             conn.SendTML(f'<DEL n={_tmp}><CRSRR n={_tmp-1}>')   # Use cursor instead of newline to avoid inserted line on some C64 terminals
                                     else:
                                         conn.SendTML('<DEL>')   # Last character was space and the previous line had 'scwidth' characters
-                                        # if line+ydisp >= len(fmessage):
-                                            # fmessage.append('')
-                                            # lines.append([0,0,False])
                                 conn.SendTML(f'{fmessage[line+ydisp]}')
                             else:   # Past character limit
                                 option = dialog1()
@@ -621,10 +608,10 @@ Press {_dec(conn.encoder.back)} to continue...'''
                 conn.connected = False
         conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
         return(topic,message)
-    #check user is logged in
+    # check user is logged in
     if conn.username == '_guest_':
         return
-    #check destination
+    # check destination
     db = conn.bbs.database
     table = db.db.table('MESSAGES')
     dbQ = Query()
@@ -681,9 +668,9 @@ Press {_dec(conn.encoder.back)} to continue...'''
         _LOG('Messaging: Message cancelled',id=conn.id,v=4)
     return m_id
 
-############################################################
+###############################################################
 # Display user private messages (board = 0) or public board
-############################################################
+###############################################################
 def inbox(conn:Connection, board):
     scwidth,scheight = conn.encoder.txt_geo
     ellipsis = conn.encoder.ellipsis
@@ -705,7 +692,7 @@ def inbox(conn:Connection, board):
             query['msg_to'] = conn.userid   # Threads directed to user
             q2['msg_from'] = conn.userid    # Threads started by user
         else:
-            return  #abort if not logged in
+            return  # abort if not logged in
     else:
         title = conn.bbs.BoardOptions.get('board'+str(board),'bOARD '+str(board))  # Replace with board title from config.ini
     table = db.db.table('MESSAGES')
@@ -739,7 +726,7 @@ def inbox(conn:Connection, board):
             tu = crop(user,11,ellipsis)
             tt += f'{to}<YELLOW><CRSRR n={(scwidth-16)-len(to)}<VLINE><WHITE>{tu}'
             ts = tl['msg_sent']    # Get timestamp of last message in thread
-            threads.append([tt,i.doc_id,um,ts])  #topic - thread_id, first unread, timestamp
+            threads.append([tt,i.doc_id,um,ts])  # topic - thread_id, first unread, timestamp
         # sort by sent timestamp, newest thread first
         threads.sort(key=lambda threads: threads[3],reverse=True)
         conn.SendTML('<CURSOR>')
@@ -781,11 +768,8 @@ def inbox(conn:Connection, board):
         while conn.connected:
             if pos != o_pos:
                 conn.SendTML(f'<AT x=0 y={pos+coff}>&gt;<CRSRL>')
-                # conn.Sendall(TT.set_CRSR(0,pos)+'>')
                 o_pos = pos
-            # k = conn.ReceiveKey(bytes(_enc('flu'),'latin1')+bytes([ckeys['CRSRD'],ckeys['CRSRU'],ckeys['CRSRL'],ckeys['CRSRR'],ord(conn.encoder.back),(ord(_enc('n'))if tt!='' else 0),(ord(_enc('d'))if conn.userclass == 10 else 0)]))
             k = conn.ReceiveKey(['f','l','u',conn.encoder.back,'n' if tt!= '' else '','d' if conn.userclass == 10 else '']+cursors)
-            # k = chr(k[0])
             if len(threads) > 0:
                 if k == cursors[1]:
                     if pos+1 < (len(threads)-(tpp*page)):    # move down
@@ -899,15 +883,15 @@ def inbox(conn:Connection, board):
                 done = True
                 break
 
-##############################################
+#################################################
 # Toggle the read status of a private message
-##############################################
+#################################################
 def toggleRead(conn:Connection, msg_id):
     ...
 
-##################################
+###################################
 # Get number of unread messages
-##################################
+###################################
 def unreadCount(conn:Connection):
     table = conn.bbs.database.db.table('MESSAGES')
     dbQ = Query()
@@ -924,9 +908,9 @@ def unreadCount(conn:Connection):
                 count[1] += 1
     return count
 
-#############################################
+################################################
 # Get first unread message in a given thread
-#############################################
+################################################
 def getUnread(conn:Connection, thread:int):
     table = conn.bbs.database.db.table('MESSAGES')
     tt = table.get(doc_id=thread)
@@ -947,10 +931,10 @@ def getUnread(conn:Connection, thread:int):
         _LOG('Messaging: ERROR-invalid thread',id=conn.id)
     return res
 
-############################################
+############################
 # Delete thread
 # Limited to admin users
-############################################
+############################
 def deleteThread(conn:Connection,thread=0):
     if thread != 0 and conn.userclass == 10:
         table = conn.bbs.database.db.table('MESSAGES')
@@ -967,17 +951,17 @@ def deleteThread(conn:Connection,thread=0):
     else:
         _LOG("ERROR: deleteThread - invalid thread or user class")
 
-##########################################
+############################
 # Delete message
 # Limited to admin users
-##########################################
+############################
 def deleteMessage(conn:Connection,msg=0):
     m_id = 0
     if msg != 0 and conn.userclass == 10:
         table = conn.bbs.database.db.table('MESSAGES')
         dmsg = table.get(doc_id = msg)
         if dmsg != None:
-            if dmsg['msg_parent'] == 0: #This is the first post in the thread, delete whole thread
+            if dmsg['msg_parent'] == 0: # This is the first post in the thread, delete whole thread
                 deleteThread(conn,msg)
             else:
                 m_id = dmsg['msg_prev']
@@ -1018,10 +1002,6 @@ def formatMsg(text, columns = 40):
               output.extend(textwrap.wrap(i,width=columns))
               if i[-1] == ' ':
                   output.append('')
-            # cols = columns+1 if (len(i) == columns+1 and i[-1]=='\b') else columns
-            # output.extend(textwrap.wrap(i,width=cols))
-            # if len(i) == columns+1 and i[-1] in [' ','\b']:
-            #     output.extend([''])
         else:
             output.extend([''])
     lines = []
@@ -1040,12 +1020,9 @@ def formatMsg(text, columns = 40):
                         break
         lines.extend([[ip,op,lwrap]])
         ip = op
-        # if len(output[i])<columns:
-        #     output[i] += '<BR>'
-
     return(output,lines)
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono = {'UNREAD':(lambda c:unreadCount(c),[('_R','_A'),('c','_C')])}

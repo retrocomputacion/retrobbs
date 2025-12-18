@@ -6,7 +6,7 @@ from copy import deepcopy
 import codecs
 from common.imgcvt import gfxmodes
 
-#VT-52 and related encoders
+# VT-52 and related encoders
 
 #--Control codes
 STOP = 0x03
@@ -42,9 +42,9 @@ BLACK  = 8
 # Color code to palette index dictionary
 PALETTE = {'\x1bk'+chr((j*16)+i):j for i in range(9) for j in range(9)}
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono =    {'VT52':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'H'+chr(ESC)+'J','HOME':chr(ESC)+'H',
                      'BACK':chr(BACK),'SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')])},
              'VidTex':{'BR':'\r\n','AT':(lambda x,y:chr(ESC)+'Y'+chr(y+32)+chr(x+32),[('_R','_C'),('x',0),('y',0)]),'CLR':chr(ESC)+'j','HOME':chr(ESC)+'H',
@@ -127,9 +127,10 @@ def toATRST(text:str, full=True):
     text = (unicodedata.normalize('NFKD',text).encode('cp437','vtspc')).decode('latin1')
     return text
 
-
-######### VT52 ASCII codec error handler #########
+####################################
+# VT52 ASCII codec error handler
 # Replace unknowns with a space
+####################################
 def vthandler(e):
     char = b''
     if type(e) == UnicodeEncodeError:
@@ -221,9 +222,11 @@ class VT52encoder(Encoder):
         else:
             return ''
 
+    ##############################################################################
     # Sanitize a given filename for compatibility with the client's filesystem
     # Input and output strings are not encoded
-    # outout 8.3 filename
+    # output 8.3 filename
+    ##############################################################################
     def sanitize_filename(self, filename):
         def find_ext():
             nonlocal tmp,ext
@@ -255,12 +258,13 @@ class VT52encoder(Encoder):
         return filename
 
 
-
-    ### Encoder setup routine
+    ###########################################################
+    # Encoder setup routine
     # Setup the required parameters for the given client id
     # Either automatically or by enquiring the user
     # Return None if no setup is necessary, or a customized
     # copy of the encoder object
+    ###########################################################
     def setup(self, conn, id):
         _copy = deepcopy(self)
         conn.SendTML('...<BR>')
@@ -276,14 +280,14 @@ class VT52encoder(Encoder):
                 conn.SendTML('<FORMAT>VidTex compatible terminal detected</FORMAT>')
                 _copy.gfxmodes = []
                 for opt in options:
-                    if 'SS' in opt: #Screen size
+                    if 'SS' in opt: # Screen size
                         lines = ord(opt[2])-31
                         cols = ord(opt[3])-31
-                    if opt == 'G4': #Semigraphics support
+                    if opt == 'G4': # Semigraphics support
                         _copy.tml_mono.update(vt_semi)
-                    if opt == 'GM': #MedRes RLE
+                    if opt == 'GM': # MedRes RLE
                         _copy.gfxmodes.append(gfxmodes.VTMED)
-                    if opt == 'GH': #HiRes RLE
+                    if opt == 'GH': # HiRes RLE
                         _copy.gfxmodes.append(gfxmodes.VTHI)
                 if len(_copy.gfxmodes) != 0:
                     if gfxmodes.VTHI in _copy.gfxmodes:
@@ -302,7 +306,6 @@ class VT52encoder(Encoder):
                     _copy.tml_mono.update(vt_colors)
                     _copy.features['color'] = True
                     _copy.features['bgcolor'] = 1
-                    # _copy.palette = PALETTE
                     _copy.colors={'GREEN':0, 'YELLOW':1, 'BLUE':2, 'RED':3, 'WHITE':4, 'CYAN': 5, 'PURPLE':6, 'ORANGE':7, 'BLACK':8}
                     if len(options[0]) > 3: # Compuserve's VidTex uses Green instead of Black, we'll replace Black with Orange
                         _copy.black_replace = True
@@ -321,15 +324,15 @@ class VT52encoder(Encoder):
             # Atari ST modes
             _copy.tml_mono.update(t_mono['ST'])
             _copy.tml_mono['SCROLL'] = (self._scroll ,[('_R','_C'),('rows',1)])
-            conn.Sendallbin(b'\x1bv\x1bq')   #Enable wordwrap, normal video
+            conn.Sendallbin(b'\x1bv\x1bq')   # Enable wordwrap, normal video
             _copy.features['color'] = True
             _copy.features['bgcolor'] = 2
             _copy.features['scrollback'] = True
             _copy.encode = toATRST
-            _copy.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
+            _copy.decode = lambda t:t.encode('latin1').decode('cp437')	# Function to decode from CP437 to Unicode
             _copy.ctrlkeys.update({'CRSRU':'\x1bA','CRSRD':'\x1bB','CRSRR':'\x1bC','CRSRL':'\x1bD'})
             _copy.tml_multi['CHECKMARK']='\xfb'
-            if _copy.txt_geo[0] > 40:   #Assume hi/medres
+            if _copy.txt_geo[0] > 40:   # Assume hi/medres
                 conn.SendTML('<BR>(M)edium or (H)i-Res?')
                 if conn.ReceiveKey('mhMH').lower() == 'm':
                     _copy.name = 'ATRSTM'
@@ -349,9 +352,9 @@ class VT52encoder(Encoder):
             _copy.tml_multi['DEL'] = '\x08 \x08'
         return _copy
 
-###################################
+######################################
 # Register with the encoder module
-###################################
+######################################
 def _Register():
     codecs.register_error('vtspc',vthandler)  # Register encoder error handler. 
     e0 = VT52encoder('VT52')

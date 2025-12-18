@@ -30,18 +30,17 @@ release_types64 = ['C64 Demo','C64 One-File Demo','C64 Intro','C64 4K Intro','C6
 release_types128 = ['C128 Release']
 release_typesother = ['C64 Disk Cover','C64 Votesheet','C64 DTV','EasyFlash Release','Other Platform C64 Tool']
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
-    fname = "CSDB" #UPPERCASE function name for config.ini
-    parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
+    fname = "CSDB"  # UPPERCASE function name for config.ini
+    parpairs = []   # config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
-#############################
 
-#######################################
+##############################
 # Plugin callable function
-#######################################
+##############################
 def plugFunction(conn:Connection):
 
     url = "https://csdb.dk/rss/latestreleases.php"
@@ -52,131 +51,130 @@ def plugFunction(conn:Connection):
     refresh = True
     render = True
     entries = []
-    # try:
-    r_types = release_types64
-    if 'PET128' in conn.mode:
-        r_types.extend(release_types128)
-    elif 'PET' not in conn.mode:
-        r_types.extend(release_types128)
-        r_types.extend(release_typesother)
+    try:
+        r_types = release_types64
+        if 'PET128' in conn.mode:
+            r_types.extend(release_types128)
+        elif 'PET' not in conn.mode:
+            r_types.extend(release_types128)
+            r_types.extend(release_typesother)
 
-    while conn.connected:
-        if render:
-            conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR>{conn.templates.GetTemplate("csdb/menutitle",**{})}')
-        if refresh:
-            conn.SendTML(f'<WINDOW top=3 bottom={scheight-3}>')
-            if conn.encoder.features['windows'] > 0:
-                conn.SendTML('<CLR>')
-            if entries == []:
-                conn.SendTML('<SPINNER>')
-                nfeed = feedparser.parse(url)
-                title = H.formatX(nfeed.feed.get('title','No title'),scwidth)
-                lines = scheight-(8+len(title))
-                for ix, e in enumerate(nfeed.entries):
-                    soup = BeautifulSoup(e.summary,'html.parser')
-                    links = soup.find_all(lambda tag: tag.name == 'a' and tag.text in release_types64)
-                    if len(links) == 0: #Skip if entry release type doesnt match
-                        continue
-                    purl = urlparse(e.link)
-                    entries.append({'title':e.get('title','No title'),'id':parse_qs(purl.query)["id"][0]})
-                pages = ceil(len(entries)/lines)
-                c_page = 0
-
-            conn.SendTML(' <BR>')
-            for t in title:
-                conn.SendTML(t)
-                if len(t)<scwidth:
-                    conn.SendTML('<BR>')
-            keys = [conn.encoder.back,'*']
-            if pages > 1:
-                keys.extend(['+','-'])
-            for ix in range(min(lines,len(entries))):
-                text = H.crop(entries[ix+(c_page*lines)]['title'],scwidth-4,conn.encoder.ellipsis)
-                S.KeyLabel(conn,H.valid_keys[ix],text,ix%2==0)
-                conn.SendTML('<BR>')
-                keys.append(H.valid_keys[ix])
-            conn.SendTML(f'<WINDOW top=0 bottom={scheight}><AT x=0 y={scheight-1}><WHITE>[{c_page+1}/{pages}]')
-            refresh = False
-        if render:
-            conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'','pages':'+/-','keys':[('*','search')]}))
-            render = False
-        key = conn.ReceiveKey(keys)
-        if key == '*':  # Search
-            if conn.encoder.features['windows']== 0:
-                conn.SendTML(f'<CLR>{conn.templates.GetTemplate("csdb/menutitle",**{})}')
-            else:
-                conn.SendTML(f'<WINDOW top=3 bottom={scheight-3}><CLR>')
-            conn.SendTML('<BR><YELLOW>Search CSDb: <WHITE>')
-            term = conn.ReceiveStr(string.ascii_letters + string.digits + ' +-_,.$%&')
-            conn.SendTML('<SPINNER>')
-            resp = requests.get(search_url+quote(term,safe=''), allow_redirects = True, headers = hdrs)
-            if resp.status_code == 200:
-                soup = BeautifulSoup(resp.content,'html.parser')
-                stitle = soup.find('head').find('title').string
-                if '- Search for ' in stitle:
-                    entries = []
-                    olist = soup.find('body').find_all('li')
-                    for i in olist:
-                        v_item = i.find('img')
-                        if v_item != None:
-                            if v_item['src'] == '/gfx/icon-dllink.gif':
-                                links = i.find_all('a')[1]
-                                r_type = (links.next_sibling.string)
-                                r_type = r_type[r_type.find("(")+1:r_type.find(")")]
-                                if r_type not in r_types:
-                                    continue
-                                purl = urlparse(links['href'])
-                                entries.append({'title':links.string,'id':parse_qs(purl.query)["id"][0]})
-                    title = ['Search results:','']
+        while conn.connected:
+            if render:
+                conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR>{conn.templates.GetTemplate("csdb/menutitle",**{})}')
+            if refresh:
+                conn.SendTML(f'<WINDOW top=3 bottom={scheight-3}>')
+                if conn.encoder.features['windows'] > 0:
+                    conn.SendTML('<CLR>')
+                if entries == []:
+                    conn.SendTML('<SPINNER>')
+                    nfeed = feedparser.parse(url)
+                    title = H.formatX(nfeed.feed.get('title','No title'),scwidth)
                     lines = scheight-(8+len(title))
+                    for ix, e in enumerate(nfeed.entries):
+                        soup = BeautifulSoup(e.summary,'html.parser')
+                        links = soup.find_all(lambda tag: tag.name == 'a' and tag.text in release_types64)
+                        if len(links) == 0: #Skip if entry release type doesnt match
+                            continue
+                        purl = urlparse(e.link)
+                        entries.append({'title':e.get('title','No title'),'id':parse_qs(purl.query)["id"][0]})
                     pages = ceil(len(entries)/lines)
                     c_page = 0
-                else:   # Single match
-                    purl = urlparse(resp.url)
-                    conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
-                    if showrelease(conn,parse_qs(purl.query)["id"][0]) == False:
-                        conn.SendTML('<ORANGE>Error retreiving CSDb data<BR><PAUSE n=3>')
-                    else:
+
+                conn.SendTML(' <BR>')
+                for t in title:
+                    conn.SendTML(t)
+                    if len(t)<scwidth:
+                        conn.SendTML('<BR>')
+                keys = [conn.encoder.back,'*']
+                if pages > 1:
+                    keys.extend(['+','-'])
+                for ix in range(min(lines,len(entries))):
+                    text = H.crop(entries[ix+(c_page*lines)]['title'],scwidth-4,conn.encoder.ellipsis)
+                    S.KeyLabel(conn,H.valid_keys[ix],text,ix%2==0)
+                    conn.SendTML('<BR>')
+                    keys.append(H.valid_keys[ix])
+                conn.SendTML(f'<WINDOW top=0 bottom={scheight}><AT x=0 y={scheight-1}><WHITE>[{c_page+1}/{pages}]')
+                refresh = False
+            if render:
+                conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'','pages':'+/-','keys':[('*','search')]}))
+                render = False
+            key = conn.ReceiveKey(keys)
+            if key == '*':  # Search
+                if conn.encoder.features['windows']== 0:
+                    conn.SendTML(f'<CLR>{conn.templates.GetTemplate("csdb/menutitle",**{})}')
+                else:
+                    conn.SendTML(f'<WINDOW top=3 bottom={scheight-3}><CLR>')
+                conn.SendTML('<BR><YELLOW>Search CSDb: <WHITE>')
+                term = conn.ReceiveStr(string.ascii_letters + string.digits + ' +-_,.$%&')
+                conn.SendTML('<SPINNER>')
+                resp = requests.get(search_url+quote(term,safe=''), allow_redirects = True, headers = hdrs)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.content,'html.parser')
+                    stitle = soup.find('head').find('title').string
+                    if '- Search for ' in stitle:
+                        entries = []
+                        olist = soup.find('body').find_all('li')
+                        for i in olist:
+                            v_item = i.find('img')
+                            if v_item != None:
+                                if v_item['src'] == '/gfx/icon-dllink.gif':
+                                    links = i.find_all('a')[1]
+                                    r_type = (links.next_sibling.string)
+                                    r_type = r_type[r_type.find("(")+1:r_type.find(")")]
+                                    if r_type not in r_types:
+                                        continue
+                                    purl = urlparse(links['href'])
+                                    entries.append({'title':links.string,'id':parse_qs(purl.query)["id"][0]})
+                        title = ['Search results:','']
+                        lines = scheight-(8+len(title))
+                        pages = ceil(len(entries)/lines)
+                        c_page = 0
+                    else:   # Single match
+                        purl = urlparse(resp.url)
+                        conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
+                        if showrelease(conn,parse_qs(purl.query)["id"][0]) == False:
+                            conn.SendTML('<ORANGE>Error retreiving CSDb data<BR><PAUSE n=3>')
+                        else:
+                            render = True
+                    refresh = True
+                    if conn.encoder.features['windows'] == 0:
                         render = True
+                else:
+                    refresh = True
+                    if conn.encoder.features['windows'] == 0:
+                        render = True
+            elif key == '-':
+                if c_page > 0:
+                    c_page -= 1
+                    refresh = True
+                    if conn.encoder.features['windows'] == 0:
+                        render = True
+            elif key == '+':
+                if c_page <= pages:
+                    c_page += 1
+                    refresh = True
+                    if conn.encoder.features['windows'] == 0:
+                        render = True
+            elif key != conn.encoder.back:
+                id = entries[H.valid_keys.index(key)+(c_page*lines)]['id']
+                if showrelease(conn, id) == False:
+                    conn.SendTML('<ORANGE>Error retreiving CSDb data<BR><PAUSE n=3>')
                 refresh = True
-                if conn.encoder.features['windows'] == 0:
-                    render = True
+                render = True
             else:
-                refresh = True
-                if conn.encoder.features['windows'] == 0:
-                    render = True
-        elif key == '-':
-            if c_page > 0:
-                c_page -= 1
-                refresh = True
-                if conn.encoder.features['windows'] == 0:
-                    render = True
-        elif key == '+':
-            if c_page <= pages:
-                c_page += 1
-                refresh = True
-                if conn.encoder.features['windows'] == 0:
-                    render = True
-        elif key != conn.encoder.back:
-            id = entries[H.valid_keys.index(key)+(c_page*lines)]['id']
-            if showrelease(conn, id) == False:
-                conn.SendTML('<ORANGE>Error retreiving CSDb data<BR><PAUSE n=3>')
-            refresh = True
-            render = True
-        else:
-            break
-    # except:
-    #     _LOG('CSDb - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)
+                break
+    except:
+        _LOG('CSDb - '+bcolors.FAIL+'failed'+bcolors.ENDC, id=conn.id,v=1)
 
 
-#############################################################
+#######################
 # Show release info
-#############################################################
+#######################
 def showrelease(conn:Connection,id):
     conn.SendTML('<SPINNER>')
     st = conn.style
     top_url = f'https://csdb.dk/webservice/?type=release&id={id}&depth=2'
-    # top_url = f'https://csdb.dk/webservice/?type=release&id=251393&depth=2'    #251393
     resp = requests.get(top_url, allow_redirects = False, headers = hdrs)
     if resp.status_code == 200:
         scwidth,scheight = conn.encoder.txt_geo
@@ -262,7 +260,8 @@ def showrelease(conn:Connection,id):
             conn.SendTML('<WHITE>Released o')
         conn.SendTML(f'n: <YELLOW>{dstr}<BR><BR>')
         keys = [conn.encoder.back]
-        if len(dlinks) > 0:
+        ix = 0
+        if dlinks != []:
             conn.SendTML('<GREEN>Downloads:<BR><BR>')
             for ix, dl in enumerate(dlinks):
                 # ATTENTION: We assume there's less than 9 download links
@@ -291,14 +290,14 @@ def showrelease(conn:Connection,id):
             else:
                 break
     else:
-        conn.SendTML(f'{resp.status_code}<PAUSE n=1>')
+        conn.SendTML(f'<BR>{resp.status_code} <PAUSE n=1>')
         _LOG('CSDb - '+bcolors.WARNING+'webservice failed'+bcolors.ENDC, id=conn.id,v=2)
         return(False)
     return(True)
 
-#######################
+#####################
 # Get entry image
-#######################
+#####################
 def getImg(src):
     scrap_im = requests.get(src, allow_redirects=True, headers=hdrs, timeout=10)
     try:

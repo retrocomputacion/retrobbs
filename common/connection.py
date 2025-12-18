@@ -75,7 +75,9 @@ class Connection:
         except:
             pass
 
+    #################
     #Close socket
+    #################
     def Close(self):
         _LOG("Total bytes sent/received: "+str(self.outbytes)+'/'+str(self.inbytes),id=self.id,v=3)
         try:
@@ -84,7 +86,9 @@ class Connection:
         except:
             pass
 
+    ######################################
     #Set mode from the terminal string
+    ######################################
     def SetMode(self, idstring, t56kver):
         self.TermString = idstring
         self.T56KVer = t56kver
@@ -114,14 +118,18 @@ class Connection:
             return True
         else:
             return False
-        
+    
+    ##############################
     # Reset feature dictionary
+    ##############################
     def ResetFeatures(self):
         self.TermFt = {i:None for i in range(128,256)}
         self.TermFt[0xFF] = 0
         self.TermFt[0xFE] = 0
 
+    #####################################################
     # Query if the client terminal supports a feature
+    #####################################################
     def QueryFeature(self, cmd:int):
         #return 0x80		# Uncomment this when testing commands
         if (self.T56KVer == 0) or (cmd < 128) or (cmd > 253):
@@ -139,7 +147,9 @@ class Connection:
             self.TermFt[cmd] = TT.T56Kold[cmd-128][0]
         return self.TermFt[cmd]
 
+    ##############################
     # Query the client's setup
+    ##############################
     def QueryClient(self,subsystem:int):
         platforms = ['Commodore 64','Commodore Plus/4','MSX','Commodore 128','Commodore VIC-20','ZX Spectrum','Atari','Apple ][','Amstrad','Amiga','Commodore PET']
         bitrates = [0,300,600,1200,1800,2400,4800,9600,19200,28800,38400,57600,76800,115200]
@@ -175,7 +185,7 @@ class Connection:
                             self.ClientSetup[subsystem][1]['VRAM'] = (qdata[1]*256)+qdata[0]
                         if subsystem == 5:  # Graphic modes
                             self.ClientSetup[subsystem][1]['GFXModes'] = qdata[0]   # Platform dependent - In the future the encoder should be configured here
-                        if subsystem == 6:  # Graphic modes
+                        if subsystem == 6:  # Audio
                             self.ClientSetup[subsystem][1]['Synths'] = qdata[0]   # Platform dependent - In the future the encoder should be configured here
                             self.ClientSetup[subsystem][1]['PCM'] = qdata[1]
                             if qdata[1] & 0b01111000 > 0:
@@ -192,10 +202,8 @@ class Connection:
                                             break
                                         tmp = tmp >> 1
                                 self.samplerate = tmp_sr
-                        ...
                     else:       # Response size is too small
                         _LOG(f"QueryClient: Response size too small / Subsystem {subsystem} not implemented", id = self.id,v=3)
-                ...
             else:
                 return None
         if subsystem < 7:
@@ -203,13 +211,17 @@ class Connection:
         else:
             return None
 
-    # set the connection into hold mode (display spinner)
+    #########################################################
+    # Set the connection into hold mode (display spinner)
+    #########################################################
     def SetHold(self):
         if not self.on_hold:
             self.SendTML(self.encoder.spinner['start'])
             self.on_hold = True
 
-    # clear the hold mode (stop displaying the spinner)
+    #######################################################
+    # Clear the hold mode (stop displaying the spinner)
+    #######################################################
     def ClearHold(self):
         if self.on_hold:
             self.on_hold = False
@@ -217,18 +229,22 @@ class Connection:
             if self.encoder.spinner['loop'] != None:
                 self.spinner = cycle(self.encoder.spinner['loop'])  # Make a new iterator so it starts always on the same place
 
-    # update spinner state
+    ########################################################################################
+    # Update spinner state
     # No safety checks, this method is only called from the connection management thread
+    ########################################################################################
     def _HoldUpdate(self):
         self.on_hold = False
         self.SendTML(next(self.spinner))
         self.on_hold = True
 
+    ##############################################################
     # Converts string to binary string and sends it via socket
-    def Sendall(self, cadena):
+    ##############################################################
+    def Sendall(self, _string):
         self.ClearHold()
         if self.connected == True:
-            _bytes = bytes(cadena,'latin1')
+            _bytes = bytes(_string,'latin1')
             try:
                 self.socket.sendall(_bytes)
                 self.outbytes += len(_bytes)
@@ -236,19 +252,23 @@ class Connection:
                 self.connected = False
                 _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Sendall'+bcolors.ENDC, id=self.id,v=2)
 
+    ###################################
     # Send binary string via socket
-    def Sendallbin(self, cadena=b''):
+    ###################################
+    def Sendallbin(self, _string=b''):
         self.ClearHold()
         if self.connected == True:
             try:
-                self.socket.sendall(cadena)
-                self.outbytes += len(cadena)
+                self.socket.sendall(_string)
+                self.outbytes += len(_string)
             except socket.error:
                 #if e == errno.EPIPE:
                 _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Sendallbin'+bcolors.ENDC, id=self.id,v=2)
                 self.connected = False
 
+    ############################################
     # Flush receive buffer for ftime seconds
+    ############################################
     def Flush(self, ftime):
         self.socket.setblocking(0)	# Change socket to non-blocking
         t0 = time.time()
@@ -260,23 +280,26 @@ class Connection:
         self.socket.setblocking(1)	# Change socket to blocking
         self.socket.settimeout(self.bbs.TOut)
 
-
+    ##############################################
     # Receive (count) binary chars from socket
+    ##############################################
     def Receive(self, count):
-        cadena = b''
+        _string = b''
         if self.connected == True:
             for c in range(0,count):
                 try:
-                    cadena += self.socket.recv(1)
+                    _string += self.socket.recv(1)
                     self.inbytes += 1
                 except socket.error:
                     _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Receive'+bcolors.ENDC, id=self.id,v=2)
                     self.connected = False
-                    cadena = b''
+                    _string = b''
                     break
-        return cadena
+        return _string
 
+    ###########################################################################################
     # Non-blocking receive up to (count) binary chars from socket, within (timeout) seconds
+    ###########################################################################################
     def NBReceive(self, count:int=1, timeout:float=3):
         data = b""
         self.socket.setblocking(False)
@@ -296,29 +319,31 @@ class Connection:
         self.inbytes += len(data)
         return data
 
+    ############################################
     # Receive single binary char from socket
-    def ReceiveKey(self, lista=b''):
-        if type(lista) != list:
-            if lista == b'':
-                lista = bytes(self.encoder.nl,'latin1')
-            if type(lista) == str:
-                lista = bytes(self.encoder.encode(lista,True),'latin1') 
+    ############################################
+    def ReceiveKey(self, charlist=b''):
+        if type(charlist) != list:
+            if charlist == b'':
+                charlist = bytes(self.encoder.nl,'latin1')
+            if type(charlist) == str:
+                charlist = bytes(self.encoder.encode(charlist,True),'latin1') 
                 decode = True
             else:
                 decode = False
             t = True
             while t == True:
-                cadena = b''
+                _string = b''
                 if self.connected == True:
                     try:
                         _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
-                        cadena = self.socket.recv(1)
+                        _string = self.socket.recv(1)
                         self.inbytes += 1
-                        _LOG("ReceiveKey - Received", cadena, id=self.id,v=4)
-                        if cadena != b'':
-                            if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
-                                cadena = bytes([cadena[0]-96])
-                            if cadena in lista:
+                        _LOG("ReceiveKey - Received", _string, id=self.id,v=4)
+                        if _string != b'':
+                            if ('PET' in self.mode) and (_string[0] in range(0xC1,0xDA + 1)):
+                                _string = bytes([_string[0]-96])
+                            if _string in charlist:
                                 t = False
                         else:
                             self.connected = False
@@ -326,25 +351,25 @@ class Connection:
                     except socket.error:
                         #if e.errno == errno.ECONNRESET:
                         _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - ReceiveKey'+bcolors.ENDC, id=self.id,v=2)
-                        cadena = ''
+                        _string = ''
                         self.connected = False
                         t = False
                 else:
                     t = False
-            return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
+            return _string if not decode else self.encoder.decode(_string.decode('latin1'))
         else:
-            mlen = max([len(a) for a in lista])
+            mlen = max([len(a) for a in charlist])
             vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)
-            _lista = lista.copy()
-            eflag = [False]*len(_lista)
-            for i,item in enumerate(_lista):     # Encode single characters
+            _charlist = charlist.copy()
+            eflag = [False]*len(_charlist)
+            for i,item in enumerate(_charlist):     # Encode single characters
                 if item in vfilter and item != self.encoder.back:
-                    _lista[i] = self.encoder.encode(item,True)
+                    _charlist[i] = self.encoder.encode(item,True)
                     eflag[i] = True
             charlist = []
             for i in range(mlen):
                 c = []
-                for j in _lista:
+                for j in _charlist:
                     if len(j) >= i+1:
                         c.append(j[i])
                     else:
@@ -360,7 +385,7 @@ class Connection:
                     self.inbytes += 1
                     if inchar in charlist[len(received)]:
                         received += inchar
-                        if received in _lista:
+                        if received in _charlist:
                             break
                     else:
                         received = ''
@@ -370,31 +395,33 @@ class Connection:
                     received = ''
                     self.connected = False
                     break
-            if eflag[_lista.index(received)]:
+            if eflag[_charlist.index(received)]:
                 return self.encoder.decode(received)
             else:
                 return received
 
+    #####################################################
     # Receive single binary char from socket - NO LOG
-    def ReceiveKeyQuiet(self, lista=b''):
-        if lista == b'':
-            lista = bytes(self.encoder.nl,'latin1')
-        if type(lista) == str:
-            lista = bytes(self.encoder.encode(lista,True),'latin1')
+    #####################################################
+    def ReceiveKeyQuiet(self, charlist=b''):
+        if charlist == b'':
+            charlist = bytes(self.encoder.nl,'latin1')
+        if type(charlist) == str:
+            charlist = bytes(self.encoder.encode(charlist,True),'latin1')
             decode = True
         else:
             decode = False
         t = True
         while t == True:
-            cadena = b''
+            _string = b''
             if self.connected == True:
                 try:
-                    cadena = self.socket.recv(1)
+                    _string = self.socket.recv(1)
                     self.inbytes += 1
-                    if cadena != b'':
-                        if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
-                            cadena = bytes([cadena[0]-96])
-                        if cadena in lista:
+                    if _string != b'':
+                        if ('PET' in self.mode) and (_string[0] in range(0xC1,0xDA + 1)):
+                            _string = bytes([_string[0]-96])
+                        if _string in charlist:
                             t = False
                     else:
                         self.connected = False
@@ -402,16 +429,18 @@ class Connection:
                 except socket.error:
                     #if e.errno == errno.ECONNRESET:
                     _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - ReceiveKey'+bcolors.ENDC, id=self.id,v=2)
-                    cadena = ''
+                    _string = ''
                     self.connected = False
                     t = False
             else:
                 t = False
-        return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
+        return _string if not decode else self.encoder.decode(_string.decode('latin1'))
 
+    ##################################################
     # Interactive string reception with echo
     # maxlen = max number of characters to receive
     # pw = True for password entry
+    ##################################################
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
         if type(keys) == str:
             keys  = bytes(self.encoder.encode(keys,True),'latin1')
@@ -421,7 +450,7 @@ class Connection:
             keys += cr	#Add RETURN if not originaly included
         if bs not in keys:
             keys += bs #Add DELETE if not originaly included
-        cadena = b''
+        _string = b''
         done = False
         while not done:
             if pw:
@@ -431,11 +460,11 @@ class Connection:
             if self.connected:
                 if k != cr and k != b'':
                     if k == bs:
-                        if len(cadena) > 0:
-                            cadena = cadena[:-1]	#Delete character
+                        if len(_string) > 0:
+                            _string = _string[:-1]	#Delete character
                             self.SendTML('<DEL>')
-                    elif len(cadena) < maxlen:
-                        cadena += k	#Add character
+                    elif len(_string) < maxlen:
+                        _string += k	#Add character
                         if pw:
                             self.Sendall('*')
                         else:
@@ -444,14 +473,16 @@ class Connection:
                     done = True
             else:
                 done = True
-        return(cadena.decode('latin1'))
+        return(_string.decode('latin1'))
 
+    ####################################################################################
     # Interactive positive integer reception with echo
     # min = minimun value
     # max = maximun value
     # default = default value returned when pressing return
     # auto = if True entry can be canceled by pressing delete with no value entered,
     #		 and is completed if the number of digits matches the limits
+    ####################################################################################
     def ReceiveInt(self, minv, maxv, defv, auto = False):
         cr = bytes(self.encoder.nl,'ascii')
         bs = bytes(self.encoder.bs,'ascii')
@@ -564,6 +595,7 @@ class Connection:
                 break
         return(int(''.join(tval)))
 
+    ##########################################################################
     # Receive a date, format taken from bbs instance
     # prompt: TML prompt
     # mindate: Earliest date possible
@@ -571,6 +603,7 @@ class Connection:
     # defdate: Default date
     # all dates of datetime.date type
     # Returns a datetime.date object, None if the parameters are incorrect
+    ##########################################################################
     def ReceiveDate(self, prompt, mindate, maxdate, defdate):
         if (mindate > maxdate) or not (mindate <= defdate <= maxdate):
             return None
@@ -657,7 +690,9 @@ class Connection:
                 self.SendTML("<BR>Invalid date!<BR>")
         return odate
 
+    #####################
     # Send TML script
+    #####################
     def SendTML(self, data, registers: dict = {'_A':None,'_S':'','_I':0}):
         self.ClearHold()
         if self.p_running:				# If original parser is in use
@@ -670,11 +705,13 @@ class Connection:
             self.p_running = False
         return ret
 
+#################################################
 # Dummy Connection object
 # Doesnt actually sends or receives anything,
 # just decodes/buffers all input data until
 # getOutput() is called
 # Dummy connection objects have negative IDs
+#################################################
 class DummyConn(Connection):
     
     def __init__(self, conn:Connection):
@@ -700,11 +737,11 @@ class DummyConn(Connection):
     def QueryFeature(self, cmd:int):
         return 0x80		# Dummy connection doesn't support any command
     
-    def Sendall(self,cadena):
-        _output = _output + cadena
+    def Sendall(self,_string):
+        _output = _output + _string
     
-    def Sendallbin(self, cadena=b''):
-        self.Sendall(cadena.decode('latin1'))
+    def Sendallbin(self, _string=b''):
+        self.Sendall(_string.decode('latin1'))
     
     def Flush(self, ftime):
         return
@@ -712,10 +749,10 @@ class DummyConn(Connection):
     def Receive(self, count):
         return ''
 
-    def ReceiveKey(self, lista=b''):
+    def ReceiveKey(self, charlist=b''):
         return ''
     
-    def ReceiveKeyQuiet(self, lista=b''):
+    def ReceiveKeyQuiet(self, charlist=b''):
         return ''
     
     def ReceiveStr(self, keys, maxlen=20, pw=False):

@@ -16,9 +16,9 @@ from geopy.geocoders import Photon, Nominatim
 # Missing tile image
 dragons: Image.Image
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
     global dragons
     fname = "MAPS" #UPPERCASE function name for config.ini
@@ -26,9 +26,9 @@ def setup():
     dragons = Image.open("plugins/maps_dragons.png")
     return(fname,parpairs)
 
-#####################################
+#############################
 # Degrees to tile numbers
-#####################################
+#############################
 def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(lat_deg)
   n = 2.0 ** zoom
@@ -36,9 +36,9 @@ def deg2num(lat_deg, lon_deg, zoom):
   ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
   return (xtile, ytile)
 
-#################################
+#############################
 # Tile numbers to degrees
-#################################  
+#############################  
 def num2deg(xtile, ytile, zoom):
   n = 2.0 ** zoom
   lon_deg = xtile / n * 360.0 - 180.0
@@ -56,9 +56,9 @@ def lat2res(lat_deg, zoom):
     dppy = dpty/256 #degrees per pixel, y
     return dptx, dpty, dppx, dppy
 
-###################################
+#####################
 # Plugin function
-###################################
+#####################
 def plugFunction(conn:Connection):
     _dec = conn.encoder.decode
     rows = conn.encoder.txt_geo[1]
@@ -87,7 +87,7 @@ def plugFunction(conn:Connection):
 
     def getImageCluster(xmin, ymin, width, height, zoom):
         smurl = r"https://tiles.stadiamaps.com/tiles/stamen_toner/{0}/{1}/{2}.png?api_key={3}"   #r"https://stamen-tiles.a.ssl.fastly.net/toner/{0}/{1}/{2}.png"
-        tnum = 2**zoom #Number of tiles per row/column
+        tnum = 2**zoom # Number of tiles per row/column
         Cluster = Image.new('RGB',((width)*256,(height)*256))
         if conn.T56KVer == 0:
             conn.SendTML('<TEXT>')
@@ -148,41 +148,41 @@ def plugFunction(conn:Connection):
     tloc = do_geocode(locqry)
     if tloc == None:
         conn.SendTML('<CLR>ERROR!<PAUSE n=0.5>')
-        #Default to Greenwich observatory
-        response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
+        # Default to Greenwich observatory
+        response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/xxx.xxx.xxx.xxx')
         result = response.content.decode()
         result  = json.loads(result)
         loc = tuple(map(float,result.get('loc',"51.47679219,-0.00073887").split(',')))
     else:
         loc = (tloc.latitude,tloc.longitude)
     zoom = 16
-    sw = GFX_MODES[gmode]['out_size'][0] #320    #Screen width
-    sh = GFX_MODES[gmode]['out_size'][1] #200    #Screen height
-    #Minimum number of tiles centered at map coordinates needed to fill screen
+    sw = GFX_MODES[gmode]['out_size'][0]    # Screen width
+    sh = GFX_MODES[gmode]['out_size'][1]    # Screen height
+    # Minimum number of tiles centered at map coordinates needed to fill screen
     xtiles = math.ceil(sw/256)
     if (xtiles*256)-sw < 256:
         xtiles = math.ceil(xtiles/2)*2+1
     ytiles = math.ceil(sh/256)
     if (ytiles*256)-sh < 256:
         ytiles = math.ceil(ytiles/2)*2+1
-    ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Center tile
-    tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+    ctilex,ctiley = deg2num(loc[0],loc[1],zoom) # Center tile
+    tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
     cpos = [1,1]
     display = True
     retrieve = True
     while conn.connected:
         if display:
-            delta = [abs(loc[i]-tilecoord[i]) for i in range(2)] #Distance from tile corner to desired coordinates
+            delta = [abs(loc[i]-tilecoord[i]) for i in range(2)]    # Distance from tile corner to desired coordinates
             delta[0] = (delta[0]*256)/dpty
             delta[1] = (delta[1]*256)/dptx
-            #croping coordinates
-            xmin = ((256*cpos[0])+delta[1])-(sw/2)    #((((xtiles*256)/2)-128) + delta[1])-(sw/2)
+            # croping coordinates
+            xmin = ((256*cpos[0])+delta[1])-(sw/2)
             xmax = xmin+sw
-            ymin = ((256*cpos[1])+delta[0])-(sh/2)    #((((ytiles*256)/2)-128) + delta[0])-(sh/2)
+            ymin = ((256*cpos[1])+delta[0])-(sh/2)
             ymax = ymin+sh
-            tnum = 2**zoom #Number of tiles per row/column
-            ttotal = tnum**2 #Total number of tiles
+            tnum = 2**zoom  # Number of tiles per row/column
+            ttotal = tnum**2    # Total number of tiles
             if retrieve:
                 conn.SendTML(f'<SPLIT row={rows-1} multi=False bgtop={conn.encoder.colors["BLACK"]} mode={conn.mode}>')
                 tiles = getImageCluster(ctilex,ctiley,xtiles,ytiles,zoom)
@@ -195,16 +195,16 @@ def plugFunction(conn:Connection):
         k = conn.ReceiveKey([conn.encoder.nl,conn.encoder.back,'+','-']+cursors)
         if (k == '-') and (zoom > 3):
             zoom -= 1
-            ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Tile containing "loc"
-            tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+            ctilex,ctiley = deg2num(loc[0],loc[1],zoom) # Tile containing "loc"
+            tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
             dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
             display = True
             retrieve = True
             cpos=[1,1]
         elif (k == '+') and (zoom < 20):
             zoom += 1
-            ctilex,ctiley = deg2num(loc[0],loc[1],zoom) #Tile containing "loc"
-            tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+            ctilex,ctiley = deg2num(loc[0],loc[1],zoom) # Tile containing "loc"
+            tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
             dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
             display = True
             retrieve = True
@@ -212,7 +212,7 @@ def plugFunction(conn:Connection):
         elif k == cursors[1]:
             if ymax+sh >= 256*ytiles:
                 ctiley += 1
-                tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+                tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
                 dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]-(dppy*sh),loc[1])
                 display = True
@@ -222,14 +222,14 @@ def plugFunction(conn:Connection):
                 if delta[0]+sh >= 256:
                     ctiley +=1
                     cpos[1] += 1
-                    tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+                    tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
                     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]-(dppy*sh),loc[1])
                 display = True
         elif k == cursors[0]:
             if ymin-sh < 0:
                 ctiley -= 1
-                tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+                tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
                 dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]+(dppy*sh),loc[1])
                 display = True
@@ -239,17 +239,17 @@ def plugFunction(conn:Connection):
                 if delta[0]-sh < 0: # center point moved beyond cell
                     ctiley-= 1
                     cpos[1]-=1
-                    tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+                    tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
                     dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
                 loc = (loc[0]+(dppy*sh),loc[1])
                 display = True
         elif k == cursors[3]:
             lon = loc[1]+(dppx*sw)
-            if lon > 180:   #wrap around
+            if lon > 180:   # wrap around
                 lon -= 360
             loc = (loc[0],lon)
-            ctilex,ctiley = deg2num(loc[0],lon,zoom) #Tile containing "loc"
-            tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+            ctilex,ctiley = deg2num(loc[0],lon,zoom)    # Tile containing "loc"
+            tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
             display = True
             if xmax+sw >= 256*xtiles:
                 cpos=[1,1]
@@ -259,11 +259,11 @@ def plugFunction(conn:Connection):
                     cpos[0]+=1
         elif k == cursors[2]:
             lon = loc[1]-(dppx*sw)
-            if lon < -180:   #wrap around
+            if lon < -180:   # wrap around
                 lon += 360
             loc = (loc[0],lon)
-            ctilex,ctiley = deg2num(loc[0],lon,zoom) #Tile containing "loc"
-            tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+            ctilex,ctiley = deg2num(loc[0],lon,zoom)    # Tile containing "loc"
+            tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
             display = True
             if xmin-sw < 0:
                 cpos=[1,1]
@@ -271,10 +271,10 @@ def plugFunction(conn:Connection):
             else:
                 if delta[1]-sw < 0:
                     cpos[0]-=1
-        elif k == conn.encoder.back:   #Exit
+        elif k == conn.encoder.back:   # Exit
             conn.SendTML('<CURSOR>')
             break
-        elif k == conn.encoder.nl:  #New Location
+        elif k == conn.encoder.nl:  # New Location
             if conn.T56KVer == 0:
                 conn.SendTML('<TEXT>')
             conn.SendTML(f'<SPLIT row={rows-1} bgbottom={conn.encoder.colors.get("BLACK",0)} mode="_C.mode"><CURSOR><CLR><YELLOW>Location:')
@@ -283,11 +283,11 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}><CURSOR>')
                 break
             conn.SendTML('<SPINNER>')
-            tloc = do_geocode(locqry)   #geoLoc.geocode(locqry,language=conn.bbs.lang)
+            tloc = do_geocode(locqry)
             if tloc == None:
                 conn.SendTML('<CLR>ERROR!<PAUSE n=0.5>')
-                #Default to user location or Greenwich observatory otherwise
-                response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/200.59.72.128')
+                # Default to user location or Greenwich observatory otherwise
+                response = requests.get('https://ipinfo.io/'+conn.addr[0])   #('https://geolocation-db.com/jsonp/xxx.xxx.xxx.xxx')
                 result = response.content.decode()
                 result  = json.loads(result)
                 loc = tuple(map(float,result.get('loc',"51.47679219,-0.00073887").split(',')))
@@ -295,7 +295,7 @@ def plugFunction(conn:Connection):
                 loc = (tloc.latitude,tloc.longitude)
             zoom = 16
             ctilex,ctiley = deg2num(loc[0],loc[1],zoom)
-            tilecoord = num2deg(ctilex,ctiley,zoom) #Coordinates for center tile top-left corner
+            tilecoord = num2deg(ctilex,ctiley,zoom) # Coordinates for center tile top-left corner
             dptx,dpty,dppx,dppy = lat2res(tilecoord[0],zoom)
             display = True
             retrieve = True

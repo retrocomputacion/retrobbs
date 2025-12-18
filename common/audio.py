@@ -25,14 +25,14 @@ from common.filetools import SendBitmap
 
 import audioread
 wavs = True
-#Audio Metadata
+# Audio Metadata
 try:
     import mutagen
     meta = True
 except:
     meta = False
 
-#SIDStreaming
+# SIDStreaming
 import common.siddumpparser as sd
 import common.ymparse as ym
 
@@ -52,7 +52,7 @@ import common.ymparse as ym
 # 13 	0,5 	    128
 # 14 	0,7071068 	180
 # 15 	1 	        255
-#PSG Log volume table
+# PSG Log volume table
 psg_to = numpy.array([ 0,  0, +1, +2, +3,  3, +4,  4, +5,  5,  6, +6,  6,  6,  7,  7, +7,
                        7,  7,  7,  8,  8,  8, +8,  8,  8,  8,  9,  9,  9,  9,  9, +9,  9,
                        9,  9,  9,  9,  9,  9, 10, 10, 10, 10, 10,+10, 10, 10, 10, 10, 10,
@@ -72,9 +72,9 @@ psg_to = numpy.array([ 0,  0, +1, +2, +3,  3, +4,  4, +5,  5,  6, +6,  6,  6,  7
 
 psg_from = numpy.array(range(256),dtype=numpy.uint8)
 
-##########################################################
+################################################
 # Display list of audio files, with playtime
-##########################################################
+################################################
 def AudioList(conn:Connection,title,speech,logtext,path):
 
     if conn.menu != -1:
@@ -191,9 +191,9 @@ def AudioList(conn:Connection,title,speech,logtext,path):
         conn.SendTML('<PAUSE n=1><SETOUTPUT>')
     return MenuDic
 
-#########################################
+##########################
 # Display audio dialog
-#########################################
+##########################
 def _AudioDialog(conn:Connection, data):
     if data.get('apic', None) != None:
         im = Image.open(BytesIO(data['apic']))
@@ -260,9 +260,9 @@ def _AudioDialog(conn:Connection, data):
         return False
     return True
 
-###########################################
+##############################################
 # Get audio length for PCM file in seconds
-###########################################
+##############################################
 def _GetPCMLength(filename):
     try:
         if meta == True and filename[-4:] != '.wav' and filename[-4:] != '.WAV':
@@ -277,11 +277,11 @@ def _GetPCMLength(filename):
         tsecs = 0
     return tsecs
 
-######################################################################
+#######################################
 # Send Audio file
 #
 # Returns True if aborted or failed
-######################################################################
+#######################################
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     if conn.QueryFeature(TT.STREAM) >= 0x80:	# Exit if terminal doesn't support PCM streaming
         return True
@@ -377,9 +377,6 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
             conn.socket.setblocking(1)
             binario = b''
         c_samples += a_len
-        # if t_samples > 0 and c_samples >= t_samples:  # Finish streaming if number of samples equals or exceed playtime
-        #     streaming = False
-
         ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
         time.sleep(ts if ts>=0 else 0)
     binario += b'\x00\x00\x00\x00\x00\x00\xFE'
@@ -392,8 +389,9 @@ def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
     conn.SendTML('<CURSOR>')
     return abort
 
-############# PcmStream Class ############
-# Receive an audio stream through FFMPEG #
+############# PcmStream Class ##############
+#  Receive an audio stream through FFMPEG  #
+############################################
 class PcmStream:
     def __init__(self, fn, sr,lineal=True, ss = 0):
         self.lineal = lineal
@@ -432,9 +430,9 @@ class PcmStream:
             self.pcm_stream.send_signal(signal.CTRL_BREAK_EVENT)
             self.pcm_stream.kill()
 
-###################################################
+######################################################
 # Get CHIPtune playtimes from ssl file or metadata
-###################################################
+######################################################
 def _GetCHIPLength(filename):
     length = [60*3]
     tstr = None
@@ -458,9 +456,9 @@ def _GetCHIPLength(filename):
     
     return length
 
-#############################################
+##################################
 # Display CHIPtune info dialog
-#############################################
+##################################
 def _DisplayCHIPInfo(conn:Connection, info):
     
     def calctime():
@@ -553,17 +551,17 @@ def _DisplayCHIPInfo(conn:Connection, info):
 #                     return st
 #     return 'default'
 
-##########################################
+#############################################
 # Stream SID/MUS files >>> DEPRECATED <<<
 # Use CHIPStream instead
-##########################################
+#############################################
 SIDStream = lambda conn,filename,ptime,dialog=True,_subtune=None:CHIPStream(conn,filename,ptime,dialog,_subtune)
 
-#############################################################################
+######################################################
 # Stream register writes to the guest's sound chip
 #
 # returns True if aborted
-#############################################################################
+######################################################
 def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
 
     # V1f = '\x00\x01'    #Voice 1 Frequency
@@ -726,7 +724,7 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
         _LOG(f'ChipStream error:{exc_type} on {fname} line {exc_tb.tb_lineno}',id=conn.id)
     return abort
 
-###########
+##############
 # TML tags
-###########
+##############
 t_mono = {	'PCMPLAY':(lambda c,file:PlayAudio(c,file,None),[('c','_C'),('file','')])}

@@ -1,6 +1,6 @@
-#########################################3
+##################
 # RLE Routines
-#
+##################
 import numpy as np
 import os
 from PIL import Image
@@ -10,7 +10,7 @@ from common.imgcvt import palette as Palette
 from common.imgcvt.types import gfxmodes
 
 
-#Palette structure
+# Palette structure
 Palette_RLE = [{'color':'Background','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':0},
     {'color':'Foreground','RGBA':[0xff,0xff,0xff,0xff],'enabled':True,'index':1}]
 
@@ -27,35 +27,33 @@ def rle_get2closest(colors,p_in,p_out,fixed):
 
 def bmpackrle(column,row,cell,buffers):
     npim = np.array(cell).ravel()
-    # runs = ''
     count = 0
     white = False
     for p in npim:
-        if not white:  #Black pixels
+        if not white:  # Black pixels
             if not p:
                 count += 1
-                if count == 94: #Max run
-                    buffers[0].append(32+count) # runs += chr(32+count)
+                if count == 94: # Max run
+                    buffers[0].append(32+count)
                     white = True
                     count = 0
                     continue
             else:
-                buffers[0].append(32+count) # runs += chr(32+count)
+                buffers[0].append(32+count)
                 white = True
                 count = 1
-        else:   #White pixels
+        else:   # White pixels
             if p:
                 count += 1
-                if count == 94: #Max run
-                    buffers[0].append(32+count) # runs += chr(32+count)
+                if count == 94: # Max run
+                    buffers[0].append(32+count)
                     white = False
                     count = 0
             else:
-                buffers[0].append(32+count) # runs += chr(32+count)
+                buffers[0].append(32+count)
                 white = False
                 count = 1
     buffers[0].append(32+count) # Add last pixels
-    # buffers[0] += bytes(runs,'latin_1')
 
 def attrpack(column,row,attr,buffers):
     pass
@@ -76,9 +74,8 @@ def get_buffers(mode=False):
 def buildfile(buffers,filename):
     t_data = buffers[0] + b'\x1bGN\x00\x00\x00'
     return(t_data,os.path.splitext(filename)[0]+'rle')
-#############################
 
-#####################################################################################################################
+#######################################################################################################################
 # Graphic modes structure
 # name: Name displayed in the combobox
 # bpp: bits per pixel
@@ -92,6 +89,7 @@ def buildfile(buffers,filename):
 # attr_pack: function call to pack the individual cell colors into attribute byte(s)
 # get_buffers: function call returns the native bitmap and attribute buffers
 # save_output: a list of lists in the format ['name','extension',save_function]
+#######################################################################################################################
 
 GFX_MODES=[{'name':'RLE HI','bpp':1,'attr':(256,192),'global_colors':(False,False),'palettes':RLEPalettes,
             'global_names':[], 'match':Palette.colordelta.CCIR,
@@ -110,8 +108,8 @@ def load_Image(filename:str):
     data = [None]*3
     gcolors = [0]*2  # Border, Background
     extension = os.path.splitext(filename)[1].upper()
-    #Read file
-    if (extension == '.RLE'):  # Screen 2
+    # Read file
+    if (extension == '.RLE'):
         with open(filename,'rb') as ifile:
             mode = ifile.read(3)
             if mode == b'\x1bGH':
@@ -144,7 +142,7 @@ def load_Image(filename:str):
                 bb = ifile.read(1)
     else:
         return None
-    #Render image
+    # Render image
     # Generate palette(s)
     rgb_in = []
     for c in Palette_RLE: # iterate colors

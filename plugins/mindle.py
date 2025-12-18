@@ -12,9 +12,9 @@ import common.turbo56k as TT
 
 wordlist = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]}
 
-###############
+##################
 # Plugin setup
-###############
+##################
 def setup():
     global wordlist
     with open("plugins/mindle_words/dict1.txt",'r') as wf:
@@ -26,18 +26,18 @@ def setup():
             d = 6
             w = l
         wordlist[int(d)].append(w)
-    fname = "MINDLE" #UPPERCASE function name for config.ini
-    parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
+    fname = "MINDLE"    # UPPERCASE function name for config.ini
+    parpairs = []   # config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
 
 
 
-###################################
+#####################
 # Plugin function
-###################################
+#####################
 def plugFunction(conn:Connection):
 
-    #Render title
+    # Render title
     def header():
         conn.SendTML(conn.templates.GetTemplate('mindle/title'))
 
@@ -49,8 +49,7 @@ def plugFunction(conn:Connection):
     if  conn.encoder.txt_geo[0] < 30:
         conn.SendTML("<CLR><FORMAT>Mindle needs at least 30 columns to work...</FORMAT><BR><PAUSE n=3>")
         return
-    ecolors = conn.encoder.colors
-    mcolors = conn.templates.GetStyle('mindle/default') #bbsstyle(ecolors)
+    mcolors = conn.templates.GetStyle('mindle/default')
     if conn.encoder.features['bgcolor'] == 0:
         if '64' in conn.mode:
             badcolor = ('<ORANGE>','Orange')
@@ -66,15 +65,6 @@ def plugFunction(conn:Connection):
         cowcolor = ('<BLACK>','Black')
     else:
         cowcolor = ('<YELLOW>','Yellow')
-    # mcolors.OoddBack = ecolors['BLACK']
-    # if 'MSX' in conn.mode:
-    #     mcolors.ToddColor = ecolors['DARK_RED']
-    #     mcolors.TevenColor = ecolors['BLUE']
-    # elif conn.mode in ['VT52','VidTex']:
-    #     mcolors.TevenColor = ecolors['BLUE']
-    #     mcolors.ToddColor = ecolors['RED']
-    # mcolors.OevenBack = ecolors['BLACK']
-    # mcolors.BgColor = ecolors.get('DARK_GREY',ecolors.get('LIGHT_BLUE',ecolors['WHITE']))
     dbase = conn.bbs.database
     table = dbase.db
     dbQ = Query()
@@ -204,9 +194,9 @@ After each try the color of the characters will change color to show how close y
             break
 
 
-###################################
+###############
 # Main game
-###################################
+###############
 def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
 
     scores = [500,400,200,100,50,25,0]
@@ -215,29 +205,29 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
     ecolors = conn.encoder.colors
     scwidth, scheight = conn.encoder.txt_geo
 
-    wlen = len(xword)  # Word lenght
+    wlen = len(xword)  # Word length
     offset = ((scwidth-2)-(wlen+2))//2
     if wlen == 6:
         offset -= 1 # Center playfield
 
     # Draw playfield
     pfcolor = '<LTBLUE>' if 'LTBLUE' in ecolors else '<BLUE>' if 'BLUE' in ecolors else '<BLACK>'
-    conn.SendTML(f'<AT x={offset} y=5><CURSOR enable=False>{pfcolor}<UL-CORNER>')   # <HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=178><HLINE><CHR c=174><BR>')
+    conn.SendTML(f'<AT x={offset} y=5><CURSOR enable=False>{pfcolor}<UL-CORNER>')
     for j in range(wlen-1):
         conn.SendTML('<HLINE><H-DOWN>')
     conn.SendTML('<HLINE><UR-CORNER><BR>')
     for i in range(6):
-        conn.SendTML(f'<CRSRR n={offset}><VLINE>') # <VLINE> <VLINE> <VLINE> <VLINE> <VLINE><BR>')
+        conn.SendTML(f'<CRSRR n={offset}><VLINE>')
         for j in range(wlen):
             conn.SendTML(' <VLINE>')
         conn.SendTML('<BR>')
         if i == 5:
             break
-        conn.SendTML(f'<CRSRR n={offset}><V-RIGHT>') # <HLINE><CROSS><HLINE><CROSS><HLINE><CROSS><HLINE><CROSS><HLINE><CHR c=179><BR>')
+        conn.SendTML(f'<CRSRR n={offset}><V-RIGHT>')
         for j in range(wlen-1):
             conn.SendTML('<HLINE><CROSS>')
         conn.SendTML('<HLINE><V-LEFT><BR>')
-    conn.SendTML(f'<CRSRR n={offset}><LL-CORNER>') # <HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=177><HLINE><CHR c=189>')
+    conn.SendTML(f'<CRSRR n={offset}><LL-CORNER>')
     for j in range(wlen-1):
         conn.SendTML('<HLINE><H-UP>')
     conn.SendTML('<HLINE><LR-CORNER><BR>')
@@ -266,8 +256,6 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
 
     t = 0   # Attempt number
     while t<6 and conn.connected:
-        # conn.SendTML(f'<GREY3>Attempt #{t}: ')
-        # guess = conn.ReceiveStr(bytes(string.ascii_letters,'ascii'),5).lower()
         guess = ''
         line = 6+(t*2)
         column = offset+1
@@ -298,7 +286,7 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
                 conn.SendTML(f'<AT x={(scwidth-30)//2} y=19><SPC n=30>')
             else:
                 conn.SendTML('<LFILL code=32 row=19>')
-            conn.SendTML(f'<AT x={column} y={line}>') # <CRSRR> <CRSRR> <CRSRR> <CRSRR> ')
+            conn.SendTML(f'<AT x={column} y={line}>')
             for i in range(wlen):
                 conn.SendTML(' <CRSRR>')
             continue
@@ -311,7 +299,6 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
         else:
             out = ''
             conn.SendTML(f'{null}<AT x={column} y={line}>')
-            # xtemp = xword
             chars = {}
             for g,x in zip(guess,xword):
                 if g == x:
@@ -334,7 +321,7 @@ def mindle(conn:Connection, xword: str, valid, style:bbsstyle):
                 else:
                     if 'MSX' in conn.mode:
                         out += f'<PAPER c={conn.encoder.colors["GREY"]}>'
-                    out += badcolor #'<BLACK>'
+                    out += badcolor
                     if g not in (bad+t_bad+t_bulls+t_cows):
                         t_bad.append(g)
                 out += g.upper()+'<CRSRR>'
