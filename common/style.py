@@ -36,7 +36,8 @@ def KeyPrompt(conn:Connection, text, style:bbsstyle=None, TML=False):
             if (bc == '' or tc == '') and conn.QueryFeature(TT.INK) < 0x80:
                 bc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PbColor)
                 tc = chr(TT.CMDON)+chr(TT.INK)+chr(style.PtColor)
-            return(bc+'['+tc+conn.encoder.encode(str(text),False)+bc+']')
+            print(ord(text),ord(conn.encoder.encode(str(text),True)))
+            return(bc+'['+tc+conn.encoder.encode(str(text),True)+bc+']')
     else:
         return(f'[{text}]')
 
