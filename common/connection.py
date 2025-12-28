@@ -136,13 +136,17 @@ class Connection:
             return 0x80
         if self.T56KVer > 0.5:
             if self.TermFt[cmd] == None:
-                if self.T56KVer < 0.7:	#Try to avoid retroterm0.14 bug
+                if self.T56KVer < 0.7:	#Try to avoid retroterm 0.14 bug
                     self.Flush(0.5)
                     time.sleep(0.5)
                 self.Sendall(chr(TT.CMDON))
                 self.Sendall(chr(TT.QUERYCMD)+chr(cmd))
-                self.TermFt[cmd] = self.Receive(1)[0]	# Store as int
                 self.Sendall(chr(TT.CMDOFF))
+                tmp = self.NBReceive(1)
+                if len(tmp) > 0:
+                    self.TermFt[cmd] = tmp[0] 	# Store as int
+                else:
+                    return 0x80                 # Command failed, return 0x80 but dont store it
         elif self.TermFt[cmd] == None:
             self.TermFt[cmd] = TT.T56Kold[cmd-128][0]
         return self.TermFt[cmd]
@@ -160,9 +164,13 @@ class Connection:
             if subsystem < 7:
                 if None in self.ClientSetup[subsystem][1].values():
                     self.Sendall(chr(TT.CMDON)+chr(TT.QUERYCLIENT)+chr(subsystem)+chr(TT.CMDOFF))
-                    count = self.Receive(1)
+                    count = self.NBReceive(1)
+                    if len(count) < 1:
+                        return None
                     if count[0] >= self.ClientSetup[subsystem][0]:
-                        qdata = self.Receive(count[0])
+                        qdata = self.NBReceive(count[0])
+                        if len(qdata) < len(count[0]):
+                            return None
                         if subsystem == 0:  # Platform / refresh rate
                             if qdata[0] & 0x7F < len(platforms):
                                 self.ClientSetup[subsystem][1]['Platform'] = platforms[qdata[0] & 0x7F]
@@ -190,6 +198,8 @@ class Connection:
                             self.ClientSetup[subsystem][1]['PCM'] = qdata[1]
                             if qdata[1] & 0b01111000 > 0:
                                 tmp_s = spb[qdata[1] & 0b11]
+                                tmp_sr = self.samplerate
+                                channels = (qdata[1] & 0b100) >> 1
                                 # tmp_s *= 1 if qdata[1] & 0b100 == 0 else 2
                                 tmp = (qdata[1] & 0b01111000) >> 3
                                 for i in range(4):  # Get lowest available samplerate (or dependent on connection speed)
@@ -197,10 +207,11 @@ class Connection:
                                         if i == 0:
                                             if self.ClientSetup[2][1]['Bitrate'] != None:
                                                 tmp_sr = (self.ClientSetup[2][1]['Bitrate']/10)*tmp_s
-                                            else:
-                                                tmp_sr = self.samplerate
                                             break
-                                        tmp = tmp >> 1
+                                        else:
+                                            tmp_sr = samplerates[i-1]
+                                            break
+                                    tmp = tmp >> 1
                                 self.samplerate = tmp_sr
                     else:       # Response size is too small
                         _LOG(f"QueryClient: Response size too small / Subsystem {subsystem} not implemented", id = self.id,v=3)

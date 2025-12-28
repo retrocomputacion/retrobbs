@@ -467,6 +467,7 @@ def _DisplayCHIPInfo(conn:Connection, info):
 
     back = conn.encoder.decode(conn.encoder.back)
     scwidth = conn.encoder.txt_geo[0]
+    subtune = -1
     if isinstance(info,dict):   # .SID file
         subtune = info['startsong']
         minutes, seconds = calctime()
@@ -646,6 +647,9 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
             data = ym.YMOpen(filename)
             if data != None:
                 info= ym.YMGetMeta(data)
+            else:
+                _LOG(f'Error opening {filename}')
+                return
             player = 'x'
         else:
             subtune = -1
@@ -695,14 +699,19 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
                     conn.Sendall(chr(TT.CMDON)+chr(TT.SIDSTREAM))
                     count = 0
                     for frame in data:
-                        conn.Sendallbin(frame[0]) #Register count
-                        conn.Sendallbin(frame[1]) #Register bitmap
-                        conn.Sendallbin(frame[2]) #Register data
-                        conn.Sendallbin(b'\xff')	 #Sync byte
+                        conn.Sendallbin(frame[0])   # Register count
+                        conn.Sendallbin(frame[1])   # Register bitmap
+                        conn.Sendallbin(frame[2])   # Register data
+                        conn.Sendallbin(b'\xff')    # Sync byte
                         count += 1
                         if count%100 == 0:
                             ack = b''
-                            ack = conn.Receive(1)
+                            ack = conn.NBReceive(1,3)   # 3 seconds, about 150/180 packets
+                            if ack == b'':          # Client has not responded in time, abort
+                                _LOG('Chiptune: Client is not respoding, abort!!!',id=conn.id,v=3)
+                                ack = b'\xff'
+                                conn.Sendallbin(b'\x00'*129) # Try to fill the client's chiptune buffer with zeroes
+                                conn.Flush(1)
                             count = 0
                             if (b'\xff' in ack) or not conn.connected:
                                 #Abort stream

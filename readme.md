@@ -1322,6 +1322,7 @@ temp = /mnt/ramdisk/
   * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * When downloading a file using XMODEM in VIP Terminal, transfer will fail around block 46.
+  * VTX files cannot be opened with some Python 3.12 distributions, upgrading to Python 3.13 will solve the problem.
 
 
 ---
