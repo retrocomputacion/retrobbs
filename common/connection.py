@@ -169,7 +169,7 @@ class Connection:
                         return None
                     if count[0] >= self.ClientSetup[subsystem][0]:
                         qdata = self.NBReceive(count[0])
-                        if len(qdata) < len(count[0]):
+                        if len(qdata) < count[0]:
                             return None
                         if subsystem == 0:  # Platform / refresh rate
                             if qdata[0] & 0x7F < len(platforms):
