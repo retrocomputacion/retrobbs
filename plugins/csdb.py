@@ -51,6 +51,7 @@ def plugFunction(conn:Connection):
     refresh = True
     render = True
     entries = []
+    ptext = ''
     try:
         r_types = release_types64
         if 'PET128' in conn.mode:
@@ -90,11 +91,15 @@ def plugFunction(conn:Connection):
                 if pages > 1:
                     keys.extend(['+','-'])
                 for ix in range(min(lines,len(entries))):
+                    if ix+(c_page*lines) >= len(entries):
+                        break
                     text = H.crop(entries[ix+(c_page*lines)]['title'],scwidth-4,conn.encoder.ellipsis)
                     S.KeyLabel(conn,H.valid_keys[ix],text,ix%2==0)
                     conn.SendTML('<BR>')
                     keys.append(H.valid_keys[ix])
-                conn.SendTML(f'<WINDOW top=0 bottom={scheight}><AT x=0 y={scheight-1}><WHITE>[{c_page+1}/{pages}]')
+                conn.SendTML(f'<WINDOW top=0 bottom={scheight}><AT x={len(ptext)} y={scheight-1}><DEL n={len(ptext)}><WHITE>')
+                ptext = f'[{c_page+1}/{pages}]'
+                conn.SendTML(ptext)
                 refresh = False
             if render:
                 conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':scheight-2,'crsr':'','pages':'+/-','keys':[('*','search')]}))

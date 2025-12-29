@@ -215,6 +215,7 @@ class Connection:
                                 self.samplerate = tmp_sr
                     else:       # Response size is too small
                         _LOG(f"QueryClient: Response size too small / Subsystem {subsystem} not implemented", id = self.id,v=3)
+                        return None
             else:
                 return None
         if subsystem < 7:

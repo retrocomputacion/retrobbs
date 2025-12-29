@@ -178,11 +178,12 @@ __New features__:
     - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
     - ANSI
  - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
- - Added non-blocking receive function to the _connection_ class
+ - Added non-blocking receive function to the _Connection_ class
  - Added templating system, based on Jinja2 templates
  - New FileList() file browser, old version now called Gallery()
  - Browse and transfer the contents of ZIP and LHA archives
  - Sysop can now delete ONELINER messages
+ - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
 
 __Changes/Bug fixes__:
  - Minimum Python version required is now 3.9
@@ -202,6 +203,8 @@ __Changes/Bug fixes__:
  - Fix to support Python-Weather >= 2.0.0
  - Fixed menu item descriptions with special characters resulting on misaligned menu screen
  - Delete temporal files after use
+ - Turbo56k query commands now use non-blocking reception, prevents hangs on client-side errors.
+ - Chiptune streaming now use non-blocking reception for synchronization.
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -1322,7 +1325,7 @@ temp = /mnt/ramdisk/
   * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * When downloading a file using XMODEM in VIP Terminal, transfer will fail around block 46.
-  * VTX files cannot be opened with some Python 3.12 distributions, upgrading to Python 3.13 will solve the problem.
+  * VTX files cannot be opened when running RetroBBS with some Python 3.12 distributions, upgrading to Python 3.13 or above should solve the problem.
 
 
 ---

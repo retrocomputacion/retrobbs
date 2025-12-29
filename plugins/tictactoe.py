@@ -187,7 +187,7 @@ def plugFunction(conn:Connection):
             DD.vectorText(conn,1,(scwidth//2)-70,84,0,12,'B')
             DD.vectorText(conn,1,(scwidth//2)-70,124,0,12,'C')
         else:
-            conn.SendTML('<HOME><CRSRD n=5><WHITE><CRSRR n=12>1 2 3<BR>')
+            conn.SendTML('<CLR><CRSRD n=5><WHITE><CRSRR n=12>1 2 3<BR>')
             for row in range(3):
                 conn.SendTML(f'<CRSRR n=10><CHR c={65+row}> ')
                 for col in range(3):
