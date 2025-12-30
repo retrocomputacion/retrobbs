@@ -206,7 +206,7 @@ Change the text color to the value passed as parameter. Actual color is platform
 
 ---
 #### **&lt;SPINNER&gt;**
-Send the _spinner_ character, which 'animates' depicting a waiting state when the blinking cursor is placed over it.</br>The actual character sent is platform dependent.
+Send the _spinner_ character, which 'animates' depicting a waiting state.</br>The actual character/animation sent is platform dependent.
 
 ---
 #### **&lt;BACK&gt;**
@@ -526,7 +526,7 @@ Grab a frame from a video file/stream and display it as a graphic screen on the 
 ---
 </br>
 
-### **Style colors ***:
+### Style colors:
 
 <br>
 
@@ -550,6 +550,7 @@ Color for text indicating warning
 #### **&lt;BADCOLOR&gt;**
 Color for text indicating an error or failure
 
+---
 ### **Plugin functions**:
 
 </br>
@@ -711,6 +712,30 @@ Engage character flash mode. Mode is automatically disengaged when a carriage re
 #### **&lt;FLASHOFF&gt;**
 Disengage character flash mode.
 
+### **Commodore 128**:
+
+In addition to *Commodore 64* and *Plus/4* tags... 
+
+#### **Color control codes, 80 column mode**
+Changes the text color to the specified color
+ - **&lt;BLACK&gt;**
+ - **&lt;WHITE&gt;**
+ - **&lt;RED&gt;**
+ - **&lt;CYAN&gt;**
+ - **&lt;PURPLE&gt;**
+ - **&lt;GREEN&gt;**
+ - **&lt;BLUE&gt;**
+ - **&lt;YELLOW&gt;**
+ - **&lt;DPURPLE&gt;** or **&lt;DARK_PURPLE&gt;**
+ - **&lt;BROWN&gt;**
+ - **&lt;PINK&gt;**
+ - **&lt;DCYAN&gt;** or **&lt;DARK_CYAN&gt;**
+ - **&lt;GREY2&gt;** or **&lt;GREY&gt;** or **&lt;MGREY&gt;**
+ - **&lt;LTGREEN&gt;**
+ - **&lt;LTBLUE&gt;**
+ - **&lt;GREY3&gt;** or **&lt;LT_GREY&gt;**
+
+
 ---
 </br>
 
@@ -740,3 +765,20 @@ Changes the text paper color to the expecified color. Paper color applies only f
 Parameters:
 
 `c`: Palette color number, default `1` (black)</br>
+
+---
+</br>
+
+### VidTex ###
+
+#### **Color control codes**
+Changes the text ink color to the specified color
+ - **&lt;GREEN&gt;**
+ - **&lt;YELLOW&gt;**
+ - **&lt;BLUE&gt;**
+ - **&lt;RED&gt;**
+ - **&lt;WHITE&gt;**
+ - **&lt;CYAN&gt;**
+ - **&lt;PURPLE&gt;**
+ - **&lt;ORANGE&gt;**
+ - **&lt;BLACK&gt;**

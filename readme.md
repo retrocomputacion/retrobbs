@@ -33,6 +33,7 @@ VERSION 0.60 dev
    3. [User accounts / Database management](#63-user-accounts--database-management)
    4. [Messaging system](#64-messaging-system)
    5. [Temporal directory](#65-temporal-directory)
+   6. [The templating system](#66-the-templating-system)
 7. [TO-DO List](#7-to-do-list)
    1. [Known bugs](#71-known-bugsissues)
 8. [Acknowledgements](#8-acknowledgements)
@@ -51,10 +52,10 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
 ---
 # 1.1 Release history
 
-### **v0.10** (16/08/2021):
+### **v0.10** (16/August/2021):
   Initial release
 
-### **v0.20** (15/11/2022):
+### **v0.20** (15/November/2022):
   __New features__:
   - Added Login/User functionality
   - Added userclass/userlevel settings for the config file, select which menu is accessible to admins/sysops, registered users and/or guests.
@@ -75,7 +76,7 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
   - AudioList now supports *HVSC* style path to songlength files
   - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
 
-### **v0.25** (14/11/2022):
+### **v0.25** (14/November/2022):
   __New features__:
   - **SLIDESHOW** now supports SID files
   - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
@@ -96,7 +97,7 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
   - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
   - Documentation rewritten in Markdown format
 
-### **v0.50** (02/01/2024):
+### **v0.50** (02/January/2024):
 
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified during runtime.
@@ -160,13 +161,16 @@ __Changes/Bug fixes__:
 __New features__:
  - MSX support
  - *Radio* and *Podcast* plugins by __Emanuele Laface__
- - New CSDb plugin, browse, search and download files from CSDb.dk
+ - New CSDb plugin, browse, search and download files from [CSDb.dk](https://csdb.dk)
+ - New File-hunter plugin, search and download files from [download.file-hunter.com](https://download.file-hunter.com)
  - SID to AY music conversion.
+ - Added *[Turbo56k](docs/turbo56k.md)* v0.8 support (Drawing primitives and query client setup).
  - New &lt;END&gt; TML statement
  - New &lt;FORMAT&gt; TML block instruction
  - Support for RLE compressed Koala Paint images
  - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
  - Added, optional TML scripts for session start and logout.
+ - *Weather* plugin now has a second screen displaying the temperature curve forecast for the next 7 days.
  - Support for non-Turbo56K terminals. Including support for
     - CCGMS
     - Novaterm
@@ -177,13 +181,16 @@ __New features__:
     - MSX RS232 ROM built in terminal (CALL COMTERM)
     - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
     - ANSI
- - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
+ - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients
  - Added non-blocking receive function to the _Connection_ class
  - Added templating system, based on Jinja2 templates
  - New FileList() file browser, old version now called Gallery()
  - Browse and transfer the contents of ZIP and LHA archives
+ - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images
  - Sysop can now delete ONELINER messages
+ - New _draw_ module, adds support drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
  - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
+ - *Webaudio* now supports chapters on Youtube sources.
 
 __Changes/Bug fixes__:
  - Minimum Python version required is now 3.9
@@ -212,8 +219,6 @@ __Changes/Bug fixes__:
 *[Turbo56k](docs/turbo56k.md)* was created by Jorge Castillo as a simple protocol to provide high-speed file transfer functionality to his bit-banging 57600bps RS232 routine for the C64.
 Over time, the protocol has been extended to include 4-bit PCM audio streaming, bitmap graphics transfer and display, SID music streaming and more.
 
-*RetroBBS* will refuse incoming connections from non-*Turbo56K* compliant terminals.
-
 ---
 # 1.3 The *TML* language
 
@@ -241,9 +246,9 @@ Current built-in functions:
 
 - Text file transfer: Process different text formats (*ASCII* or *PETSCII*) and send it to the client computer either paginated or with interactive scrolling.
 
-- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64 and Plus/4 Hires or Multicolor, also supports Koala Painter, Advanced Art Studio, Doodle!, Art Studio C64 native file formats and Botticelli Plus/4 native file format. Images larger than 320x200 pixels are resized and cropped for best fit. This functionality can be used from plug-ins. 
+- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64, Plus/4 Hires or Multicolor and MSX Screen 2, also supports Koala Painter (normal and RLE encoded), Advanced Art Studio, Doodle!, Art Studio C64 native file formats, Botticelli Plus/4 native file format, Screen2 MSX native format and Compuserve RLE files. Images larger than the client screen are resized and cropped for best fit. This functionality can be used from plug-ins. 
 
-- PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
+- PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit PCM audio streams on the fly. Metadata is supported and displayed.
 
 - SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDumpHR* or *SIDDump* executables in the system path, if neither is found a slower Python implementation will be used instead.
 
@@ -255,7 +260,7 @@ Current built-in functions:
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
-- File transfer to the client's (disk) storage device.
+- File transfer to the client's (disk) storage device, using either the custom Turbo56K protocol, or X/YModem.
 
 Included plug-ins:
 
@@ -269,6 +274,11 @@ Included plug-ins:
 - Weather (weather.py): Query the weather forecast for any part of the world.
 - Maps (maps.py): Display and navigate the map of the world. 
 - Mindle (mindle.py): A Wordle clone, with variable word length.
+- CSDb (csdb.py): Browse, search and download files from the _Commodore Scene Database_
+- File-hunter (filehunter.py): Search and download files from _download.file-hunter.com_
+- Tic-Tac-Toe (tictactoe.py): A tic-tac-toe game, takes advantage of client side drawing primitives if available.
+
+
 
 
 ---
@@ -1286,7 +1296,7 @@ Next you have to mount your new RAM disk:
 ```
 sudo mount -t tmpfs -o rw,size=1M tmpfs /mnt/ramdisk
 ```
-Here the "1M" means the RAM disk will have a size of 1 Megabyte, this is more than enough for most use cases, but take into account that files downloaded from CSDb can be larger than this limit and will be saved here if the user decided to browse a .zip archive instead of direct download.
+Here the "1M" means the RAM disk will have a size of 1 Megabyte, this is more than enough for most use cases, but take into account that files downloaded from _CSDb_ or _file-hunter_ can be larger than this limit and will be saved here if the user decided to browse a .zip archive instead of direct download.
 
 To make this change permanent you'll need to add the previous command to your fstab file.
 
@@ -1310,6 +1320,115 @@ Lastly change the `temp` path in your configuration file:
 temp = /mnt/ramdisk/
 ...
 ```
+---
+# 6.6 The templating system
+
+In v0.6 a templating system based on _Jinja2_ has been introduced.
+The templates reside on the `templates` directory.
+
+An example directory tree:
+```
+templates
+├── default
+│   ├── csdb
+│   │   └── menutitle.j2
+│   ├── default.json
+│   ├── main
+│   │   ├── dialog.j2
+│   │   ├── keylabel.j2
+│   │   ├── menusection1col.j2
+│   │   ├── menusection2col.j2
+│   │   ├── menusection_macros.j2
+│   │   ├── menutitle.j2
+│   │   ├── navbar.j2
+│   │   └── splash.j2
+│   ├── mindle
+│   │   ├── default.json
+│   │   └── title.j2
+│   ├── oneliner
+│   │   └── title.j2
+│   └── wiki
+│       └── default.json
+└── theme2
+    └── main
+        └── splash.j2
+
+```
+
+In this example, there is two template themes, the `default` theme and a custom theme named `theme2`.
+
+A theme directory contains a subdirectory called `main` which contains the default templates for the BBS core, such as menus, navigation bar, splash screen, etc.
+If a plugin supports templating, it will its own subdirectory, the templates can be made ad-hoc for the plugin, or override core functions, such as the title bar.
+
+Besides the _Jinja2_(.j2) template files there is also a `.json` file that contains the color style (preset screen and text colors) to be used by the BBS
+
+## Template variables:
+The following variables are always available to the templates:
+
+- conn: The _Connection_ object
+- st: A _bbsstyle_ object
+- mode: The connection _mode_ string
+- scwidth: The client's text screen width in columns
+- scheight: The client's text screen height in lines
+
+Specific variables can and are of course be passed from the code if needed, read below and the _Jinja2_ documentation for more info.
+
+## Basic template structure:
+
+Although a template can be as simple as a plain text that will show for every supported client. The preferred structure is to use Jinja's conditionals to customize the rendering to each client type, for example:
+
+```jinja
+<CLR>
+{% if 'PET' in mode %}
+	<GREY3><RVSON>
+  This text will show on Commodore clients
+{% elif mode == 'MSX1' %}
+	<WHITE><RVSON>
+  And this text will show on MSX clients
+{% elif mode in ['ANSI','ATRSTL'] %}
+  This other text will show for ANSI and Atari ST on low res mode
+{% else %}
+  For everything else, this will be the text.
+{% endif %}
+```
+
+## Core templates
+
+### Splash screen (splash.j2):
+This is called when displaying the __Login/Guest__ prompt.
+
+### Key label (keylabel.j2):
+Defines how to display a menu entry, consisting of the key to press and the menu name/label.
+#### Additional parameters passed:
+- key: A single character
+- label: The menu name/label string
+- toggle: A boolean, define if the menu entry will use the odd or even color style
+
+### Menu section, one column (menusection1col.j2):
+Called for each menu section with menu entries arranged in a single column.
+#### Additional parameters passed:
+- section: The menu section dictionary
+- scount: Section number
+#### Functions passed:
+- formatX()
+- crop()
+- unescape()
+
+### Menu section, two columns (menusection2col.j2):
+The same as `menusection1col.j2` but for menu entries arranges in two columns.
+
+### Menu title (menutitle.j2):
+Defines the title bar of a menu screen, usually the three topmost screen lines.
+
+### Navigation bar (navbar.j2):
+Defines the navigation bar usually displayed at the second to last screen line.
+
+#### Additional parameters passed:
+- barline: Preferred screen line to display the navbar on
+- pages: The keys assigned for the page up/down function
+- crsr: The keys assigned for single line up/down function
+- keys: A list of `(key,function)` tuples, with custom key functions
+  
 
 ---
 # 7 TO-DO List
@@ -1318,6 +1437,8 @@ temp = /mnt/ramdisk/
  * Work towards user style customization
  * Localization
  * Figure out a way to remove hard-coded filetype handling.
+ * Add support for the _punter_ file transfer protocol
+ * Add RIPscrip/Skypix support for ANSI terminals
 
 ---
 # 7.1 Known bugs/issues

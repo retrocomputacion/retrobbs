@@ -142,3 +142,11 @@ def star(conn:Connection, pen:int, x:int, y:int, r1:int, r2:int, sides:int=4, ro
         return True
     else:
         return False
+
+##############
+# TML tags
+##############
+t_mono = {	'STAR':(lambda c,pen,x,y,r1,r2,sides,rot:star(c,pen,x,y,r1,r2,sides,rot),[('c','_C'),('pen',1),('x',0),('y',0),('r1',50),('r2',20),('sides',5),('rot',0)]),
+            'POLYGON':(lambda c,pen,x,y,r,sides,rot:polygon(c,pen,x,y,r,sides,rot),[('c','_C'),('pen',1),('x',0),('y',0),('r',50),('sides',4),('rot',45)]),
+            'VECTORTXT':(lambda c,pen,x,y,font,size,text,dir:vectorText(c,pen,x,y,font,size,text,dir),[('c','_C'),('pen',1),('x',0),('y',0),('font',0),('size',8),('text',''),('dir',0)]),
+            }
