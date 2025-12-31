@@ -33,7 +33,7 @@ VERSION 0.60 dev
    3. [User accounts / Database management](#63-user-accounts--database-management)
    4. [Messaging system](#64-messaging-system)
    5. [Temporal directory](#65-temporal-directory)
-   6. [The templating system](#66-the-templating-system)
+   6. [The template system](#66-the-template-system)
 7. [TO-DO List](#7-to-do-list)
    1. [Known bugs](#71-known-bugsissues)
 8. [Acknowledgements](#8-acknowledgements)
@@ -52,50 +52,62 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
 ---
 # 1.1 Release history
 
-### **v0.10** (16/August/2021):
-  Initial release
+### **v0.60**:
+__New features__:
+ - Retroterm MSX support
+ - *Radio* and *Podcast* plugins by __Emanuele Laface__
+ - New CSDb plugin, browse, search and download files from [CSDb.dk](https://csdb.dk)
+ - New File-hunter plugin, search and download files from [download.file-hunter.com](https://download.file-hunter.com)
+ - SID to AY music conversion.
+ - Added *[Turbo56k](docs/turbo56k.md)* v0.8 support (Drawing primitives and query client setup).
+ - New &lt;END&gt; TML statement
+ - New &lt;FORMAT&gt; TML block instruction
+ - Support for RLE compressed Koala Paint images
+ - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
+ - Added, optional TML scripts for session start and logout.
+ - *Weather* plugin now has a second screen displaying the temperature curve forecast for the next 7 days.
+ - Support for non-Turbo56K terminals. Including support for
+    - CCGMS
+    - Novaterm
+    - HandyTerm
+    - Xgraphic enabled terminals (EdgeTerm)
+    - Other Commodore 64 CG terminals
+    - VicTerm (VIC-20 color PETSCII terminal)
+    - MSX RS232 ROM built in terminal (CALL COMTERM)
+    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
+    - ANSI
+ - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients
+ - Added non-blocking receive function to the _Connection_ class
+ - Added templating system, based on Jinja2 templates
+ - New FileList() file browser, old version now called Gallery()
+ - Browse and transfer the contents of ZIP and LHA archives
+ - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images
+ - Sysop can now delete ONELINER messages
+ - New _draw_ module, adds support drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
+ - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
+ - *Webaudio* now supports chapters on Youtube sources.
+ - Added TML tags for the BBS style colors
 
-### **v0.20** (15/November/2022):
-  __New features__:
-  - Added Login/User functionality
-  - Added userclass/userlevel settings for the config file, select which menu is accessible to admins/sysops, registered users and/or guests.
-  - Added a verbosity command line switch, see section 5
-  - Added *[Turbo56k](docs/turbo56k.md)* v0.6 support, terminal features are queried and displayed on connection.
-  - Messaging system, supports public boards and private messages.
-    Public boards can have independent Read/Post user class permissions.
-
-  __Changes/Bug fixes__:
-  - Improvements to c64cvt
-  - Fixed problems retrieving *YouTube* videos metadata due to the removal of the dislikes count.
-  - *YouTube* frame capture is now faster after the 1st frame.
-  - Core PCM audio and SID file streaming functions moved to their own module.
-  - All PCM audio decoding is done using *FFmpeg*
-  - WebAudio plugin can share any given PCM stream between multiple clients.
-  - Updated example config file with valid links to *YouTube* videos and RSS feeds.
-  - Miscellaneous code cleanup
-  - AudioList now supports *HVSC* style path to songlength files
-  - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
-
-### **v0.25** (14/November/2022):
-  __New features__:
-  - **SLIDESHOW** now supports SID files
-  - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
-  - BBS version and host OS are shown after the welcome message.
-  - Total BBS uptime is stored in the database. Session uptime is available as an attribute of the BBS class.
-  - Total data transferred for each user account is stored in the database.
-
-  __Changes/Bug fixes__:
-  - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longer uses mu-law compression.
-  - Removed legacy RAW audio streaming code.
-  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-Latin characters.
-  - Fixed broken Streamlink support. Added Twitch stream example to configuration file
-  - **SLIDESHOW** now plays PCM audio for the correct amount of time.
-  - SIDStreaming flushes the input buffer when the stream is canceled.
-  - Fixed board/inbox message list order, changed from newest thread first to thread with the newest message first.
-  - Board/Inbox message list now displays the author of the latest message in each thread.
-  - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
-  - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
-  - Documentation rewritten in Markdown format
+__Changes/Bug fixes__:
+ - Minimum Python version required is now 3.9
+ - Fixed filter cutoff low nibble in SID chiptune streaming
+ - Fixed PCMPLAY support for non-local files
+ - *Webaudio* plugin now supports non-live sources
+ - Send the correct number of delete characters for the LogOff confirmation message
+ - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
+ - Fixed *Slideshow* handling of .C and .PET PETSCII files
+ - *Weather* plugin now has more robust handling of geocoder timeouts
+ - *Weather* plugin can now fallback to text mode
+ - Fixed image converter Bayer 4x4 dithering matrix
+ - Added user-agent when using wikipediaapi >= 0.6.0
+ - Fixed audio streaming now works when the BBS is running under Windows
+ - Messaging system reworked, it now supports different screen dimensions and longer messages
+ - MSX-ASCII art header for the *Oneliner* plugin
+ - Fix to support Python-Weather >= 2.0.0
+ - Fixed menu item descriptions with special characters resulting on misaligned menu screen
+ - Delete temporal files after use
+ - Turbo56k query commands now use non-blocking reception, prevents hangs on client-side errors.
+ - Chiptune streaming now use non-blocking reception for synchronization.
 
 ### **v0.50** (02/January/2024):
 
@@ -157,61 +169,52 @@ __Changes/Bug fixes__:
  - *Sendfile* checks if executable file fits in the client's available memory size and range and disables transfer to memory if the file is too large or resides outside the valid memory range.
  - Added `←` glyph to BetterPixels font
 
-### **v0.60**:
-__New features__:
- - MSX support
- - *Radio* and *Podcast* plugins by __Emanuele Laface__
- - New CSDb plugin, browse, search and download files from [CSDb.dk](https://csdb.dk)
- - New File-hunter plugin, search and download files from [download.file-hunter.com](https://download.file-hunter.com)
- - SID to AY music conversion.
- - Added *[Turbo56k](docs/turbo56k.md)* v0.8 support (Drawing primitives and query client setup).
- - New &lt;END&gt; TML statement
- - New &lt;FORMAT&gt; TML block instruction
- - Support for RLE compressed Koala Paint images
- - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
- - Added, optional TML scripts for session start and logout.
- - *Weather* plugin now has a second screen displaying the temperature curve forecast for the next 7 days.
- - Support for non-Turbo56K terminals. Including support for
-    - CCGMS
-    - Novaterm
-    - HandyTerm
-    - Xgraphic enabled terminals (EdgeTerm)
-    - Other Commodore 64 CG terminals
-    - VicTerm (VIC-20 color PETSCII terminal)
-    - MSX RS232 ROM built in terminal (CALL COMTERM)
-    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
-    - ANSI
- - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients
- - Added non-blocking receive function to the _Connection_ class
- - Added templating system, based on Jinja2 templates
- - New FileList() file browser, old version now called Gallery()
- - Browse and transfer the contents of ZIP and LHA archives
- - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images
- - Sysop can now delete ONELINER messages
- - New _draw_ module, adds support drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
- - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
- - *Webaudio* now supports chapters on Youtube sources.
+### **v0.25** (14/December/2022):
+  __New features__:
+  - **SLIDESHOW** now supports SID files
+  - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
+  - BBS version and host OS are shown after the welcome message.
+  - Total BBS uptime is stored in the database. Session uptime is available as an attribute of the BBS class.
+  - Total data transferred for each user account is stored in the database.
 
-__Changes/Bug fixes__:
- - Minimum Python version required is now 3.9
- - Fixed filter cutoff low nibble in SID chiptune streaming
- - Fixed PCMPLAY support for non-local files
- - *Webaudio* plugin now supports non-live sources
- - Send the correct number of delete characters for the LogOff confirmation message
- - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
- - Fixed *Slideshow* handling of .C and .PET PETSCII files
- - *Weather* plugin now has more robust handling of geocoder timeouts
- - *Weather* plugin can now fallback to text mode
- - Fixed image converter Bayer 4x4 dithering matrix
- - Added user-agent when using wikipediaapi >= 0.6.0
- - Fixed audio streaming now works when the BBS is running under Windows
- - Messaging system reworked, it now supports different screen dimensions and longer messages
- - MSX-ASCII art header for the *Oneliner* plugin
- - Fix to support Python-Weather >= 2.0.0
- - Fixed menu item descriptions with special characters resulting on misaligned menu screen
- - Delete temporal files after use
- - Turbo56k query commands now use non-blocking reception, prevents hangs on client-side errors.
- - Chiptune streaming now use non-blocking reception for synchronization.
+  __Changes/Bug fixes__:
+  - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longer uses mu-law compression.
+  - Removed legacy RAW audio streaming code.
+  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-Latin characters.
+  - Fixed broken Streamlink support. Added Twitch stream example to configuration file
+  - **SLIDESHOW** now plays PCM audio for the correct amount of time.
+  - SIDStreaming flushes the input buffer when the stream is canceled.
+  - Fixed board/inbox message list order, changed from newest thread first to thread with the newest message first.
+  - Board/Inbox message list now displays the author of the latest message in each thread.
+  - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
+  - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
+  - Documentation rewritten in Markdown format
+
+
+### **v0.20** (15/November/2022):
+  __New features__:
+  - Added Login/User functionality
+  - Added userclass/userlevel settings for the config file, select which menu is accessible to admins/sysops, registered users and/or guests.
+  - Added a verbosity command line switch, see section 5
+  - Added *[Turbo56k](docs/turbo56k.md)* v0.6 support, terminal features are queried and displayed on connection.
+  - Messaging system, supports public boards and private messages.
+    Public boards can have independent Read/Post user class permissions.
+
+  __Changes/Bug fixes__:
+  - Improvements to c64cvt
+  - Fixed problems retrieving *YouTube* videos metadata due to the removal of the dislikes count.
+  - *YouTube* frame capture is now faster after the 1st frame.
+  - Core PCM audio and SID file streaming functions moved to their own module.
+  - All PCM audio decoding is done using *FFmpeg*
+  - WebAudio plugin can share any given PCM stream between multiple clients.
+  - Updated example config file with valid links to *YouTube* videos and RSS feeds.
+  - Miscellaneous code cleanup
+  - AudioList now supports *HVSC* style path to songlength files
+  - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
+
+### **v0.10** (16/August/2021):
+  Initial release
+
 
 ---
 # 1.2 The *Turbo56K* protocol
@@ -1159,7 +1162,7 @@ Grab's a frame from the specified video file/stream.
 - **\<path\>** video file/stream path or URL
 - **\<crop\>** a tuple with the 4 corners coordinates for cropping the video frame, or None
 - **\<length\>** video playtime in milliseconds. Pass None to let _Grabframe_ to figure the playtime, or 0 to indicate a live stream
-- **\<pos>\>** Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
+- **\<pos\>** Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
 
 ---
 # 5 Encoders
@@ -1185,7 +1188,7 @@ If you're upgrading a previous installation, make sure to not overwrite your con
 
   **NOTICE**: Starting at v0.20, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
 
-  **NOTICE**: If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and viceversa)
+  **NOTICE**: If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and vice versa)
 
 
 You can run this script from a command line by navigating to the Installation
@@ -1219,7 +1222,7 @@ Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles
 
 From v0.60 additional TML scripts can be placed in the `[bbsfiles]` directory:
 
- - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the oneliner plugin.
+ - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the _oneliner_ plugin.
  - `logoff.tml` will run when the client closes the connection the proper way, can be used to display connection statistics or display a goodbye image/text. 
 
 ---
@@ -1321,9 +1324,9 @@ temp = /mnt/ramdisk/
 ...
 ```
 ---
-# 6.6 The templating system
+# 6.6 The template system
 
-In v0.6 a templating system based on _Jinja2_ has been introduced.
+In v0.6 a template system based on _Jinja2_ has been introduced.
 The templates reside on the `templates` directory.
 
 An example directory tree:
@@ -1358,7 +1361,7 @@ templates
 In this example, there is two template themes, the `default` theme and a custom theme named `theme2`.
 
 A theme directory contains a subdirectory called `main` which contains the default templates for the BBS core, such as menus, navigation bar, splash screen, etc.
-If a plugin supports templating, it will its own subdirectory, the templates can be made ad-hoc for the plugin, or override core functions, such as the title bar.
+If a plugin supports templates, it will have its own subdirectory, the templates can be made ad-hoc for the plugin, or override core functions, such as the title bar.
 
 Besides the _Jinja2_(.j2) template files there is also a `.json` file that contains the color style (preset screen and text colors) to be used by the BBS
 
@@ -1410,9 +1413,9 @@ Called for each menu section with menu entries arranged in a single column.
 - section: The menu section dictionary
 - scount: Section number
 #### Functions passed:
-- formatX()
-- crop()
-- unescape()
+- `formatX()`
+- `crop()`
+- `unescape()`
 
 ### Menu section, two columns (menusection2col.j2):
 The same as `menusection1col.j2` but for menu entries arranges in two columns.
@@ -1421,7 +1424,7 @@ The same as `menusection1col.j2` but for menu entries arranges in two columns.
 Defines the title bar of a menu screen, usually the three topmost screen lines.
 
 ### Navigation bar (navbar.j2):
-Defines the navigation bar usually displayed at the second to last screen line.
+Defines the navigation bar usually displayed at the second to last screen line, displaying the control keys available.
 
 #### Additional parameters passed:
 - barline: Preferred screen line to display the navbar on
@@ -1429,6 +1432,17 @@ Defines the navigation bar usually displayed at the second to last screen line.
 - crsr: The keys assigned for single line up/down function
 - keys: A list of `(key,function)` tuples, with custom key functions
   
+### File dialog (dialog.j2):
+Defines the aspect of the dialog shown when the user is given an option to display, open, play or download a file.
+
+#### Additional parameters passed:
+- height: The dialog height in text lines
+- title: The title to display at the top of the dialog
+
+### Function passed:
+- `crop()`
+
+</br>
 
 ---
 # 7 TO-DO List
@@ -1436,7 +1450,7 @@ Defines the navigation bar usually displayed at the second to last screen line.
  * More code cleanup, move more functions out of the main script and into their corresponding modules.
  * Work towards user style customization
  * Localization
- * Figure out a way to remove hard-coded filetype handling.
+ * Figure out a way to remove hard-coded file type handling.
  * Add support for the _punter_ file transfer protocol
  * Add RIPscrip/Skypix support for ANSI terminals
 
