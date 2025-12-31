@@ -132,17 +132,17 @@ def ConfigRead():
         nchar = 0   # LABEL (no associated key) entries use chars 0x00 to 0x0c
         for e in range(0,sentry['entries']):
             try:
-                tentry = cfg[key]['entry'+str(e+1)+'title']	# Entry Title
+                tentry = cfg[key][f'entry{e+1}title']	# Entry Title
             except:
-                raise Exception(f'Configuration file error:\n entry{str(e+1)}title not found')
+                raise Exception(f'Configuration file error:\n entry{e+1}title not found')
             if sentry['columns'] < 2:
-                dentry = cfg.get(key,'entry'+str(e+1)+'desc', fallback = '')
+                dentry = cfg.get(key, f'entry{e+1}desc', fallback = '')
                 if dentry != '':
                     tentry = (tentry,dentry)
-            efunc = cfg.get(key,'entry'+str(e+1)+'func', fallback ='LABEL')		# Entry Internal function
+            efunc = cfg.get(key, f'entry{e+1}func', fallback ='LABEL')		# Entry Internal function
             if efunc != 'LABEL':
                 try:
-                    ekey = cfg[key]['entry'+str(e+1)+'key']		# Entry Key binding
+                    ekey = cfg[key][f'entry{e+1}key']		# Entry Key binding
                 except:
                     raise Exception('Configuration file error:\n Menu entry missing associated key')
             else:
@@ -152,13 +152,13 @@ def ConfigRead():
                     raise Exception('Configuration file - Too many LABEL entries')
             if ekey not in sentry['entrydefs']:
                 sentry['entrydefs'][ekey] = {}
-            emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    # Entry connection mode
-            level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
+            emode = cfg.get(key, f'entry{e+1}mode', fallback ='')		    # Entry connection mode
+            level = cfg.getint(key, f'entry{e+1}level', fallback = 0)
             # Parse parameters
             parms = []
             if efunc == 'IMAGEGALLERY':		# Show image file list
-                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
-                parms= [tentry,'','Displaying image list',p,tuple(['.GIF','.JPG','.PNG']+im_extensions),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
+                p = cfg.get(key, f'entry{e+1}path', fallback='images/')
+                parms= [tentry,'','Displaying image list',p,tuple(['.GIF','.JPG','.PNG']+im_extensions),FT.SendBitmap,cfg.getboolean(key, f'entry{e+1}save',fallback=False)]
             elif efunc == 'SWITCHMENU':		# Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			# Show file list
@@ -167,34 +167,34 @@ def ConfigRead():
                     exts = tuple(te.split(','))
                 else:
                     exts = ()
-                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
-                parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'subdirs',fallback=False)]
+                p = cfg.get(key, f'entry{e+1}path', fallback='programs/')
+                parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key, f'entry{e+1}save',fallback=False),cfg.getboolean(key, f'entry{e+1}subdirs',fallback=False)]
             elif efunc == 'AUDIOLIBRARY':	# Show audio file list
-                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound/')
+                p = cfg.get(key, f'entry{e+1}path', fallback='sound/')
                 parms = [tentry,'','Displaying audio list',p]
             elif efunc == 'PCMPLAY':		# Play PCM audio
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
+                parms = [cfg.get(key, f'entry{e+1}path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
             elif efunc == 'GRABFRAME':		# Grab video frame
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),None]
+                parms = [cfg.get(key, f'entry{e+1}path', fallback=''),None]
             elif efunc == 'SIDPLAY' or efunc == 'CHIPPLAY':        # Play SID/MUS
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
+                parms = [cfg.get(key, f'entry{e+1}path', fallback = ''),cfg.getint(key, f'entry{e+1}playt',fallback=None),False,cfg.getint(key, f'entry{e+1}subt',fallback=None)]
             elif efunc == 'SLIDESHOW':		# Iterate through and show all supported files in a directory
-                parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures'),1,True,cfg.getboolean(key,'entry'+str(e+1)+'shuffle', fallback=False)]
+                parms = [tentry,cfg.get(key, f'entry{e+1}path', fallback=bbs_instance.Paths['bbsfiles']+'pictures'),1,True,cfg.getboolean(key, f'entry{e+1}shuffle', fallback=False)]
             elif efunc == 'SENDFILE':
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),cfg.getboolean(key,'entry'+str(e+1)+'dialog', fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'save', fallback=False)]
+                parms = [cfg.get(key, f'entry{e+1}path', fallback=''),cfg.getboolean(key, f'entry{e+1}dialog', fallback=False),cfg.getboolean(key, f'entry{e+1}save', fallback=False)]
             elif efunc == 'SENDRAW':
-                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback='')]
+                parms = [cfg.get(key, f'entry{e+1}path', fallback='')]
             elif efunc == 'INBOX':
                 parms = [0]
             elif efunc == 'BOARD':
-                parms = [cfg.getint(key,'entry'+str(e+1)+'id', fallback = 1)]
+                parms = [cfg.getint(key, f'entry{e+1}id', fallback = 1)]
             # functions without parameters
             elif efunc in ['BACK','EXIT','USEREDIT','USERLIST','MESSAGE','LABEL','STATS']:
                 parms = []
             elif efunc in PlugDict:			# Plugin function
                 parms = []
                 for p in PlugDict[efunc][1]:	# Iterate parameters
-                    ep = cfg.get(key, 'entry'+str(e+1)+p[0], fallback=p[1])
+                    ep = cfg.get(key, f'entry{e+1}{p[0]}', fallback=p[1])
                     if isinstance(p[1],tuple) == True and isinstance(ep,tuple) == False:
                         ep = tuple([int(e) if e.isdigit() else 0 for e in ep.split(',')])
                     parms.append(ep)
@@ -209,7 +209,7 @@ def ConfigRead():
                 for mode in emode.split(','):
                     sentry['entrydefs'][ekey][mode] = [PlugDict[efunc][0],tuple(parms),tentry,level,False]
             else:
-                raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
+                raise Exception(f'Configuration file - Unknown function at: entry{e+1}func')
         return(sentry)
 
     # Iterate Menu Sections
@@ -287,11 +287,11 @@ def ConfigRead():
             tmenu = config['MAINMENU']['title']								# MainMenu title
             scount = config['MAINMENU'].getint('sections')					# MainMenu number of sections
             tkey = 'MAINMENUSECTION'
-            prompt = config['MAINMENU'].get('prompt', fallback='sELECTION:')
-        else:
-            tmenu = config['MENU'+str(m+1)]['title']						# Menu title
-            scount = config['MENU'+str(m+1)].getint('sections')				# Menu number of sections
-            prompt = config['MENU'+str(m+1)].get('prompt', fallback='sELECTION:')
+            prompt = config['MAINMENU'].get('prompt', fallback='Selection:')
+        elif f'MENU{m+1}' in config:
+            tmenu = config[f'MENU{m+1}']['title']						# Menu title
+            scount = config[f'MENU{m+1}'].getint('sections')				# Menu number of sections
+            prompt = config[f'MENU{m+1}'].get('prompt', fallback='Selection:')
             tkey = 'MENU'+str(m+1)+'SECTION'
         _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
         _bbs_menues[m] = MIter(config,tkey,_bbs_menues[m])

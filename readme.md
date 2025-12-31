@@ -54,19 +54,19 @@ Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removin
 
 ### **v0.60**:
 __New features__:
- - Retroterm MSX support
+ - Retroterm MSX support.
  - *Radio* and *Podcast* plugins by __Emanuele Laface__
  - New CSDb plugin, browse, search and download files from [CSDb.dk](https://csdb.dk)
  - New File-hunter plugin, search and download files from [download.file-hunter.com](https://download.file-hunter.com)
  - SID to AY music conversion.
  - Added *[Turbo56k](docs/turbo56k.md)* v0.8 support (Drawing primitives and query client setup).
- - New &lt;END&gt; TML statement
- - New &lt;FORMAT&gt; TML block instruction
- - Support for RLE compressed Koala Paint images
- - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
+ - New &lt;END&gt; TML statement.
+ - New &lt;FORMAT&gt; TML block instruction.
+ - Support for RLE compressed Koala Paint images.
+ - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags.
  - Added, optional TML scripts for session start and logout.
  - *Weather* plugin now has a second screen displaying the temperature curve forecast for the next 7 days.
- - Support for non-Turbo56K terminals. Including support for
+ - Support for non-Turbo56K terminals. Including support for:
     - CCGMS
     - Novaterm
     - HandyTerm
@@ -76,17 +76,18 @@ __New features__:
     - MSX RS232 ROM built in terminal (CALL COMTERM)
     - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
     - ANSI
- - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients
- - Added non-blocking receive function to the _Connection_ class
- - Added templating system, based on Jinja2 templates
+ - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients.
+ - Added non-blocking receive function to the _Connection_ class.
+ - Added template system, based on Jinja2 templates.
  - New FileList() file browser, old version now called Gallery()
- - Browse and transfer the contents of ZIP and LHA archives
- - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images
- - Sysop can now delete ONELINER messages
+ - Browse and transfer the contents of ZIP and LHA archives.
+ - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images.
+ - Sysop can now delete ONELINER messages.
  - New _draw_ module, adds support drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
  - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
  - *Webaudio* now supports chapters on Youtube sources.
- - Added TML tags for the BBS style colors
+ - Added TML tags for the BBS style colors.
+ - Added new core function: RTERMSETUP. Shows current client and _retroterm_ capabilities.
 
 __Changes/Bug fixes__:
  - Minimum Python version required is now 3.9
@@ -243,7 +244,7 @@ Current built-in functions:
 
 - Public message boards and private messaging system
 
-- Program transfer: Send Commodore 64 and Plus/4 .prg files to the computer memory at the correct memory address.
+- Program transfer: Send Commodore 64 and Plus/4 `.prg` files, or MSX `.rom` files to the computer memory at the correct memory address.
 
 - RAW file transfer: Send RAW file data directly to the computer, no processing is done to the input data.
 
@@ -280,6 +281,8 @@ Included plug-ins:
 - CSDb (csdb.py): Browse, search and download files from the _Commodore Scene Database_
 - File-hunter (filehunter.py): Search and download files from _download.file-hunter.com_
 - Tic-Tac-Toe (tictactoe.py): A tic-tac-toe game, takes advantage of client side drawing primitives if available.
+- Search internet radios (radio.py): Search and listen to internet radios. By __Emanuele Laface__
+- Search Podcasts (podcast.py): Search and listen to podcast. By __Emanuele Laface__
 
 
 
@@ -617,6 +620,16 @@ Retrieves and displays the text and picture from NASA's Astronomy Picture Of the
 - Configuration file parameters: NONE
 - Configuration file \[PLUGINS\] options: `nasakey` = Your NASA API key, obtained from https://api.nasa.gov/. Default is `DEMO_KEY`
 
+### CSDb (csdb.py):
+Browse, search and download files from the Commodore Scene Database.
+
+- Configuration file function: CSDB
+
+### File-hunter (filehunter.py):
+Search and downloads files from _download.file-hunter.com.
+
+- Configuration file function: FILEHUNTER
+
 ### IRC Client (irc_client.py):
 Basic and very experimental IRC client.
 
@@ -663,9 +676,18 @@ Retrieves the latest ten entries from the specified RSS feed, upon user selectio
 By __Emanuele Laface__</br>
 Uses Radio-browser.info API to search for and listen to internet radios.
 
+- Configuration file function: RADIO
+
 ### Search Podcasts (podcast.py):
 By __Emanuele Laface__</br>
 Search for and listen to podcasts.
+
+- Configuration file function: PODCAST
+
+### Tic-Tac-Toe (tictactoe.py):
+A simple game of Tic-Tac-Toe that uses drawing primitives when available.
+
+- Configuration file function: TICTACTOE
 
 ### Weather (weather.py) (new 0.25):
 Displays current weather and forecast for the next 2-3 days as a Hires image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
