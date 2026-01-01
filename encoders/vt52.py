@@ -1,5 +1,6 @@
 import unicodedata
 import re
+import textwrap
 from common.classes import Encoder
 import os
 from copy import deepcopy
@@ -351,6 +352,58 @@ class VT52encoder(Encoder):
                 _copy.tml_mono.update(st_colorslo)
             _copy.tml_multi['DEL'] = '\x08 \x08'
         return _copy
+
+    def wordwrap(self, text, split=False):
+
+        def insert(l):
+            nonlocal tmp, t2, ll,ix
+            while True:
+                if ix < len(escpos):    # Re-insert escape sequences
+                    if escpos[ix][0]-ll+t2 < len(l):
+                        l = l[0:escpos[ix][0]-ll+t2]+escpos[ix][2]+l[escpos[ix][0]-ll+t2:]
+                        t2 += escpos[ix][1]
+                        ix += 1
+                else:
+                    break
+            return l
+
+        p = re.compile(r'\x1b([ABCDHJjIEefpqML]?(G[4MNH])?([bck].{1})?(Y.{2})?)')  # VT52/Vidtex escape sequence regex
+        lines = text.split(self.nl_out)
+        if split:
+            out = []
+        else:
+            out = ''
+        for line in lines:
+            escpos = [] # Escape sequence positions
+            plen = 0    # Previous sequence lenght
+            for m in p.finditer(line):
+                escpos.append((m.start()-plen,len(m.group()),m.group()))
+                plen = escpos[-1][1]
+            wlines = textwrap.wrap(re.sub(p,'',line),width=self.txt_geo[0])
+            ix = 0  # escpos index
+            ll = 0  # line lenght counter
+            for l in wlines:
+                tmp = len(l)
+                t2 = 0
+                if len(l)<self.txt_geo[0]:
+                    l = insert(l)
+                    if not split:
+                        out += l+self.nl_out
+                    else:
+                        out.append(l+self.nl_out)
+                else:
+                    l = insert(l)
+                    if not split:
+                        out += l
+                    else:
+                        out.append(l)
+                ll += tmp
+            if len(wlines)==0:
+                if not split:
+                    out += self.nl_out
+                else:
+                    out.append(self.nl_out)
+        return(out)
 
 ######################################
 # Register with the encoder module
