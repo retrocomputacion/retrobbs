@@ -1,5 +1,6 @@
 import unicodedata
 import re
+import textwrap
 from common.classes import Encoder
 import codecs
 from copy import deepcopy
@@ -246,12 +247,17 @@ class ASCIIencoder(Encoder):
                     #     conn.Sendall(f'\x1b[1;{int(_copy.txt_geo[1])}r')    # Reset margins
                     ## NComm (Amiga) doesnt seem to correcly reset the margins
                     #     #TODO: Add window area support
-
             else:
                 conn.SendTML('<BR>Screen columns? (80): ')
                 cols = conn.ReceiveInt(32,80,80)
                 conn.SendTML('<BR>Screen lines? (25): ')
                 _copy.txt_geo = (cols,conn.ReceiveInt(8,25,25))
+            # Try to detect RIPscrip support
+            # conn.SendTML('...<BR>')
+            # conn.Sendallbin(b'\x1b[!')    # Query RIPscrip version number
+            # ripv = conn.NBReceive(14,2.5).decode('latin1')
+            # if 'RIPSCRIP' in ripv:
+            #     conn.SendTML('RIPscrip supported<PAUSE n=1>')
             _copy.colors={'BLACK':0,'DKRED':1,'GREEN':2,'DKYELLOW':3,'BLUE':4,'PURPLE':5,'DKCYAN':6,'GREY3':7,
                           'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'LTBLUE':12,'LTPURPLE':13,'CYAN':14,'WHITE':15,
                           'DARK_RED':1,'MEDIUM_GREY':8,'GREY':8,'LIGHT_BLUE':12,'LIGHT_PURPLE':13,'LIGHT_GREEN':10,
@@ -263,6 +269,57 @@ class ASCIIencoder(Encoder):
         else:
             return None
 
+    def wordwrap(self, text, split=False):
+
+        def insert(l):
+            nonlocal tmp, t2, ll,ix
+            while True:
+                if ix < len(escpos):    # Re-insert escape sequences
+                    if escpos[ix][0]-ll+t2 < len(l):
+                        l = l[0:escpos[ix][0]-ll+t2]+escpos[ix][2]+l[escpos[ix][0]-ll+t2:]
+                        t2 += escpos[ix][1]
+                        ix += 1
+                else:
+                    break
+            return l
+
+        p = re.compile(r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})?(;[0-9]{3})?)?[m|K]?')  # ANSI escape sequence regex (https://stackoverflow.com/questions/13506033/filtering-out-ansi-escape-sequences)
+        lines = text.split(self.nl_out)
+        if split:
+            out = []
+        else:
+            out = ''
+        for line in lines:
+            escpos = [] # Escape sequence positions
+            plen = 0    # Previous sequence lenght
+            for m in p.finditer(line):
+                escpos.append((m.start()-plen,len(m.group()),m.group()))
+                plen = escpos[-1][1]
+            wlines = textwrap.wrap(re.sub(p,'',line),width=self.txt_geo[0])
+            ix = 0  # escpos index
+            ll = 0  # line lenght counter
+            for l in wlines:
+                tmp = len(l)
+                t2 = 0
+                if len(l)<self.txt_geo[0]:
+                    l = insert(l)
+                    if not split:
+                        out += l+self.nl_out
+                    else:
+                        out.append(l+self.nl_out)
+                else:
+                    l = insert(l)
+                    if not split:
+                        out += l
+                    else:
+                        out.append(l)
+                ll += tmp
+            if len(wlines)==0:
+                if not split:
+                    out += self.nl_out
+                else:
+                    out.append(self.nl_out)
+        return(out)
 
 ######################################
 # Register with the encoder module

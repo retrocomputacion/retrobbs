@@ -278,11 +278,11 @@ def ConfigRead():
     except:
         bbs_instance.PlugOptions = {}
 
-    # Parse Menues
-    mcount = config['MAIN'].getint('menues')								# Number of menues
-    _bbs_menues = [None] * mcount
+    # Parse Menus
+    mcount = config['MAIN'].getint('menus',config['MAIN'].getint('menues',1))	# Number of menus
+    _bbs_menus = [None] * mcount
 
-    for m in range(0, mcount):		# Iterate menues
+    for m in range(0, mcount):		# Iterate menus
         if m == 0:
             tmenu = config['MAINMENU']['title']								# MainMenu title
             scount = config['MAINMENU'].getint('sections')					# MainMenu number of sections
@@ -293,10 +293,10 @@ def ConfigRead():
             scount = config[f'MENU{m+1}'].getint('sections')				# Menu number of sections
             prompt = config[f'MENU{m+1}'].get('prompt', fallback='Selection:')
             tkey = 'MENU'+str(m+1)+'SECTION'
-        _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
-        _bbs_menues[m] = MIter(config,tkey,_bbs_menues[m])
-        _bbs_menues[m]['entries'][0]['entrydefs']['\r']={'':[SendMenu,(),'',0,False]}
-    bbs_instance.MenuList = _bbs_menues
+        _bbs_menus[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
+        _bbs_menus[m] = MIter(config,tkey,_bbs_menus[m])
+        _bbs_menus[m]['entries'][0]['entrydefs']['\r']={'':[SendMenu,(),'',0,False]}
+    bbs_instance.MenuList = _bbs_menus
 
 ####################
 # Handles CTRL-C

@@ -31,7 +31,7 @@ allfiles = []
 def setup():
     fname = "FILEHUNTER"  # UPPERCASE function name for config.ini
     parpairs = []   # config.ini Parameter pairs (name,defaultvalue)
-    get_updatelog() # Get latest files, and allfiles lists
+    # get_updatelog() # Get latest files, and allfiles lists
     return(fname,parpairs)
 
 ##############################
