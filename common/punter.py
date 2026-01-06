@@ -73,8 +73,8 @@ class Punter:
                 return False
         return True
     
-    def __sendPacket(self,lenght):
-        self.conn.Sendallbin(self.data_buffer[:lenght])
+    def __sendPacket(self,length):
+        self.conn.Sendallbin(self.data_buffer[:length])
         retries = 12
         while retries > 0:
             hs = self.__waitHandshake()
@@ -100,7 +100,7 @@ class Punter:
         if not self.__waitForHandshake(b'S/B',10):
             return False
         # Initial packet
-        self.data_buffer[4] = 4     # next block lenght
+        self.data_buffer[4] = 4     # next block length
         self.data_buffer[5] = 0xff  # block number lo
         self.data_buffer[6] = 0xff  # block number hi
         self.data_buffer[7] = 2 if ftype else 1     # 1 PRG - 2 SEQ - 3 Wordpro
@@ -120,7 +120,7 @@ class Punter:
             self.data_buffer[5] = 0
             self.data_buffer[6] = 0
             self.__set_checksum(7)
-            curLenght = self.data_buffer[4]
+            curLength = self.data_buffer[4]
             if self.__sendPacket(7):
                 # Send file packets
                 packetCount = int((len(data) / 248) + (1 if (len(data) / 248) > 0 else 0))
@@ -142,15 +142,15 @@ class Punter:
                     self.data_buffer[4] = nextLen
                     self.data_buffer[5] = packetNumber & 255
                     self.data_buffer[6] = packetNumber >> 8
-                    for i in range(curLenght-7):
+                    for i in range(curLength-7):
                         self.data_buffer[7+i] = data[dataPointer+i]
-                    self.__set_checksum(curLenght)
+                    self.__set_checksum(curLength)
                     retries = 12
                     while True:
-                        res = self.__sendPacket(curLenght)
+                        res = self.__sendPacket(curLength)
                         if res: # Success
-                            dataPointer += curLenght-7
-                            curLenght = nextLen
+                            dataPointer += curLength-7
+                            curLength = nextLen
                             packetNumber += 1
                             break
                         elif res == False:  # Bad
