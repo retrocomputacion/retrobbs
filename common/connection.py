@@ -292,6 +292,21 @@ class Connection:
         self.socket.setblocking(1)	# Change socket to blocking
         self.socket.settimeout(self.bbs.TOut)
 
+
+    ############################################
+    # Flush receive buffer empty
+    ############################################
+    def FlushAll(self):
+        self.socket.setblocking(0)	# Change socket to non-blocking
+        while True:
+            try:
+                self.socket.recv(1)
+            except Exception as e:
+                # We exit on any error, not just EAGAIN or EWOULDLOCK
+                break
+        self.socket.setblocking(1)	# Change socket to blocking
+        self.socket.settimeout(self.bbs.TOut)
+
     ##############################################
     # Receive (count) binary chars from socket
     ##############################################

@@ -21,6 +21,7 @@ from crc import Calculator, Configuration
 from ymodem.Socket import ModemSocket
 from ymodem.Protocol import ProtocolType
 # import logging
+import common.punter as punter
 import zipfile
 import lhafile
 from d64 import DiskImage
@@ -100,8 +101,6 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
 
     _LOG(logtext,id=conn.id, v=4)
 
-    # Send speech message
-    # Select screen output
     conn.SendTML(f'<PAUSE n=1><SETOUTPUT><NUL n=2><CURSOR><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>')
     if win_s:
         S.RenderMenuTitle(conn,title)
@@ -825,7 +824,7 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
                 with open(file,'rb') as fb:
                     data = fb.read()
             else:
-                return xFileTransfer(conn,file,savename if savename != None else '')
+                return xFileTransfer(conn,file,savename if savename != None else '', seq)
     else:
         data = file
     if (conn.QueryFeature(TT.FILETR) < 0x80):
@@ -878,9 +877,9 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
         _LOG("TransferFile: Client doesn't suppport File Transfer command", id = conn.id, v=2)
         return False
 
-############################
-# X/YModem file transfer
-############################
+#######################################
+# X/YModem and Punter file transfer
+#######################################
 def xFileTransfer(conn:Connection, file, savename = '', seq=False):
 
     tbytes = -1
@@ -916,8 +915,8 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
         okbytes = spackets
 
     # logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[c] YModem<BR>[<BACK>] Abort')
-    k = conn.ReceiveKey('abc'+conn.encoder.decode(conn.encoder.back))
+    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[c] YModem<BR>[d] Punter<BR>[e] Multi-Punter<BR>[<BACK>] Abort')
+    k = conn.ReceiveKey('abcde'+conn.encoder.decode(conn.encoder.back))
     if k == 'a':
         psize = 128
         proto = ProtocolType.XMODEM
@@ -927,12 +926,26 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
     elif k == 'c':
         psize = 128
         proto = ProtocolType.YMODEM
+    elif k == 'd':
+        proto = None
+        with open(file,'rb') as rf:
+            data=rf.read()
+        params = (data,seq)
+    elif k == 'e':
+        proto = None
+        params = ([(file,savename,seq)],)
     else:
         return False
     conn.SendTML('<BR>Transferring file...<BR>')
     conn.Sendall(savename)
-    tmodem = ModemSocket(xread, xwrite, proto,packet_size=psize)
-    result = tmodem.send([file], callback=xcallback)
+    if proto != None:
+        tmodem = ModemSocket(xread, xwrite, proto,packet_size=psize)
+        result = tmodem.send([file], callback=xcallback)
+    else:
+        transfer = punter.Punter(conn)
+        if transfer.punterXmit(*params):    # if transfer.punter_xmit(data,len(data)):
+            tbytes = okbytes
+
     conn.SendTML('<BR><PAUSE n=1>')
     return tbytes - okbytes == 0
 

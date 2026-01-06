@@ -45,8 +45,9 @@ VERSION 0.60 dev
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
-Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside.</br>
-Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removing hard-coded PETSCII strings and C64 format images. With the goal of supporting other retro platforms.
+Originally written specifically for the PETSCII character set used in Commodore computers, from v0.50 the BBS transitioned to neutral encoding, slowly removing hard-coded PETSCII strings and C64 format images. Making support of other retro platforms possible.
+
+v0.60 introduces support for many normal, non-Turbo65K compatible terminals. Getting RetroBBS closer to a standard BBS, but there's still ways to go.
 
 
 ---
@@ -77,6 +78,7 @@ __New features__:
     - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
     - ANSI
  - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients.
+ - Punter and Multi-Punter file transfer protocols for non-Turbo56K Commodore clients.
  - Added non-blocking receive function to the _Connection_ class.
  - Added template system, based on Jinja2 templates.
  - New FileList() file browser, old version now called Gallery()
@@ -264,7 +266,7 @@ Current built-in functions:
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
-- File transfer to the client's (disk) storage device, using either the custom Turbo56K protocol, or X/YModem.
+- File transfer to the client's (disk) storage device, using either the custom Turbo56K protocol, XModem, YModem, Punter or Mult-Punter protocols.
 
 Included plug-ins:
 
@@ -826,6 +828,11 @@ Current supported values:
 ```
 C64HI: Commodore 64 hires bitmap
 C64MULTI: Commodore 64 multicolor bitmap
+P4HI: Commodore Plus/4 hires bitmap
+P4MULTI: Commodore Plus/4 multicolor bitmap
+MSXSC2: MSX Screen 2 bitmap
+VTHI: VidTex hires bitmap
+VTMED: VidTex medres bitmap
 ```
 
 ### dithertype
@@ -898,30 +905,34 @@ Open a native image file, returns a PIL image object, native image data and grap
 Implements the Connection class, this is the class used to communicate with clients, all plug-ins must include this module. Only properties and methods to be used by plug-ins are described below.
 
 ### Connection class properties:
-- **\<socket\>**: Socket object for this connection. The socket is set to blocking mode by default, with a timeout of 5 minutes.
-- **\<addr\>**: Client's IP address **-READ ONLY-**
-- **\<id\>**: ID for this connection **-READ ONLY-**
-- **\<outbytes\>**: Total number of bytes sent to this client **-READ ONLY-**
-- **\<inbytes\>**: Total number of bytes received from this client **-READ ONLY-**
-- **\<samplerate\>**: Supported PCM sample rate **-READ ONLY-**
-- **\<TermString\>**: Client's terminal ID string **-READ ONLY-**
-- **\<T56KVer\>**: Client's terminal reported _Turbo56K_ version **-READ ONLY-**
+- `socket`: Socket object for this connection. The socket is set to blocking mode by default, with a timeout of 5 minutes.
+- `addr`: Client's IP address **-READ ONLY-**
+- `id`: ID for this connection **-READ ONLY-**
+- `outbytes`: Total number of bytes sent to this client **-READ ONLY-**
+- `inbytes`: Total number of bytes received from this client **-READ ONLY-**
+- `samplerate`: Supported PCM sample rate **-READ ONLY-**
+- `TermString`: Client's terminal ID string **-READ ONLY-**
+- `T56KVer`: Client's terminal reported _Turbo56K_ version **-READ ONLY-**
 
 ### Connection class methods:
 
 **QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.<br>If the command exist the returned value is the number of parameter bytes needed (up to 127). Otherwise the return value will have it's 7th bit set.
 
-**Sendall(cadena)**: Converts string **\<cadena\>** to a binary string and sends it to the client.
+**QueryClient(subsystem)**: Query the client system setup, where `subsystem` is the specific system feature area, such as text screen dimensions, RAM or VRAM amount, etc.  
 
-**Sendallbin(cadena)**: Sends binary string **\<cadena\>** to the client.
+**Sendall(_string)**: Converts string `_string` to a binary string and sends it to the client.
 
-**Flush(ftime)**: Flush the receiving buffer for **\<ftime\>** seconds.
+**Sendallbin(_string)**: Sends binary string `_string` to the client.
 
-**Receive(count)**: Receives **\<count\>** binary chars from the client.<br>Returns: binary string.
+**Flush(ftime)**: Flush the receiving buffer for `ftime` seconds.
 
-**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to **\<count\>** within the time specified by **\<timeout\>** (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
+**FlushAll()**: Flush the receiving buffer until it is empty.
 
-**ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** parameter.<br>**\<keys\>** can be:
+**Receive(count)**: Receives `count` binary chars from the client.<br>Returns: binary string.
+
+**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to `count` within the time specified by `timeout` (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
+
+**ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the `keys` parameter.<br>`keys` can be:
  - A binary string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, no conversion performed before or after.
  - A normal string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, the passed parameter is encoded before comparison, and the received character is decoded before returning.
  - A list of strings: _ReceiveKey_ will wait for any character matching any one of the individual strings in the passed list. Only single character alphanumerical strings are encoded before comparison and decoded before returning. Strings containing control codes are left untouched. This option is useful for receiving control sequences, ie: ANSI escape codes.
@@ -931,70 +942,70 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **ReceiveStr(keys, maxlen = 20, pw = False)**: Interactive reception with echo. The call is completed on reception of a carriage return.
 
-- **\<keys\>** is a binary or normal string with the accepted input characters. Use binary string for characters in the native encoding. Normal string for unencoded characters.
-- **\<maxlen\>** is the maximum input string length
+- `keys` is a binary or normal string with the accepted input characters. Use binary string for characters in the native encoding. Normal string for unencoded characters.
+- `maxlen` is the maximum input string length
 
-Set **\<pw\>** to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
+Set `pw` to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
 
-**ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
+**ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between `minv` and `maxv`, if the user presses `RETURN` instead, the function will return `defv`.<br> If `auto` is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
-**ReceiveDate(prompt, mindate, maxdate, defdate)**: Interactive reception of a calendar date with echo. The user will be restricted to enter a date between **\<mindate\>** and **\<maxdate\>**, if the user presses `RETURN` instead, the function will return **\<defdate\>**. The date format will follow the user preference if set, otherwise the global BBS date format will be used. Returns a _datetime.date_ object
+**ReceiveDate(prompt, mindate, maxdate, defdate)**: Interactive reception of a calendar date with echo. The user will be restricted to enter a date between `mindate` and `maxdate`, if the user presses `RETURN` instead, the function will return `defdate`. The date format will follow the user preference if set, otherwise the global BBS date format will be used. Returns a _datetime.date_ object
 
-**SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a **\<data\>** **TML** script to the client, optionally initialize the TML parser **\<registers\>**. Returns a dictionary with the last states of the TML parser registers.
+**SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a `data` **TML** script to the client, optionally initialize the TML parser `registers`. Returns a dictionary with the last states of the TML parser registers.
 
 ## common.dbase - Database management:
 ### getUsers(): 
 Get a list of (id, username) pairs. Both `id` and `username` are strings.
 
 ### getUserPrefs(id, defaults={}):
-Get a dictionary containing the preferences corresponding to the user **\<id\>**. Pass the **\<defaults\>** values in case the user has no/incomplete preferences.
+Get a dictionary containing the preferences corresponding to the user `id`. Pass the `defaults` values in case the user has no/incomplete preferences.
 
 ### updateUserPrefs(id,prefs:dict):
-Update the preferences corresponding to user **\<id\>** with the contents of the **\<prefs\>** dictionary
+Update the preferences corresponding to user `id` with the contents of the `prefs` dictionary
 
 ## common.filetools - Functions related to file transfer:
 ### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
 Convert image to C64 mode and send it to the client.
 __Important: The parameter order has changed since v0.25__
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path to image file/bytes object/PIL image object
-- **\<save\>**: Set to `True` to save the image to disk. Default `False`
-- **\<lines\>**: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
-- **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
-- **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
-- **\<gfxmode\>**: Target graphic mode. Overridden by user selection if **\<dialog\>** = `True`
-- **\<preproc\>**: Image processing parameters prior to conversion. Pass `None` for automatic processing.
-- **\<dither>\>**: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
+- `conn`: Connection object
+- `filename`: Path to image file/bytes object/PIL image object
+- `save`: Set to `True` to save the image to disk. Default `False`
+- `lines`: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
+- `display`: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
+- `dialog`: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
+- `gfxmode`: Target graphic mode. Might be overridden by user selection if `dialog` is `True`
+- `preproc`: Image processing parameters prior to conversion. Pass `None` for automatic processing.
+- `dither`: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
 
 ### SendProgram(conn:Connection, filename):
 Sends program file into the client memory at the correct address in turbo mode
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path of the program file to be sent
+- `conn`: Connection object
+- `filename`: Path of the program file to be sent
 
 ### SendFile(conn:Connection, filename, dialog = False, save = False):
 Calls the right transfer function for each supported file type. If selected, will display a dialog beforehand.
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path of the file to be sent
-- **\<dialog\>**: Set to `True` to send a dialog asking the action to take. Default `False`
-- **\<save\>**: Set to `True` to transfer the file to disk. If `dialog` is `True`, then the _save_ option will be added.
+- `conn`: Connection object
+- `filename`: Path of the file to be sent
+- `dialog`: Set to `True` to send a dialog asking the action to take. Default `False`
+- `save`: Set to `True` to transfer the file to disk. If `dialog` is `True`, then the _save_ option will be added.
 
 ### SendRAWFile(conn:Connection, filename, wait = True):
 Sends a file directly without processing
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path of the file to be sent
-- **\<wait\>**: Boolean, wait for `RETURN` after sending the file
+- `conn`: Connection object
+- `filename`: Path of the file to be sent
+- `wait`: Boolean, wait for `RETURN` after sending the file
 
 ### TransferFile(conn:Connection, file, savename, seq = False):
 Starts a file transfer to disk, pending the client acceptance.
 
-- **\<conn\>**: Connection object
-- **\<file\>**: Either the path string to the file to transfer. Or a _bytes_ object with the actual data to be transferred.
-- **\<savename\>**: The name used to save the file on the disk. Mandatory if `file` is a _bytes_ object.
-- **\<seq\>**: Set to `True` to save the file as a _SEQ_ file. Otherwise, it will be saved as a _PRG_ file.
+- `conn`: Connection object
+- `file`: Either the path string to the file to transfer. Or a _bytes_ object with the actual data to be transferred.
+- `savename`: The name used to save the file on the disk. Mandatory if `file` is a _bytes_ object.
+- `seq`: Set to `True` to save the file as a _SEQ_ file. Otherwise, it will be saved as a _PRG_ file.
 
 ### SendText(conn:Connection, filename, title = '', lines = 25):
 Display a text (.txt) or sequential (.seq) file.
@@ -1003,23 +1014,23 @@ Text files are displayed through `common.helpers.More`.
 
 Sequential files are scanned for _PETSCII_ control codes and interpreted accordingly.
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path to the file to display
-- **\<title\>**: If not empty, will be used to display a title bar. Otherwise, no title bar will be rendered.
-- **\<lines\>**: Number if lines available before scrolling.
+- `conn`: Connection object
+- `filename`: Path to the file to display
+- `title`: If not empty, will be used to display a title bar. Otherwise, no title bar will be rendered.
+- `lines`: Number if lines available before scrolling.
 
 ### SendCPetscii(conn:Connection, filename, pause = 0):
 Display a _.c_ formatted C64 text screen, as exported by _PETSCII_ or _PETMate_. Multiple frames per file are supported
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path to the file to display
-- **\<pause\>**: Seconds to pause between frames. Default: 0, wait for user to press RETURN.
+- `conn`: Connection object
+- `filename`: Path to the file to display
+- `pause`: Seconds to pause between frames. Default: 0, wait for user to press RETURN.
 
 ### SendPETPetscii(conn:Connection, filename):
 Display a _.PET_ formatted C64 text screen, as exported by _PETMate_. Returns immediately
 
-- **\<conn\>**: Connection object
-- **\<filename\>**: Path to the file to display
+- `conn`: Connection object
+- `filename`: Path to the file to display
 
 ## common.helpers
 Misc functions that do not fit anywhere else at this point. Functions might get deprecated and/or moved to other modules in the future.
@@ -1036,47 +1047,37 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 
 
 ### formatX(text, columns = 40, convert = True)
-Formats the **\<text\>** into **\<columns\>** columns with word wrapping, **\<convert\>** selects if *PETSCII* conversion is performed.
+Formats the `text` into `columns` columns with word wrapping, `convert` selects if *PETSCII* conversion is performed (`convert` is deprecated).
 
 ### More(conn, text, lines, colors=default_style):
-Paginates **\<text\>**, sends it to **\<conn\>**, the user must press `RETURN` to get next page(s). Supports most *PETSCII* control codes, including color and cursor movement.
-- **\<lines\>**: how many lines per page to transfer. Useful when using the windowing commands of *Turbo56K*.
-- **\<colors\>**: a `bbsstyle` object defining the color set to use.
+Paginates `text`, sends it to `conn`, the user must press `RETURN` to get next page(s). Supports most control codes, including color and cursor movement.
+- `lines`: how many lines per page to transfer. Useful when using the windowing commands.
+- `colors`: a `bbsstyle` object defining the color set to use.
 
 ### text_displayer(conn, text, lines, colors=default_style):
 Displays `text` in a text window `lines` in height. Scrolling up and down with the cursor keys.
-- **\<conn\>**: Connection object
-- **\<text\>**: Preformatted text list, as returned by `formatX`
-- **\<lines\>**: How tall is the text window in use. Text window limits must be set before calling `text_displayer`. Actual displayed text lines is `lines`-1
-- **\<colors\>**: Color style to use for rendering the text.
+- `conn`: Connection object
+- `text`: Preformatted text list, as returned by `formatX`
+- `lines`: How tall is the text window in use. Text window limits must be set before calling `text_displayer`. Actual displayed text lines is `lines`-1
+- `colors`: Color style to use for rendering the text.
 
 ### crop(text, length)
-Cuts **\<text\>** to max **\<length\>** characters, adding an ellipsis to the end if needed.
+Cuts `text` to a maximum of `length` characters, adding an ellipsis to the end if needed.
 
 ### gfxcrop(text, width, font = font_text):
-Cuts **\<text\>** to max **\<width\>** pixels using **\<font\>**, adding an ellipsis to the end if needed.
+Cuts `text` to max `width` pixels using `font`, adding an ellipsis to the end if needed.
 
 ### format_bytes(b):
-Convert an integer **\<b\>** depicting a size in bytes to a string rounded up to B/KB/MB/GB or TB
+Convert an integer `b` depicting a size in bytes to a string rounded up to B/KB/MB/GB or TB
 
 ### catalog(path, dirs = False, full = True):
 Return a list of files (and subdirectories) in the specified top directory
-- **\<path\>**: Top directory
-- **\<dirs\>**: Include subdirectories? Default False
-- **\<full\>**: Each entry in the list includes the full path. Default True
+- `path`: Top directory
+- `dirs`: Include subdirectories? Default False
+- `full`: Each entry in the list includes the full path. Default True
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
-Many control codes and graphic characters are defined as constants in this module, it is recommended to inspect it to learn more.
-
-**PALETTE**: A tuple containing the C64 palette control codes in the correct order
-
-**NONPRINTABLE**: A list of all the non-printable *PETSCII* characters
-
-### toPETSCII(text, full = True):
-Converts **\<text\>** from *UTF-8* to *PETSCII*, if **\<full\>** is `True`, some characters are replaced with a visually similar *PETSCII* equivalent.
-
-### toASCII(text):
-Converts **\<text\>** from *PETSCII* to plain *ASCII*, no extra care is taken to convert *PETSCII* graphic characters to their *ASCII* equivalents
+**DEPRECATED** - Superceded by the encoder class.
 
 ## common.style:
 Defines the BBS style, this module is in a very early stage.
@@ -1084,20 +1085,20 @@ Defines the BBS style, this module is in a very early stage.
 The `bbsstyle` class is defined here, and the default_style instance of this class is initialized. Read the module source to find about the different class properties.
 
 ### RenderMenuTitle(conn,title):
-Sends the menu title header with text **\<title\>** to **\<conn\>**, using the default style. The client screen is cleared and charset is switched to lowercase. Text mode is not enforced, the caller must ensure that text mode or a text window is active on the client.
+Sends the menu title header with text `title` to `conn`, using the `style` title template or the default style template of none is passed.
 
 ### KeyPrompt(text,style=default_style,TML=False):
-Returns the key prompt string for **\<text\>**. The prompt takes the form `[<text>]` using the colors defined by **\<style\>**</br>
+Returns the key prompt string for `text`. The prompt takes the form `[<text>]` using the colors defined by the `style`.</br>
 Set `TML` to `True` to return a _TML_ string instead. **IMPORTANT**: _TML_ string output will become the default in the future.
 
 ### KeyLabel(conn,key,label,toggle,style=default_style):
-Renders menu option **\<label\>** for assigned **\<key\>** in the selected **\<style\>**, boolean **\<toggle\>** switches between odd/even styles.<br>The result is sent to **\<conn\>**
+Renders menu option `label` for assigned `key` in the selected `style` keylabel template, the `toggle` boolean switches between odd/even styles.<br>The result is sent to `conn`
 
 ### RenderDialog(conn,height,title):
 Renders the background for file view/play/transfer dialogs.
-**\<conn\>** Connection object
-**\<height\>** Desired height rows for the dialog in screen
-**\<title>\>** Optional title string
+`conn`: Connection object
+`height`: Desired height in rows for the dialog
+`title`: Optional title string
 
 ## common.turbo56k:
 Defines the *[Turbo56k](turbo56k.md)* protocol constants and helper functions
@@ -1107,84 +1108,84 @@ use with the Connection.Sendall() or Connection.Sendallbin() methods.
 
 ### to_Text(page, border, background, bin = False):
 Switch the client screen to text mode.
-- **\<page\>** is the text memory page to use
-- **\<border\>** and **\<background\>** set the corresponding client screen colors
-- **\<bin\>** selects the return string type
+- `page` is the text memory page to use
+- `border` and `background` set the corresponding client screen colors
+- `bin` selects the return string type
 
 ### to_Hires(page,border, bin = False):
 Switch the client screen to Hires graphic mode.
-- **\<page\>** is the bitmap memory page to use
-- **\<border\>** is the client screen border color
-- **\<bin\>** selects the return string type
+- `page` is the bitmap memory page to use
+- `border` is the client screen border color
+- `bin` selects the return string type
 
 ### to_Multi(page, border, background, bin = False):
 Switch the client screen to multicolor graphic mode.
-- **\<page\>** is the bitmap memory page to use
-- **\<border\>** and **\<background\>** set the corresponding client screen colors
-- **\<bin\>** selects the return string type
+- `page` is the bitmap memory page to use
+- `border` and `background` set the corresponding client screen colors
+- `bin` selects the return string type
 
 ### customTransfer(address, bin = False):
 Sets the destination address for the next block transfer command.
-- **\<address\>** a valid 16-bit integer value for the destination memory address
-- **\<bin\>** selects the return string type
+- `address` a valid 16-bit integer value for the destination memory address
+- `bin` selects the return string type
 
 ### presetTransfer(preset, bin= False):
-Set the destination address for the next block transfer to the one defined by **\<preset\>**
-- **\<bin\>** selects the return string type
+Set the destination address for the next block transfer to the one defined by `preset`
+- `bin` selects the return string type
 
 ### blockTransfer(data):
-Transfer the binary string <data> to the client.<br>This function returns the entire command sequence to complete the transfer as a byte string, including **\<data\>**. Normal usage is calling `SendAllbin` with the result of this function as the parameter
+Transfer the binary string `data` to the client.<br>This function returns the entire command sequence to complete the transfer as a byte string, including `data`. Normal usage is calling `SendAllbin` with the result of this function as the parameter
 
 ### to_Screen(bin = False):
 Selects the client screen as the output.
-- **\<bin\>** selects the return string type
+- `bin` selects the return string type
 
 ### to_Speech(bin = False):
 Selects the optional hardware speech synthesizer as text output.
-- **\<bin\>** selects the return string type
+- `bin` selects the return string type
 
 ### reset_Turbo56K(bin = False):
 Return a command sequence that enables the cursor, disables split screen and resets text window limits.
-- **\<bin\>** selects the return string type
+- `bin` selects the return string type
 
 ### set_CRSR(column, row, bin= False):
-Sets the client's text cursor position to **\<column\>**, **\<row\>** coordinates
-- **\<bin\>** selects the return string type
+Sets the client's text cursor position to `column`, `row` coordinates
+- `bin` selects the return string type
 
 ### Fill_Line(row, char, bin= False):
-Fill the client screen **\<row\>** with **\<char\>** (in C64 screencode), fill color is the last used.
-- **\<bin\>** selects the return string type
+Fill the client screen `row` with `char` (in C64 or MSX screencode), fill color is the last used.
+- `bin` selects the return string type
 
 ### enable_CRSR(bin = False):
 Enables the client's text cursor.
-- **\<bin\>** selects the return string type
+- `bin` selects the return string type
 
 ### disable_CRSR(bin = False):
 Disables the client's text cursor.
-- **\<bin\>** selects the return string type
+- `bin` selects the return string type
 
 ### split_Screen(line, multi, bgtop, bgbottom, bin = False):
 Splits the client's screen into a bitmap top and a text bottom parts.
-- **\<line\>** the text screen row on which the split occurs
-- **\<multi\>** boolean, `True` for Multicolor mode on the top part, `False` for Hires
-- **\<bgtop\>** Background color for the top part, only used when Multicolor mode is selected
-- **\<bgbottom\>** Background color for the bottom part
-- **\<bin\>** selects the return string type
+- `line` the text screen row on which the split occurs
+- `multi` boolean, `True` for Multicolor mode on the top part, `False` for Hires
+- `bgtop`: Background color for the top part, only used when Multicolor mode is selected
+- `bgbottom`: Background color for the bottom part
+- `bin` selects the return string type
 
 ### set_Window(top, bottom,bin = False):
-Set the **\<top\>** and **\<bottom\>** limits for the client text output, this includes scrolling and screen clearing.
-- **\<bin\>** selects the return string type
+Set the `top` and `bottom` limits for the client text output, this includes scrolling and screen clearing.
+- `bin` selects the return string type
 
 ## common.video:
 Video related routines.
 
 ### Grabframe(conn:Connection, path, crop, length = None, pos = None):
 Grab's a frame from the specified video file/stream.
-- **\<conn\>** connection to send the image to
-- **\<path\>** video file/stream path or URL
-- **\<crop\>** a tuple with the 4 corners coordinates for cropping the video frame, or None
-- **\<length\>** video playtime in milliseconds. Pass None to let _Grabframe_ to figure the playtime, or 0 to indicate a live stream
-- **\<pos\>** Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
+- `conn`: connection to send the image to
+- `path`: video file/stream path or URL
+- `crop`: a tuple with the 4 corners coordinates for cropping the video frame, or None
+- `length`: video playtime in milliseconds. Pass None to let _Grabframe_ to figure the playtime, or 0 to indicate a live stream
+- `pos`: Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
 
 ---
 # 5 Encoders
@@ -1230,7 +1231,9 @@ Optional arguments:
 
 ---
 # 6.1 The intro/login/logout sequences
-Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash`* bitmap file found in the `bbsfiles` path preset.
+Once a connection with established and a supported client is detected/selected, the login/guest screen will be displayed.
+
+_Turbo56K_ compatible clients will enter into split screen mode and display the `splash` bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
 
 * The actual `splash` file depends on the detected client:
@@ -1473,8 +1476,9 @@ Defines the aspect of the dialog shown when the user is given an option to displ
  * Work towards user style customization
  * Localization
  * Figure out a way to remove hard-coded file type handling.
- * Add support for the _punter_ file transfer protocol
- * Add RIPscrip/Skypix support for ANSI terminals
+ * Add support for the _punter_ file transfer protocol.
+ * Add RIPscrip/Skypix support for ANSI terminals.
+ * Add _Latin1_ ANSI variant for Amiga terminals.
 
 ---
 # 7.1 Known bugs/issues

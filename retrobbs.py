@@ -1214,7 +1214,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
     bits = 4
 
     conn.SendTML(f'<RESET><SETOUTPUT o=True><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>'
-                 f'<CLR><LOWER><LTBLUE>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR>'
+                 f'<CLR><LOWER><LTBLUE><FORMAT>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR></FORMAT>'
                 f'<LTBLUE>Turbo56K version: <WHITE>{conn.T56KVer}<BR><PAUSE n=0.5>')
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
@@ -1242,7 +1242,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
             res = conn.QueryClient(6)  # Query audio setup
             if res != None:
                 bits = b[res['PCM']&3]
-        conn.SendTML(f'{grey}PCM audio samplerate <YELLOW>{bits}bit {conn.samplerate}Hz<BR>')
+        conn.SendTML(f'<FORMAT>{grey}PCM audio samplerate <YELLOW>{bits}bit {conn.samplerate}Hz<BR></FORMAT>')
     time.sleep(0.5)
 
 ###################
