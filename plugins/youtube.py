@@ -61,19 +61,22 @@ def plugFunction(conn:Connection,url, crop):
         try:
             stl = slsession.resolve_url(url)
             source = stl[0]
-            if source != "":
+            if source != '':
                 crop = None # Don't use crop parameters, we dont know the dimensions of the video returned by Streamlink
                 tmsecs = None
                 plug = stl[1](slsession,url)	# Create plugin object
                 pa = plug.streams()
-                for k in ['240p','360p','480p','720p','1080p','144p']:
+                for k in ['240p','360p','480p','720p','1080p','best','144p','worst']:
                     s = pa.get(k,None)
                     if s != None:
                         if type(s) == streamlink.stream.MuxedStream:
                             best = s.substreams[0].url # Index 0 seems to always be the video stream
                             break
                         elif type(s) == streamlink.stream.HLSStream:
-                            best = s.url_master
+                            try:
+                                best = s.url_master
+                            except:
+                                best = s.url
                             break
                         else:
                             best = s.url
@@ -86,7 +89,7 @@ def plugFunction(conn:Connection,url, crop):
         return
     conn.SendTML(f'<TEXT border={conn.encoder.colors["BLUE"]} background={conn.encoder.colors["BLUE"]}><CLR>'
                  f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> for a new image<BR>'
-                 f'<BR>Press <KPROMPT t=_><YELLOW> to exit<BR>')
+                 f'<BR>Press <KPROMPT t=_BACK><YELLOW> to exit<BR>')
     back = conn.encoder.decode(conn.encoder.back)
     if conn.ReceiveKey(back + conn.encoder.nl) == back:
         return

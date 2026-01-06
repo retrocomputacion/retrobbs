@@ -70,7 +70,7 @@ def plugFunction(conn:Connection):
             if idata == None:
                 _LOG(bcolors.OKBLUE+"APOD Retrying..."+bcolors.ENDC,id=conn.id,v=3)
             i += 1
-            conn.Sendall(".")
+            conn.SendTML(".<SPINNER>")
         conn.SendTML(f'<BELL><DEL n={23+i}>')
         if idata != None:
             scwidth,scheight = conn.encoder.txt_geo
@@ -156,10 +156,15 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
 
     date = idate.strftime("%Y-%m-%d")
     resp = None
+    hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
+    param = {'api_key': key, 'date': date}
+    m_type = ''
     while resp == None:
         try :
-            param = {'api_key': key, 'date': date}
-            resp = requests.get(url, params=param, timeout=8).json()
+            rq = requests.get(url, params=param, timeout=8, headers=hdrs)
+            print(rq)
+            resp = rq.json()
+            print(resp)
             if "media_type" in resp:
                 m_type = resp["media_type"]
             else:
@@ -172,8 +177,7 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
             if retry == True:
                 _LOG('APOD - Error, retrying...')
             else:
-                m_type = ''
-                resp = -1
+                break
     if m_type != 'image':
         resp = None
     return(resp)
