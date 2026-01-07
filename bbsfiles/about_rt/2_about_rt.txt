@@ -1,9 +1,9 @@
 Retroterm is a multimedia terminal for retro computers.
 At the time of writing, Retroterm have been ported to the Commodore 64, Commodore Plus/4 and MSX computers.
 
-The Commodore 64 ports support speeds of up to 57600bps using the normal userport interface or the Turbo232 cartridge or 38400bps when using the SwitfLink cartridge.
+The Commodore 64 ports support speeds of up to 57600bps using the normal userport interface or the Turbo232 cartridge or 38400bps when using the SwitfLink cartridge (or the modem emulation in the Ultimate products).
 The Plus/4 port works at 19200bps using the built-in ACIA.
-And the MSX port can use either standard RS232 interfaces at 19200bps, or 39400bps using a Wi-Fi modem connected to the printer port.
+The MSX ports support the standard MSX RS232 interfaces at 19200bps, the BadCat cartridge at 57600bps or 39400bps using a Wi-Fi modem connected to the printer port.
 
 While on normal text operation Retroterm averages around 1500/1800bps, but on turbo mode is when it shines, allowing the streaming of PCM audio, chiptunes and the transfer of images and program data into memory.
 

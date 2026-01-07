@@ -3,23 +3,8 @@ RetroBBS server v0.60
 A BBS system written in Python, aimed at retro computers running the RetroTerm terminal software.
 
 
-List of TURBO56K BBS
-====================
 
-Thierry's Lair:
-thierryslair.ddnsfree.com:64128
 
-LU4FBU BBS:
-lu4fbu.ddns.net:6400
+For a list of currently online BBS visit:
 
-Omega 64 BBS:
-omegabbs.scumm.it:6400
-
-SotanoMSXBBS:
-sotanomsxbbs.org:6400
-
-Temporal Vortex:
-bbs.gunstar.one:6400
-
-Vaporatorious 64:
-jsanchez.ddns.net:6400
+solidstate.com.ar/bbsstatus/

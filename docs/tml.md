@@ -301,7 +301,7 @@ Parameter:
 `m`: Encoding for this code block, default `'PET64'`
 
 
-#### **&lt;FORMAT&&gt;**
+#### **&lt;FORMAT&gt;**
 All text inside the block is formatted to fit inside the client's screen width, wordwrapping where necessary.</br>
 All code and text inside the block is parsed and send to the client once the end of the block is reached, functions/statements that return *Turbo56K* commands are ignored, do not use &lt;PAUSE&gt; and functions that require user input like &lt;INKEYS&gt; inside the block.
 
@@ -371,6 +371,8 @@ Parameter:
 
 ### **Turbo56K related commands**:
 </br>
+These tags implement Turbo56K commands, but some will still work on other modes, suchs as ANSI or VT52
+
 
 #### **&lt;AT&gt;**
 Move the client's text cursor to the requested position.</br>
@@ -562,6 +564,39 @@ Refer to the plugin section in the main readme for more information.
 ```html
 <WEBAUDIO url='http://relay3.slayradio.org:8000/'>
 ```
+
+## **Common Semigraphic characters**
+
+Some of the included encoders support the use of semigraphic characters in one way or another.
+For Commodore computers and MSX under retroterm the full range of semigraphics con be unlocked by using reverse video.
+The standard MSX encoder only support non reversed semigraphics.
+For VidTex semigraphics is a distinct 'graphic' mode, and support depends on each terminal.
+
+#### **&lt;_xx_-QUAD&gt;**
+Display the specified quadrant(s) semigraphic, where _xx_ can be any of the following:
+
+**Common for all clients supporting semigraphics** 
+- UL: Upper Left
+- UR: Upper Right
+- LL: Lower Left
+- LR: Lower Right
+- UL-LR: Upper Left and Lower Right
+- L-HALF: Left Half
+- B-HALF: Bottom Half
+
+**Common for MSX and VidTex**
+- BLOCK: Filled block
+- R-HALF: Right Half
+- U-HALF: Upper Half
+
+**VidTex only**
+- UR-LL: Upper Right and Lower Left
+- UL-UR-LL: Upper Left and Upper Right and Lower Left
+- UL-UR-LR: Upper Left and Upper Right and Lower Right
+- UL-LL-LR: Upper Left and Lower Left and Lower Right
+- LL-LR-UR: Lower Left and Lower Right and Upper Right
+
+
 
 ## **Platform specific commands and tags**:
 
@@ -759,12 +794,26 @@ Changes the text ink color to the specified color
  - **&lt;DGREEN&gt;**
  - **&lt;LTYELLOW&gt;**
 
- ---
+---
 #### **&lt;PAPER&gt;**
 Changes the text paper color to the expecified color. Paper color applies only for text printed after this tag</br>
 Parameters:
 
 `c`: Palette color number, default `1` (black)</br>
+
+---
+
+#### **&lt;POUND&gt;**
+Displays the pound "`£`" character.
+
+---
+
+#### **&lt;PI&gt;**
+Displays the pi "`π`" character.
+---
+
+#### **&lt;TRI-LEFT&gt;** **&lt;TRI-RIGHT&gt;** **&lt;TRI-UP&gt;** **&lt;TRI-DOWN&gt;**
+Displays a triangle occupying the corresponding character quadrant (and pointing to the opposite direction)
 
 ---
 </br>

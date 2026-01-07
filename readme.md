@@ -7,7 +7,7 @@
 
 VERSION 0.60 dev
 
-(c)2020-2024 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+(c)2020-2026 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
 
 
