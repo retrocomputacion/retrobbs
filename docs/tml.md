@@ -451,6 +451,107 @@ Parameters:
 `top`: Top most row of the window. Default `0`</br>
 `bottom`: Bottom most row of the window. Default `24`
 
+#### **&lt;SCNCLR&gt;**
+Clear the graphic screen.
+
+---
+#### **&lt;PENCOLOR&gt;**
+Set on of the graphic pens to the specified color index.</br>
+Parameters:
+
+`pen`: Graphic pen to set
+`color`: Color index
+
+---
+#### **&lt;PLOT&gt;**
+Plot a point on the graphic screen.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x`: X coordinate
+`y`: y coordinate
+
+---
+#### **&lt;LINE&gt;**
+Draw a line on the graphic screen.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x1`: Starting X coordinate
+`y1`: Starting Y coordinate
+`x2`: End X coordinate
+`y2`: End Y coordinate
+
+---
+#### **&lt;BOX&gt;**
+Draw a (filled) rectangle on the graphics screen.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x1`: First corner X coordinate
+`y1`: First corner Y coordinate
+`x2`: Second corner X coordinate
+`y2`: Second corner Y coordinate
+`fill`: True to draw a filled rectangle. False to draw only the perimeter
+
+---
+#### **&lt;CIRCLE&gt;**
+Draw a circle or ellipse on the graphics screen.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x`: Center X coordinate
+`y`: Center y coordinate
+`rx`: X radius
+`ry`: Y radius
+
+---
+#### **&lt;FILL&gt;**
+Flood fill</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x`: X coordinate
+`y`: Y coordinate
+
+---
+#### **&lt;POLYGON&gt;**
+Draw a regular polygon on the graphics screen.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x`: Center X coordinate
+`y`: Center Y coordinate
+`r`: Radius
+`sides`: Number of sides
+`rot`: Rotation in degrees
+
+---
+#### **&lt;STAR&gt;**
+Draw a star on the graphics screen.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x`: Center X coordinate
+`y`: Center Y coordinate
+`r1`: External radius
+`r2`: Internal radius
+`sides`: Number of sides/points
+`rot`: Rotation in degrees
+
+---
+#### **&lt;VECTORTXT&gt;**
+Draw a string onto the graphics screen using Hershey fonts.</br>
+Parameters:
+
+`pen`: Graphic pen to use
+`x`: Starting X coordinate
+`y`: Starting Y coordinate
+`font`: Font face index
+`size`: Size in pixels
+`text`: The string to draw
+`dir`: Direction (0 = 0°, 1 = 90°, 2 = 180°, 3 = 270° clockwise)
+
 ---
 </br>
 
