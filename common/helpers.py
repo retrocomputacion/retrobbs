@@ -35,7 +35,7 @@ valid_keys = 'abcdefghijklmnopqrstuvwxyz1234567890\\*;/'
 date_strings = [["%d/%m/%Y","dd/mm/yyyy"],["%m/%d/%Y","mm/dd/yyyy"],["%Y/%m/%d","yyyy/mm/dd"]]
 
 # convert int to Byte
-_byte = lambda i: i.to_bytes(1,'little')
+_byte = lambda i: (i&255).to_bytes(1,'little')
 
 ###########################
 # Paginate current menu
@@ -85,7 +85,8 @@ def formatX(text, columns = 40, convert = True):
 #                and may contain TML tags
 ###################################################
 # >>>>>>>>>>>>>>>  UNFINISHED  <<<<<<<<<<<<<<<<<
-# >>>>>>>>>>> UNTESTED, DO NOT USE! <<<<<<<<<<<<
+# >>>>>>>>>>> UNTESTED, DO NOT USE <<<<<<<<<<<<<
+# >>>>>>>>>>>>> ON YOUR OWN CODE <<<<<<<<<<<<<<<
 def wordwrap(conn:Connection, text:str, split = False, encode = False):
     if not encode:
         return conn.encoder.wordwrap(text, split)

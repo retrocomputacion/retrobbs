@@ -372,6 +372,7 @@ Global BBS settings
 | `goodbye` | Log off message
 | `busy` | Message shown when all the connection slots are in use
 | `dateformat` | Format in which dates will be printed out, client-side:<br>0 = dd/mm/yyyy<br>1 = mm/dd/yyyy<br>2 = yyyy/mm/dd
+| `template` | Teamplate to use, name of the subdirectory inside /templates/. `default` will be used if this entry not defined.
 
 ### **\[BOARDS\]**
 Settings for the available messaging boards
@@ -748,7 +749,7 @@ Other plug-ins not included in the distribution or by 3rd parties:
 
 ---
 # 4 Common modules
-Located inside the \<common\> directory you'll find modules which integrate what could be called the BBS' API. The use of some of these modules is mandatory when writing a new plug-in.
+Located inside the \<common\> directory you'll find modules which implement what could be called the BBS' API. The use of some of these modules is mandatory when writing a new plug-in.
 
 ## common.audio - Audio/SID streaming:
 
@@ -1037,8 +1038,6 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 
 **valid_keys**: A string containing the valid characters to be used as user input.
 
-**menu_colors**: List containing the odd/even color pairs for menu entries __-DEPRECATED-__.
-
 **font_bold**: Default bold Imagefont for use on bitmaps, 16px height.
 
 **font_big**: Default big Imagefont for use on bitmaps, 24px height.
@@ -1075,16 +1074,17 @@ Return a list of files (and subdirectories) in the specified top directory
 - `path`: Top directory
 - `dirs`: Include subdirectories? Default False
 - `full`: Each entry in the list includes the full path. Default True
+
+### is_local(url):
+Returns `True` if the parameter passed exists as a local path
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
 **DEPRECATED** - Superceded by the encoder class.
 
 ## common.style:
-Defines the BBS style, this module is in a very early stage.
+Some basic routines to render UI elements using the style/template system.
 
-The `bbsstyle` class is defined here, and the default_style instance of this class is initialized. Read the module source to find about the different class properties.
-
-### RenderMenuTitle(conn,title):
+### RenderMenuTitle(conn,title,style):
 Sends the menu title header with text `title` to `conn`, using the `style` title template or the default style template of none is passed.
 
 ### KeyPrompt(text,style=default_style,TML=False):
@@ -1095,7 +1095,7 @@ Set `TML` to `True` to return a _TML_ string instead. **IMPORTANT**: _TML_ strin
 Renders menu option `label` for assigned `key` in the selected `style` keylabel template, the `toggle` boolean switches between odd/even styles.<br>The result is sent to `conn`
 
 ### RenderDialog(conn,height,title):
-Renders the background for file view/play/transfer dialogs.
+Renders the background/area for file view/play/transfer dialogs.
 `conn`: Connection object
 `height`: Desired height in rows for the dialog
 `title`: Optional title string
@@ -1172,9 +1172,47 @@ Splits the client's screen into a bitmap top and a text bottom parts.
 - `bgbottom`: Background color for the bottom part
 - `bin` selects the return string type
 
-### set_Window(top, bottom,bin = False):
+### set_Window(top, bottom, bin = False):
 Set the `top` and `bottom` limits for the client text output, this includes scrolling and screen clearing.
 - `bin` selects the return string type
+
+### scroll(rows, bin = False):
+Scroll up or down `rows` number of times. Positive values scroll up, negative scroll down.
+- `bin` selects the return string type
+
+### set_ink(color, bin = False):
+Set the text in color to `color` index.
+- `bin` selects the return string type
+
+### screen_clear(bin = False):
+Clear the graphic screen.
+- `bin` selects the return string type
+
+### pen_color(pen, color, bin = False):
+Set the graphic `pen` to `color` index.
+- `bin` selects the return string type
+
+### plot(pen, x, y, bin = False):
+Plot a point on the graphic screen at the `x`,`y` coordinates, using the `pen` color.
+- `bin` selects the return string type
+
+### line(pen, x1, y1, x2, y2, bin = False):
+Draw a line in the graphic screen, from `x1`,`y1` to `x2`,`y2`, using the `pen` color.
+- `bin` selects the return string type
+
+### box(pen, x1, y2, x2, y2, fill = False, bin = False):
+Draw a box delimited by the coordintates `x1`,`y1`,`x2`,`y2`, using the `pen` color.
+- `fill` the box if True.
+- `bin` selects the return string type
+
+### circle(pen, x, y, rx, ry, pen, bin = False):
+Draw a circle or ellipse centered at `x`,`y` with radii `rx` and `ry`, using the `pen` color.
+- `bin` selects the return string type
+
+### fill(pen, x, y, pen, bin = False):
+Perform a flood fill starting at coordinates `x`,`y`, using the `pen` color.
+- `bin` selects the return string type
+
 
 ## common.video:
 Video related routines.
