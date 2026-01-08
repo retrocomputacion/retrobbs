@@ -85,7 +85,7 @@ __New features__:
  - Browse and transfer the contents of ZIP and LHA archives.
  - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images.
  - Sysop can now delete ONELINER messages.
- - New _draw_ module, adds support drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
+ - New _draw_ module, adds support for drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
  - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
  - *Webaudio* now supports chapters on Youtube sources.
  - Added TML tags for the BBS style colors.

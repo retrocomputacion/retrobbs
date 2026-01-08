@@ -668,9 +668,9 @@ Refer to the plugin section in the main readme for more information.
 
 ## **Common Semigraphic characters**
 
-Some of the included encoders support the use of semigraphic characters in one way or another.
-For Commodore computers and MSX under retroterm the full range of semigraphics con be unlocked by using reverse video.
-The standard MSX encoder only support non reversed semigraphics.
+Some included encoders support the use of semigraphic characters in one way or another.
+For Commodore computers and MSX under Retroterm the full range of semigraphics con be unlocked by using reverse video.
+The standard MSX encoder only supports non-reversed semigraphics.
 For VidTex semigraphics is a distinct 'graphic' mode, and support depends on each terminal.
 
 #### **&lt;_xx_-QUAD&gt;**
@@ -932,3 +932,9 @@ Changes the text ink color to the specified color
  - **&lt;PURPLE&gt;**
  - **&lt;ORANGE&gt;**
  - **&lt;BLACK&gt;**
+
+ #### **&lt;G4&gt;**
+ Semigraphic mode
+
+ #### **&lt;GN&gt;**
+ Normal text mode

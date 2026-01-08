@@ -360,6 +360,7 @@ class VT52encoder(Encoder):
             while True:
                 if ix < len(escpos):    # Re-insert escape sequences
                     if escpos[ix][0]-ll+t2 < len(l):
+                        print([escpos[ix][2]])
                         l = l[0:escpos[ix][0]-ll+t2]+escpos[ix][2]+l[escpos[ix][0]-ll+t2:]
                         t2 += escpos[ix][1]
                         ix += 1
@@ -367,7 +368,7 @@ class VT52encoder(Encoder):
                     break
             return l
 
-        p = re.compile(r'\x1b([ABCDHJjIEefpqML]?(G[4MNH])?([bck].{1})?(Y.{2})?)')  # VT52/Vidtex escape sequence regex
+        p = re.compile(r'\x1b(([ABCDHJjIEefpqML])|(G[4MNH])|(Y.{2})|([bck].{1}))')  # VT52/Vidtex escape sequence regex
         lines = text.split(self.nl_out)
         if split:
             out = []
@@ -383,6 +384,7 @@ class VT52encoder(Encoder):
             ix = 0  # escpos index
             ll = 0  # line lenght counter
             for l in wlines:
+                print([l], len(l)<self.txt_geo[0])
                 tmp = len(l)
                 t2 = 0
                 if len(l)<self.txt_geo[0]:

@@ -30,7 +30,7 @@ def setup():
 def plugFunction(conn:Connection):
 
     def WikiTitle(conn:Connection):
-        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR><INK c={wcolors.HlColor}>{crop("Wikipedia, the free Encyclopedia",scwidth,conn.encoder.ellipsis)}')
+        conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}><CLR><CURSOR><INK c={wcolors.HlColor}>{crop("Wikipedia, the free Encyclopedia",scwidth,conn.encoder.ellipsis)}')
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             conn.SendTML(f'{TxTtag}<AT x=0 y=2><LFILL row=1 code={hcode}>')
         else:

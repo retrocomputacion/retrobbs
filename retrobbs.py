@@ -1520,7 +1520,7 @@ else:
     # Add OS version
     bbs_instance.OSText = bbs_instance.OSText + platform.release()
 
-print('\n\nRetroBBS v%.2f (c)2021-2025\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
+print('\n\nRetroBBS v%.2f (c)2021-2026\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
 
 # Init plugins
 bbs_instance.plugins = EX.RegisterPlugins()
