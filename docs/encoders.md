@@ -72,7 +72,7 @@ At this time RetroBBS does not support any of those escape codes.
         - Commodore Plus/4: `PET264`
 2. CCGMS compatible terminals:
     - Manual selection:
-        - CCGMS (25 screen lines)
+        - CCGMS (40 or 80 columns, 25 screen lines)
         - Novaterm/Striketerm (24 lines)
         - HandyTerm (22 lines)
     - Delete in: `\x14`

@@ -345,6 +345,8 @@ Python modules:
 
 *RetroBBS* uses the standard INI format for its configuration file (accepts the extended value interpolation method as used by the _configparse_ Python module), the default file is `config.ini`, located in the root install directory:
 
+**_Is recommended to build your own configuration file and point RetroBBS to that file using the `-c` command line option_**
+
 ```ini 
 [SECTION]
 key = value
@@ -1227,7 +1229,7 @@ Grab's a frame from the specified video file/stream.
 
 ---
 # 5 Encoders
-Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation. This means reducing to a minimum instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
+RetroBBS v0.50 started moving towards an encoding agnostic implementation. This means reducing to a minimum instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
 
 For this purpose a new `Encoder` class has been created.</br>
 This class provides platform specific encoding/decoding of strings, as well as defining the basic control codes and color palette.
@@ -1244,10 +1246,13 @@ For an extensive description of the currently supported encoders check the dedic
 
 ---
 # 6 Installation/Usage
-After ensuring you have installed all the required python modules and extra software, just unpack this archive into a directory of your choice.<br>
+
+1. Just unpack this archive into a directory of your choice.
+2. Install the required [python modules](#15-requirements) and [extra software](#external-software).
+
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
-  **NOTICE**: Starting at v0.20, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
+  **NOTICE**: For v0.20 and above, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
 
   **NOTICE**: If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and vice versa)
 
@@ -1267,6 +1272,15 @@ Optional arguments:
  - `-v[1-4]` sets the verbosity of the log messages, a value of 1 will only output error messages, while a value of 4 will output every log line.
  - `-c [file name]` sets the configuration file to be used, defaults to `config.ini`
 
+### Upgrading
+On most cases upgrading can be done by simply extracting the new version over the previously installed.</br>
+
+But you might need to be aware to not overwrite these files:
+
+- `config.ini` if you're using an edited version of this default file instead of file with another name.
+- The contents of the `bbsfiles` subdirectory, if you have customized the any of the default splash graphics, the `terms/rules.txt` or `logoff.tml` files, or changed the files in the `intro` subdirectory but still use the same default filenames.
+- The contents of the `templates/default` subdirectory if you have customized the default template instead of making your own copy.
+
 ---
 # 6.1 The intro/login/logout sequences
 Once a connection with established and a supported client is detected/selected, the login/guest screen will be displayed.
@@ -1274,7 +1288,7 @@ Once a connection with established and a supported client is detected/selected, 
 _Turbo56K_ compatible clients will enter into split screen mode and display the `splash` bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
 
-* The actual `splash` file depends on the detected client:
+* The actual `splash` file depends on the detected client, and the `main/splash.j2` template:
  - `splash.art` for Commodore 64 clients
  - `splash.boti` for Plus/4 clients
  - `splash.sc2` for MSX1 clients
@@ -1346,7 +1360,7 @@ A user with admin/sysop user class (10) can delete threads or individual message
 # 6.5 Temporal directory
 The path preset `temp` is used by the BBS or it's plugins to store temporal files.
 
-Currently, only the SID streaming function makes use of this path.
+Currently, the file browser, the SID streaming function and the _CSDb_ and _file-hunter_ plugins make use of this path.
 
 If you're running the BBS from a Raspberry Pi or other SBC that uses an SD card as main storage we recommend creating a RAM disk and point the `temp` path to it. This will reduce the wear on your SD card.
 

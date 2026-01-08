@@ -144,7 +144,7 @@ def plugFunction(conn:Connection):
                 if ukey == back or ukey == '':
                     loop = False
         else:
-            conn.SendTML("<BR>ERROR, unable to connect with NASA")
+            conn.SendTML("<BR>ERROR, unable to connect with NASA<PAUSE n=2><CLR>")
             _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id,v=2)
             loop = False
 
