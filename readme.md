@@ -757,41 +757,41 @@ Located inside the \<common\> directory you'll find modules which implement what
 
 ## common.audio - Audio/SID streaming:
 
-### AudioList(conn,title,speech,logtext,path):
+#### AudioList(conn,title,speech,logtext,path):
 Creates and manages an PCM audio/SID file browser.
-  - **\<conn\>**: Connection object
-  - **\<title\>**: String to be used as the title for the file browser
-  - **\<speech\>**: Optional string for the voice synthesizer
-  - **\<logtext\>**: String to output in the log
-  - **\<path\>**: Path to the directory to browse
+  - `conn`: Connection object
+  - `title`: String to be used as the title for the file browser
+  - `speech`: Optional string for the voice synthesizer
+  - `logtext`: String to output in the log
+  - `path`: Path to the directory to browse
 
-### PlayAudio(conn,filename, length = 60.0, dialog=False):
+#### PlayAudio(conn,filename, length = 60.0, dialog=False):
 Converts and streams a PCM audio file to **\<conn\>**.
-- **\<filename\>**: Path to the file to stream, file can be any audio file format supported by audioread/*FFmpeg*
-- **\<length\>**: Length of the audio to stream in seconds
-- **\<dialog\>**: Boolean, display audio metadata and instructions before starting streaming
+- `filename`: Path to the file to stream, file can be any audio file format supported by audioread/*FFmpeg*
+- `length`: Length of the audio to stream in seconds
+- `dialog`: Boolean, display audio metadata and instructions before starting streaming
 
-### CHIPStream(conn, filename,ptime, dialog=True):
+#### CHIPStream(conn, filename,ptime, dialog=True):
 Stream register writes data to the guest's sound chip
-- **\<conn\>**: Destination
-- **\<filename\>**: Path to the SID file
-- **\<ptime\>**: Playtime in seconds
-- **\<dialog\>**: Display SID file metadata and instructions before starting streaming
+- `conn`: Destination
+- `filename`: Path to the SID file
+- `ptime`: Playtime in seconds
+- `dialog`: Display SID file metadata and instructions before starting streaming
 
 
-### SIDStream(conn, filename,ptime, dialog=True): __-DEPRECATED-!__ Use CHIPStream instead
-Stream a SID file to **\<conn\>**
-- **\<filename\>**: Path to the SID file
-- **\<ptime\>**: Playtime in seconds
-- **\<dialog\>**: Display SID file metadata and instructions before starting streaming
+#### SIDStream(conn, filename,ptime, dialog=True): __-DEPRECATED-!__ Use CHIPStream instead
+Stream a SID file to `conn`
+- `filename`: Path to the SID file
+- `ptime`: Playtime in seconds
+- `dialog`: Display SID file metadata and instructions before starting streaming
 
 check the [Chiptune streaming](docs/chiptune_streaming.md) protocol
 
 
 ### class PCMStream(fn, sr) :
 Receive an audio stream from *FFmpeg* in chunks.
-- **fn**: Path to the audio, can either be a local filename path or an online stream.
-- **sr**: Target sample rate
+- `fn`: Path to the audio, can either be a local filename path or an online stream.
+- `sr`: Target sample rate
 
 **PCMStream.read(size)**:
 Read a chunk of data **size** bytes in length. Returns a byte string
@@ -801,28 +801,28 @@ Terminates an audio stream, and closes *FFmpeg*.
 
 ## common.bbsdebug - Log output to stdout:
 
-### _LOG(message, _end='\n', date=True, id=0, v=1):
-Prints **\<message\>** on stdout. **\<message\>** can be any expression valid for the print function.<br>The message will end in a newline by default, you can change this by passing a different end string in the **\<_end\>** parameter.<br>By default, the message will be preceded by the current date and time, disable this by passing `False` in the **\<date\>** parameter.
-- **\<id\>**: Should be the connection id corresponding to this message. Defaults to 0 -> general message.
-- **\<v\>**: Verbosity level for this message. If greater than the level selected on startup, the log message will not be printed.
+#### _LOG(message, _end='\n', date=True, id=0, v=1):
+Prints `message` on stdout. `message` can be any expression valid for the print function.<br>The message will end in a newline by default, you can change this by passing a different end string in the `_end` parameter.<br>By default, the message will be preceded by the current date and time, disable this by passing `False` in the **\<date\>** parameter.
+- `id`: Should be the connection id corresponding to this message. Defaults to 0 -> general message.
+- `v`: Verbosity level for this message. If greater than the level selected on startup, the log message will not be printed.
 
 Also defined in this module is the <bcolors> class, which enumerates a few ANSI codes for use in the log messages.
 
 ## common.c64cvt - Image conversion to raw C64 formats: (__-DEPRECATED-__)
 
-### c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
+#### c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
 Converts PIL image object **\<Source\>** into C64 graphic data.
-- **\<gfxmode\>**: selects the C64 graphic mode to use:<br>`0` = HiRes<br>`1` = MultiColor (default)
-- **\<lumaD\>**: dithering type for the luminance channel, defaults 0, none
-- **\<fullD\>**: color dithering type, defaults to 6, bayer8x8
-- **\<preproc\>**: Auto preprocessing of the image brightness/contrast.
+- `gfxmode`: selects the C64 graphic mode to use:<br>`0` = HiRes<br>`1` = MultiColor (default)
+- `lumaD`: dithering type for the luminance channel, defaults 0, none
+- `fullD`: color dithering type, defaults to 6, bayer8x8
+- `preproc`: Auto preprocessing of the image brightness/contrast.
 
 Returns a tuple `(e_img,cells,screen,color,bg_color)` where:
-- **\<e_img\>**: PIL image object, rendering of the converted image
-- **\<cells\>**: C64 bitmap data (8000 bytes)
-- **\<screen\>**: C64 screen matrix color data (1000 bytes)
-- **\<color\>**: C64 color ram data (1000 bytes), used only in multicolor mode
-- **\<bg_color\>**: C64 background color (1 byte), used only in multicolor mode
+- `e_img`: PIL image object, rendering of the converted image
+- `cells`: C64 bitmap data (8000 bytes)
+- `screen`: C64 screen matrix color data (1000 bytes)
+- `color`: C64 color ram data (1000 bytes), used only in multicolor mode
+- `bg_color`: C64 background color (1 byte), used only in multicolor mode
 
 ## common.imgcvt - Image conversion to a native graphic format:
 
@@ -885,23 +885,23 @@ A simple class defining the image processing values:
 
 Creating a ColorProcess without parameters and passing it to *`convert_To`* will result in no image processing being performed.
 
-### convert_To(Source, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8, threshold=4, cmatch=1, g_colors=None)
+#### convert_To(Source, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8, threshold=4, cmatch=1, g_colors=None)
 Convert a _PIL_ image to a native graphic format.
 
-- **\<Source\>**: PIL image source, it will automatically be scaled/cropped to fit the target graphic mode
-- **\<gfxmode\>**: Target graphic mode
-- **\<preproc\>**: Image preprocessing, pass `None` for automatic image adjustment.
-- **\<dither\>**: Dither method
-- **\<threshold\>**: Dither threshold
-- **\<cmatch\>**: Color matching method
-- **\<gcolors\>**: Global colors list, pass `None` for best guess
+- `Source`: PIL image source, it will automatically be scaled/cropped to fit the target graphic mode
+- `gfxmode`: Target graphic mode
+- `preproc`: Image preprocessing, pass `None` for automatic image adjustment.
+- `dither`: Dither method
+- `threshold`: Dither threshold
+- `cmatch`: Color matching method
+- `gcolors`: Global colors list, pass `None` for best guess
 
 Returns a PIL image rendering of the result, a list of buffers containing the native data (platform/mode dependent), and a list of global colors
 
-### get_IndexedImg(mode:gfxmodes, bgcolor=0)
+#### get_IndexedImg(mode:gfxmodes, bgcolor=0)
 Returns a PIL "P" image with the dimensions and palette of `mode`, filled with `bgcolor` color index.
 
-### open_Image(filename)
+#### open_Image(filename)
 Open a native image file, returns a PIL image object, native image data and graphic mode
 
 ## common.classes - Internal use only
@@ -959,17 +959,17 @@ Set `pw` to `True` to echo `*` for each character received, ie, for password ent
 **SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a `data` **TML** script to the client, optionally initialize the TML parser `registers`. Returns a dictionary with the last states of the TML parser registers.
 
 ## common.dbase - Database management:
-### getUsers(): 
+#### getUsers(): 
 Get a list of (id, username) pairs. Both `id` and `username` are strings.
 
-### getUserPrefs(id, defaults={}):
+#### getUserPrefs(id, defaults={}):
 Get a dictionary containing the preferences corresponding to the user `id`. Pass the `defaults` values in case the user has no/incomplete preferences.
 
-### updateUserPrefs(id,prefs:dict):
+#### updateUserPrefs(id,prefs:dict):
 Update the preferences corresponding to user `id` with the contents of the `prefs` dictionary
 
 ## common.filetools - Functions related to file transfer:
-### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
+#### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
 Convert image to C64 mode and send it to the client.
 __Important: The parameter order has changed since v0.25__
 
@@ -983,13 +983,13 @@ __Important: The parameter order has changed since v0.25__
 - `preproc`: Image processing parameters prior to conversion. Pass `None` for automatic processing.
 - `dither`: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
 
-### SendProgram(conn:Connection, filename):
+#### SendProgram(conn:Connection, filename):
 Sends program file into the client memory at the correct address in turbo mode
 
 - `conn`: Connection object
 - `filename`: Path of the program file to be sent
 
-### SendFile(conn:Connection, filename, dialog = False, save = False):
+#### SendFile(conn:Connection, filename, dialog = False, save = False):
 Calls the right transfer function for each supported file type. If selected, will display a dialog beforehand.
 
 - `conn`: Connection object
@@ -997,14 +997,14 @@ Calls the right transfer function for each supported file type. If selected, wil
 - `dialog`: Set to `True` to send a dialog asking the action to take. Default `False`
 - `save`: Set to `True` to transfer the file to disk. If `dialog` is `True`, then the _save_ option will be added.
 
-### SendRAWFile(conn:Connection, filename, wait = True):
+#### SendRAWFile(conn:Connection, filename, wait = True):
 Sends a file directly without processing
 
 - `conn`: Connection object
 - `filename`: Path of the file to be sent
 - `wait`: Boolean, wait for `RETURN` after sending the file
 
-### TransferFile(conn:Connection, file, savename, seq = False):
+#### TransferFile(conn:Connection, file, savename, seq = False):
 Starts a file transfer to disk, pending the client acceptance.
 
 - `conn`: Connection object
@@ -1012,7 +1012,7 @@ Starts a file transfer to disk, pending the client acceptance.
 - `savename`: The name used to save the file on the disk. Mandatory if `file` is a _bytes_ object.
 - `seq`: Set to `True` to save the file as a _SEQ_ file. Otherwise, it will be saved as a _PRG_ file.
 
-### SendText(conn:Connection, filename, title = '', lines = 25):
+#### SendText(conn:Connection, filename, title = '', lines = 25):
 Display a text (.txt) or sequential (.seq) file.
 
 Text files are displayed through `common.helpers.More`.
@@ -1024,14 +1024,14 @@ Sequential files are scanned for _PETSCII_ control codes and interpreted accordi
 - `title`: If not empty, will be used to display a title bar. Otherwise, no title bar will be rendered.
 - `lines`: Number if lines available before scrolling.
 
-### SendCPetscii(conn:Connection, filename, pause = 0):
+#### SendCPetscii(conn:Connection, filename, pause = 0):
 Display a _.c_ formatted C64 text screen, as exported by _PETSCII_ or _PETMate_. Multiple frames per file are supported
 
 - `conn`: Connection object
 - `filename`: Path to the file to display
 - `pause`: Seconds to pause between frames. Default: 0, wait for user to press RETURN.
 
-### SendPETPetscii(conn:Connection, filename):
+#### SendPETPetscii(conn:Connection, filename):
 Display a _.PET_ formatted C64 text screen, as exported by _PETMate_. Returns immediately
 
 - `conn`: Connection object
@@ -1049,37 +1049,37 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 **font_text**: Default text Imagefont for use on bitmaps, 16px height.
 
 
-### formatX(text, columns = 40, convert = True)
+#### formatX(text, columns = 40, convert = True)
 Formats the `text` into `columns` columns with word wrapping, `convert` selects if *PETSCII* conversion is performed (`convert` is deprecated).
 
-### More(conn, text, lines, colors=default_style):
+#### More(conn, text, lines, colors=default_style):
 Paginates `text`, sends it to `conn`, the user must press `RETURN` to get next page(s). Supports most control codes, including color and cursor movement.
 - `lines`: how many lines per page to transfer. Useful when using the windowing commands.
 - `colors`: a `bbsstyle` object defining the color set to use.
 
-### text_displayer(conn, text, lines, colors=default_style):
+#### text_displayer(conn, text, lines, colors=default_style):
 Displays `text` in a text window `lines` in height. Scrolling up and down with the cursor keys.
 - `conn`: Connection object
 - `text`: Preformatted text list, as returned by `formatX`
 - `lines`: How tall is the text window in use. Text window limits must be set before calling `text_displayer`. Actual displayed text lines is `lines`-1
 - `colors`: Color style to use for rendering the text.
 
-### crop(text, length)
+#### crop(text, length)
 Cuts `text` to a maximum of `length` characters, adding an ellipsis to the end if needed.
 
-### gfxcrop(text, width, font = font_text):
+#### gfxcrop(text, width, font = font_text):
 Cuts `text` to max `width` pixels using `font`, adding an ellipsis to the end if needed.
 
-### format_bytes(b):
+#### format_bytes(b):
 Convert an integer `b` depicting a size in bytes to a string rounded up to B/KB/MB/GB or TB
 
-### catalog(path, dirs = False, full = True):
+#### catalog(path, dirs = False, full = True):
 Return a list of files (and subdirectories) in the specified top directory
 - `path`: Top directory
 - `dirs`: Include subdirectories? Default False
 - `full`: Each entry in the list includes the full path. Default True
 
-### is_local(url):
+#### is_local(url):
 Returns `True` if the parameter passed exists as a local path
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
@@ -1088,17 +1088,17 @@ Returns `True` if the parameter passed exists as a local path
 ## common.style:
 Some basic routines to render UI elements using the style/template system.
 
-### RenderMenuTitle(conn,title,style):
+#### RenderMenuTitle(conn,title,style):
 Sends the menu title header with text `title` to `conn`, using the `style` title template or the default style template of none is passed.
 
-### KeyPrompt(text,style=default_style,TML=False):
+#### KeyPrompt(text,style=default_style,TML=False):
 Returns the key prompt string for `text`. The prompt takes the form `[<text>]` using the colors defined by the `style`.</br>
 Set `TML` to `True` to return a _TML_ string instead. **IMPORTANT**: _TML_ string output will become the default in the future.
 
-### KeyLabel(conn,key,label,toggle,style=default_style):
+#### KeyLabel(conn,key,label,toggle,style=default_style):
 Renders menu option `label` for assigned `key` in the selected `style` keylabel template, the `toggle` boolean switches between odd/even styles.<br>The result is sent to `conn`
 
-### RenderDialog(conn,height,title):
+#### RenderDialog(conn,height,title):
 Renders the background/area for file view/play/transfer dialogs.
 `conn`: Connection object
 `height`: Desired height in rows for the dialog
@@ -1110,65 +1110,65 @@ Defines the *[Turbo56k](turbo56k.md)* protocol constants and helper functions
 The following functions return either a string or a binary string for
 use with the Connection.Sendall() or Connection.Sendallbin() methods.
 
-### to_Text(page, border, background, bin = False):
+#### to_Text(page, border, background, bin = False):
 Switch the client screen to text mode.
 - `page` is the text memory page to use
 - `border` and `background` set the corresponding client screen colors
 - `bin` selects the return string type
 
-### to_Hires(page,border, bin = False):
+#### to_Hires(page,border, bin = False):
 Switch the client screen to Hires graphic mode.
 - `page` is the bitmap memory page to use
 - `border` is the client screen border color
 - `bin` selects the return string type
 
-### to_Multi(page, border, background, bin = False):
+#### to_Multi(page, border, background, bin = False):
 Switch the client screen to multicolor graphic mode.
 - `page` is the bitmap memory page to use
 - `border` and `background` set the corresponding client screen colors
 - `bin` selects the return string type
 
-### customTransfer(address, bin = False):
+#### customTransfer(address, bin = False):
 Sets the destination address for the next block transfer command.
 - `address` a valid 16-bit integer value for the destination memory address
 - `bin` selects the return string type
 
-### presetTransfer(preset, bin= False):
+#### presetTransfer(preset, bin= False):
 Set the destination address for the next block transfer to the one defined by `preset`
 - `bin` selects the return string type
 
-### blockTransfer(data):
+#### blockTransfer(data):
 Transfer the binary string `data` to the client.<br>This function returns the entire command sequence to complete the transfer as a byte string, including `data`. Normal usage is calling `SendAllbin` with the result of this function as the parameter
 
-### to_Screen(bin = False):
+#### to_Screen(bin = False):
 Selects the client screen as the output.
 - `bin` selects the return string type
 
-### to_Speech(bin = False):
+#### to_Speech(bin = False):
 Selects the optional hardware speech synthesizer as text output.
 - `bin` selects the return string type
 
-### reset_Turbo56K(bin = False):
+#### reset_Turbo56K(bin = False):
 Return a command sequence that enables the cursor, disables split screen and resets text window limits.
 - `bin` selects the return string type
 
-### set_CRSR(column, row, bin= False):
+#### set_CRSR(column, row, bin= False):
 Sets the client's text cursor position to `column`, `row` coordinates
 - `bin` selects the return string type
 
-### Fill_Line(row, char, bin= False):
+#### Fill_Line(row, char, bin= False):
 Fill the client screen `row` with `char` (in C64 or MSX screencode), fill color is the last used.
 - `bin` selects the return string type
 
-### enable_CRSR(bin = False):
+#### enable_CRSR(bin = False):
 Enables the client's text cursor.
 - `bin` selects the return string type
 
-### disable_CRSR(bin = False):
+#### disable_CRSR(bin = False):
 Disables the client's text cursor.
 - `bin` selects the return string type
 
-### split_Screen(line, multi, bgtop, bgbottom, bin = False):
+#### split_Screen(line, multi, bgtop, bgbottom, bin = False):
 Splits the client's screen into a bitmap top and a text bottom parts.
 - `line` the text screen row on which the split occurs
 - `multi` boolean, `True` for Multicolor mode on the top part, `False` for Hires
@@ -1176,44 +1176,44 @@ Splits the client's screen into a bitmap top and a text bottom parts.
 - `bgbottom`: Background color for the bottom part
 - `bin` selects the return string type
 
-### set_Window(top, bottom, bin = False):
+#### set_Window(top, bottom, bin = False):
 Set the `top` and `bottom` limits for the client text output, this includes scrolling and screen clearing.
 - `bin` selects the return string type
 
-### scroll(rows, bin = False):
+#### scroll(rows, bin = False):
 Scroll up or down `rows` number of times. Positive values scroll up, negative scroll down.
 - `bin` selects the return string type
 
-### set_ink(color, bin = False):
+#### set_ink(color, bin = False):
 Set the text in color to `color` index.
 - `bin` selects the return string type
 
-### screen_clear(bin = False):
+#### screen_clear(bin = False):
 Clear the graphic screen.
 - `bin` selects the return string type
 
-### pen_color(pen, color, bin = False):
+#### pen_color(pen, color, bin = False):
 Set the graphic `pen` to `color` index.
 - `bin` selects the return string type
 
-### plot(pen, x, y, bin = False):
+#### plot(pen, x, y, bin = False):
 Plot a point on the graphic screen at the `x`,`y` coordinates, using the `pen` color.
 - `bin` selects the return string type
 
-### line(pen, x1, y1, x2, y2, bin = False):
+#### line(pen, x1, y1, x2, y2, bin = False):
 Draw a line in the graphic screen, from `x1`,`y1` to `x2`,`y2`, using the `pen` color.
 - `bin` selects the return string type
 
-### box(pen, x1, y2, x2, y2, fill = False, bin = False):
+#### box(pen, x1, y2, x2, y2, fill = False, bin = False):
 Draw a box delimited by the coordintates `x1`,`y1`,`x2`,`y2`, using the `pen` color.
 - `fill` the box if True.
 - `bin` selects the return string type
 
-### circle(pen, x, y, rx, ry, pen, bin = False):
+#### circle(pen, x, y, rx, ry, pen, bin = False):
 Draw a circle or ellipse centered at `x`,`y` with radii `rx` and `ry`, using the `pen` color.
 - `bin` selects the return string type
 
-### fill(pen, x, y, pen, bin = False):
+#### fill(pen, x, y, pen, bin = False):
 Perform a flood fill starting at coordinates `x`,`y`, using the `pen` color.
 - `bin` selects the return string type
 
@@ -1221,7 +1221,7 @@ Perform a flood fill starting at coordinates `x`,`y`, using the `pen` color.
 ## common.video:
 Video related routines.
 
-### Grabframe(conn:Connection, path, crop, length = None, pos = None):
+#### Grabframe(conn:Connection, path, crop, length = None, pos = None):
 Grab's a frame from the specified video file/stream.
 - `conn`: connection to send the image to
 - `path`: video file/stream path or URL
@@ -1301,7 +1301,7 @@ After a successful login or directly after choosing guest access, the supported 
 
 Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged-in user and show the amount of unread public and private messages if any.
 
-From v0.60 additional TML scripts can be placed in the `[bbsfiles]` directory:
+From v0.60 two additional TML scripts can be placed in the `[bbsfiles]` directory:
 
  - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the _oneliner_ plugin.
  - `logoff.tml` will run when the client closes the connection the proper way, can be used to display connection statistics or display a goodbye image/text. 
@@ -1535,7 +1535,8 @@ Defines the aspect of the dialog shown when the user is given an option to displ
  * Figure out a way to remove hard-coded file type handling.
  * Add RIPscrip/Skypix support for ANSI terminals.
  * Add _Latin1_ ANSI variant for Amiga terminals.
- * Implement @idolpx's dockerization of the BBS.  
+ * Implement @idolpx's dockerization of the BBS.
+ * Set on an API naming convention. Right now function names are all over the place.
 
 ---
 # 7.1 Known bugs/issues
