@@ -972,7 +972,7 @@ def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfe
     if filetype != None:
         tml += f'<RVSON> File: {H.crop(filename,scwidth-8,conn.encoder.ellipsis)}<BR>'
     if size > 0:
-        tml += f'<RVSON> Size: {size}<BR><BR>'
+        tml += f'<RVSON> Size: {H.format_bytes(size)}<BR><BR>'
     else:
         tml += '<BR>'
     if save:
