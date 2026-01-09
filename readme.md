@@ -103,7 +103,7 @@ __Changes/Bug fixes__:
  - *Weather* plugin can now fallback to text mode
  - Fixed image converter Bayer 4x4 dithering matrix
  - Added user-agent when using wikipediaapi >= 0.6.0
- - Fixed audio streaming now works when the BBS is running under Windows
+ - Fixed audio streaming now works when the BBS is running under Windows and Mac.
  - Messaging system reworked, it now supports different screen dimensions and longer messages
  - MSX-ASCII art header for the *Oneliner* plugin
  - Fix to support Python-Weather >= 2.0.0
@@ -266,7 +266,7 @@ Current built-in functions:
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
-- File transfer to the client's (disk) storage device, using either the custom Turbo56K protocol, XModem, YModem, Punter or Mult-Punter protocols.
+- File transfer to the client's (disk) storage device, using either the custom Turbo56K protocol, XModem, YModem, Punter or Multi-Punter protocols.
 
 Included plug-ins:
 
@@ -328,7 +328,8 @@ Python modules:
   
     pip install -r requirements.txt
 
-  ** Note: Wikipedia-API version is currently restricted to a version up to 0.6.0. If you're experiencing problems with the _Wikipedia_ plugin try either upgrading to the latest version, or downgrade to 0.5.8
+  > [!NOTE]
+  > Wikipedia-API version is currently restricted to a version up to 0.6.0. If you're experiencing problems with the _Wikipedia_ plugin try either upgrading to the latest version, or downgrade to 0.5.8
 
 ### External software:
 
@@ -345,7 +346,8 @@ Python modules:
 
 *RetroBBS* uses the standard INI format for its configuration file (accepts the extended value interpolation method as used by the _configparse_ Python module), the default file is `config.ini`, located in the root install directory:
 
-**_Is recommended to build your own configuration file and point RetroBBS to that file using the `-c` command line option_**
+> [!TIP]
+> Is recommended to build your own configuration file and point RetroBBS to that file using the `-c` command line option
 
 ```ini 
 [SECTION]
@@ -369,7 +371,7 @@ Global BBS settings
 | `ip` | IP V4 address on which the BBS will be accessible, default is `127.0.0.1`
 | `port` | port number on which the BBS will be accessible
 | `lines` | Number of connection slots
-| `language` | language for transmitted texts, only partially implemented as of 0.25
+| `language` | language for transmitted texts, only partially implemented as of 0.60
 | `welcome` | Welcome message on connection
 | `goodbye` | Log off message
 | `busy` | Message shown when all the connection slots are in use
@@ -394,7 +396,7 @@ Directory paths to different BBS files, some are used internally, others are ref
 | `audio` | Path to files for the audio library
 | `images` | Path to pictures for the Image gallery
 | `downloads` | Path to files for the program library
-| `temp` | Path to temporal files created by the BBS or it's plugins
+| `temp` | Path to temporal files created by the BBS or its plugins
 
 Custom paths can be added here as needed
 
@@ -631,7 +633,7 @@ Browse, search and download files from the Commodore Scene Database.
 - Configuration file function: CSDB
 
 ### File-hunter (filehunter.py):
-Search and downloads files from _download.file-hunter.com.
+Search and download files from _download.file-hunter.com.
 
 - Configuration file function: FILEHUNTER
 
@@ -919,7 +921,7 @@ Implements the Connection class, this is the class used to communicate with clie
 
 ### Connection class methods:
 
-**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.<br>If the command exist the returned value is the number of parameter bytes needed (up to 127). Otherwise the return value will have it's 7th bit set.
+**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.<br>If the command exist the returned value is the number of parameter bytes needed (up to 127). Otherwise the return value will have its 7th bit set.
 
 **QueryClient(subsystem)**: Query the client system setup, where `subsystem` is the specific system feature area, such as text screen dimensions, RAM or VRAM amount, etc.  
 
@@ -933,7 +935,7 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **Receive(count)**: Receives `count` binary chars from the client.<br>Returns: binary string.
 
-**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to `count` within the time specified by `timeout` (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
+**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to `count` binary chars within the time specified by `timeout` (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
 
 **ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the `keys` parameter.<br>`keys` can be:
  - A binary string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, no conversion performed before or after.
@@ -1252,9 +1254,11 @@ For an extensive description of the currently supported encoders check the dedic
 
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
-  **NOTICE**: For v0.20 and above, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
+> [!MPORTANT]
+> For v0.20 and above, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
 
-  **NOTICE**: If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and vice versa)
+> [!IMPORTANT]
+> If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and vice versa)
 
 
 You can run this script from a command line by navigating to the Installation
@@ -1343,7 +1347,8 @@ With this script you can:
 
 The script will also do a quick integrity check on the database file.
 
-**IMPORTANT**: When setting up a new BBS (or upgrading from v0.10) use dbmaintenance.py to create your account and set your class as 10 to assign yourself as admin/sysop.
+> [!IMPORTANT]
+> When setting up a new BBS (or upgrading from v0.10) use dbmaintenance.py to create your account and set your class as 10 to assign yourself as admin/sysop.
 
 ---
 # 6.4 Messaging system
@@ -1358,7 +1363,7 @@ A user with admin/sysop user class (10) can delete threads or individual message
 
 ---
 # 6.5 Temporal directory
-The path preset `temp` is used by the BBS or it's plugins to store temporal files.
+The path preset `temp` is used by the BBS or its plugins to store temporal files.
 
 Currently, the file browser, the SID streaming function and the _CSDb_ and _file-hunter_ plugins make use of this path.
 
@@ -1435,7 +1440,7 @@ templates
 
 ```
 
-In this example, there is two template themes, the `default` theme and a custom theme named `theme2`.
+In this example, there are two template themes, the `default` theme and a custom theme named `theme2`.
 
 A theme directory contains a subdirectory called `main` which contains the default templates for the BBS core, such as menus, navigation bar, splash screen, etc.
 If a plugin supports templates, it will have its own subdirectory, the templates can be made ad-hoc for the plugin, or override core functions, such as the title bar.
@@ -1525,20 +1530,21 @@ Defines the aspect of the dialog shown when the user is given an option to displ
 # 7 TO-DO List
 
  * More code cleanup, move more functions out of the main script and into their corresponding modules.
- * Work towards user style customization
+ * Complete user style customization
  * Localization
  * Figure out a way to remove hard-coded file type handling.
- * Add support for the _punter_ file transfer protocol.
  * Add RIPscrip/Skypix support for ANSI terminals.
  * Add _Latin1_ ANSI variant for Amiga terminals.
+ * Implement @idolpx's dockerization of the BBS.  
 
 ---
 # 7.1 Known bugs/issues
 
-  * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
+  * Config file parser still doesn't check for all errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * When downloading a file using XMODEM in VIP Terminal, transfer will fail around block 46.
   * VTX files cannot be opened when running RetroBBS with some Python 3.12 distributions, upgrading to Python 3.13 or above should solve the problem.
+  * When connecting to the BBS with the _CCGMS Future_ terminal in 80 column mode and 2400bps (userport), deleting characters might cause loss of data, this can cause problems when displaying text with the MORE function. This is a limitation of _CCGMS Future_ , not _RetroBBS_, and can be avoided by reducing the connection speed to 1200bps.
 
 
 ---
@@ -1562,6 +1568,7 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * ChrisKewl - [twitter.com/chriskewltv](http://twitter.com/chriskewltv)
 
 Also many thanks to __Emanuele Laface__ for the *Radio* and *Podcast* plugins.
+And _Jaime Idolpx_ for fixing audio streaming under Mac.
 
 ## External software, support files
 
