@@ -5,7 +5,7 @@
 
 # RetroBBS
 
-VERSION 0.60 dev
+VERSION 0.60
 
 (c)2020-2026 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
@@ -53,7 +53,7 @@ v0.60 introduces support for many normal, non-Turbo65K compatible terminals. Get
 ---
 # 1.1 Release history
 
-### **v0.60**:
+### **v0.60** (10/January/2026):
 __New features__:
  - Retroterm MSX support.
  - *Radio* and *Podcast* plugins by __Emanuele Laface__
