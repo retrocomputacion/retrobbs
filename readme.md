@@ -1254,7 +1254,7 @@ For an extensive description of the currently supported encoders check the dedic
 
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
-> [!MPORTANT]
+> [!IMPORTANT]
 > For v0.20 and above, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
 
 > [!IMPORTANT]
