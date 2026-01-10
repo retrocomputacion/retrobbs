@@ -87,7 +87,7 @@ __New features__:
  - Sysop can now delete ONELINER messages.
  - New _draw_ module, adds support for drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
  - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
- - *Webaudio* now supports chapters on Youtube sources.
+ - *Webaudio* now supports chapters on Youtube sources. For videos without chapters it will show the thumbnail.
  - Added TML tags for the BBS style colors.
  - Added new core function: RTERMSETUP. Shows current client and _retroterm_ capabilities.
 
@@ -1287,7 +1287,7 @@ But you might need to be aware to not overwrite these files:
 
 ---
 # 6.1 The intro/login/logout sequences
-Once a connection with established and a supported client is detected/selected, the login/guest screen will be displayed.
+Once a connection is established and a supported client is detected/selected, the login/guest screen will be displayed.
 
 _Turbo56K_ compatible clients will enter into split screen mode and display the `splash` bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
@@ -1308,7 +1308,7 @@ From v0.60 two additional TML scripts can be placed in the `[bbsfiles]` director
 
 ---
 # 6.2 SID SongLength
-Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the song length by searching for the `.ssl` files corresponding the `.sid` files found, defaulting to 3 minutes when not found.<br>
+Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the song length by searching for the `.ssl` files corresponding to the `.sid` files found, defaulting to 3 minutes when not found.<br>
 The `.ssl` format is used by the songlength files part of the *High Voltage SID Collection* (http://hvsc.c64.com). *HVSC* uses a `SONGLENGTHS` subdirectory to store the `.ssl` files, *RetroBBS* can also read these files in the same directory where the `.sid` files are located.
 
 ---

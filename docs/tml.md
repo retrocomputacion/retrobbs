@@ -873,6 +873,17 @@ Changes the text color to the specified color
 
 
 ---
+
+#### **&lt;ULINEON&gt;**
+Engage character underline mode.
+
+---
+
+#### **&lt;ULINEOFF&gt;**
+Disengage character flash mode.
+
+---
+
 </br>
 
 ### **MSX**:

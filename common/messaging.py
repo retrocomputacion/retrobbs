@@ -130,7 +130,7 @@ def readMessage(conn:Connection, msg_id:int):
                         if i > 0 and (i+1) < len(ol):
                             conn.Sendall('/')
                     conn.SendTML(f'<BR><BACK> Exit{adm}<AT x=0 y=3><GREY3>')
-                    k = conn.ReceiveKey(keys)
+                    k = conn.ReceiveKey(list(keys))
                 if k == conn.encoder.back:
                     done = True
                     break
@@ -180,6 +180,7 @@ def readMessage(conn:Connection, msg_id:int):
                             msg_id = deleteMessage(conn,msg_id)
                             break
                     break
+
             conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
         else:
             _LOG('readMessage: ERROR - Invalid message',id=conn.id,v=1)

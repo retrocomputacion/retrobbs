@@ -379,7 +379,7 @@ class PETencoder(Encoder):
             return None
         elif self.name == 'PET128std':
             _copy = deepcopy(self)
-            _copy.features.update({'underline':True,'blink':True,'bgcolor':0,'scrollback':False})
+            _copy.features.update({'underline':True,'blink':True,'bgcolor':0,'scrollback':False,'windows':0})
             # _copy.tml_mono['SCROLL'] = (self._scroll128 ,[('_R','_C'),('rows',0)])
             conn.SendTML(f'<HOME><HOME><CLR>Screen lines? (25): ')
             _copy.txt_geo = (80,conn.ReceiveInt(1,25,25))
