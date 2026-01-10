@@ -160,7 +160,10 @@ def plugFunction(conn:connection.Connection,url,image,title):
             sURL = None
     if sURL == None and '.m3u' not in url:
         try:
-            sURL,sTitle,sChapters = ytdlp_resolve(conn,url,title)
+            sURL,sTitle,sChapters,sThumb = ytdlp_resolve(conn,url,title)
+            print([image])
+            if image == '' and sThumb != None:
+                image = sThumb
         except:
             sURL = None
     if sURL == None:
@@ -216,7 +219,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
                 gm = conn.encoder.def_gfxmode
             img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
     # Display info
-    if img != None:
+    if img != None and sChapters == None:
         c_black = (0,0,0)
         c_white = (0xff,0xff,0xff)
         c_yellow = (0xff,0xff,0x55)
@@ -335,6 +338,7 @@ def ytdlp_resolve(conn,url,title):
     sURL = None
     sTitle = None
     sChapters = None
+    sThumb = None
     ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
     cookies = conn.bbs.PlugOptions.get('ytcookies','')
     if cookies != '':
@@ -343,6 +347,7 @@ def ytdlp_resolve(conn,url,title):
         info = ydl.extract_info(url, download=False)
         sTitle = formatX(title+info['webpage_url_domain']+': '+info['title'],conn.encoder.txt_geo[0])
         formats = info['formats']
+        sThumb = info.get('thumbnail',None)
         for f in formats:
             if f['resolution'] == 'audio only':
                 sURL = f['url']
@@ -351,4 +356,4 @@ def ytdlp_resolve(conn,url,title):
                 sURL = f['url']
                 break
         sChapters = info.get('chapters',None)
-    return sURL,sTitle,sChapters
+    return sURL,sTitle,sChapters,sThumb
