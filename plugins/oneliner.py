@@ -52,7 +52,7 @@ def plugFunction(conn:Connection):
             conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
         else:
             conn.SendTML('<BR>')
-        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message <KPROMPT t={conn.encoder.back}><GREEN>exit')
+        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message <KPROMPT t=_BACK><GREEN>exit')
         if conn.userclass == 10:    # Admin
             conn.SendTML(' <KPROMPT t=D><GREEN>elete')
             adm = 'd'
