@@ -22,6 +22,7 @@ from ymodem.Socket import ModemSocket
 from ymodem.Protocol import ProtocolType
 # import logging
 import common.punter as punter
+from common.turbomodem import TurboModem
 import zipfile
 import lhafile
 from d64 import DiskImage
@@ -915,8 +916,8 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
         okbytes = spackets
 
     # logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[c] YModem<BR>[d] Punter<BR>[e] Multi-Punter<BR>[<BACK>] Abort')
-    k = conn.ReceiveKey('abcde'+conn.encoder.decode(conn.encoder.back))
+    conn.SendTML('<RVSOFF><CLR>Select protocol:<BR>[a] XModem-CRC<BR>[b] XModem-1K<BR>[c] YModem<BR>[d] Punter<BR>[e] Multi-Punter<BR>[f] TurboModem<BR>[<BACK>] Abort')
+    k = conn.ReceiveKey('abcdef'+conn.encoder.decode(conn.encoder.back))
     if k == 'a':
         psize = 128
         proto = ProtocolType.XMODEM
@@ -934,6 +935,9 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
     elif k == 'e':
         proto = None
         params = ([(file,savename,seq)],)
+    elif k == 'f':
+        proto = None
+        data = file
     else:
         return False
     conn.SendTML('<BR>Transferring file...<BR>')
@@ -942,9 +946,13 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
         tmodem = ModemSocket(xread, xwrite, proto,packet_size=psize)
         result = tmodem.send([file], callback=xcallback)
     else:
-        transfer = punter.Punter(conn)
-        if transfer.punterXmit(*params):    # if transfer.punter_xmit(data,len(data)):
-            tbytes = okbytes
+        if type(data) == tuple:
+            transfer = punter.Punter(conn)
+            if transfer.punterXmit(*params):    # if transfer.punter_xmit(data,len(data)):
+                tbytes = okbytes
+        else:
+            turbom = TurboModem(conn.socket)
+            turbom.send_file(data)
 
     conn.SendTML('<BR><PAUSE n=1>')
     return tbytes - okbytes == 0

@@ -5,7 +5,7 @@
 
 # RetroBBS
 
-VERSION 0.60
+VERSION 0.61dev
 
 (c)2020-2026 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
@@ -52,6 +52,14 @@ v0.60 introduces support for many normal, non-Turbo65K compatible terminals. Get
 
 ---
 # 1.1 Release history
+
+
+### **v0.61**:
+__New features__:
+ - Added TurboModem transfer protocol, by L.A.Style
+
+__Changes/Bug fixes__:
+ - FILEHUNTER: Fixed inconsistent quotes on f-string (syntax error on Python below 3.12)
 
 ### **v0.60** (10/January/2026):
 __New features__:
@@ -1582,5 +1590,6 @@ And _Jaime Idolpx_ for fixing audio streaming under Mac.
 ## Contains code from:
 
   * sid2psg.py by simondotm under MIT license (https://github.com/simondotm/ym2149f/tree/master)
+  * turbomodem.py from PYCGMS by L.A.Style (https://csdb.dk/release/?id=258681)
 
 ---

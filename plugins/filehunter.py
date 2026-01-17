@@ -137,7 +137,7 @@ def plugFunction(conn:Connection):
                 d_resp = requests.get(url, allow_redirects = True, headers = hdrs)
                 if d_resp.status_code == 200:
                     # Save tmp file
-                    filename = f'{conn.bbs.Paths["temp"]}{entries[H.valid_keys.index(key)+(c_page*lines)]['title']}'
+                    filename = f'{conn.bbs.Paths["temp"]}{entries[H.valid_keys.index(key)+(c_page*lines)]["title"]}'
                     with open(filename,'wb') as tf:
                         tf.write(d_resp.content)
                     FT.SendFile(conn,filename,True,True)
