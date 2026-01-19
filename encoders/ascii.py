@@ -228,6 +228,7 @@ class ASCIIencoder(Encoder):
             _copy.ctrlkeys.update({'CRSRU':'\x1b[A','CRSRD':'\x1b[B','CRSRR':'\x1b[C','CRSRL':'\x1b[D'})
             # Try to detect screen size
             conn.SendTML('...<BR>')
+            conn.FlushAll()
             conn.Sendallbin(b'\x1b[999;999H')    # Move cursor to the extreme lower right
             conn.Sendallbin(b'\x1b[6n')          # Device status report
             cursor = conn.NBReceive(10,2.5).decode('latin1')

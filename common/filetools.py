@@ -699,6 +699,7 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
                 SendText(conn,filename,title)
             elif res == 2:
                 if ext == '.TXT':
+                    # FIXME: This always truncates names to 16 characters max.
                     if len(os.path.basename(filename)) > 16:
                         fn = os.path.splitext(os.path.basename(filename))
                         savename = (fn[0][:16-len(fn[1])]+fn[1]).upper()
@@ -719,10 +720,28 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
             if type(SendBitmap(conn,filename,dialog,save)) != bool:
                 conn.SendTML('<INKEYS><NUL><CURSOR>')
         # Audio
-        elif ext in ['.MP3','.WAV'] and not save:
-            AA.PlayAudio(conn,filename,None,dialog)
+        elif ext in ['.MP3','.WAV']:
+            res = AA.PlayAudio(conn,filename,None,dialog,save)
+            if res == -2:
+                savename = os.path.splitext(os.path.basename(filename))[0].upper()
+                savename = conn.encoder.sanitize_filename(savename) # Remove MSX-DOS reserved characters
+                if TransferFile(conn,filename, savename[:16]):
+                    conn.SendTML(fok)
+                else:
+                    conn.SendTML(fabort)
+                conn.SendTML('<KPROMPT t=RETURN>')
+                conn.ReceiveKey()
         elif ext in ['.SID','.MUS','.YM','.VTX','.VGZ']:
-            AA.CHIPStream(conn,filename,None,dialog=dialog)
+            res = AA.CHIPStream(conn,filename,None,dialog=dialog,save=save)
+            if res == -2:
+                savename = os.path.splitext(os.path.basename(filename))[0].upper()
+                savename = conn.encoder.sanitize_filename(savename) # Remove MSX-DOS reserved characters
+                if TransferFile(conn,filename, savename[:16]):
+                    conn.SendTML(fok)
+                else:
+                    conn.SendTML(fabort)
+                conn.SendTML('<KPROMPT t=RETURN>')
+                conn.ReceiveKey()
         # TML script
         elif ext == '.TML': 
             with open(filename,'r') as slide:

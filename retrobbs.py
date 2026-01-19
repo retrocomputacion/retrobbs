@@ -108,7 +108,7 @@ from common.imgcvt import im_extensions
 
 ###################
 # BBS Version
-_version = 0.60
+_version = 0.61
 ###################
 
 # Threads running flag
@@ -171,7 +171,7 @@ def ConfigRead():
                 parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key, f'entry{e+1}save',fallback=False),cfg.getboolean(key, f'entry{e+1}subdirs',fallback=False)]
             elif efunc == 'AUDIOLIBRARY':	# Show audio file list
                 p = cfg.get(key, f'entry{e+1}path', fallback='sound/')
-                parms = [tentry,'','Displaying audio list',p]
+                parms = [tentry,'','Displaying audio list',p,cfg.getboolean(key, f'entry{e+1}save', fallback=False)]
             elif efunc == 'PCMPLAY':		# Play PCM audio
                 parms = [cfg.get(key, f'entry{e+1}path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
             elif efunc == 'GRABFRAME':		# Grab video frame
