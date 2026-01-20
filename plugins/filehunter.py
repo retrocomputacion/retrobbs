@@ -56,8 +56,8 @@ def plugFunction(conn:Connection):
 
         while conn.connected:
             if render:
-                # conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR>{conn.templates.GetTemplate("csdb/menutitle",**{})}')
-                conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=File-hunter>')
+                conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR>{conn.templates.GetTemplate("filehunter/menutitle",**{})}')
+                # conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=File-hunter>')
             if refresh:
                 conn.SendTML(f'<WINDOW top=3 bottom={scheight-3}>')
                 if conn.encoder.features['windows'] > 0:
