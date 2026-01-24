@@ -755,7 +755,9 @@ def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None, save
                         count += 1
                         if count%100 == 0:
                             ack = b''
-                            ack = conn.NBReceive(1,3)   # 3 seconds, about 150/180 packets
+                            # t0 = time.time()
+                            ack = conn.NBReceive(1,5 if count == 1 else 10)   # 10 seconds for the first packet train, 5 seconds after
+                            # print(time.time()-t0, ack)
                             if ack == b'':          # Client has not responded in time, abort
                                 _LOG('Chiptune: Client is not respoding, abort!!!',id=conn.id,v=3)
                                 ack = b'\xff'

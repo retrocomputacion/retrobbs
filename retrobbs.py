@@ -1241,7 +1241,8 @@ def GetTerminalFeatures(conn:Connection, display = True):
         if conn.QueryFeature(TT.QUERYCLIENT) < 0x80:
             res = conn.QueryClient(6)  # Query audio setup
             if res != None:
-                bits = b[res['PCM']&3]
+                if res['PCM'] != None:
+                    bits = b[res['PCM']&3]
         conn.SendTML(f'<FORMAT>{grey}PCM audio samplerate <YELLOW>{bits}bit {conn.samplerate}Hz<BR></FORMAT>')
     time.sleep(0.5)
 
