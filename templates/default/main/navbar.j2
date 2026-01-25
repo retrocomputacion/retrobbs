@@ -153,6 +153,27 @@
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><VLINE><BACK>:exit<INK c={{st.NBarBG}}><VLINE><RVSOFF>
 {# ZX Spectrum #}
 {% elif mode == 'ZXstd' %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=143><AT x=0 y={{barline}}><RVSON>
+	{% else %}
+		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth-1}}><CRSRL><INS> <AT x=0 y={{barline}}>
+	{% endif %}
+	<R-HALF><INK c={{st.NBarMove}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><L-HALF>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<R-HALF>
+		{% endif %}
+	{% else %}
+		<R-NARROW>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-HALF><BACK>:exit<INK c={{st.NBarBG}}><L-HALF><RVSOFF>
+
+{#
 	<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
 	<VLINE><INK c={{st.NBarMove}}>{{pages}}
 	{% if crsr|length %}
@@ -168,10 +189,33 @@
 		<VLINE>
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><VLINE><BACK>:exit<INK c={{st.NBarBG}}><VLINE><RVSOFF>
+#}
 {# TS2068 #}
 {% elif mode == 'TSstd' %}
+	{% if conn.QueryFeature(177) < 128 %}
+		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=143><AT x=0 y={{barline}}><RVSON>
+	{% else %}
+		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth-1}}><CRSRL><INS> <AT x=0 y={{barline}}>
+	{% endif %}
+	<R-HALF><INK c={{st.NBarMove}}>{{pages}}
+	{% if crsr|length %}
+		/{{crsr}}
+	{% endif%}
+	:move
+	{% if kdef|length > 0 %}
+		<INK c={{st.NBarKeys}}><L-HALF>{{kdef}}
+		{% if kdef|length-1 < spleft+1 %}
+			<R-HALF>
+		{% endif %}
+	{% else %}
+		<R-NARROW>
+	{% endif %}
+	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-HALF><BACK>:exit<INK c={{st.NBarBG}}><L-HALF><RVSOFF>
+
+
+{#
 	<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
-	<SPC><INK c={{st.NBarMove}}>{{pages}}
+	<R-HALF><INK c={{st.NBarMove}}>{{pages}}
 	{% if crsr|length %}
 		/{{crsr}}
 	{% endif%}
@@ -185,6 +229,7 @@
 		<SPC>
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><SPC><BACK>:exit<INK c={{st.NBarBG}}><SPC><RVSOFF>
+#}
 {# Default #}
 {% else %}
 	<VLINE>{{pages}}

@@ -1,6 +1,9 @@
 {# Key Label Template #}
 {# Parameters: key, label, toggle #}
 {# set colors #}
+{% if key == '_'%}
+	{% set key = conn.encoder.back %}
+{% endif %}
 {% if key == conn.encoder.back %}
 	{% set key = conn.encoder.decode(key) %}
 {% endif %}
@@ -75,7 +78,7 @@
 	<SPC><RVSOFF><INK c={{ c2 }}>{{ label }}
 {# ZX Spectrum/TS2068 #}
 {% elif mode in ['ZXstd','TSstd'] %}
-	<INK c={{ c1 }}><RVSON><SPC>
+	<INK c={{ c1 }}><R-HALF><RVSON>
 	{% if bg1 >= 0 %}
 		<PAPER c={{ bg1 }}>
 	{% endif %}
@@ -83,7 +86,7 @@
 	{% if bg >= 0 %}
 		<PAPER c={{ bg }}>
 	{% endif %}
-	<SPC><RVSOFF><INK c={{ c2 }}>{{ label }}
+	<RVSOFF><L-HALF><INK c={{ c2 }}>{{ label }}
 {# Generic fallback #}
 {% else %}
 	[{{ key.lower() }}]{{ label }}
