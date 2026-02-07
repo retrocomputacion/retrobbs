@@ -152,7 +152,7 @@
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><VLINE><BACK>:exit<INK c={{st.NBarBG}}><VLINE><RVSOFF>
 {# ZX Spectrum #}
-{% elif mode == 'ZXstd' %}
+{% elif mode in ['ZXstd','TSstd','ZX1'] %}
 	{% if conn.QueryFeature(177) < 128 %}
 		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=143><AT x=0 y={{barline}}><RVSON>
 	{% else %}

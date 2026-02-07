@@ -2,9 +2,12 @@
 # ZX Spectrum Routines
 #
 import numpy as np
+import os
+from PIL import Image
 
-import modules.common as CC
-import modules.palette as Palette
+from common.imgcvt import common as CC
+from common.imgcvt import palette as Palette
+from common.imgcvt.types import gfxmodes
 
 #Palette structure
 Palette_ZXSpectrum = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':0},
@@ -18,6 +21,8 @@ Palette_ZXSpectrum = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':Tr
     {'color':'White (Bright)','RGBA':[0xff,0xff,0xff,0xff],'enabled':True,'index':15}]
 
 ZXPalettes = [['ZX Spectrum',Palette_ZXSpectrum]]
+
+Native_Ext = ['.SCR']
 
 #HiRes
 def zx_get2closest(colors,p_in,p_out,fixed):
@@ -115,11 +120,70 @@ def buildfile(buffers):
 # save_output: a list of lists in the format ['name','extension',save_function]
 
 GFX_MODES=[{'name':'ZX Spectrum','bpp':1,'attr':(8,8),'global_colors':(False,False),'palettes':ZXPalettes,
-            'global_names':[],
+            'global_names':[],'match':Palette.colordelta.CCIR,
             'in_size':(256,192),'out_size':(256,192),'get_attr':zx_get2closest,'bm_pack': bmpackhi,'attr_pack':attrpack,
-            'get_buffers': get_buffers,'save_output':[['ZX Spectrum .scr','.scr',lambda buf,c: buildfile(buf)]]},
-            {'name':'ZX Spectrum unrestricted','bpp':4,'attr':(0,0),'global_colors':(False,False),'palettes':ZXPalettes,
-             'global_names':[],
-            'in_size':(256,192),'out_size':(256,192),'get_attr': None,'bm_pack': None,'attr_pack': None,
-            'get_buffers': None,'save_output': None}]
+            'get_buffers': get_buffers,'save_output':[['ZX Spectrum .scr','.scr',lambda buf,c: buildfile(buf)]]}]
 
+##############################
+# Load native image format
+##############################
+def load_Image(filename:str):
+
+    def bitcount(x):
+        return bin(x).count('1')
+
+    colorcnt = [0]*16
+    multi = gfxmodes.ZXHI
+    data = [None]*3
+    gcolors = [0]*2  # Border, Background
+    extension = os.path.splitext(filename)[1].upper()
+    fsize = os.stat(filename).st_size
+    # Read file
+    if (extension == '.SCR') and (fsize == 6912):
+        with open(filename,'rb') as ifile:
+            # Bitmap data
+            data[0] = ifile.read(6144)
+            # Attribute data
+            data[1] = ifile.read(768)
+            text = 'ZX Spectrum Screen'
+            for i in range(6144):
+                v = data[0][i]
+                colorcnt[v>>4] += bitcount(data[0][i])      # Can be replaced with int.bit_count() for Python 3.10+
+                colorcnt[v&15] += 8-bitcount(data[0][i])
+            gcolors[0] = colorcnt.index(max(colorcnt))      # Set most used color as border
+    else:
+        return None
+    # Render image
+    # Generate palette(s)
+    rgb_in = []
+    for c in Palette_ZXSpectrum: # iterate colors
+        rgb_in.append(np.array(c['RGBA'][:3]))   # ignore alpha for now
+    fsPal = [element for sublist in rgb_in for element in sublist]
+    plen = len(fsPal)//3
+    fsPal.extend(fsPal[:3]*(256-plen))
+
+    nimg = np.empty((192,256),dtype=np.uint8)
+    t_cell = [0,0,0,0,0,0,0,0]
+    for c in range(768):
+        x = c%32
+        y = c//32
+        offset = x+(((y%8)*32)+(2048*((y*256)//2048)))
+        for j in range(0,2048,256):
+            t_cell[j//256] = data[0][offset+j]
+        cell = np.unpackbits(np.array(t_cell,dtype=np.uint8), axis=0)
+        bright = (data[1][c]&64)>>3
+        fg = (data[1][c]&7)|bright
+        bg = ((data[1][c]&56)>>3)|bright
+        fgbg = {0:bg,1:fg}
+        ncell = np.copy(cell)
+        for k,v in fgbg.items():
+            ncell[cell==k] = v
+        sr = int(c/32)*8
+        er = sr+8
+        sc = (c*8)%256
+        ec = sc+8
+        nimg[sr:er,sc:ec] = ncell.reshape(8,8)
+    tmpI = Image.fromarray(nimg,mode='P')
+    tmpI.putpalette(fsPal)
+
+    return [tmpI,multi,data,gcolors,text]

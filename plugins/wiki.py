@@ -49,6 +49,8 @@ def plugFunction(conn:Connection):
     TxTtag = f'<INK c={wcolors.TxtColor}>'
     if 'MSX' in conn.mode:
         hcode = 0x17
+    elif 'ZX' in conn.mode:
+        hcode = ord('-')
     else:
         hcode = 0x40
 

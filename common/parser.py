@@ -96,7 +96,7 @@ class TMLParser(HTMLParser):
         ###
         self.t_mono.update(EX.t_mono)			    # Plugins and Extensions functions
         if conn.T56KVer > 0:                        # Add Turbo56K tags only if the terminal supports them
-            self.t_mono.update(turbo_tags)
+            self.t_mono.update(conn.T56KCmd.tags)
         self.t_mono.update(conn.encoder.tml_mono)	# Encoder definitions
         #self.t_mono.update(TT.t_mono)			# Turbo56K functions
         self.t_mono =  {k.lower(): v for k, v in self.t_mono.items()}

@@ -9,6 +9,7 @@ from common.imgcvt import c64 as c64
 from common.imgcvt import plus4 as p4
 from common.imgcvt import msx as msx
 from common.imgcvt import rle as rle
+from common.imgcvt import zxspectrum as zx
 from common.imgcvt import palette as Palette
 from common.imgcvt import dither as DT
 from common.imgcvt.types import gfxmodes, cropmodes
@@ -18,13 +19,13 @@ import os
 GFX_MODES = []
 
 # Mode conversion mapping
-mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI,gfxmodes.P4MULTI:gfxmodes.C64MULTI,gfxmodes.MSXSC2:gfxmodes.C64MULTI,gfxmodes.VTHI:gfxmodes.C64HI,gfxmodes.VTMED:gfxmodes.C64HI},
-             'PET264':{gfxmodes.C64HI:gfxmodes.P4HI,gfxmodes.C64MULTI:gfxmodes.P4MULTI,gfxmodes.MSXSC2:gfxmodes.P4MULTI,gfxmodes.VTHI:gfxmodes.P4HI,gfxmodes.VTMED:gfxmodes.P4HI},
-             'MSX1':{gfxmodes.P4HI:gfxmodes.MSXSC2,gfxmodes.P4MULTI:gfxmodes.MSXSC2,gfxmodes.C64HI:gfxmodes.MSXSC2,gfxmodes.C64MULTI:gfxmodes.MSXSC2,gfxmodes.VTHI:gfxmodes.MSXSC2,gfxmodes.VTMED:gfxmodes.MSXSC2},
-             'VIDTEX':{gfxmodes.C64HI:gfxmodes.VTHI,gfxmodes.C64MULTI:gfxmodes.VTHI,gfxmodes.P4HI:gfxmodes.VTHI,gfxmodes.P4MULTI:gfxmodes.VTHI,gfxmodes.MSXSC2:gfxmodes.VTHI}}
+mode_conv = {'PET64':{gfxmodes.P4HI:gfxmodes.C64HI, gfxmodes.P4MULTI:gfxmodes.C64MULTI, gfxmodes.MSXSC2:gfxmodes.C64MULTI, gfxmodes.VTHI:gfxmodes.C64HI, gfxmodes.VTMED:gfxmodes.C64HI, gfxmodes.ZXHI:gfxmodes.C64HI},
+             'PET264':{gfxmodes.C64HI:gfxmodes.P4HI, gfxmodes.C64MULTI:gfxmodes.P4MULTI, gfxmodes.MSXSC2:gfxmodes.P4MULTI, gfxmodes.VTHI:gfxmodes.P4HI, gfxmodes.VTMED:gfxmodes.P4HI, gfxmodes.ZXHI:gfxmodes.P4HI},
+             'MSX1':{gfxmodes.P4HI:gfxmodes.MSXSC2, gfxmodes.P4MULTI:gfxmodes.MSXSC2, gfxmodes.C64HI:gfxmodes.MSXSC2, gfxmodes.C64MULTI:gfxmodes.MSXSC2, gfxmodes.VTHI:gfxmodes.MSXSC2, gfxmodes.VTMED:gfxmodes.MSXSC2, gfxmodes.ZXHI:gfxmodes.MSXSC2},
+             'VIDTEX':{gfxmodes.C64HI:gfxmodes.VTHI, gfxmodes.C64MULTI:gfxmodes.VTHI, gfxmodes.P4HI:gfxmodes.VTHI, gfxmodes.P4MULTI:gfxmodes.VTHI, gfxmodes.MSXSC2:gfxmodes.VTHI, gfxmodes.ZXHI:gfxmodes.VTHI}}
 
 # Native format filename extensions
-im_extensions = c64.Native_Ext + p4.Native_Ext + msx.Native_Ext + rle.Native_Ext
+im_extensions = c64.Native_Ext + p4.Native_Ext + msx.Native_Ext + rle.Native_Ext + zx.Native_Ext
 
 ######## Image preprocess class ########
 class PreProcess:
@@ -53,8 +54,8 @@ def build_modes():
         GFX_MODES.append(m)
     for m in rle.GFX_MODES:
         GFX_MODES.append(m)
-    # for m in zx.GFX_MODES:
-    #     GFX_MODES.append(m)
+    for m in zx.GFX_MODES:
+        GFX_MODES.append(m)
 
 ###########################
 # Image crop and resize
@@ -429,6 +430,8 @@ def open_Image(filename:str):
         result = msx.load_Image(filename)
     elif extension in rle.Native_Ext:
         result = rle.load_Image(filename)
+    elif extension in zx.Native_Ext:
+        result = zx.load_Image(filename)
     else:
         return None
     return result

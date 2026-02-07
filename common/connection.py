@@ -53,6 +53,7 @@ class Connection:
 
         self.TermString = '' 		# Terminal identification string
         self.T56KVer = 0			# Terminal Turbo56K version
+        self.T56KCmd = None         # Turbo56K object
         self.TermFt = {i:None for i in range(128,256)}	# Terminal features
         self.TermFt[0xFF] = 0
         self.TermFt[0xFE] = 0
@@ -102,6 +103,9 @@ class Connection:
                 self.mode = tmp.name
             # Reinit Terminal features
             self.TermFt[0xb7] = None	# Maybe reinit the whole dictionary in the future?
+            if self.T56KCmd != None:
+                del(self.T56KCmd)
+            self.T56KCmd = TT.Turbo56K(self)
             del(self.parser)
             self.parser = TMLParser(self)
             del(self.style)

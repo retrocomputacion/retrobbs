@@ -28,7 +28,7 @@ CRSR_UP = 0x0B
 CRSR_DOWN = 0x0A
 CLEAR = 0xFD    #0xFB
 HOME = 0x0B
-DELETE = 0x08
+DELETE = 0x0C
 
 #--Foreground Colors
 BLACK = 0x00
@@ -78,7 +78,7 @@ t_mono = 	{'ZXSTD':{'CLR':chr(CLEAR),'HOME':chr(AT)+'\x00\x00','RVSON':chr(INVER
             'PAPER':(lambda c:'\x11'+chr(c),[('_R','_C'),('c',7)])} #,'INK':(lambda c:'\x10'+chr(c),[('_R','_C'),('c',7)])}
 }
 t_multi =	{'ZXSTD':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_RIGHT),'CRSRD':chr(CRSR_DOWN),'DEL':chr(DELETE),
-            'POUND':chr(POUND),'UARROW':'^','VLINE':chr(VLINE),
+            'POUND':chr(POUND),'UARROW':'^','VLINE':chr(VLINE),'CHECKMARK':'+',
             'BLOCK':'\x8F',
             'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
             'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'U-HALF':chr(U_HALF),'R-HALF':chr(R_HALF),
@@ -386,38 +386,37 @@ def zxhandler(e):
 ###################################
 def _Register():
     codecs.register_error('zxspc',zxhandler)  # Register encoder error handler. 
-    # e0 = Sinclairencoder('ZX1')
-    # e0.clients = {b'Z1':'Retroterm ZX',b'TS':'Retroterm 2048'}
-    # e0.tml_mono  = t_mono['ZX1']
-    # e0.tml_multi = t_multi['ZX1']
+    e0 = Sinclairencoder('ZX1')
+    e0.clients = {b'Z1':'Retroterm ZX',b'TS':'Retroterm 2068'}
+    e0.tml_mono  = t_mono['ZXSTD']
+    e0.tml_multi = t_multi['ZXSTD']
     # e0.bbuffer = 0x02ed #Bottom of the buffer
     # e0.tbuffer = 0xbfff #Top of the buffer
-    # e0.palette = PALETTE
-    # e0.colors = {'BLACK':1,'GREEN':2,'LTGREEN':3,'BLUE':4,'LTBLUE':5,'DARK_RED':6,'CYAN':7,'RED':8,'PINK':9,'YELLOW':10,
-    #              'LTYELLOW':11,'DARK_GREEN':12,'PURPLE':13,'GREY':14,'WHITE':15,'LIGHT_GREY':14,'DARK_GREY':14,'GREY1':14,
-    #              'GREY2':14,'MEDIUM_GREY':14,'ORANGE':9,'BROWN':6, 'GREY3':14,'LIGHT_BLUE':5,'LIGHT_GREEN':3,
-    #              'DGREEN':12,'DRED':6,'DKRED':6,'DGREEN':12}
-    # # e0.def_gfxmode = gfxmodes.MSXSC2
-    # # e0.gfxmodes = (gfxmodes.MSXSC2,)
-    # e0.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
-    #                'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE)}
-    # e0.features['color']  = True
-    # e0.features['reverse'] = True
+    e0.palette = PALETTE
+    e0.colors = {'BLACK':0,'BLUE':1,'RED':2,'PURPLE':3,'GREEN':4,'CYAN':5,'YELLOW':6,'WHITE':7}
+    e0.def_gfxmode = gfxmodes.ZXHI
+    e0.gfxmodes = (gfxmodes.ZXHI,)
+    e0.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE)}
+    e0.features['bgcolor'] = 2
+    e0.features['color']  = True
+    e0.features['reverse'] = True
 
     # Non-Turbo56K encoders
     e1 = Sinclairencoder('ZXstd')
     e1.minT56Kver = 0
+    e1.bs = '\x08'
     e1.palette = PALETTE
     e1.colors = {'BLACK':0,'BLUE':1,'RED':2,'PURPLE':3,'GREEN':4,'CYAN':5,'YELLOW':6,'WHITE':7}
-    e1.clients = {b'ZX0':'Sinclair ASCII'}
+    e1.clients = {b'ZX0':'Sinclair ASCII (TSTerm)'}
     e1.tml_mono  = t_mono['ZXSTD']
-    e1.tml_multi = t_multi['ZXSTD']
-    # e1.tml_multi['DEL'] = chr(0x7f)
+    e1.tml_multi = t_multi['ZXSTD'].copy()
+    e1.tml_multi['DEL'] = '\x08'
     e1.ctrlkeys = {'CRSRU':chr(CRSR_UP),'CRSRD':chr(CRSR_DOWN),'CRSRL':chr(CRSR_LEFT),'CRSRR':chr(CRSR_RIGHT),
-                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':chr(DELETE)}
+                   'HOME':chr(HOME),'CLEAR':chr(CLEAR),'DELETE':'\x08'}
     e1.features['windows'] = 0
-    e1.features['bgcolor'] = 0
+    e1.features['bgcolor'] = 2
     e1.features['color'] = True
     e1.features['reverse'] = True
 
-    return [e1]  #Each encoder module can return more than one encoder object.
+    return [e0,e1]  #Each encoder module can return more than one encoder object.

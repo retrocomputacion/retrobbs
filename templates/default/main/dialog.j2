@@ -40,6 +40,25 @@
 		<B-HALF n={{scwidth-1}}><CRSRL><INS><B-HALF><CRSRR>
 		<WHITE><HOME>
 	{% endif %}
+{% elif mode == 'ZX1' %}
+	<WHITE><RVSON>
+	{% if conn.QueryFeature(177) < 128 %}
+		<LFILL row=0 code=45>{# replace with HLINE #}
+		{% for l in range(1,height)%}
+			<LFILL row={{l}} code=143>
+		{% endfor %}
+		<BLUE>
+		<LFILL row={{height}} code=131>
+		<WHITE>
+	{% else %}
+		<HLINE n={{scwidth-1}}><CRSRL><INS><HLINE><CRSRR>
+		{% for l in range(1,height)%}
+			<SPC n={{scwidth-1}}><CRSRL><INS> <CRSRR>
+		{% endfor %}
+		<GREY>
+		<B-HALF n={{scwidth-1}}><CRSRL><INS><B-HALF><CRSRR>
+		<WHITE><HOME>
+	{% endif %}
 {% elif mode in ['ANSI','ATRSTL'] %}
 	<GREY3><RVSON>
 	<HLINE n={{scwidth}}>

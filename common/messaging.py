@@ -38,6 +38,8 @@ def readMessage(conn:Connection, msg_id:int):
     scwidth,scheight = conn.encoder.txt_geo
     if 'MSX' in conn.mode:
         hcode = 0x17
+    elif 'ZX' in conn.mode:
+        hcode = ord('-')
     else:
         hcode = 0x40
     db:DBase = conn.bbs.database
@@ -338,6 +340,10 @@ Press {_dec(conn.encoder.back)} to continue...'''
             win = False
         if 'MSX' in conn.mode:
             hcode = 0x17
+            tcolor = '<WHITE>'
+            hlcolor = '<YELLOW>'
+        elif 'ZX' in conn.mode:
+            hcode = ord('-')
             tcolor = '<WHITE>'
             hlcolor = '<YELLOW>'
         else:
@@ -677,6 +683,8 @@ def inbox(conn:Connection, board):
     ellipsis = conn.encoder.ellipsis
     if 'MSX' in conn.mode:
         hcode = 0x17
+    elif 'ZX' in conn.mode:
+        hcode = ord('-')
     else:
         hcode = 0x40
     _dec = conn.encoder.decode

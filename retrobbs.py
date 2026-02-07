@@ -1166,8 +1166,14 @@ def UserList(conn:Connection):
     users = sorted(users, key= lambda l:l[0])
     digits = len(str(max(users[:])[0]))
     tml = '<WHITE> ID         Username<BR><BR><LTGREEN>'
+    if 'PET' in conn.mode:
+        hcode = 0x40
+    elif 'ZX' in conn.mode:
+        hcode = ord('-')
+    else:
+        hcode = 0x17
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        tml += f'<LFILL row=4 code={64 if "PET" in conn.mode else 0x17}>'
+        tml += f'<LFILL row=4 code={hcode}>'
     else:
         tml += f'<CRSRU><HLINE n={conn.encoder.txt_geo[0]}>'
     conn.SendTML(tml)

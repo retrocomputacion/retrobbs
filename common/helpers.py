@@ -103,7 +103,7 @@ def wordwrap(conn:Connection, text:str, split = False, encode = False):
 #####################
 def More(conn:Connection, text, lines, colors=None):
 
-    if conn.QueryFeature(TT.SPLIT_SCR) >= 0x80:
+    if conn.QueryFeature(TT.SET_WIN) >= 0x80:
         lines = conn.encoder.txt_geo[1]
     if colors == None:
         colors = conn.style

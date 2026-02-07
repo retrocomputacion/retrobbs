@@ -453,6 +453,9 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
     elif conn.mode == 'MSX1':
         gfxhi = gfxmodes.MSXSC2
         gfxmulti = -1
+    elif conn.mode == 'ZX1':
+        gfxhi = gfxmodes.ZXHI
+        gfxmulti = -1
     elif conn.mode == 'VidTex':
         gfxhi = gfxmodes.VTHI if gfxmodes.VTHI in conn.encoder.gfxmodes else gfxmodes.VTMED
         gfxmulti = -1
@@ -561,7 +564,10 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
             # Bitmap data
             binaryout = data[0][0:tbytes] # Bitmap
             # Set the transfer pointer + $00 (screen memory)
-            binaryout += b'\x81\x00'
+            if cmode == 'ZX1':
+                binaryout += b'\x81\x20'
+            else:
+                binaryout += b'\x81\x00'
             # Transfer screen block + Byte count (low, high)
             binaryout += b'\x82'
             binaryout += tchars.to_bytes(2,'little')	#Block size
@@ -570,7 +576,7 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
             if border == None:
                 border = b'\x00' if bgcolor == None else bgcolor
             border = bytes([border]) if type(border) == int else border
-            if (gfxmode == gfxmulti) or (cmode != 'PET64' and data[2] != None):
+            if (gfxmode == gfxmulti) or (cmode not in ['PET64','ZX1'] and data[2] != None):
                 # Set the transfer pointer + $20 (color memory)
                 if 'MSX' in cmode:
                     binaryout += b'\x81\x21'
@@ -1034,12 +1040,13 @@ def SendRAWFile(conn:Connection,filename, wait=True):
 # Sends a text or sequential file
 #####################################
 def SendText(conn:Connection, filename, title='', lines=25):
+    l = lines
     if title != '':
         S.RenderMenuTitle(conn, title)
-        l = conn.encoder.txt_geo[1]-3
-        conn.SendTML(f'<WINDOW top=3 bottom={l+2}>')
+        if conn.QueryFeature(TT.SET_WIN) < 0x80:
+            l = conn.encoder.txt_geo[1]-3
+            conn.SendTML(f'<WINDOW top=3 bottom={l+2}>')
     else:
-        l = lines
         conn.SendTML('<CLR>')
 
     if filename.endswith(('.txt','.TXT')):

@@ -26,6 +26,8 @@ def plugFunction(conn:Connection):
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             if 'MSX' in conn.mode:
                 conn.SendTML(f'<CURSOR enable=False><PAPER c=13><WHITE><LFILL row=3 code=23><LFILL row={scheight-3} code=23><PAPER c={conn.style.BgColor}><CURSOR>')
+            elif 'ZX' in conn.mode:
+                conn.SendTML(f'<CURSOR enable=False><PAPER c=3><WHITE><LFILL row=3 code={ord('-')}><LFILL row={scheight-3} code={ord('-')}><PAPER c={conn.style.BgColor}><CURSOR>')
             else:
                 conn.SendTML(f'<PURPLE><LFILL row=3 code=192><LFILL row={scheight-3} code=192>') # Window borders
         else:

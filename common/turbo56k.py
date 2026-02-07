@@ -2,6 +2,10 @@
 #Turbo56K - Protocol#
 #####################
 
+# from common.connection import Connection # Moved to the end of the file to avoid circular import
+
+
+
 #Constants
 CMDON = 0xFF    # Enters command mode
 CMDOFF = 0xFE   # Exits command mode
@@ -255,6 +259,138 @@ def fill(pen,x,y,bin = False):
         return bytes([CMDON,FILL,pen,x[0],x[1],y[0],y[1],chr(CMDOFF)])
     else:
         return chr(CMDON)+chr(FILL)+chr(pen)+x.decode('latin1')+y.decode('latin1')+chr(CMDOFF)
+    
+class Turbo56K:
+    def __init__(self,conn):
+        self.conn:Connection = conn
+        # Here build turbo_tags dictionary
+        self.tags = {'SETOUTPUT':(self.setOutput,[('_R','_C'),('o',True)]),
+          'TEXT':(self.toText,[('_R','_C'),('page',0),('border',0),('background',0)]),
+          'GRAPHIC':(self.graphics,[('_R','_C'),('mode',False),('page',0),('border',0),('background',0)]),
+          'RESET':(reset_Turbo56K,[('_R','_C')]),
+          'LFILL':(self.fillLine,[('_R','_C'),('row',0),('code',0)]),
+          'CURSOR':(self.cursor,[('_R','_C'),('enable',True)]),
+          'WINDOW':(self.window,[('_R','_C'),('top',0),('bottom',24)]),
+          'SPLIT':(self.splitScreen,[('_R','_C'),('row',0),('multi',False),('bgtop',0),('bgbottom',0),('mctop',0),('bin',False),('mode','PET64')]),
+          'SCROLL':(self.scroll,[('_R','_C'),('rows',0)]),
+          'AT':(self.setCRSR,[('_R','_C'),('x',0),('y',0)]),
+          'SCNCLR':(self.gfxClear,[('_R','_C')]),
+          'PENCOLOR':(self.penColor,[('_R','_C'),('pen',1),('color',0)]),
+          'PLOT':(self.plot,[('_R','_C'),('pen',1),('x',0),('y',0)]),
+          'LINE':(self.line,[('_R','_C'),('pen',1),('x1',0),('y1',0),('x2',0),('y2',0)]),
+          'BOX':(self.box,[('_R','_C'),('pen',1),('x1',0),('y1',0),('x2',0),('y2',0),('fill',False)]),
+          'CIRCLE':(self.circle,[('_R','_C'),('pen',1),('x',0),('y',0),('rx',0),('ry',0)]),
+          'FILL':(self.fill,[('_R','_C'),('pen',1),('x',0),('y',0)])
+         }
+    
+    def setOutput(self, screen:bool=True):
+        if screen:
+            return to_Screen()
+        else:
+            return to_Speech()
+    
+    def toText(self, page=0, border=0, background=0):
+        return to_Text(page,border,background)
+
+    def graphics(self, mode=False, page=0, border=0, background=0):
+        if self.conn.QueryFeature(HIRES) < 0x80:
+            if mode:
+                return to_Multi(page,border,background)
+            else:
+                return to_Hires(page,border)
+        else:
+            # Here check if the encoder has a graphic tag
+            if 'GRAPHIC' in self.conn.encoder.tml_mono:
+                return self.conn.encoder.tml_mono['GRAPHIC'][0](mode,page,border,background)
+            else:
+                return ''
+    
+    def fillLine(self, row=0, code=0):
+        if self.conn.QueryFeature(LINE_FILL) < 0x80:
+            return Fill_Line(row,code)
+        else:
+            return ''
+
+    def cursor(self, enable=True):
+        if self.conn.QueryFeature(CURSOR_EN) < 0x80:
+            return enable_CRSR() if enable else disable_CRSR()
+        else:
+            if 'CURSOR' in self.conn.encoder.tml_mono:
+                return self.conn.encoder.tml_mono['CURSOR'][0](enable)
+            else:
+                return ''
+    
+    def window(self, top=0, bottom=24):
+        if self.conn.QueryFeature(SET_WIN) < 0x80:
+            return set_Window(top,bottom)
+        else:
+            return ''
+    
+    def splitScreen(self, row=0, multi=False, bgtop=0, bgbottom=0, mctop=0, bin=False, mode='PET64'):
+        if self.conn.QueryFeature(SPLIT_SCR) < 0x80:
+            return split_Screen(row,multi,bgtop,bgbottom,mctop,False,mode)
+        else:
+            return ''
+
+    def scroll(self, rows=0):
+        if self.conn.QueryFeature(SCROLL) < 0x80:
+            return scroll(rows)
+        else:
+            if 'SCROLL' in self.conn.encoder.tml_mono:
+                return self.conn.encoder.tml_mono['SCROLL'][0](rows)
+            else:
+                return ''
+    
+    def setCRSR(self, x=0, y=0):
+        if self.conn.QueryFeature(SET_CRSR) < 0x80:
+            return set_CRSR(x,y)
+        else:
+            if 'AT' in self.conn.encoder.tml_mono:
+                return self.conn.encoder.tml_mono['AT'][0](x,y)
+            else:
+                return ''
+
+    def gfxClear(self):
+        if self.conn.QueryFeature(SCNCLR) < 0x80:
+            return screen_clear()
+        else:
+            return ''
+    
+    def penColor(self, pen=1, color=0):
+        if self.conn.QueryFeature(PENCOLOR) < 0x80:
+            return pen_color(pen,color)
+        else:
+            return ''
+
+    def plot(self, pen=1, x=0, y=0):
+        if self.conn.QueryFeature(PLOT) < 0x80:
+            return plot(pen,x,y)
+        else:
+            return ''
+
+    def line(self, pen=1, x1=0, y1=0, x2=0, y2=0):
+        if self.conn.QueryFeature(LINE) < 0x80:
+            return line(pen,x1,y1,x2,y2)
+        else:
+            return ''
+
+    def box(self, pen=1, x1=0, y1=0, x2=0, y2=0, fill=False):
+        if self.conn.QueryFeature(BOX) < 0x80:
+            return box(pen,x1,y1,x2,y2,fill)
+        else:
+            return ''
+
+    def circle(self, pen=1, x=0, y=0, rx=0, ry=0):
+        if self.conn.QueryFeature(CIRCLE) < 0x80:
+            return circle(pen,x,y,rx,ry)
+        else:
+            return ''
+
+    def fill(self, pen=1, x=0, y=0):
+        if self.conn.QueryFeature(FILL) < 0x80:
+            return fill(pen,x,y)
+        else:
+            return ''
 
 ###################################################################################
 # TML tags (Added at TML parser creation time only if the client supports them)
@@ -277,3 +413,5 @@ turbo_tags = {'SETOUTPUT':(lambda o: to_Screen() if o else to_Speech(),[('_R','_
           'CIRCLE':(circle,[('_R','_C'),('pen',1),('x',0),('y',0),('rx',0),('ry',0)]),
           'FILL':(fill,[('_R','_C'),('pen',1),('x',0),('y',0)])
          }
+
+from common.connection import Connection    # Moved here to avoid circular import

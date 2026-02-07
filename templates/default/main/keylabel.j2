@@ -77,7 +77,7 @@
 	{% endif %}
 	<SPC><RVSOFF><INK c={{ c2 }}>{{ label }}
 {# ZX Spectrum/TS2068 #}
-{% elif mode in ['ZXstd','TSstd'] %}
+{% elif mode in ['ZXstd','TSstd','ZX1'] %}
 	<INK c={{ c1 }}><R-HALF><RVSON>
 	{% if bg1 >= 0 %}
 		<PAPER c={{ bg1 }}>

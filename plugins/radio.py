@@ -35,6 +35,8 @@ def plugFunction(conn:Connection):
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             if 'MSX' in conn.mode:
                 conn.SendTML('<GREEN><LFILL row=1 code=23>')
+            elif 'ZX' in conn.mode:
+                conn.SendTML('<GREEN><LFILL row=1 code=45>')
             else:
                 conn.SendTML('<GREEN><LFILL row=1 code=64>')
         else:

@@ -226,10 +226,10 @@ Accepted commands:
     ####
     scwidth,scheight = conn.encoder.txt_geo
     if 'MSX' in conn.mode:
-        bcode = 0xDB
         hcode = 0x17
+    elif 'ZX' in conn.mode:
+        hcode = ord('-')
     else:
-        bcode = 0xA0
         hcode = 0x40
     S.RenderMenuTitle(conn,'IRC')
     if win:

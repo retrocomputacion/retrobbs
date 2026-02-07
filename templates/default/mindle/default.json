@@ -47,6 +47,14 @@
         "BgColor"		: "GREY3",
         "TxtColor"      : "GREY2"
     },
+    "ZX1":{
+        "BgColor"		: "WHITE",
+        "ToddColor"     : "DKRED",
+        "OoddBack"      : "BLACK",
+        "TevenColor"    : "BLUE",
+        "OevenBack"     : "BLACK",
+        "TxtColor"      : "BLUE"
+    },
     "ZXstd":{
         "BgColor"		: "WHITE",
         "ToddColor"     : "DKRED",
