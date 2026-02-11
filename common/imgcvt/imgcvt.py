@@ -394,17 +394,6 @@ def get_IndexedImg(mode: gfxmodes = gfxmodes.C64HI, bgcolor = 0):
     inPal = Palette.Palette(hd_p)
     return inPal.create_PIL_png_from_closest_colour(cc), inPal
 
-######################################################################
-# Returns the color palette index closest to the passed RGB values
-######################################################################
-def get_ColorIndex(mode: gfxmodes, rgb):
-    pal = GFX_MODES[mode]['palettes'][0][1]
-    dist = [2**1024]*len(pal)
-    for c in pal:
-        if c['enabled']:
-            dist[c['index']] = CC.Redmean(rgb,c['RGBA'][:3])
-    return dist.index(min(dist))
-
 ###############################################################
 # Returns the RGB values for the index in the color palette
 ###############################################################
@@ -416,6 +405,17 @@ def get_RGB(mode: gfxmodes, index):
             if c['index'] == index:
                 return c['RGBA'][:3]
     return rgb
+
+######################################################################
+# Returns the color palette index closest to the passed RGB values
+######################################################################
+def get_ColorIndex(mode: gfxmodes, rgb):
+    pal = GFX_MODES[mode]['palettes'][0][1]
+    dist = [2**1024]*len(pal)
+    for c in pal:
+        if c['enabled']:
+            dist[c['index']] = CC.Redmean(rgb,c['RGBA'][:3])
+    return dist.index(min(dist))
 
 ########################################################################################
 # Open a native image, return Image object, (Native image data if any, Graphic mode)

@@ -16,7 +16,7 @@ Palette_ZXSpectrum = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':Tr
     {'color':'Cyan','RGBA':[0x00,0xd8,0xd8,0xff],'enabled':True,'index':5},{'color':'Yellow','RGBA':[0xd8,0xd8,0x00,0xff],'enabled':True,'index':6},
     {'color':'White','RGBA':[0xd8,0xd8,0xd8,0xff],'enabled':True,'index':7},{'color':'Black (Bright)','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':8},
     {'color':'Blue (Bright)','RGBA':[0x00,0x00,0xff,0xff],'enabled':True,'index':9},{'color':'Red (Bright)','RGBA':[0xff,0x00,0x00,0xff],'enabled':True,'index':10},
-    {'color':'Magenta (Bright)','RGBA':[0xff,0x00,0xff,0xff],'enabled':True,'index':11},{'color':'Green (Bright','RGBA':[0x00,0xff,0x00,0xff],'enabled':True,'index':12},
+    {'color':'Magenta (Bright)','RGBA':[0xff,0x00,0xff,0xff],'enabled':True,'index':11},{'color':'Green (Bright)','RGBA':[0x00,0xff,0x00,0xff],'enabled':True,'index':12},
     {'color':'Cyan (Bright)','RGBA':[0x00,0xff,0xff,0xff],'enabled':True,'index':13},{'color':'Yellow (Bright)','RGBA':[0xff,0xff,0x00,0xff],'enabled':True,'index':14},
     {'color':'White (Bright)','RGBA':[0xff,0xff,0xff,0xff],'enabled':True,'index':15}]
 
@@ -132,7 +132,7 @@ def load_Image(filename:str):
     def bitcount(x):
         return bin(x).count('1')
 
-    colorcnt = [0]*16
+    # colorcnt = [0]*16
     multi = gfxmodes.ZXHI
     data = [None]*3
     gcolors = [0]*2  # Border, Background
@@ -146,11 +146,11 @@ def load_Image(filename:str):
             # Attribute data
             data[1] = ifile.read(768)
             text = 'ZX Spectrum Screen'
-            for i in range(6144):
-                v = data[0][i]
-                colorcnt[v>>4] += bitcount(data[0][i])      # Can be replaced with int.bit_count() for Python 3.10+
-                colorcnt[v&15] += 8-bitcount(data[0][i])
-            gcolors[0] = colorcnt.index(max(colorcnt))      # Set most used color as border
+            # for i in range(6144):
+            #     v = data[0][i]
+            #     colorcnt[v>>4] += bitcount(data[0][i])      # Can be replaced with int.bit_count() for Python 3.10+
+            #     colorcnt[v&15] += 8-bitcount(data[0][i])
+            # gcolors[0] = colorcnt.index(max(colorcnt))      # Set most used color as border
     else:
         return None
     # Render image
@@ -183,6 +183,9 @@ def load_Image(filename:str):
         sc = (c*8)%256
         ec = sc+8
         nimg[sr:er,sc:ec] = ncell.reshape(8,8)
+    colorcnt = np.unique(nimg,return_counts=True)
+    # print(colorcnt, int(colorcnt[1].argmax()))
+    gcolors[0] = colorcnt[0][int(colorcnt[1].argmax())] & 7 
     tmpI = Image.fromarray(nimg,mode='P')
     tmpI.putpalette(fsPal)
 

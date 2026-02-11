@@ -12,7 +12,7 @@ from common.connection import Connection
 from common import helpers as H
 from common import audio as AA
 from PIL import Image
-from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File, im_extensions, GFX_MODES
+from common.imgcvt import convert_To, gfxmodes, PreProcess, dithertype, cropmodes, open_Image, mode_conv, build_File, im_extensions, GFX_MODES, get_ColorIndex, get_RGB
 from io import BytesIO
 from common import turbo56k as TT
 from common import style as S
@@ -529,7 +529,10 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
         Source.close()
         bgcolor = bytes([gcolors[0]])
         gcolors = [gcolors[0]]+gcolors # Border color = bgcolor
-        border = bgcolor if border == None else bytes([border])
+        if border != None:
+            border = bytes([get_ColorIndex(gfxmode,get_RGB(pimg[1],border))])
+        else:
+            border = bgcolor # if border == None else bytes([border])
     elif pimg != None and dialog:
         mode = ImageDialog(conn,text,save=save)
         if mode < 0:
