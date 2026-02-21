@@ -1,6 +1,4 @@
-################################################################
-# Retrieves an APOD and converts it to an adecuate gfx format
-################################################################
+#Retrieves an APOD and converts it to c64 gfx format
 
 import requests
 import random
@@ -18,9 +16,9 @@ from common.imgcvt import gfxmodes
 
 url = 'https://api.nasa.gov/planetary/apod'
 
-##################
+###############
 # Plugin setup
-##################
+###############
 def setup():
     fname = "APOD"
     parpairs= []
@@ -29,9 +27,9 @@ def setup():
 start_date = datetime.today().replace(day=16, month=6, year=1995).toordinal()
 end_date = datetime.today().toordinal()
 
-#####################
+###################################
 # Plugin function
-#####################
+###################################
 def plugFunction(conn:Connection):
 
     apod_lang = {'en':['Connecting with NASA',f"<CLR><BR><LTGREEN>Converting...<BR>press <INK c={conn.style.PbColor}>"	\
@@ -70,7 +68,7 @@ def plugFunction(conn:Connection):
             if idata == None:
                 _LOG(bcolors.OKBLUE+"APOD Retrying..."+bcolors.ENDC,id=conn.id,v=3)
             i += 1
-            conn.SendTML(".<SPINNER>")
+            conn.Sendall(".")
         conn.SendTML(f'<BELL><DEL n={23+i}>')
         if idata != None:
             scwidth,scheight = conn.encoder.txt_geo
@@ -90,6 +88,17 @@ def plugFunction(conn:Connection):
             else:
                 pages = 'p/n'
             conn.SendTML(conn.templates.GetTemplate('main/navbar',**{'barline':barline,'crsr':crsr,'pages':pages,'keys':[('v','view')]}))
+            # if 'MSX' in conn.mode:
+            #     bcode = 0xDB
+            #     rcrsr = ''
+            # else:
+            #     bcode = 0xA0
+            #     rcrsr = '<CRSRR n=7><R-NARROW>'
+            # if conn.QueryFeature(TT.LINE_FILL) < 0x80:
+            #     conn.SendTML(f'<CYAN><LFILL row={barline} code={bcode}><AT x=0 y={barline}><RVSON>')
+            # else:
+            #     conn.SendTML(f'<CYAN><AT x=0 y={barline}><RVSON><SPC n={scwidth-1}><CRSRL><INS> <AT x=0 y={barline}>')
+            # conn.SendTML(f'<R-NARROW><LTBLUE>{pages}{crsr}:move<GREEN><L-NARROW>v:view<R-NARROW><CYAN>{rcrsr}<YELLOW><BACK>:exit<CYAN><L-NARROW><RVSOFF>')
             if conn.QueryFeature(TT.SET_WIN) >= 0x80:
                 conn.SendTML('<BR>')
             date = idata["date"]
@@ -101,28 +110,28 @@ def plugFunction(conn:Connection):
                 autor = idata["copyright"]
             else:
                 autor = ''
-            text = formatX(title,scwidth)
-            # Date
+            texto = formatX(title,scwidth)
+            #Date
             tdate = formatX('\n'+date+'\n\n',scwidth)
             tdate[0] = f'<INK c={conn.style.HlColor}>'+tdate[0]
-            text += tdate
-            # Author
+            texto += tdate
+            #Author
             if autor != '':
                 at = formatX(autor,scwidth)
                 at[0] = f'<INK c={conn.style.TevenColor}>'+at[0]
             else:
                 at = ['<BR>']
-            # Description
+            #Description
             tdesc = formatX(desc,scwidth)
             tdesc[0] = f'<INK c={conn.style.TxtColor}>'+tdesc[0]
-            text += at+tdesc
+            texto += at+tdesc
             conn.SendTML(f'<WINDOW top=3 bottom={scheight-2}>')
-            ukey = text_displayer(conn,text,scheight-4,ekeys='v')
+            tecla = text_displayer(conn,texto,scheight-4,ekeys='v')
             conn.SendTML('<WINDOW>')
             back = conn.encoder.back
             if conn.connected == False:
                 return()
-            if ukey == back or ukey == '':
+            if tecla == back or tecla == '':
                 loop = False
             if loop == True:
                 if conn.QueryFeature(TT.PRADDR) < 0x80 or (conn.T56KVer == 0 and len(conn.encoder.gfxmodes) > 0):
@@ -136,35 +145,31 @@ def plugFunction(conn:Connection):
                         conn.SendTML("<BR>ERROR, unable to receive image")
                 else:
                     conn.SendTML(apod_lang.get(conn.bbs.lang,'en')[2])
-                ukey = conn.ReceiveKey([conn.encoder.nl,back])
+                tecla = conn.ReceiveKey([conn.encoder.nl,back])
                 conn.SendTML('<CURSOR>')
                 if conn.connected == False:
                     _LOG(bcolors.WARNING+"ShowAPOD - Disconnect"+bcolors.ENDC,id=conn.id,v=1)
                     return()
-                if ukey == back or ukey == '':
+                if tecla == back or tecla == '':
                     loop = False
         else:
-            conn.SendTML("<BR>ERROR, unable to connect with NASA<PAUSE n=2><CLR>")
+            conn.SendTML("<BR>ERROR, unable to connect with NASA")
             _LOG(bcolors.WARNING+"Error while reaching NASA"+bcolors.ENDC,id=conn.id,v=2)
             loop = False
 
-########################
+#####################################################
 # Retrieve APOD data
-########################
+#####################################################
 def apod_info(idate, key='DEMO_KEY', retry = False):
     global url
 
     date = idate.strftime("%Y-%m-%d")
     resp = None
-    hdrs = {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0'}
-    param = {'api_key': key, 'date': date}
-    m_type = ''
     while resp == None:
         try :
-            rq = requests.get(url, params=param, timeout=8, headers=hdrs)
-            print(rq)
-            resp = rq.json()
-            print(resp)
+            param = {'api_key': key, 'date': date}
+            resp = requests.get(url, params=param, timeout=8).json()
+            #apod_url = resp["hdurl"]
             if "media_type" in resp:
                 m_type = resp["media_type"]
             else:
@@ -177,14 +182,15 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
             if retry == True:
                 _LOG('APOD - Error, retrying...')
             else:
-                break
+                m_type = ''
+                resp = -1
     if m_type != 'image':
         resp = None
     return(resp)
 
-#########################
+###################################
 # Retrieve APOD image
-#########################
+###################################
 def apod_img(conn:Connection,url):
     cv_img = None
     bitmap = None

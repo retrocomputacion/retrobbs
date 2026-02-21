@@ -141,38 +141,5 @@
         "NBarBG"        : "BLUE",
         "NBarMove"      : "LTBLUE",
         "NBarExit"      : "DKRED"
-    },
-    "ZX1":{
-        "BgColor"		: "WHITE",
-        "BoColor"		: "WHITE",
-        "TxtColor"		: "BLUE",
-        "HlColor"		: "BLACK",
-        "PbColor"		: "BLACK",
-        "PtColor"       : "BLUE",
-        "NBarBG"        : "BLUE",
-        "NBarMove"      : "CYAN",
-        "NBarExit"      : "RED"
-    },
-    "ZXstd":{
-        "BgColor"		: "WHITE",
-        "BoColor"		: "WHITE",
-        "TxtColor"		: "BLUE",
-        "HlColor"		: "BLACK",
-        "PbColor"		: "BLACK",
-        "PtColor"       : "BLUE",
-        "NBarBG"        : "BLUE",
-        "NBarMove"      : "CYAN",
-        "NBarExit"      : "RED"
-    },
-    "TSstd":{
-        "BgColor"		: "WHITE",
-        "BoColor"		: "WHITE",
-        "TxtColor"		: "BLUE",
-        "HlColor"		: "BLACK",
-        "PbColor"		: "BLACK",
-        "PtColor"       : "BLUE",
-        "NBarBG"        : "BLUE",
-        "NBarMove"      : "CYAN",
-        "NBarExit"      : "RED"
     }
 }

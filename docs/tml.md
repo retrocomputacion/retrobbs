@@ -120,7 +120,7 @@ Integer register, any value stored into this register will be typecast to a Pyth
 #### **_BACK Read only 'back key' register**:
 This special register contains the decoded '_back key_' character for the current connection.
 Use this register when testing a variable for the '_back key_'.
-##### Example: Wait for either Return/Enter or the back key, and act accordinly:
+##### Example: Wait for Return/Enter or the back key, and act accordinly:
 ```html
 <INKEY k='&backsim;&#13;'>
 <IF c='_A=="&#13;"'>
@@ -206,7 +206,7 @@ Change the text color to the value passed as parameter. Actual color is platform
 
 ---
 #### **&lt;SPINNER&gt;**
-Send the _spinner_ character, which 'animates' depicting a waiting state.</br>The actual character/animation sent is platform dependent.
+Send the _spinner_ character, which 'animates' depicting a waiting state when the blinking cursor is placed over it.</br>The actual character sent is platform dependent.
 
 ---
 #### **&lt;BACK&gt;**
@@ -301,7 +301,7 @@ Parameter:
 `m`: Encoding for this code block, default `'PET64'`
 
 
-#### **&lt;FORMAT&gt;**
+#### **&lt;FORMAT&&gt;**
 All text inside the block is formatted to fit inside the client's screen width, wordwrapping where necessary.</br>
 All code and text inside the block is parsed and send to the client once the end of the block is reached, functions/statements that return *Turbo56K* commands are ignored, do not use &lt;PAUSE&gt; and functions that require user input like &lt;INKEYS&gt; inside the block.
 
@@ -371,8 +371,6 @@ Parameter:
 
 ### **Turbo56K related commands**:
 </br>
-These tags implement Turbo56K commands, but some will still work on other modes, suchs as ANSI or VT52
-
 
 #### **&lt;AT&gt;**
 Move the client's text cursor to the requested position.</br>
@@ -415,7 +413,7 @@ Reset the client's terminal screen to the default state.
 Scroll the client's text screen in the required amount and direction.</br>
 Parameter:
 
-`rows`: Amount of rows to scroll. Positive number will scroll up, negative will scroll down. Default `0`
+`rows`: Ammount of rows to scroll. Positive number will scroll up, negative will scroll down. Default `0`
 
 ---
 #### **&lt;SETOUTPUT&gt;**
@@ -450,107 +448,6 @@ Parameters:
 
 `top`: Top most row of the window. Default `0`</br>
 `bottom`: Bottom most row of the window. Default `24`
-
-#### **&lt;SCNCLR&gt;**
-Clear the graphic screen.
-
----
-#### **&lt;PENCOLOR&gt;**
-Set on of the graphic pens to the specified color index.</br>
-Parameters:
-
-`pen`: Graphic pen to set
-`color`: Color index
-
----
-#### **&lt;PLOT&gt;**
-Plot a point on the graphic screen.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x`: X coordinate
-`y`: y coordinate
-
----
-#### **&lt;LINE&gt;**
-Draw a line on the graphic screen.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x1`: Starting X coordinate
-`y1`: Starting Y coordinate
-`x2`: End X coordinate
-`y2`: End Y coordinate
-
----
-#### **&lt;BOX&gt;**
-Draw a (filled) rectangle on the graphics screen.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x1`: First corner X coordinate
-`y1`: First corner Y coordinate
-`x2`: Second corner X coordinate
-`y2`: Second corner Y coordinate
-`fill`: True to draw a filled rectangle. False to draw only the perimeter
-
----
-#### **&lt;CIRCLE&gt;**
-Draw a circle or ellipse on the graphics screen.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x`: Center X coordinate
-`y`: Center y coordinate
-`rx`: X radius
-`ry`: Y radius
-
----
-#### **&lt;FILL&gt;**
-Flood fill</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x`: X coordinate
-`y`: Y coordinate
-
----
-#### **&lt;POLYGON&gt;**
-Draw a regular polygon on the graphics screen.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x`: Center X coordinate
-`y`: Center Y coordinate
-`r`: Radius
-`sides`: Number of sides
-`rot`: Rotation in degrees
-
----
-#### **&lt;STAR&gt;**
-Draw a star on the graphics screen.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x`: Center X coordinate
-`y`: Center Y coordinate
-`r1`: External radius
-`r2`: Internal radius
-`sides`: Number of sides/points
-`rot`: Rotation in degrees
-
----
-#### **&lt;VECTORTXT&gt;**
-Draw a string onto the graphics screen using Hershey fonts.</br>
-Parameters:
-
-`pen`: Graphic pen to use
-`x`: Starting X coordinate
-`y`: Starting Y coordinate
-`font`: Font face index
-`size`: Size in pixels
-`text`: The string to draw
-`dir`: Direction (0 = 0°, 1 = 90°, 2 = 180°, 3 = 270° clockwise)
 
 ---
 </br>
@@ -629,31 +526,6 @@ Grab a frame from a video file/stream and display it as a graphic screen on the 
 ---
 </br>
 
-### Style colors:
-
-<br>
-
-Some of the style system preset colors are accessible with _TML_ tags, these tags only affect the text ink color, but not inverse video or other text attributes.
-
-#### **&lt;TXTCOLOR&gt;**
-Default text color
-
-####  **&lt;HLCOLOR&gt;**
-Highlight text color
-
-#### **&lt;RVSCOLOR&gt;**
-Reverse video text color
-
-#### **&lt;OKCOLOR&gt;**
-Color for text indicating a successful action
-
-#### **&lt;WRNCOLOR&gt;**
-Color for text indicating warning
-
-#### **&lt;BADCOLOR&gt;**
-Color for text indicating an error or failure
-
----
 ### **Plugin functions**:
 
 </br>
@@ -665,39 +537,6 @@ Refer to the plugin section in the main readme for more information.
 ```html
 <WEBAUDIO url='http://relay3.slayradio.org:8000/'>
 ```
-
-## **Common Semigraphic characters**
-
-Some included encoders support the use of semigraphic characters in one way or another.
-For Commodore computers and MSX under Retroterm the full range of semigraphics con be unlocked by using reverse video.
-The standard MSX encoder only supports non-reversed semigraphics.
-For VidTex semigraphics is a distinct 'graphic' mode, and support depends on each terminal.
-
-#### **&lt;_xx_-QUAD&gt;**
-Display the specified quadrant(s) semigraphic, where _xx_ can be any of the following:
-
-**Common for all clients supporting semigraphics** 
-- UL: Upper Left
-- UR: Upper Right
-- LL: Lower Left
-- LR: Lower Right
-- UL-LR: Upper Left and Lower Right
-- L-HALF: Left Half
-- B-HALF: Bottom Half
-
-**Common for MSX and VidTex**
-- BLOCK: Filled block
-- R-HALF: Right Half
-- U-HALF: Upper Half
-
-**VidTex only**
-- UR-LL: Upper Right and Lower Left
-- UL-UR-LL: Upper Left and Upper Right and Lower Left
-- UL-UR-LR: Upper Left and Upper Right and Lower Right
-- UL-LL-LR: Upper Left and Lower Left and Lower Right
-- LL-LR-UR: Lower Left and Lower Right and Upper Right
-
-
 
 ## **Platform specific commands and tags**:
 
@@ -848,42 +687,7 @@ Engage character flash mode. Mode is automatically disengaged when a carriage re
 #### **&lt;FLASHOFF&gt;**
 Disengage character flash mode.
 
-### **Commodore 128**:
-
-In addition to *Commodore 64* and *Plus/4* tags... 
-
-#### **Color control codes, 80 column mode**
-Changes the text color to the specified color
- - **&lt;BLACK&gt;**
- - **&lt;WHITE&gt;**
- - **&lt;RED&gt;**
- - **&lt;CYAN&gt;**
- - **&lt;PURPLE&gt;**
- - **&lt;GREEN&gt;**
- - **&lt;BLUE&gt;**
- - **&lt;YELLOW&gt;**
- - **&lt;DPURPLE&gt;** or **&lt;DARK_PURPLE&gt;**
- - **&lt;BROWN&gt;**
- - **&lt;PINK&gt;**
- - **&lt;DCYAN&gt;** or **&lt;DARK_CYAN&gt;**
- - **&lt;GREY2&gt;** or **&lt;GREY&gt;** or **&lt;MGREY&gt;**
- - **&lt;LTGREEN&gt;**
- - **&lt;LTBLUE&gt;**
- - **&lt;GREY3&gt;** or **&lt;LT_GREY&gt;**
-
-
 ---
-
-#### **&lt;ULINEON&gt;**
-Engage character underline mode.
-
----
-
-#### **&lt;ULINEOFF&gt;**
-Disengage character flash mode.
-
----
-
 </br>
 
 ### **MSX**:
@@ -906,46 +710,9 @@ Changes the text ink color to the specified color
  - **&lt;DGREEN&gt;**
  - **&lt;LTYELLOW&gt;**
 
----
+ ---
 #### **&lt;PAPER&gt;**
 Changes the text paper color to the expecified color. Paper color applies only for text printed after this tag</br>
 Parameters:
 
 `c`: Palette color number, default `1` (black)</br>
-
----
-
-#### **&lt;POUND&gt;**
-Displays the pound "`£`" character.
-
----
-
-#### **&lt;PI&gt;**
-Displays the pi "`π`" character.
----
-
-#### **&lt;TRI-LEFT&gt;** **&lt;TRI-RIGHT&gt;** **&lt;TRI-UP&gt;** **&lt;TRI-DOWN&gt;**
-Displays a triangle occupying the corresponding character quadrant (and pointing to the opposite direction)
-
----
-</br>
-
-### VidTex ###
-
-#### **Color control codes**
-Changes the text ink color to the specified color
- - **&lt;GREEN&gt;**
- - **&lt;YELLOW&gt;**
- - **&lt;BLUE&gt;**
- - **&lt;RED&gt;**
- - **&lt;WHITE&gt;**
- - **&lt;CYAN&gt;**
- - **&lt;PURPLE&gt;**
- - **&lt;ORANGE&gt;**
- - **&lt;BLACK&gt;**
-
- #### **&lt;G4&gt;**
- Semigraphic mode
-
- #### **&lt;GN&gt;**
- Normal text mode

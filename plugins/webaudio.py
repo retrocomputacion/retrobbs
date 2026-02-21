@@ -1,6 +1,7 @@
 import urllib
 
 import time
+#import pafy
 import streamlink
 import yt_dlp
 
@@ -115,9 +116,9 @@ class AudioStreams:
 slsession = None
 # AStreams = AudioStreams()
 
-##################
+###############
 # Plugin setup
-##################
+###############
 def setup():
     global slsession
     fname = "WEBAUDIO" #UPPERCASE function name for config.ini
@@ -125,21 +126,35 @@ def setup():
     slsession = streamlink.Streamlink()
     return(fname,parpairs)
 
-#####################
+##################################################
 # Plugin function
-#####################
+##################################################
 def plugFunction(conn:connection.Connection,url,image,title):
+    #_LOG('Sending audio',id=conn.id)
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'
     conn.SendTML('<PAUSE n=1><SPINNER>')
 
-    # Streaming mode
+    #Streaming mode
     binario = b'\xFF\x83'
 
     if title != '':
         title += '\n'
     sURL = None
     sTitle = None
+    # PAFY support commented out for now. Waiting for development to restart or confirmation of its demise
+    # try:
+    #     pa = pafy.new(url)
+    #     s= pa.streams[0]
+    #     sURL = s.url
+    #     _LOG("WebAudio - Now streaming from YouTube: "+pa.title,id=conn.id,v=3)
+    #     #logo = 'plugins/youtubelogo.png'
+    #     sTitle = formatX('YouTube Stream: '+pa.title)
+    # except:
+    #     sURL = None
+    # Pafy failed, try with streamlink
+    # streamlink lacks metadata functionality
+
     ss = 0  # Start time
     sChapters = None
 
@@ -155,15 +170,13 @@ def plugFunction(conn:connection.Connection,url,image,title):
                 return
             sURL = url
             _LOG("WebAudio - Now streaming from Icecast/Shoutcast: "+req_data.getheader('icy-name'),id=conn.id,v=3)
+            #logo = 'plugins/shoutlogo.png'
             sTitle = formatX(title+'Shoutcast Stream: '+req_data.getheader('icy-name'),conn.encoder.txt_geo[0])
         except:
             sURL = None
     if sURL == None and '.m3u' not in url:
         try:
-            sURL,sTitle,sChapters,sThumb = ytdlp_resolve(conn,url,title)
-            print([image])
-            if image == '' and sThumb != None:
-                image = sThumb
+            sURL,sTitle,sChapters = ytdlp_resolve(conn,url,title)
         except:
             sURL = None
     if sURL == None:
@@ -194,7 +207,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
     if sURL == None:
         _LOG("WebAudio -"+bcolors.FAIL+" ERROR"+bcolors.ENDC,id=conn.id,v=1)
         return
-    # try to open image if any
+    #try to open image if any
     img = None
     if image != '' and conn.QueryFeature(TT.PRADDR) < 0x80:
         im = None
@@ -211,6 +224,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
                 pass
         if im != None:
             im.thumbnail((128,128))
+            # im.show()
             if conn.mode == "PET64":
                 gm = gfxmodes.C64HI
             elif conn.mode == "PET264":
@@ -218,8 +232,8 @@ def plugFunction(conn:connection.Connection,url,image,title):
             else:
                 gm = conn.encoder.def_gfxmode
             img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
-    # Display info
-    if img != None and sChapters == None:
+    #Display info
+    if img != None:
         c_black = (0,0,0)
         c_white = (0xff,0xff,0xff)
         c_yellow = (0xff,0xff,0x55)
@@ -241,6 +255,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
             draw.text((pwidth//2,pheight-8),"Press <X> to cancel",c_yellow,font=H.font_text,anchor='mt')
         else:
             draw.text((pwidth//2,pheight-20),"Press <X> and wait to stop or cancel",c_yellow,font=H.font_text,anchor='mt')
+        #draw.text((136,168),"or cancel",c_yellow,font=H.font_text)
         SendBitmap(conn,img[0],gfxmode=gm,preproc=PreProcess(),dither=dithertype.NONE)
     else:
         conn.SendTML(f'<TEXT border={conn.encoder.colors.get("BLUE",0)} background={conn.encoder.colors.get("BLUE",0)}><CLR><YELLOW>')
@@ -250,12 +265,11 @@ def plugFunction(conn:connection.Connection,url,image,title):
             conn.SendTML('<BR>')
             for i, chap in enumerate(sChapters):
                 conn.SendTML(f'<KPROMPT t={str(i+1)}> <YELLOW>{crop(chap["title"], conn.encoder.txt_geo[0], conn.encoder.ellipsis)}<BR>')
-            conn.SendTML('<BR><FORMAT>Select chapter or <KPROMPT t=return><YELLOW> to cancel:</FORMAT>')
+            conn.SendTML('<BR>Select chapter or <KPROMPT t=return><YELLOW> to cancel:')
             entry = conn.ReceiveInt(0,len(sChapters),0)
             if entry == 0:
                 return
             ss = sChapters[entry-1]['start_time']
-            conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')
             if 'MSX' in conn.mode:
                 conn.SendTML(f'<BR>Press <KPROMPT t=STOP><YELLOW> to stop<BR><KPROMPT t=X><YELLOW> to cancel<BR>')
             else:
@@ -303,7 +317,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
             conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,2)].to_bytes(1,'little'), binario))
             streaming = conn.connected
             sys.stderr.flush()
-            # Check for user cancellation
+            #Check for terminal cancelation
             conn.socket.setblocking(0)	# Change socket to non-blocking
             try:
                 hs = conn.socket.recv(1)
@@ -338,7 +352,6 @@ def ytdlp_resolve(conn,url,title):
     sURL = None
     sTitle = None
     sChapters = None
-    sThumb = None
     ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
     cookies = conn.bbs.PlugOptions.get('ytcookies','')
     if cookies != '':
@@ -347,7 +360,6 @@ def ytdlp_resolve(conn,url,title):
         info = ydl.extract_info(url, download=False)
         sTitle = formatX(title+info['webpage_url_domain']+': '+info['title'],conn.encoder.txt_geo[0])
         formats = info['formats']
-        sThumb = info.get('thumbnail',None)
         for f in formats:
             if f['resolution'] == 'audio only':
                 sURL = f['url']
@@ -356,4 +368,4 @@ def ytdlp_resolve(conn,url,title):
                 sURL = f['url']
                 break
         sChapters = info.get('chapters',None)
-    return sURL,sTitle,sChapters,sThumb
+    return sURL,sTitle,sChapters

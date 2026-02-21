@@ -10,7 +10,8 @@ from tinydb import Query
 import re
 from os import get_terminal_size
 
-
+# Data base path
+base_path = 'data/'
 
 def update(un=None):
     global data
@@ -211,7 +212,7 @@ def listusers():
 print("----RetroBBS Database maintenance tool----\n")
 
 t_size =  get_terminal_size()
-data = DB.DBase('bbsfiles/')
+data = DB.DBase(base_path+'bbsfiles/')
 print("Database open...")
 print("Checking database integrity...")
 table = data.db.table('USERS')

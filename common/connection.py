@@ -53,11 +53,10 @@ class Connection:
 
         self.TermString = '' 		# Terminal identification string
         self.T56KVer = 0			# Terminal Turbo56K version
-        self.T56KCmd = None         # Turbo56K object
         self.TermFt = {i:None for i in range(128,256)}	# Terminal features
-        self.TermFt[0xFF] = 0
-        self.TermFt[0xFE] = 0
-        self.ClientSetup = {0:[1,{'Platform':None,'Refresh':None}],1:[2,{'Text':None}],2:[1,{'Bitrate':None}],3:[2,{'RAM':None}],4:[2,{'VRAM':None}],5:[1,{'GFXModes':None}],6:[2,{'Synths':None,'PCM':None}]}
+        self.TermFt[0xFF] = b'\x00'
+        self.TermFt[0xFE] = b'\x00'
+
         self.mode = 'ASCII'			                        # Connection mode -> type of client
         self.encoder:Encoder = self.bbs.encoders[self.mode]	# Encoder for this connection
         self.style = bbsstyle(self.encoder.colors)
@@ -76,9 +75,7 @@ class Connection:
         except:
             pass
 
-    #################
     #Close socket
-    #################
     def Close(self):
         _LOG("Total bytes sent/received: "+str(self.outbytes)+'/'+str(self.inbytes),id=self.id,v=3)
         try:
@@ -87,9 +84,7 @@ class Connection:
         except:
             pass
 
-    ######################################
     #Set mode from the terminal string
-    ######################################
     def SetMode(self, idstring, t56kver):
         self.TermString = idstring
         self.T56KVer = t56kver
@@ -103,13 +98,10 @@ class Connection:
                 self.mode = tmp.name
             # Reinit Terminal features
             self.TermFt[0xb7] = None	# Maybe reinit the whole dictionary in the future?
-            if self.T56KCmd != None:
-                del(self.T56KCmd)
-            self.T56KCmd = TT.Turbo56K(self)
             del(self.parser)
             self.parser = TMLParser(self)
             del(self.style)
-            self.style = bbsstyle(self.encoder.colors)  # Init default colors
+            self.style = bbsstyle(self.encoder.colors)  #Init default colors
             del(self.templates)
             self.templates = template(self,self.bbs.Template)
             self.style = self.templates.GetStyle('default') # Set template colors
@@ -122,122 +114,41 @@ class Connection:
             return True
         else:
             return False
-    
-    ##############################
-    # Reset feature dictionary
-    ##############################
-    def ResetFeatures(self):
-        self.TermFt = {i:None for i in range(128,256)}
-        self.TermFt[0xFF] = 0
-        self.TermFt[0xFE] = 0
 
-    #####################################################
     # Query if the client terminal supports a feature
-    #####################################################
     def QueryFeature(self, cmd:int):
         #return 0x80		# Uncomment this when testing commands
         if (self.T56KVer == 0) or (cmd < 128) or (cmd > 253):
             return 0x80
         if self.T56KVer > 0.5:
             if self.TermFt[cmd] == None:
-                if self.T56KVer < 0.7:	#Try to avoid retroterm 0.14 bug
+                if self.T56KVer < 0.7:	#Try to avoid retroterm0.14 bug
                     self.Flush(0.5)
+                    # self.socket.setblocking(0)	# Change socket to non-blocking
+                    # t0 = time.time()
+                    # while time.time()-t0 < 0.5:   # Flush receive buffer for 1/2 second
+                    #     try:
+                    #         self.socket.recv(10)
+                    #     except Exception as e:
+                    #         pass
+                    # self.socket.setblocking(1)	# Change socket to blocking
+                    # self.socket.settimeout(self.bbs.TOut)
                     time.sleep(0.5)
                 self.Sendall(chr(TT.CMDON))
                 self.Sendall(chr(TT.QUERYCMD)+chr(cmd))
+                self.TermFt[cmd] = self.Receive(1)[0]	# Store as int
                 self.Sendall(chr(TT.CMDOFF))
-                tmp = self.NBReceive(1)
-                if len(tmp) > 0:
-                    self.TermFt[cmd] = tmp[0] 	# Store as int
-                else:
-                    return 0x80                 # Command failed, return 0x80 but dont store it
         elif self.TermFt[cmd] == None:
             self.TermFt[cmd] = TT.T56Kold[cmd-128][0]
         return self.TermFt[cmd]
 
-    ##############################
-    # Query the client's setup
-    ##############################
-    def QueryClient(self,subsystem:int):
-        platforms = ['Commodore 64','Commodore Plus/4','MSX','Commodore 128','Commodore VIC-20','ZX Spectrum','Atari','Apple ][','Amstrad','Amiga','Commodore PET']
-        bitrates = [0,300,600,1200,1800,2400,4800,9600,19200,28800,38400,57600,76800,115200]
-        spb = [8,2,1,0.5]   # samples per byte
-        samplerates = [11050,16000,22050]   # fixed sample rates
-
-        if self.QueryFeature(TT.QUERYCMD) < 128:
-            if subsystem < 7:
-                if None in self.ClientSetup[subsystem][1].values():
-                    self.Sendall(chr(TT.CMDON)+chr(TT.QUERYCLIENT)+chr(subsystem)+chr(TT.CMDOFF))
-                    count = self.NBReceive(1)
-                    if len(count) < 1:
-                        return None
-                    if count[0] >= self.ClientSetup[subsystem][0]:
-                        qdata = self.NBReceive(count[0])
-                        if len(qdata) < count[0]:
-                            return None
-                        if subsystem == 0:  # Platform / refresh rate
-                            if qdata[0] & 0x7F < len(platforms):
-                                self.ClientSetup[subsystem][1]['Platform'] = platforms[qdata[0] & 0x7F]
-                            else:
-                                self.ClientSetup[subsystem][1]['Platform'] = 'unknown'
-                            if qdata[0] & 0x80 == 0:
-                                self.ClientSetup[subsystem][1]['Refresh'] = 50
-                            else:
-                                self.ClientSetup[subsystem][1]['Refresh'] = 60
-                        if subsystem == 1:  # Text screen size
-                            self.ClientSetup[subsystem][1]['Text'] = [qdata[0],qdata[1]]    # TODO: Update encoder with these values
-                        if subsystem == 2:  # Bit rate
-                            if qdata[0] < len(bitrates):
-                                self.ClientSetup[subsystem][1]['Bitrate'] = bitrates[qdata[0]]
-                            else:
-                                self.ClientSetup[subsystem][1]['Bitrate'] = 57600
-                        if subsystem == 3:  # RAM
-                            self.ClientSetup[subsystem][1]['RAM'] = (qdata[1]*256)+qdata[0]
-                        if subsystem == 4:  # VRAM
-                            self.ClientSetup[subsystem][1]['VRAM'] = (qdata[1]*256)+qdata[0]
-                        if subsystem == 5:  # Graphic modes
-                            self.ClientSetup[subsystem][1]['GFXModes'] = qdata[0]   # Platform dependent - In the future the encoder should be configured here
-                        if subsystem == 6:  # Audio
-                            self.ClientSetup[subsystem][1]['Synths'] = qdata[0]   # Platform dependent - In the future the encoder should be configured here
-                            self.ClientSetup[subsystem][1]['PCM'] = qdata[1]
-                            if qdata[1] & 0b01111000 > 0:
-                                tmp_s = spb[qdata[1] & 0b11]
-                                tmp_sr = self.samplerate
-                                channels = (qdata[1] & 0b100) >> 1
-                                # tmp_s *= 1 if qdata[1] & 0b100 == 0 else 2
-                                tmp = (qdata[1] & 0b01111000) >> 3
-                                for i in range(4):  # Get lowest available samplerate (or dependent on connection speed)
-                                    if tmp & 1 == 1:
-                                        if i == 0:
-                                            if self.ClientSetup[2][1]['Bitrate'] != None:
-                                                tmp_sr = (self.ClientSetup[2][1]['Bitrate']/10)*tmp_s
-                                            break
-                                        else:
-                                            tmp_sr = samplerates[i-1]
-                                            break
-                                    tmp = tmp >> 1
-                                self.samplerate = tmp_sr
-                    else:       # Response size is too small
-                        _LOG(f"QueryClient: Response size too small / Subsystem {subsystem} not implemented", id = self.id,v=3)
-                        return None
-            else:
-                return None
-        if subsystem < 7:
-            return self.ClientSetup[subsystem][1]
-        else:
-            return None
-
-    #########################################################
-    # Set the connection into hold mode (display spinner)
-    #########################################################
+    # set the connection into hold mode (display spinner)
     def SetHold(self):
         if not self.on_hold:
             self.SendTML(self.encoder.spinner['start'])
             self.on_hold = True
 
-    #######################################################
-    # Clear the hold mode (stop displaying the spinner)
-    #######################################################
+    # clear the hold mode (stop displaying the spinner)
     def ClearHold(self):
         if self.on_hold:
             self.on_hold = False
@@ -245,22 +156,18 @@ class Connection:
             if self.encoder.spinner['loop'] != None:
                 self.spinner = cycle(self.encoder.spinner['loop'])  # Make a new iterator so it starts always on the same place
 
-    ########################################################################################
-    # Update spinner state
+    # update spinner state
     # No safety checks, this method is only called from the connection management thread
-    ########################################################################################
     def _HoldUpdate(self):
         self.on_hold = False
         self.SendTML(next(self.spinner))
         self.on_hold = True
 
-    ##############################################################
     # Converts string to binary string and sends it via socket
-    ##############################################################
-    def Sendall(self, _string):
+    def Sendall(self, cadena):
         self.ClearHold()
         if self.connected == True:
-            _bytes = bytes(_string,'latin1')
+            _bytes = bytes(cadena,'latin1')
             try:
                 self.socket.sendall(_bytes)
                 self.outbytes += len(_bytes)
@@ -268,23 +175,19 @@ class Connection:
                 self.connected = False
                 _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Sendall'+bcolors.ENDC, id=self.id,v=2)
 
-    ###################################
     # Send binary string via socket
-    ###################################
-    def Sendallbin(self, _string=b''):
+    def Sendallbin(self, cadena=b''):
         self.ClearHold()
         if self.connected == True:
             try:
-                self.socket.sendall(_string)
-                self.outbytes += len(_string)
+                self.socket.sendall(cadena)
+                self.outbytes += len(cadena)
             except socket.error:
                 #if e == errno.EPIPE:
                 _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Sendallbin'+bcolors.ENDC, id=self.id,v=2)
                 self.connected = False
 
-    ############################################
     # Flush receive buffer for ftime seconds
-    ############################################
     def Flush(self, ftime):
         self.socket.setblocking(0)	# Change socket to non-blocking
         t0 = time.time()
@@ -297,42 +200,26 @@ class Connection:
         self.socket.settimeout(self.bbs.TOut)
 
 
-    ############################################
-    # Flush receive buffer empty
-    ############################################
-    def FlushAll(self):
-        self.socket.setblocking(0)	# Change socket to non-blocking
-        while True:
-            try:
-                self.socket.recv(1)
-            except Exception as e:
-                # We exit on any error, not just EAGAIN or EWOULDLOCK
-                break
-        self.socket.setblocking(1)	# Change socket to blocking
-        self.socket.settimeout(self.bbs.TOut)
-
-    ##############################################
     # Receive (count) binary chars from socket
-    ##############################################
     def Receive(self, count):
-        _string = b''
+        cadena = b''
         if self.connected == True:
             for c in range(0,count):
                 try:
-                    _string += self.socket.recv(1)
+                    cadena += self.socket.recv(1)
                     self.inbytes += 1
                 except socket.error:
+                    #if e.errno == errno.ECONNRESET:
                     _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - Receive'+bcolors.ENDC, id=self.id,v=2)
                     self.connected = False
-                    _string = b''
+                    cadena = b''
                     break
-        return _string
+        return cadena
 
-    ###########################################################################################
     # Non-blocking receive up to (count) binary chars from socket, within (timeout) seconds
-    ###########################################################################################
     def NBReceive(self, count:int=1, timeout:float=3):
         data = b""
+        # conn.socket.settimeout(5.0)
         self.socket.setblocking(False)
         tmp = time.time()
         while ((time.time()-tmp) < timeout) and (len(data) < count):
@@ -350,31 +237,29 @@ class Connection:
         self.inbytes += len(data)
         return data
 
-    ############################################
     # Receive single binary char from socket
-    ############################################
-    def ReceiveKey(self, charlist=b''):
-        if type(charlist) != list:
-            if charlist == b'':
-                charlist = bytes(self.encoder.nl,'latin1')
-            if type(charlist) == str:
-                charlist = bytes(self.encoder.encode(charlist,True),'latin1') 
+    def ReceiveKey(self, lista=b''):
+        if type(lista) != list:
+            if lista == b'':
+                lista = bytes(self.encoder.nl,'latin1')
+            if type(lista) == str:
+                lista = bytes(self.encoder.encode(lista,True),'latin1') 
                 decode = True
             else:
                 decode = False
             t = True
             while t == True:
-                _string = b''
+                cadena = b''
                 if self.connected == True:
                     try:
                         _LOG("ReceiveKey - Waiting...",id=self.id,v=4)
-                        _string = self.socket.recv(1)
+                        cadena = self.socket.recv(1)
                         self.inbytes += 1
-                        _LOG("ReceiveKey - Received", _string, id=self.id,v=4)
-                        if _string != b'':
-                            if ('PET' in self.mode) and (_string[0] in range(0xC1,0xDA + 1)):
-                                _string = bytes([_string[0]-96])
-                            if _string in charlist:
+                        _LOG("ReceiveKey - Received", cadena, id=self.id,v=4)
+                        if cadena != b'':
+                            if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
+                                cadena = bytes([cadena[0]-96])
+                            if cadena in lista:
                                 t = False
                         else:
                             self.connected = False
@@ -382,25 +267,25 @@ class Connection:
                     except socket.error:
                         #if e.errno == errno.ECONNRESET:
                         _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - ReceiveKey'+bcolors.ENDC, id=self.id,v=2)
-                        _string = ''
+                        cadena = ''
                         self.connected = False
                         t = False
                 else:
                     t = False
-            return _string if not decode else self.encoder.decode(_string.decode('latin1'))
+            return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
         else:
-            mlen = max([len(a) for a in charlist])
+            mlen = max([len(a) for a in lista])
             vfilter = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&=<>#\\^" + chr(34)
-            _charlist = charlist.copy()
-            eflag = [False]*len(_charlist)
-            for i,item in enumerate(_charlist):     # Encode single characters
+            _lista = lista.copy()
+            eflag = [False]*len(_lista)
+            for i,item in enumerate(_lista):     # Encode single characters
                 if item in vfilter and item != self.encoder.back:
-                    _charlist[i] = self.encoder.encode(item,True)
+                    _lista[i] = self.encoder.encode(item,True)
                     eflag[i] = True
             charlist = []
             for i in range(mlen):
                 c = []
-                for j in _charlist:
+                for j in _lista:
                     if len(j) >= i+1:
                         c.append(j[i])
                     else:
@@ -416,7 +301,7 @@ class Connection:
                     self.inbytes += 1
                     if inchar in charlist[len(received)]:
                         received += inchar
-                        if received in _charlist:
+                        if received in _lista:
                             break
                     else:
                         received = ''
@@ -426,33 +311,31 @@ class Connection:
                     received = ''
                     self.connected = False
                     break
-            if eflag[_charlist.index(received)]:
+            if eflag[_lista.index(received)]:
                 return self.encoder.decode(received)
             else:
                 return received
 
-    #####################################################
     # Receive single binary char from socket - NO LOG
-    #####################################################
-    def ReceiveKeyQuiet(self, charlist=b''):
-        if charlist == b'':
-            charlist = bytes(self.encoder.nl,'latin1')
-        if type(charlist) == str:
-            charlist = bytes(self.encoder.encode(charlist,True),'latin1')
+    def ReceiveKeyQuiet(self, lista=b''):
+        if lista == b'':
+            lista = bytes(self.encoder.nl,'latin1')
+        if type(lista) == str:
+            lista = bytes(self.encoder.encode(lista,True),'latin1')
             decode = True
         else:
             decode = False
         t = True
         while t == True:
-            _string = b''
+            cadena = b''
             if self.connected == True:
                 try:
-                    _string = self.socket.recv(1)
+                    cadena = self.socket.recv(1)
                     self.inbytes += 1
-                    if _string != b'':
-                        if ('PET' in self.mode) and (_string[0] in range(0xC1,0xDA + 1)):
-                            _string = bytes([_string[0]-96])
-                        if _string in charlist:
+                    if cadena != b'':
+                        if ('PET' in self.mode) and (cadena[0] in range(0xC1,0xDA + 1)):
+                            cadena = bytes([cadena[0]-96])
+                        if cadena in lista:
                             t = False
                     else:
                         self.connected = False
@@ -460,18 +343,16 @@ class Connection:
                 except socket.error:
                     #if e.errno == errno.ECONNRESET:
                     _LOG(bcolors.WARNING+'Remote disconnect/timeout detected - ReceiveKey'+bcolors.ENDC, id=self.id,v=2)
-                    _string = ''
+                    cadena = ''
                     self.connected = False
                     t = False
             else:
                 t = False
-        return _string if not decode else self.encoder.decode(_string.decode('latin1'))
+        return cadena if not decode else self.encoder.decode(cadena.decode('latin1'))
 
-    ##################################################
     # Interactive string reception with echo
     # maxlen = max number of characters to receive
     # pw = True for password entry
-    ##################################################
     def ReceiveStr(self, keys, maxlen = 20, pw = False):
         if type(keys) == str:
             keys  = bytes(self.encoder.encode(keys,True),'latin1')
@@ -481,7 +362,7 @@ class Connection:
             keys += cr	#Add RETURN if not originaly included
         if bs not in keys:
             keys += bs #Add DELETE if not originaly included
-        _string = b''
+        cadena = b''
         done = False
         while not done:
             if pw:
@@ -491,11 +372,11 @@ class Connection:
             if self.connected:
                 if k != cr and k != b'':
                     if k == bs:
-                        if len(_string) > 0:
-                            _string = _string[:-1]	#Delete character
+                        if len(cadena) > 0:
+                            cadena = cadena[:-1]	#Delete character
                             self.SendTML('<DEL>')
-                    elif len(_string) < maxlen:
-                        _string += k	#Add character
+                    elif len(cadena) < maxlen:
+                        cadena += k	#Add character
                         if pw:
                             self.Sendall('*')
                         else:
@@ -504,16 +385,14 @@ class Connection:
                     done = True
             else:
                 done = True
-        return(_string.decode('latin1'))
+        return(cadena.decode('latin1'))
 
-    ####################################################################################
     # Interactive positive integer reception with echo
     # min = minimun value
     # max = maximun value
     # default = default value returned when pressing return
     # auto = if True entry can be canceled by pressing delete with no value entered,
     #		 and is completed if the number of digits matches the limits
-    ####################################################################################
     def ReceiveInt(self, minv, maxv, defv, auto = False):
         cr = bytes(self.encoder.nl,'ascii')
         bs = bytes(self.encoder.bs,'ascii')
@@ -626,7 +505,6 @@ class Connection:
                 break
         return(int(''.join(tval)))
 
-    ##########################################################################
     # Receive a date, format taken from bbs instance
     # prompt: TML prompt
     # mindate: Earliest date possible
@@ -634,7 +512,6 @@ class Connection:
     # defdate: Default date
     # all dates of datetime.date type
     # Returns a datetime.date object, None if the parameters are incorrect
-    ##########################################################################
     def ReceiveDate(self, prompt, mindate, maxdate, defdate):
         if (mindate > maxdate) or not (mindate <= defdate <= maxdate):
             return None
@@ -721,9 +598,7 @@ class Connection:
                 self.SendTML("<BR>Invalid date!<BR>")
         return odate
 
-    #####################
     # Send TML script
-    #####################
     def SendTML(self, data, registers: dict = {'_A':None,'_S':'','_I':0}):
         self.ClearHold()
         if self.p_running:				# If original parser is in use
@@ -736,13 +611,11 @@ class Connection:
             self.p_running = False
         return ret
 
-#################################################
 # Dummy Connection object
 # Doesnt actually sends or receives anything,
 # just decodes/buffers all input data until
 # getOutput() is called
 # Dummy connection objects have negative IDs
-#################################################
 class DummyConn(Connection):
     
     def __init__(self, conn:Connection):
@@ -768,11 +641,11 @@ class DummyConn(Connection):
     def QueryFeature(self, cmd:int):
         return 0x80		# Dummy connection doesn't support any command
     
-    def Sendall(self,_string):
-        _output = _output + _string
+    def Sendall(self,cadena):
+        _output = _output + cadena
     
-    def Sendallbin(self, _string=b''):
-        self.Sendall(_string.decode('latin1'))
+    def Sendallbin(self, cadena=b''):
+        self.Sendall(cadena.decode('latin1'))
     
     def Flush(self, ftime):
         return
@@ -780,10 +653,10 @@ class DummyConn(Connection):
     def Receive(self, count):
         return ''
 
-    def ReceiveKey(self, charlist=b''):
+    def ReceiveKey(self, lista=b''):
         return ''
     
-    def ReceiveKeyQuiet(self, charlist=b''):
+    def ReceiveKeyQuiet(self, lista=b''):
         return ''
     
     def ReceiveStr(self, keys, maxlen=20, pw=False):

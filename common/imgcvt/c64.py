@@ -1,6 +1,6 @@
-##################
+#########################################3
 # C64 Routines
-##################
+#
 import numpy as np
 import os
 from PIL import Image
@@ -9,7 +9,7 @@ from common.imgcvt import common as CC
 from common.imgcvt import palette as Palette
 from common.imgcvt.types import gfxmodes
 
-# Palette structure
+#Palette structure
 Palette_Colodore = [{'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':0},
     {'color':'White','RGBA':[0xff,0xff,0xff,0xff],'enabled':True,'index':1},{'color':'Red','RGBA':[0x96,0x28,0x2e,0xff],'enabled':True,'index':2},
     {'color':'Cyan','RGBA':[0x5b,0xd6,0xce,0xff],'enabled':True,'index':3},{'color':'Purple','RGBA':[0x9f,0x2d,0xad,0xff],'enabled':True,'index':4},
@@ -34,9 +34,9 @@ C64Palettes = [['Colodore',Palette_Colodore],['Pepto (NTSC,Sony)',Palette_PeptoN
 
 Native_Ext = ['.KOA','.KLA','.ART','.OCP','.DD','.DDL','.GG']
 
-##########################
+##############################################
 # Get 2 closest colors
-##########################
+##############################################
 def c64_get2closest(colors,p_in,p_out,fixed):
     cd = [[197000 for j in range(len(p_in))] for i in range(len(colors))]
     closest = []
@@ -54,21 +54,21 @@ def c64_get2closest(colors,p_in,p_out,fixed):
     if len(closest) == 1:
         closest.append(CC.RGB24(p_in[0][0]).tolist())
         _indexes[1]= 0
-    tix = sorted(_indexes)  # Sort by color index
+    tix = sorted(_indexes)  #Sort by color index
     if tix != _indexes:
         closest.reverse()
         _indexes = tix
     return(_indexes,Palette.Palette(closest))
 
-##########################
+###################################################
 # Get 4 closest colors
-##########################
+###################################################
 def c64_get4closest(colors, p_in, p_out, bgcolor):
     cd = [[0 for j in range(len(p_in))] for i in range(len(colors))]
     brgb = CC.RGB24(next(x[0].tolist() for x in p_in if x[1]==bgcolor[0]))
     closest = [brgb,brgb,brgb,brgb]
     _indexes = [bgcolor[0],bgcolor[0],bgcolor[0],bgcolor[0]]
-    # Find least used color
+    #Find least used color
     if len(colors) >= 4:
         bi = colors.index(min(colors))
     else:
@@ -81,15 +81,15 @@ def c64_get4closest(colors, p_in, p_out, bgcolor):
             cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
-        m = p_in[xmin][0]
+        m = p_in[xmin][0] #p_out[cc]
         closest[xx] = CC.RGB24(m).tolist()
         _indexes[xx] = cc
         xx += 1
     return(_indexes,Palette.Palette(closest))
 
-############################
+#######################################
 # Pack Hires bitmap cell
-############################
+#######################################
 def bmpackhi(column,row,cell,buffers):
     if len(buffers)<4:
         offset = (column*8)+(row*320)
@@ -98,9 +98,9 @@ def bmpackhi(column,row,cell,buffers):
         offset = ((column+3)*8)+(row//8)*320+(row&7)
         buffers[0][offset]=list(np.packbits(np.asarray(cell,dtype='bool')))[0]
 
-#################################
+##########################################
 # Pack multicolor bitmap cell
-#################################
+##########################################
 def bmpackmulti(column,row,cell,buffers):
     cell_a = np.asarray(cell)
     offset = (column*8)+(row*320)
@@ -110,27 +110,27 @@ def bmpackmulti(column,row,cell,buffers):
             tbyte += int(cell_a[y,x])<<((3-x)*2)
         buffers[0][offset+y] = tbyte
 
-#########################
+#######################################
 # Pack attribute cell
-#########################
+#######################################
 def attrpack(column,row,attr,buffers):
     if len(buffers) < 4:
-        offset = column+(row*40)    # Normal
+        offset = column+(row*40)    #Normal
     else:
-        offset = column+3+((row//8)*40) # (A)FLI
+        offset = column+3+((row//8)*40) #(A)FLI
     if len(attr) == 2:
         if len(buffers) == 2:
-            buffers[1][offset]=attr[0]+(attr[1]*16) # HIRES
+            buffers[1][offset]=attr[0]+(attr[1]*16) #HIRES
         else:
-            buffers[1+(row % 8)][offset]=attr[0]+(attr[1]*16) # AFLI
+            buffers[1+(row % 8)][offset]=attr[0]+(attr[1]*16) #AFLI
     else:
         buffers[1][offset]=attr[2]+(attr[1]*16)
         buffers[2][offset]=attr[3]
 
-###################################
+################################
 # Get buffers to store raw data
 # Returns a list of lists
-###################################
+################################
 def get_buffers(mode:int):
     if mode == 3:
         x = 8
@@ -144,42 +144,42 @@ def get_buffers(mode:int):
         buffers.append([0]*1000)    # Color RAM
     return buffers
 
-#################################################
+##############################################
 # Build a native image file from the raw data
-#################################################
+##############################################
 def buildfile(buffers,gcols,baseMode,filename):
-    if baseMode == 1:   # Save Koala
-        t_data = b'\x00\x60' # Load address
-        # Bitmap
-        t_data += bytes(buffers[0])
-        # Screen
-        t_data += bytes(buffers[1])
-        # ColorRAM
-        t_data += bytes(buffers[2])
-        # Background
+    if baseMode == 1:   #Save Koala
+        t_data = b'\x00\x60' #Load address
+        #Bitmap
+        t_data += bytes(buffers[0])#bitmap
+        #Screen
+        t_data += bytes(buffers[1])#screen
+        #ColorRAM
+        t_data += bytes(buffers[2])#cram
+        #Background
         t_data += gcols[1].to_bytes(1,'big')
         filename = '\x81PIC A ' + filename[:9]
-    elif baseMode == 0:   # Save ArtStudio
-        t_data = b'\x00\x20' # Load address
-        # Bitmap
-        t_data += bytes(buffers[0])
-        # Screen
-        t_data += bytes(buffers[1])
-        # Border
+    elif baseMode == 0:   #Save ArtStudio
+        t_data = b'\x00\x20' #Load address
+        #Bitmap
+        t_data += bytes(buffers[0])#bitmap
+        #Screen
+        t_data += bytes(buffers[1])#screen
+        #Border
         t_data += gcols[0].to_bytes(1,'big')
-        # Padding
+        #Padding
         t_data += b"M 'STU"
         filename = (filename.ljust(13,' ') if len(filename)<13 else filename[:13])+'PIC'
     return(t_data, filename)
 
-#######################################################################################################################
+#####################################################################################################################
 # Graphic modes structure
 # name: Name displayed in the combobox
 # bpp: bits per pixel
 # attr: attribute size in pixels
 # global_colors: a boolean tuple of 2^bpp elements, True if the color for that index is global for the whole screen
 # palettes: a list of name/palette pairs
-#
+
 # This field is for the planned rewrite of the conversion routine(s), unused right now.
 # attributes: list of attributes:
 #               dim: area this/these attributes cover
@@ -187,7 +187,7 @@ def buildfile(buffers,gcols,baseMode,filename):
 #               bm_pack:  function call to pack the bitmap from 8bpp into the native format order (optional)
 #               attr_pack: function call to pack the individual cell color(s) into attribute byte(s) (optional)
 #               Need more fields to set GUI options -> name and get best color    
-#
+
 # in_size: input image dimensions, converted image will also be displayed with these dimensions
 # out_size: native image dimensions
 # get_attr: function call to get closest colors for an attribute cell
@@ -195,7 +195,6 @@ def buildfile(buffers,gcols,baseMode,filename):
 # attr_pack: function call to pack the individual cell colors into attribute byte(s)
 # get_buffers: function call returns the native bitmap and attribute buffers
 # save_output: a list of lists in the format ['name','extension',save_function]
-#######################################################################################################################
 
 GFX_MODES=[{'name':'C64 HiRes','bpp':1,'attr':(8,8),'global_colors':(False,False),'palettes':C64Palettes,
             'global_names':[],
@@ -219,7 +218,7 @@ def load_Image(filename:str):
     gcolors = [0]*2  # Border, Background
     extension = os.path.splitext(filename)[1].upper()
     fsize = os.stat(filename).st_size
-    # Read file
+    #Read file
     if (extension == '.ART') and (fsize == 9009):  # Art Studio
         with open(filename,'rb') as ifile:
             if ifile.read(2) == b'\x00\x20':
@@ -237,11 +236,11 @@ def load_Image(filename:str):
             if ifile.read(2) == b'\x00\x5c':
                 # Screen data
                 data[1] = ifile.read(1000)
-                # Skip
+                #Skip
                 ifile.read(24)
                 # Bitmap data
                 data[0] = ifile.read(8000)
-                gcolors[0] = 0x0c    # Border color
+                gcolors[0] = 0x0c    #Border color
                 text = 'Doodle'
             else:
                 return None
@@ -280,7 +279,7 @@ def load_Image(filename:str):
                 text = 'Koala Paint'
             else:
                 return None
-    elif (extension == '.GG'):  # RLE encoded KoalaPainter
+    elif (extension == '.GG'):  #RLE encoded KoalaPainter
         with open(filename,'rb') as ifile:
             if ifile.read(2) == b'\x00\x60':
                 c_buffer = ifile.read()
@@ -289,11 +288,11 @@ def load_Image(filename:str):
                 d_index = 0
                 repeat = 0
                 for v in c_buffer:
-                    if run == 0:  # Literal or escape
+                    if run == 0:  #Literal or escape
                         if v == 254:    # escape
                             run = 1
                             continue
-                        d_buffer = d_buffer + v.to_bytes(1,'big')   # literal
+                        d_buffer = d_buffer + v.to_bytes(1,'big')   #literal
                     elif run == 1:  # repeat byte
                         run = 2
                         repeat = v
@@ -312,7 +311,7 @@ def load_Image(filename:str):
                 return None
     else:
         return None
-    # Render image
+    #Render image
     # Generate palette(s)
     rgb_in = []
     for c in Palette_Colodore: # iterate colors

@@ -1,11 +1,11 @@
-###################
+##########################
 # Debug logging
-###################
+##########################
 
 import sys
 import datetime
 
-# ANSI CODES
+#ANSI CODES
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -14,7 +14,7 @@ class bcolors:
     FAIL = '\033[91m'
     ENDC = '\033[0m'
 
-# Global verbosity level
+#Global verbosity level
 Verbosity = 3
 
 # 1 = ERRORS ONLY
@@ -22,9 +22,9 @@ Verbosity = 3
 # 3 = INFO
 # 4 = LOG
 
-#########################
+##########################
 # Set verbosity level
-#########################
+##########################
 def set_verbosity(v = 1):
     global Verbosity
     if v > 0:
@@ -32,9 +32,9 @@ def set_verbosity(v = 1):
     else:
         Verbosity = 1
 
-##################################
+#######################################################
 # Print Log message to console
-##################################
+#######################################################
 def _LOG(*message, _end='\n', date=True, id=0, v = 1):
     if v <= Verbosity:
         if id != 0:

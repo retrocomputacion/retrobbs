@@ -8,17 +8,18 @@ from common.connection import Connection
 from common import turbo56k as TT
 from common.helpers import crop
 
-##################
+###############
 # Plugin setup
-##################
+###############
 def setup():
-    fname = "ONELINER"  # UPPERCASE function name for config.ini
-    parpairs = [] # config.ini Parameter pairs (name,defaultvalue)
+    fname = "ONELINER" #UPPERCASE function name for config.ini
+    parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
+#############################
 
-######################
+###################################
 # Plugin  function
-######################
+###################################
 def plugFunction(conn:Connection):
 
     def header():
@@ -26,8 +27,6 @@ def plugFunction(conn:Connection):
         if conn.QueryFeature(TT.LINE_FILL) < 0x80:
             if 'MSX' in conn.mode:
                 conn.SendTML(f'<CURSOR enable=False><PAPER c=13><WHITE><LFILL row=3 code=23><LFILL row={scheight-3} code=23><PAPER c={conn.style.BgColor}><CURSOR>')
-            elif 'ZX' in conn.mode:
-                conn.SendTML(f'<CURSOR enable=False><PAPER c=3><WHITE><LFILL row=3 code={ord('-')}><LFILL row={scheight-3} code={ord('-')}><PAPER c={conn.style.BgColor}><CURSOR>')
             else:
                 conn.SendTML(f'<PURPLE><LFILL row=3 code=192><LFILL row={scheight-3} code=192>') # Window borders
         else:
@@ -36,7 +35,8 @@ def plugFunction(conn:Connection):
                 conn.SendTML(f'<AT x=0 y={scheight-3}><HLINE n={scwidth}><RVSOFF>')
             else:
                 conn.SendTML('<RVSOFF>')
- 
+        
+
     _dec = conn.encoder.decode
     keys = string.ascii_letters + string.digits + " !?';:[]()*/@+-_,.$%&"
     scwidth,scheight = conn.encoder.txt_geo
@@ -54,7 +54,7 @@ def plugFunction(conn:Connection):
             conn.SendTML(f'<WINDOW top={scheight-2} bottom={scheight-1}><CLR>')
         else:
             conn.SendTML('<BR>')
-        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message <KPROMPT t=_BACK><GREEN>exit')
+        conn.SendTML(f'<KPROMPT t=RETURN><GREEN>new message <KPROMPT t={conn.encoder.back}><GREEN>exit')
         if conn.userclass == 10:    # Admin
             conn.SendTML(' <KPROMPT t=D><GREEN>elete')
             adm = 'd'
@@ -85,7 +85,7 @@ def plugFunction(conn:Connection):
                     onelines = getOneliners()
                     onelines.append([nick,line])
                     if len(onelines) > 9:
-                        onelines.pop(0) # If there's more than 9 onelines, remove the oldest.
+                        onelines.pop(0) #If there's more than 9 onelines, remove the oldest.
                     saveOneliners(onelines)
                     refr = True
                 elif conn.encoder.features['windows'] == 0:
@@ -110,10 +110,11 @@ def plugFunction(conn:Connection):
 
     conn.SendTML(f'<WINDOW top=0 bottom={scheight}>')
 
-##################################
+##########################################
 # Send oneliners to connection
-##################################
+##########################################
 def sendOneliners(conn:Connection,lines):
+    # count = ceil(conn.encoder.txt_geo[0]/3)-1
     conn.SendTML(f'<WINDOW top=4 bottom={conn.encoder.txt_geo[1]-4}>')
     if conn.T56KVer > 0:
         conn.SendTML('<CLR>')
@@ -126,12 +127,12 @@ def sendOneliners(conn:Connection,lines):
         conn.SendTML(f'<YELLOW>{l[0]} says:<BR>{txtc}{line}')
         if (i<8) and (len(line)<conn.encoder.txt_geo[0]):
             conn.SendTML('<BR>')
-        if i == 8:  # Just in case the json file has more than 9 entries
+        if i == 8:  #Just in case the json file has more than 9 entries
             break
 
-#######################
+######################################
 # Get the oneliners
-#######################
+######################################
 def getOneliners():
     try:    # Refresh oneliners in case another user posted in the meanwhile
         olf = open('plugins/oneliners.json','r')
@@ -141,9 +142,9 @@ def getOneliners():
         onelines = []
     return onelines
 
-########################
+######################################
 # Save the oneliners
-########################
+######################################
 def saveOneliners(onelines):
     with open('plugins/oneliners.json','w') as olf:
         json.dump(onelines,olf,indent=4)

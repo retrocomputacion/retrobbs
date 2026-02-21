@@ -1,7 +1,7 @@
-##################################
+###############################################################################
 # Basic Database functionality
 # Mainly user stuff
-##################################
+###############################################################################
 
 from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
@@ -11,41 +11,35 @@ import time
 import re
 from collections import deque
 
-# Dictionary of user editable fields, for some future use?
-#  [field name, field type, [field length range]]
-#  field type: 0 Text
-#              1 Password
-#              2 Date
-#              3 Integer
+#Dictionary of user editable fields, for some future use?
+# [field name, field type, [field length range]]
+# field type: 0 Text
+#             1 Password
+#             2 Date
+#             3 Integer
 User_Fields = {'User name':['uname',0,[6,15]], 'Password':['pass',1,[6,15]], 'First name':['fname',0,[1,15]], 'Last name':['lname',0,[1,15]],
                 'Birthdate':['bday',2,[10,10]], 'Country':['country',0,[2,15]]}
 
 ######### DBase class #########
 class DBase:
-    ###################
-    # Open DataBase
-    ###################
     def __init__(self,path):
-        # Only the main script should call this
+    #Open DataBase
+        #Only the main script should call this
         self.db = TinyDB(path+'db.json',sort_keys=True, indent=4)
         table = self.db.table('USERS')
         table.update({'online':0})  #Logoff any stray user from last time the BBS was run
 
-    ####################
-    # Close DataBase
-    ####################
+    #Close DataBase
     def closeDB(self):
-        # Only the main script should call this
+        #Only the main script should call this
         self.db.close()
 
     ################################
     # User related functions
     ################################
 
-    ########################################
-    # Get all users
-    # Return list of (id,username) pairs
-    ########################################
+    #Get all users
+    #Return list of (id,username) pairs
     def getUsers(self):
         table = self.db.table('USERS')
         ul = []
@@ -53,19 +47,15 @@ class DBase:
             ul.append((u.doc_id,u['uname'],u['uclass']))
         return ul
 
-    #############################################
-    # Check if user exists
-    # Return dictionary, or None if not found
-    #############################################
+    #Check if user exists
+    #Return dictionary, or None if not found
     def chkUser(self, username):
         table = self.db.table('USERS')
         dbQ = Query()
         return table.get(dbQ.uname.search('^'+username+'$',flags=re.IGNORECASE))
 
-    ##################################################################
-    # Check if password matches for the user, and optionally login
-    # uentry must be a dictionary
-    ##################################################################
+    #Check if password matches for the user, and optionally login
+    #uentry must be a dictionary
     def chkPW(self, uentry, pw, login = True):
         upw = hashlib.pbkdf2_hmac('sha256', pw.encode('utf-8'), bytes.fromhex(uentry['salt']),100000)
         if upw.hex() == uentry['pass']:
@@ -77,10 +67,8 @@ class DBase:
             return(True)
         return(False)
 
-    ####################################
-    # Logoff user (by id)
-    # updates total data transferred
-    ####################################
+    #Logoff user (by id)
+    #updates total data transferred
     def logoff(self, id, dbytes, ubytes):
         table = self.db.table('USERS')
         ud = table.get(doc_id=id)
@@ -91,11 +79,9 @@ class DBase:
                       'totaltime':tt+(time.time()-ud.get('lastlogin',0))},
                      doc_ids=[id])
 
-    ########################
-    # Creates a new user
-    ########################
+    #Creates a new user
     def newUser(self, uname, pw, fname, lname, bday, country,uclass=1):
-        # Make sure user doesnt already exists
+        #Make sure user doesnt already exists
         if self.chkUser(uname) == None:
             table = self.db.table('USERS')
             salt = os.urandom(32)   #New salt for this user
@@ -114,10 +100,8 @@ class DBase:
                                  'visits':1,
                                  'online':1})
 
-    ###################################
-    # Update user data (by id)
-    # Pass untouched fields as None
-    ###################################
+    #Update user data (by id)
+    #Pass untouched fields as None
     def updateUser(self, id, uname, pw, fname, lname, bday, country,uclass):
         temp = locals()
         temp.pop('db',None)
@@ -134,9 +118,7 @@ class DBase:
         params.pop('self')
         table.update(params, doc_ids=[id])
 
-    ##########################
-    # Get user preferences
-    ##########################
+    #Get user preferences
     def getUserPrefs(self,id,defaults = {}):
         table = self.db.table('USERS')
         data = table.get(doc_id = id)
@@ -145,9 +127,7 @@ class DBase:
             defaults.update(prefs)
         return defaults
 
-    #############################
-    # Update user preferences
-    #############################
+    #Update user preferences
     def updateUserPrefs(self,id,prefs:dict):
         table = self.db.table('USERS')
         data = table.get(doc_id = id)
@@ -155,13 +135,11 @@ class DBase:
         oldp.update(prefs)
         table.update({'preferences':oldp}, doc_ids=[id])
     
-    ###########################
+    ################################
     # BBS session functions
-    ###########################
+    ################################
 
-    #############################
-    # Increment visitor count
-    #############################
+    #Increment visitor count
     def newVisit(self, uname='-Guest-'):
         table = self.db
         dbQ = Query()
@@ -179,18 +157,14 @@ class DBase:
             lu.appendleft(uname)
             table.update_multiple([(increment('visits'), where('record') == 'bbs_stats'),({'latest':list(lu)}, where('record') == 'bbs_stats')])
     
-    ####################################
-    # Return the BBS stats db record
-    ####################################
+    #Return the BBS stats db record
     def bbsStats(self):
         table = self.db
         dbQ = Query()
         return table.get(dbQ.record == 'bbs_stats')
     
-    ############################################################
-    # Update total uptime
-    # Pass stime = 0 to just return the actual stored uptime
-    ############################################################
+    #Update total uptime
+    #Pass stime = 0 to just return the actual stored uptime
     def uptime(self, stime):
         table = self.db
         dbQ = Query()

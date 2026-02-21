@@ -118,15 +118,12 @@ def plugFunction(conn:Connection,server,port,channel):
         printchat(txt)
 
     def on_connect(connection, event):
-        # if irc.client.is_channel(channel):
-        try:
+        printchat(f'<CYAN>Connected to: {server}<BR>')
+        txt = H.formatX(event.arguments[0],scwidth)
+        txt[0] = '<CYAN>'+txt[0]
+        printchat(txt)
+        if irc.client.is_channel(channel):
             connection.join(channel)
-            printchat(f'<CYAN>Connected to: {server}<BR>')
-            txt = H.formatX(event.arguments[0],scwidth)
-            txt[0] = '<CYAN>'+txt[0]
-            printchat(txt)
-        except:
-            pass
         #main_loop(connection)
 
     def on_names(connection, event):
@@ -226,10 +223,10 @@ Accepted commands:
     ####
     scwidth,scheight = conn.encoder.txt_geo
     if 'MSX' in conn.mode:
+        bcode = 0xDB
         hcode = 0x17
-    elif 'ZX' in conn.mode:
-        hcode = ord('-')
     else:
+        bcode = 0xA0
         hcode = 0x40
     S.RenderMenuTitle(conn,'IRC')
     if win:

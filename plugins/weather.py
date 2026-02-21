@@ -29,23 +29,23 @@ from common.helpers import font_text, crop
 
 wgfx24: list  # Weather gfx 24px 
 wgfx8:  list  # Weather gfx 8px
-# Weather types -> icons
-wtypes =    {110:2,113:2,0:2,                                   # Clear
-            116:7,1:7,                                          # Partly Cloudy
-            119:1,2:1,                                          # Cloudy
-            122:23,3:23,                                        # Overcast
-            143:6,                                              # Mist
-            176:13,263:13,353:13,80:13,                         # Light showers
-            179:14,362:14,374:14,311:14,323:14,326:14,368:14,56:14,66:14,71:14,85:14,   # Light snow/sleet
-            182:4,185:4,281:4,314:4,317:4,350:4,377:4,365:4,57:4,67:4,73:4,             # Moderate/heavy snow/sleet
-            200:15,386:15,392:15,                               # Thundery showers
-            227:17,230:17,320:17,                               # Blizzard
-            248:5,260:5,45:5,48:5,                              # Fog
-            266:13,293:13,296:13,51:13,53:13,55:13,61:13,       # Light rain
-            299:3,302:3,356:3,63:3,                             # Moderate rain
-            305:11,308:11,359:11,65:11,                         # Heavy rain
-            335:24,371:24,395:0,338:24,86:24,                   # Heavy snow
-            389:0,95:0                                          # Thunder
+#Weather types -> icons
+wtypes =    {110:2,113:2,0:2,                                   #Clear
+            116:7,1:7,                                          #Partly Cloudy
+            119:1,2:1,                                          #Cloudy
+            122:23,3:23,                                        #Overcast
+            143:6,                                              #Mist
+            176:13,263:13,353:13,80:13,                         #Light showers
+            179:14,362:14,374:14,311:14,323:14,326:14,368:14,56:14,66:14,71:14,85:14,   #Light snow/sleet
+            182:4,185:4,281:4,314:4,317:4,350:4,377:4,365:4,57:4,67:4,73:4,             #Moderate/heavy snow/sleet
+            200:15,386:15,392:15,                               #Thundery showers
+            227:17,230:17,320:17,                               #Blizzard
+            248:5,260:5,45:5,48:5,                              #Fog
+            266:13,293:13,296:13,51:13,53:13,55:13,61:13,       #Light rain
+            299:3,302:3,356:3,63:3,                             #Moderate rain
+            305:11,308:11,359:11,65:11,                         #Heavy rain
+            335:24,371:24,395:0,338:24,86:24,                   #Heavy snow
+            389:0,95:0                                          #Thunder
 }
 #Weather types -> text
 twtypes = { 110:'Clear',113:'Clear',0:'Clear',
@@ -88,20 +88,20 @@ cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 
 
-##################
+###############
 # Plugin setup
-##################
+###############
 def setup():
     global wgfx8
     global wgfx24
     gfx = NP.array(Image.open('plugins/weather_icons.png'))
     wgfx24 = [gfx[x:x+24,y:y+24] for x in range(0,48,24) for y in range(0,312,24)]
     wgfx8 = [gfx[x:x+8,y:y+8] for x in range(56,72,8) for y in range(0,40,8)]
-    fname = "WEATHER"   # UPPERCASE function name for config.ini
-    parpairs = []   # config.ini Parameter pairs (name,defaultvalue)
+    fname = "WEATHER" #UPPERCASE function name for config.ini
+    parpairs = [] #config.ini Parameter pairs (name,defaultvalue)
     return(fname,parpairs)
 
-###########################################
+#########################################
 # Register/Get/Set Plugin preferences
 #-------------------------------------
 # Pass no parameters to get a list of
@@ -113,7 +113,7 @@ def setup():
 #
 # Pass all connection, param & value to
 # set the parameter for this client
-###########################################
+#########################################
 def plugPrefs(conn:Connection = None, param = None, value = None):
     if conn == None: # Get parameter list
         return [{'name':'wxunits','title':'Weather units','prompt':'Set weather units:','values':{'F':'Imperial','C':'Metric'}}]
@@ -125,9 +125,9 @@ def plugPrefs(conn:Connection = None, param = None, value = None):
             conn.bbs.database.updateUserPrefs(conn.userid, {'wxunits':value})
 
 
-#####################
+###################################
 # Plugin function
-#####################
+###################################
 def plugFunction(conn:Connection):
 
     # Avoid Geocode timeout/Unavailable errors
@@ -150,7 +150,7 @@ def plugFunction(conn:Connection):
         geoLoc = Nominatim(user_agent="RetroBBS-Weather")
 
     conn.SendTML('<SPINNER>')
-    # First get location from the connection IP
+    #First get location from the connection IP
     response = requests.get('https://ipinfo.io/'+conn.addr[0]+'/json')
     result = response.content.decode()
     # Convert this data into a dictionary
@@ -176,15 +176,12 @@ def plugFunction(conn:Connection):
         locqry['latitude'] = tloc.latitude
         locqry['longitude'] = tloc.longitude
 
+    # locqry = result.get('city', conn.bbs.PlugOptions.get('wxdefault','Meyrin'))
     done = False
     loop = asyncio.new_event_loop()
     while conn.connected and not done:
         conn.SendTML('<SPINNER>')
-        try:
-            img, img2, series = loop.run_until_complete(getweather(conn,locqry,geoLoc))
-        except:
-            conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
-            break
+        img, img2, series = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         if img != None:
             if conn.QueryFeature(TT.PRADDR) < 0x80:
                 gmod = gfxmodes.P4HI if conn.mode == 'PET264' else gfxmodes.C64HI
@@ -209,7 +206,7 @@ def plugFunction(conn:Connection):
             conn.SendTML('Location:')
             _locqry['city'] = conn.encoder.decode(conn.ReceiveStr(keys,30))
             try:
-                tloc = do_geocode(_locqry['city'])
+                tloc = do_geocode(_locqry['city']) #geoLoc.geocode(locqry,language=conn.bbs.lang)
             except:
                 _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
                 conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
@@ -226,9 +223,9 @@ def plugFunction(conn:Connection):
 cellx = lambda width,percent:int((width*percent)//8)*8
 
 
-#######################################
+#######################################################
 # Get weather data and render image
-#######################################
+#######################################################
 async def getweather(conn:Connection,locquery,geoLoc):
     global retry_session
 
@@ -322,13 +319,13 @@ async def getweather(conn:Connection,locquery,geoLoc):
 
     # Get full location from returned coordinates
     try:
-        floc = do_reverse(str(weather.Latitude())+','+str(weather.Longitude()))
-        address = floc.raw.get('address',floc.raw.get('properties',{})) # 'address' in nominatim, 'properties in photon
-        # City
+        floc = do_reverse(str(weather.Latitude())+','+str(weather.Longitude())) #geoLoc.reverse(str(weather.location[0])+','+str(weather.location[1]),language=conn.bbs.lang)
+        address = floc.raw.get('address',floc.raw.get('properties',{})) #'address' in nominatim, 'properties in photon
+        #City
         city = address.get('village',address.get('town',address.get('city',address.get('municipality','Unknown'))))
-        # Region
+        #Region
         region = address.get('state',address.get('region',address.get('county','')))
-        # Country
+        #Country
         country = address.get('country',address.get('country_code',address.get('continent','')))
     except Exception as e:
         _LOG('Error getting location data, using user query instead',id=conn.id, v=1)
@@ -336,52 +333,52 @@ async def getweather(conn:Connection,locquery,geoLoc):
         region = ''
         country = ''
     locdisplay = city+('-'+region if region != '' else '')+('-'+country if country != '' else '')
-    # Current temperature
+    #Current temperature
     ctemp = int(weather.Current().Variables(0).Value())
     if units == 'F':
         if ctemp < 32:
-            tco = c_purple  # 4
+            tco = c_purple  #4
             ttco = '<PURPLE>'
         elif ctemp < 41:
-            tco = c_lblue   # 14
+            tco = c_lblue   #14
             ttco = '<LTBLUE>'
         elif ctemp < 59:
-            tco = c_cyan    # 3
+            tco = c_cyan    #3
             ttco = '<CYAN>'
         elif ctemp < 77:
-            tco = c_yellow  # 7
+            tco = c_yellow  #7
             ttco = '<YELLOW>'
         elif ctemp < 86:
-            tco = c_orange  # 8
+            tco = c_orange  #8
             ttco = '<ORANGE>'
         else:
-            tco = c_red     # 2
+            tco = c_red     #2
             ttco = '<RED>'
     else:
         if ctemp < 0:
-            tco = c_purple  # 4
+            tco = c_purple  #4
             ttco = '<PURPLE>'
         elif ctemp < 5:
-            tco = c_lblue   # 14
+            tco = c_lblue   #14
             ttco = '<LTBLUE>'
         elif ctemp < 15:
-            tco = c_cyan    # 3
+            tco = c_cyan    #3
             ttco = '<CYAN>'
         elif ctemp < 25:
-            tco = c_yellow  # 7
+            tco = c_yellow  #7
             ttco = '<YELLOW>'
         elif ctemp < 30:
-            tco = c_orange  # 8
+            tco = c_orange  #8
             ttco = '<ORANGE>'
         else:
-            tco = c_red     # 2
+            tco = c_red     #2
             ttco = '<RED>'
-    # Current weather type
+    #Current weather type
     wt = weather.Current().Variables(1).Value()
-    # Current wind conditions
+    #Current wind conditions
     wd = wind_vane[int((weather.Current().Variables(4).Value()%360)//22.5)]
     ws = round(weather.Current().Variables(3).Value())
-    # Pressure
+    #Pressure
     sp = round(weather.Current().Variables(2).Value())
 
     time_s = weather.Hourly().Time()
@@ -409,13 +406,13 @@ async def getweather(conn:Connection,locquery,geoLoc):
         tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[wtypes.get(wt,8)]))
         img.paste(tmp,(8,24))
         tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[16]))
-        img.paste(tmp,(cellx(xdim[0],.325),24)) # 32.5%
-        draw.text((cellx(xdim[0],.425),28),str(ws)+('km/h' if units == 'C' else 'mph'),c_white,font=font_title)   # 42.5%
+        img.paste(tmp,(cellx(xdim[0],.325),24)) #32.5%
+        draw.text((cellx(xdim[0],.425),28),str(ws)+('km/h' if units == 'C' else 'mph'),c_white,font=font_title)   #42.5%
         tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx8[wwind[wd]]))
-        img.paste(tmp,(cellx(xdim[0],.575),32)) # 57.5%
+        img.paste(tmp,(cellx(xdim[0],.575),32)) #57.5%
         tmp = inPal.create_PIL_png_from_rgb_array(Image.fromarray(wgfx24[10]))
-        img.paste(tmp,(cellx(xdim[0],.7),24)) # 70%
-        draw.text((cellx(xdim[0],.8),28),str(sp)+'hPa',c_white,font=font_title)   # 80%
+        img.paste(tmp,(cellx(xdim[0],.7),24)) #70%
+        draw.text((cellx(xdim[0],.8),28),str(sp)+'hPa',c_white,font=font_title)   #80%
     else:
         img = '<CLR>'
         locdisplay = crop(locdisplay, conn.encoder.txt_geo[0]-2, conn.encoder.ellipsis)
@@ -431,10 +428,10 @@ async def getweather(conn:Connection,locquery,geoLoc):
     if gfx:
         draw.line(((0,55),(xdim[0]-1,55)),fill=c_blue)
         # get the weather forecast for a few days
-        draw.text((cellx(xdim[0],.17),58),'Morning',c_white,font=font_text,anchor='mt')     # 17%
-        draw.text((cellx(xdim[0],.394),58),'Noon',c_white,font=font_text,anchor='mt')       # 39.37%
-        draw.text((cellx(xdim[0],.62),58),'Evening',c_white,font=font_text,anchor='mt')     # 62%
-        draw.text((cellx(xdim[0],.837),58),'Night',c_white,font=font_text,anchor='mt')      # 83.75%
+        draw.text((cellx(xdim[0],.17),58),'Morning',c_white,font=font_text,anchor='mt')     #17%
+        draw.text((cellx(xdim[0],.394),58),'Noon',c_white,font=font_text,anchor='mt')       #39.37%
+        draw.text((cellx(xdim[0],.62),58),'Evening',c_white,font=font_text,anchor='mt')     #62%
+        draw.text((cellx(xdim[0],.837),58),'Night',c_white,font=font_text,anchor='mt')      #83.75%
         ix = 0
         for day in range(0,3):
             date = datetime.fromtimestamp(time_s+(86400*day),ZoneInfo(tz))
@@ -443,11 +440,11 @@ async def getweather(conn:Connection,locquery,geoLoc):
                 wt = d_wc[hour+(day*24)]
                 if hour == 6: # Morning
                     xx = cellx(xdim[0],.10)
-                elif hour == 12: # Noon
+                elif hour == 12: #Noon
                     xx = cellx(xdim[0],.325)
-                elif hour == 18: # Evening
+                elif hour == 18: #Evening
                     xx = cellx(xdim[0],.55)
-                elif hour == 24: # Night
+                elif hour == 24: #Night
                     xx = cellx(xdim[0],.775)
                 try:
                     icon = Image.fromarray(wgfx24[wtypes.get(wt,8)])
@@ -468,7 +465,7 @@ async def getweather(conn:Connection,locquery,geoLoc):
             img +=f'</FORMAT><GREEN><HLINE n={conn.encoder.txt_geo[0]}>'
 
     if gfx:
-        # Render 2nd screen
+        #Render 2nd screen
         draw2.rectangle([0,0,xdim[0]-1,15],c_lgrey)
         j = 3
         for i in range(0,7):

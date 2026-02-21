@@ -1,6 +1,6 @@
-##################
+#########################################3
 # MSX Routines
-##################
+#
 import numpy as np
 import os
 from PIL import Image
@@ -10,7 +10,7 @@ from common.imgcvt import palette as Palette
 from common.imgcvt.types import gfxmodes
 
 
-# Palette structure
+#Palette structure
 Palette_MSX0 = [{'color':'Transparent','RGBA':[0x00,0x00,0x00,0x00],'enabled':False,'index':0},
     {'color':'Black','RGBA':[0x00,0x00,0x00,0xff],'enabled':True,'index':1},{'color':'Medium Green','RGBA':[0x3e,0xb8,0x49,0xff],'enabled':True,'index':2},
     {'color':'Light Green','RGBA':[0x74,0xd0,0x7d,0xff],'enabled':True,'index':3},{'color':'Dark Blue','RGBA':[0x59,0x55,0xe0,0xff],'enabled':True,'index':4},
@@ -44,16 +44,16 @@ def msx_get2closest(colors,p_in,p_out,fixed):
     for x in range(0,len(colors)):
         for y in range(0,len(p_in)):
             if y != xmin:
-                cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])
+                cd[x][y] = CC.Redmean(colors[x][1],p_in[y][0])  #(rd * rd + gd * gd + bd * bd)
         xmin=cd[x].index(min(cd[x]))
         cc = p_in[xmin][1]
-        m = p_in[xmin][0]
+        m = p_in[xmin][0] #p_out[cc]
         closest.append(CC.RGB24(m).tolist())
         _indexes[x] = cc
     if len(closest) == 1:
         closest.append(CC.RGB24(p_in[1][0]).tolist())
         _indexes[1]= 1
-    tix = sorted(_indexes)  # Sort by color index
+    tix = sorted(_indexes)  #Sort by color index
     if tix != _indexes:
         closest.reverse()
         _indexes = tix
@@ -66,11 +66,10 @@ def bmpacksc2(column,row,cell,buffers):
 
 def attrpack(column,row,attr,buffers):
     offset = (column*8)+(row//8)*256+(row&7)
-    buffers[2][offset]=attr[0]+(attr[1]*16) # HIRES
+    buffers[2][offset]=attr[0]+(attr[1]*16) #HIRES
 
-#############################
+
 # Returns a list of lists
-#############################
 def get_buffers():
     buffers=[]
     buffers.append([0]*6144)    # [0] Bitmap
@@ -79,7 +78,7 @@ def get_buffers():
     return buffers
 
 def buildfile(buffers,filename):
-    t_data = b'\xFE\x00\x00\xFF\x37\x00\x00' # Header
+    t_data = b'\xFE\x00\x00\xFF\x37\x00\x00' #Header
     #Bitmap
     t_data += bytes(buffers[0])
     #Names
@@ -89,8 +88,9 @@ def buildfile(buffers,filename):
     #Colors
     t_data += bytes(buffers[2])
     return(t_data,os.path.splitext(filename)[0][:8].replace(' ','_')+'sc2')
+#############################
 
-#######################################################################################################################
+#####################################################################################################################
 # Graphic modes structure
 # name: Name displayed in the combobox
 # bpp: bits per pixel
@@ -104,7 +104,6 @@ def buildfile(buffers,filename):
 # attr_pack: function call to pack the individual cell colors into attribute byte(s)
 # get_buffers: function call returns the native bitmap and attribute buffers
 # save_output: a list of lists in the format ['name','extension',save_function]
-#######################################################################################################################
 
 GFX_MODES=[{'name':'MSX1 Screen 2','bpp':1,'attr':(8,1),'global_colors':(False,False),'palettes':MSXPalettes,
             'global_names':[], 'match':Palette.colordelta.CCIR,
@@ -125,7 +124,7 @@ def load_Image(filename:str):
     gcolors = [0]*2  # Border, Background
     extension = os.path.splitext(filename)[1].upper()
     fsize = os.stat(filename).st_size
-    # Read file
+    #Read file
     if (extension == '.SC2') and (fsize == 14343):  # Screen 2
         with open(filename,'rb') as ifile:
             if ifile.read(7) == b'\xFE\x00\x00\xFF\x37\x00\x00':
@@ -149,13 +148,13 @@ def load_Image(filename:str):
                 if data[2][i]&15 == 0:
                     v |= 1
                 tmp = tmp + v.to_bytes(1,'big')
-                colorcnt[v>>4] += bitcount(data[0][i])      # Can be replaced with int.bit_count() for Python 3.10+
+                colorcnt[v>>4] += bitcount(data[0][i])      #Can be replaced with int.bit_count() for Python 3.10+
                 colorcnt[v&15] += 8-bitcount(data[0][i])
             data[2] = tmp
-            gcolors[0] = colorcnt.index(max(colorcnt))      # Set most used color as border
+            gcolors[0] = colorcnt.index(max(colorcnt))      #Set most used color as border
     else:
         return None
-    # Render image
+    #Render image
     # Generate palette(s)
     rgb_in = []
     for c in Palette_MSX1: # iterate colors

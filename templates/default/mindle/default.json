@@ -46,29 +46,5 @@
     "ANSI":{
         "BgColor"		: "GREY3",
         "TxtColor"      : "GREY2"
-    },
-    "ZX1":{
-        "BgColor"		: "WHITE",
-        "ToddColor"     : "RED",
-        "OoddBack"      : "BLACK",
-        "TevenColor"    : "BLUE",
-        "OevenBack"     : "BLACK",
-        "TxtColor"      : "BLUE"
-    },
-    "ZXstd":{
-        "BgColor"		: "WHITE",
-        "ToddColor"     : "RED",
-        "OoddBack"      : "BLACK",
-        "TevenColor"    : "BLUE",
-        "OevenBack"     : "BLACK",
-        "TxtColor"      : "BLUE"
-    },
-    "TSstd":{
-        "BgColor"		: "WHITE",
-        "ToddColor"     : "RED",
-        "OoddBack"      : "BLACK",
-        "TevenColor"    : "BLUE",
-        "OevenBack"     : "BLACK",
-        "TxtColor"      : "BLUE"
     }
 }

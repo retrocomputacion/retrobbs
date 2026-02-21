@@ -1,6 +1,5 @@
 import unicodedata
 import re
-import textwrap
 from common.classes import Encoder
 import codecs
 from copy import deepcopy
@@ -43,9 +42,9 @@ U_HALF  = 0xDF
 #--Non printable characters grouped
 NONPRINTABLE = [chr(i) for i in range(0,10)]+[11]+[chr(i) for i in range(14,32)]+[127]
 
-##############
+###########
 # TML tags
-##############
+###########
 t_mono = 	{'ASCII':{'BR':'\r\n','AT':'','CLR':'\x0c','BACK':'_','SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')])},
              'ANSI':{'BR':'\r\n','CLR':'\x1b[2J\x1b[H','BACK':'_','HOME':'\x1b[H','SPINNER':(lambda conn:conn.SetHold(),[('conn','_C')]),
                      'RVSON':(lambda conn:ASCIIencoder.RVS(conn.encoder,conn,True),[('_R','_C'),('conn','_C')]),
@@ -93,9 +92,7 @@ def toASCII(text:str, full=True):
     text = (unicodedata.normalize('NFKD',text).encode('cp437','asciispc')).decode('latin1')
     return text
 
-###################################
 # Replace unknowns with a space
-###################################
 def asciihandler(e):
     char = b''
     if type(e) == UnicodeEncodeError:
@@ -110,13 +107,13 @@ class ASCIIencoder(Encoder):
     def __init__(self, name:str) -> None:
         super().__init__(name)
         self.minT56Kver = 0
-        self.encode = toASCII   # Function to encode from ASCII/Unicode
-        self.decode = lambda t:t.encode('latin1').decode('cp437')	# Function to decode from CP437 to Unicode
+        self.encode = toASCII   #	Function to encode from ASCII/Unicode
+        self.decode = lambda t:t.encode('latin1').decode('cp437')	#	Function to decode from CP437 to Unicode
         self.non_printable = NONPRINTABLE	#	List of non printable characters
-        self.nl	= '\r'			# New line string/character
-        self.nl_out = '\r\n'      # New line string/character (out)
-        self.bs = chr(DELETE)	# Backspace string/character
-        self.txt_geo = (32,24)  # Text screen dimensions
+        self.nl	= '\r'			#	New line string/character
+        self.nl_out = '\r\n'      #   New line string/character (out)
+        self.bs = chr(DELETE)	#	Backspace string/character
+        self.txt_geo = (32,24)  #   Text screen dimensions
         self.ellipsis = '...'   # Ellipsis representation
         self.clients = {b'_default_':'ASCII', b'ASC':'Extended ASCII (CP437)',b'ANS':'ANSI'}
         self.back = '_'
@@ -135,21 +132,38 @@ class ASCIIencoder(Encoder):
 
     def SetColor(self,conn,c):
         c &= 15
+        # if not self.rvs:
         self.fgcolor = c
         f = ansi_fgidx[c]
+        # b = ansi_bgidx[self.bgcolor]
         conn.parser.color = c
+        # else:
+        #     self.bgcolor = c
+        #     b = ansi_bgidx[c]
+        #     f = ansi_fgidx[self.fgcolor]
         return f'\x1b[{f}m'
 
     def SetBackground(self,conn,c):
         c &= 15
+        # if not self.rvs:
         self.bgcolor = c
         b = ansi_bgidx[c]
+        # f = ansi_fgidx[self.fgcolor]
+        # else:
+        #     self.fgcolor = c
+        #     f = ansi_fgidx[c]
+        #     conn.parser.color = c
+        #     b = ansi_bgidx[self.bgcolor]
         return f'\x1b[{b}m'
 
     def RVS(self,conn, v=True):
         res = ''
         if self.rvs != v:
             if not v:
+            # bg = self.bgcolor
+            # self.bgcolor = self.fgcolor
+            # self.fgcolor = bg
+            # conn.parser.color = bg
                 cb = ansi_bgidx[self.bgcolor]
                 cf = ansi_fgidx[self.fgcolor]
                 res = f'\x1b[27m\x1b[m\x1b[{cf};{cb}{";5" if self.blink else ""}m'
@@ -162,6 +176,10 @@ class ASCIIencoder(Encoder):
         res = ''
         if self.blink != v:
             if not v:
+            # bg = self.bgcolor
+            # self.bgcolor = self.fgcolor
+            # self.fgcolor = bg
+            # conn.parser.color = bg
                 cb = ansi_bgidx[self.bgcolor]
                 cf = ansi_fgidx[self.fgcolor]
                 res = f'\x1b[25m\x1b[m\x1b[{cf};{cb}{";7" if self.rvs else ""}m'
@@ -170,11 +188,9 @@ class ASCIIencoder(Encoder):
         self.blink = v
         return res
 
-    ##############################################################################
     # Sanitize a given filename for compatibility with the client's filesystem
     # Input and output strings are not encoded
     # outout 8.3 filename
-    ##############################################################################
     def sanitize_filename(self, filename):
         def find_ext():
             nonlocal tmp,ext
@@ -228,7 +244,6 @@ class ASCIIencoder(Encoder):
             _copy.ctrlkeys.update({'CRSRU':'\x1b[A','CRSRD':'\x1b[B','CRSRR':'\x1b[C','CRSRL':'\x1b[D'})
             # Try to detect screen size
             conn.SendTML('...<BR>')
-            conn.FlushAll()
             conn.Sendallbin(b'\x1b[999;999H')    # Move cursor to the extreme lower right
             conn.Sendallbin(b'\x1b[6n')          # Device status report
             cursor = conn.NBReceive(10,2.5).decode('latin1')
@@ -248,17 +263,12 @@ class ASCIIencoder(Encoder):
                     #     conn.Sendall(f'\x1b[1;{int(_copy.txt_geo[1])}r')    # Reset margins
                     ## NComm (Amiga) doesnt seem to correcly reset the margins
                     #     #TODO: Add window area support
+
             else:
                 conn.SendTML('<BR>Screen columns? (80): ')
                 cols = conn.ReceiveInt(32,80,80)
                 conn.SendTML('<BR>Screen lines? (25): ')
                 _copy.txt_geo = (cols,conn.ReceiveInt(8,25,25))
-            # Try to detect RIPscrip support
-            # conn.SendTML('...<BR>')
-            # conn.Sendallbin(b'\x1b[!')    # Query RIPscrip version number
-            # ripv = conn.NBReceive(14,2.5).decode('latin1')
-            # if 'RIPSCRIP' in ripv:
-            #     conn.SendTML('RIPscrip supported<PAUSE n=1>')
             _copy.colors={'BLACK':0,'DKRED':1,'GREEN':2,'DKYELLOW':3,'BLUE':4,'PURPLE':5,'DKCYAN':6,'GREY3':7,
                           'GREY2':8,'RED':9,'LTGREEN':10,'YELLOW':11,'LTBLUE':12,'LTPURPLE':13,'CYAN':14,'WHITE':15,
                           'DARK_RED':1,'MEDIUM_GREY':8,'GREY':8,'LIGHT_BLUE':12,'LIGHT_PURPLE':13,'LIGHT_GREEN':10,
@@ -270,63 +280,12 @@ class ASCIIencoder(Encoder):
         else:
             return None
 
-    def wordwrap(self, text, split=False):
 
-        def insert(l):
-            nonlocal tmp, t2, ll,ix
-            while True:
-                if ix < len(escpos):    # Re-insert escape sequences
-                    if escpos[ix][0]-ll+t2 < len(l):
-                        l = l[0:escpos[ix][0]-ll+t2]+escpos[ix][2]+l[escpos[ix][0]-ll+t2:]
-                        t2 += escpos[ix][1]
-                        ix += 1
-                else:
-                    break
-            return l
-
-        p = re.compile(r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})?(;[0-9]{3})?)?[m|K]?')  # ANSI escape sequence regex (https://stackoverflow.com/questions/13506033/filtering-out-ansi-escape-sequences)
-        lines = text.split(self.nl_out)
-        if split:
-            out = []
-        else:
-            out = ''
-        for line in lines:
-            escpos = [] # Escape sequence positions
-            plen = 0    # Previous sequence lenght
-            for m in p.finditer(line):
-                escpos.append((m.start()-plen,len(m.group()),m.group()))
-                plen = escpos[-1][1]
-            wlines = textwrap.wrap(re.sub(p,'',line),width=self.txt_geo[0])
-            ix = 0  # escpos index
-            ll = 0  # line lenght counter
-            for l in wlines:
-                tmp = len(l)
-                t2 = 0
-                if len(l)<self.txt_geo[0]:
-                    l = insert(l)
-                    if not split:
-                        out += l+self.nl_out
-                    else:
-                        out.append(l+self.nl_out)
-                else:
-                    l = insert(l)
-                    if not split:
-                        out += l
-                    else:
-                        out.append(l)
-                ll += tmp
-            if len(wlines)==0:
-                if not split:
-                    out += self.nl_out
-                else:
-                    out.append(self.nl_out)
-        return(out)
-
-######################################
+###################################
 # Register with the encoder module
-######################################
+###################################
 def _Register():
     codecs.register_error('asciispc',asciihandler)  # Register encoder error handler. 
     e0 = ASCIIencoder('ASCII')
     e0.minT56Kver = 0
-    return [e0]  # Each encoder module can return more than one encoder object. For example here it could also return ANSI.
+    return [e0]  #Each encoder module can return more than one encoder object. For example here it could also return ANSI.

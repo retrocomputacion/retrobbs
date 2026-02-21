@@ -5,9 +5,9 @@
 
 # RetroBBS
 
-VERSION 0.61dev
+VERSION 0.60 dev
 
-(c)2020-2026 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
+(c)2020-2024 By Pablo Roldán(Durandal) & Jorge Castillo(Pastbytes)
 </div>
 
 
@@ -33,7 +33,6 @@ VERSION 0.61dev
    3. [User accounts / Database management](#63-user-accounts--database-management)
    4. [Messaging system](#64-messaging-system)
    5. [Temporal directory](#65-temporal-directory)
-   6. [The template system](#66-the-template-system)
 7. [TO-DO List](#7-to-do-list)
    1. [Known bugs](#71-known-bugsissues)
 8. [Acknowledgements](#8-acknowledgements)
@@ -45,82 +44,59 @@ VERSION 0.61dev
 
 *RetroBBS* is written in *Python3* and uses several 3rd party modules to provide a rich, multimedia online experience for 8-bit computers.
 
-Originally written specifically for the PETSCII character set used in Commodore computers, from v0.50 the BBS transitioned to neutral encoding, slowly removing hard-coded PETSCII strings and C64 format images. Making support of other retro platforms possible.
-
-v0.60 introduces support for many normal, non-Turbo65K compatible terminals. Getting RetroBBS closer to a standard BBS, but there's still ways to go.
+Even though this is the third rewrite of this script, it is still in an early development stage, expect to find many bugs and ugly/non-pythonic code inside.</br>
+Starting from v0.50 the BBS is transitioning to neutral encoding, slowly removing hard-coded PETSCII strings and C64 format images. With the goal of supporting other retro platforms.
 
 
 ---
 # 1.1 Release history
 
+### **v0.10** (16/08/2021):
+  Initial release
 
-### **v0.61**:
-__New features__:
- - Added TurboModem transfer protocol, by L.A.Style
+### **v0.20** (15/11/2022):
+  __New features__:
+  - Added Login/User functionality
+  - Added userclass/userlevel settings for the config file, select which menu is accessible to admins/sysops, registered users and/or guests.
+  - Added a verbosity command line switch, see section 5
+  - Added *[Turbo56k](docs/turbo56k.md)* v0.6 support, terminal features are queried and displayed on connection.
+  - Messaging system, supports public boards and private messages.
+    Public boards can have independent Read/Post user class permissions.
 
-__Changes/Bug fixes__:
- - FILEHUNTER: Fixed inconsistent quotes on f-string (syntax error on Python below 3.12)
+  __Changes/Bug fixes__:
+  - Improvements to c64cvt
+  - Fixed problems retrieving *YouTube* videos metadata due to the removal of the dislikes count.
+  - *YouTube* frame capture is now faster after the 1st frame.
+  - Core PCM audio and SID file streaming functions moved to their own module.
+  - All PCM audio decoding is done using *FFmpeg*
+  - WebAudio plugin can share any given PCM stream between multiple clients.
+  - Updated example config file with valid links to *YouTube* videos and RSS feeds.
+  - Miscellaneous code cleanup
+  - AudioList now supports *HVSC* style path to songlength files
+  - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
 
-### **v0.60** (10/January/2026):
-__New features__:
- - Retroterm MSX support.
- - *Radio* and *Podcast* plugins by __Emanuele Laface__
- - New CSDb plugin, browse, search and download files from [CSDb.dk](https://csdb.dk)
- - New File-hunter plugin, search and download files from [download.file-hunter.com](https://download.file-hunter.com)
- - SID to AY music conversion.
- - Added *[Turbo56k](docs/turbo56k.md)* v0.8 support (Drawing primitives and query client setup).
- - New &lt;END&gt; TML statement.
- - New &lt;FORMAT&gt; TML block instruction.
- - Support for RLE compressed Koala Paint images.
- - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags.
- - Added, optional TML scripts for session start and logout.
- - *Weather* plugin now has a second screen displaying the temperature curve forecast for the next 7 days.
- - Support for non-Turbo56K terminals. Including support for:
-    - CCGMS
-    - Novaterm
-    - HandyTerm
-    - Xgraphic enabled terminals (EdgeTerm)
-    - Other Commodore 64 CG terminals
-    - VicTerm (VIC-20 color PETSCII terminal)
-    - MSX RS232 ROM built in terminal (CALL COMTERM)
-    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
-    - ANSI
- - XModem, XModem-CRC and YModem file transfer protocols for non-Turbo56K clients.
- - Punter and Multi-Punter file transfer protocols for non-Turbo56K Commodore clients.
- - Added non-blocking receive function to the _Connection_ class.
- - Added template system, based on Jinja2 templates.
- - New FileList() file browser, old version now called Gallery()
- - Browse and transfer the contents of ZIP and LHA archives.
- - Browse and transfer the contents of D64/D71/D81 and IMG/DSK disk images.
- - Sysop can now delete ONELINER messages.
- - New _draw_ module, adds support for drawing stars, polygons and Hershey fonts using the new client side drawing primitives.
- - New TIC-TAC-TOE game, uses drawing primitives commands on clients which support them.
- - *Webaudio* now supports chapters on Youtube sources. For videos without chapters it will show the thumbnail.
- - Added TML tags for the BBS style colors.
- - Added new core function: RTERMSETUP. Shows current client and _retroterm_ capabilities.
+### **v0.25** (14/11/2022):
+  __New features__:
+  - **SLIDESHOW** now supports SID files
+  - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
+  - BBS version and host OS are shown after the welcome message.
+  - Total BBS uptime is stored in the database. Session uptime is available as an attribute of the BBS class.
+  - Total data transferred for each user account is stored in the database.
 
-__Changes/Bug fixes__:
- - Minimum Python version required is now 3.9
- - Fixed filter cutoff low nibble in SID chiptune streaming
- - Fixed PCMPLAY support for non-local files
- - *Webaudio* plugin now supports non-live sources
- - Send the correct number of delete characters for the LogOff confirmation message
- - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
- - Fixed *Slideshow* handling of .C and .PET PETSCII files
- - *Weather* plugin now has more robust handling of geocoder timeouts
- - *Weather* plugin can now fallback to text mode
- - Fixed image converter Bayer 4x4 dithering matrix
- - Added user-agent when using wikipediaapi >= 0.6.0
- - Fixed audio streaming now works when the BBS is running under Windows and Mac.
- - Messaging system reworked, it now supports different screen dimensions and longer messages
- - MSX-ASCII art header for the *Oneliner* plugin
- - Fix to support Python-Weather >= 2.0.0
- - Fixed menu item descriptions with special characters resulting on misaligned menu screen
- - Delete temporal files after use
- - Turbo56k query commands now use non-blocking reception, prevents hangs on client-side errors.
- - Chiptune streaming now use non-blocking reception for synchronization.
+  __Changes/Bug fixes__:
+  - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longer uses mu-law compression.
+  - Removed legacy RAW audio streaming code.
+  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-Latin characters.
+  - Fixed broken Streamlink support. Added Twitch stream example to configuration file
+  - **SLIDESHOW** now plays PCM audio for the correct amount of time.
+  - SIDStreaming flushes the input buffer when the stream is canceled.
+  - Fixed board/inbox message list order, changed from newest thread first to thread with the newest message first.
+  - Board/Inbox message list now displays the author of the latest message in each thread.
+  - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
+  - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
+  - Documentation rewritten in Markdown format
 
-### **v0.50** (02/January/2024):
+### **v0.50** (02/01/2024):
 
 __New features__:
  - Idle BBS will reload the configuration file if it has been modified during runtime.
@@ -180,58 +156,60 @@ __Changes/Bug fixes__:
  - *Sendfile* checks if executable file fits in the client's available memory size and range and disables transfer to memory if the file is too large or resides outside the valid memory range.
  - Added `←` glyph to BetterPixels font
 
-### **v0.25** (14/December/2022):
-  __New features__:
-  - **SLIDESHOW** now supports SID files
-  - **WEATHER** plugin, display the current weather and forecast for the next 2-3 days.
-  - BBS version and host OS are shown after the welcome message.
-  - Total BBS uptime is stored in the database. Session uptime is available as an attribute of the BBS class.
-  - Total data transferred for each user account is stored in the database.
+### **v0.60**:
+__New features__:
+ - MSX support
+ - *Radio* and *Podcast* plugins by __Emanuele Laface__
+ - New CSDb plugin, browse, search and download files from CSDb.dk
+ - SID to AY music conversion.
+ - New &lt;END&gt; TML statement
+ - New &lt;FORMAT&gt; TML block instruction
+ - Support for RLE compressed Koala Paint images
+ - New &lt;PCMPLAY&gt; and &lt;SENDBITMAP&gt; TML tags
+ - Added, optional TML scripts for session start and logout.
+ - Support for non-Turbo56K terminals. Including support for
+    - CCGMS
+    - Novaterm
+    - HandyTerm
+    - Xgraphic enabled terminals (EdgeTerm)
+    - Other Commodore 64 CG terminals
+    - VicTerm (VIC-20 color PETSCII terminal)
+    - MSX RS232 ROM built in terminal (CALL COMTERM)
+    - VT52/VidTex compatible terminals (VIDTEX, CBTerm, VIP Terminal, ATARI ST)
+    - ANSI
+ - XModem and XModem-CRC file transfer protocols for non-Turbo56K clients
+ - Added non-blocking receive function to the _connection_ class
+ - Added templating system, based on Jinja2 templates
+ - New FileList() file browser, old version now called Gallery()
+ - Browse and transfer the contents of ZIP and LHA archives
+ - Sysop can now delete ONELINER messages
 
-  __Changes/Bug fixes__:
-  - *Librosa* module replaced by *audioread* and use of *FFmpeg* audio filters, PCM streaming no longer uses mu-law compression.
-  - Removed legacy RAW audio streaming code.
-  - Fixed broken **AUDIOLIBRARY** formatting when a filename contains non-Latin characters.
-  - Fixed broken Streamlink support. Added Twitch stream example to configuration file
-  - **SLIDESHOW** now plays PCM audio for the correct amount of time.
-  - SIDStreaming flushes the input buffer when the stream is canceled.
-  - Fixed board/inbox message list order, changed from newest thread first to thread with the newest message first.
-  - Board/Inbox message list now displays the author of the latest message in each thread.
-  - When reading a public board message thread, the date for the current message is displayed in the header next to the author.
-  - **SendProgram** and **SendRAWFile** moved from the main script to the common.filetools module.
-  - Documentation rewritten in Markdown format
-
-
-### **v0.20** (15/November/2022):
-  __New features__:
-  - Added Login/User functionality
-  - Added userclass/userlevel settings for the config file, select which menu is accessible to admins/sysops, registered users and/or guests.
-  - Added a verbosity command line switch, see section 5
-  - Added *[Turbo56k](docs/turbo56k.md)* v0.6 support, terminal features are queried and displayed on connection.
-  - Messaging system, supports public boards and private messages.
-    Public boards can have independent Read/Post user class permissions.
-
-  __Changes/Bug fixes__:
-  - Improvements to c64cvt
-  - Fixed problems retrieving *YouTube* videos metadata due to the removal of the dislikes count.
-  - *YouTube* frame capture is now faster after the 1st frame.
-  - Core PCM audio and SID file streaming functions moved to their own module.
-  - All PCM audio decoding is done using *FFmpeg*
-  - WebAudio plugin can share any given PCM stream between multiple clients.
-  - Updated example config file with valid links to *YouTube* videos and RSS feeds.
-  - Miscellaneous code cleanup
-  - AudioList now supports *HVSC* style path to songlength files
-  - Now most text parameters other than in calls to the Connection class are expected to be *ASCII*, not *PETSCII*, this also counts for the config file.
-
-### **v0.10** (16/August/2021):
-  Initial release
-
+__Changes/Bug fixes__:
+ - Minimum Python version required is now 3.9
+ - Fixed filter cutoff low nibble in SID chiptune streaming
+ - Fixed PCMPLAY support for non-local files
+ - *Webaudio* plugin now supports non-live sources
+ - Send the correct number of delete characters for the LogOff confirmation message
+ - Fix to support Wikipedia-API version 0.6.0 and above (see note on the Requirements section)
+ - Fixed *Slideshow* handling of .C and .PET PETSCII files
+ - *Weather* plugin now has more robust handling of geocoder timeouts
+ - *Weather* plugin can now fallback to text mode
+ - Fixed image converter Bayer 4x4 dithering matrix
+ - Added user-agent when using wikipediaapi >= 0.6.0
+ - Fixed audio streaming now works when the BBS is running under Windows
+ - Messaging system reworked, it now supports different screen dimensions and longer messages
+ - MSX-ASCII art header for the *Oneliner* plugin
+ - Fix to support Python-Weather >= 2.0.0
+ - Fixed menu item descriptions with special characters resulting on misaligned menu screen
+ - Delete temporal files after use
 
 ---
 # 1.2 The *Turbo56K* protocol
 
 *[Turbo56k](docs/turbo56k.md)* was created by Jorge Castillo as a simple protocol to provide high-speed file transfer functionality to his bit-banging 57600bps RS232 routine for the C64.
 Over time, the protocol has been extended to include 4-bit PCM audio streaming, bitmap graphics transfer and display, SID music streaming and more.
+
+*RetroBBS* will refuse incoming connections from non-*Turbo56K* compliant terminals.
 
 ---
 # 1.3 The *TML* language
@@ -254,15 +232,15 @@ Current built-in functions:
 
 - Public message boards and private messaging system
 
-- Program transfer: Send Commodore 64 and Plus/4 `.prg` files, or MSX `.rom` files to the computer memory at the correct memory address.
+- Program transfer: Send Commodore 64 and Plus/4 .prg files to the computer memory at the correct memory address.
 
 - RAW file transfer: Send RAW file data directly to the computer, no processing is done to the input data.
 
 - Text file transfer: Process different text formats (*ASCII* or *PETSCII*) and send it to the client computer either paginated or with interactive scrolling.
 
-- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64, Plus/4 Hires or Multicolor and MSX Screen 2, also supports Koala Painter (normal and RLE encoded), Advanced Art Studio, Doodle!, Art Studio C64 native file formats, Botticelli Plus/4 native file format, Screen2 MSX native format and Compuserve RLE files. Images larger than the client screen are resized and cropped for best fit. This functionality can be used from plug-ins. 
+- Image conversion and display: Supports conversion of *GIF*, *PNG*, *JPG* file formats to C64 and Plus/4 Hires or Multicolor, also supports Koala Painter, Advanced Art Studio, Doodle!, Art Studio C64 native file formats and Botticelli Plus/4 native file format. Images larger than 320x200 pixels are resized and cropped for best fit. This functionality can be used from plug-ins. 
 
-- PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit PCM audio streams on the fly. Metadata is supported and displayed.
+- PCM audio streaming: *WAV* and *MP3* files are converted to 4-bit 11520Hz PCM audio streams on the fly. Metadata is supported and displayed.
 
 - SID music streaming: .SID and .MUS files are converted to a stream of SID register writes. Only SID tunes that play once per frame (1X speed) are supported. This function requires the existence of the *SIDDumpHR* or *SIDDump* executables in the system path, if neither is found a slower Python implementation will be used instead.
 
@@ -274,7 +252,7 @@ Current built-in functions:
 
 - Video frame grabbing: Any file format supported by OpenCV2/ffmpeg, files can be local or from an external URL.
 
-- File transfer to the client's (disk) storage device, using either the custom Turbo56K protocol, XModem, YModem, Punter or Multi-Punter protocols.
+- File transfer to the client's (disk) storage device.
 
 Included plug-ins:
 
@@ -288,13 +266,6 @@ Included plug-ins:
 - Weather (weather.py): Query the weather forecast for any part of the world.
 - Maps (maps.py): Display and navigate the map of the world. 
 - Mindle (mindle.py): A Wordle clone, with variable word length.
-- CSDb (csdb.py): Browse, search and download files from the _Commodore Scene Database_
-- File-hunter (filehunter.py): Search and download files from _download.file-hunter.com_
-- Tic-Tac-Toe (tictactoe.py): A tic-tac-toe game, takes advantage of client side drawing primitives if available.
-- Search internet radios (radio.py): Search and listen to internet radios. By __Emanuele Laface__
-- Search Podcasts (podcast.py): Search and listen to podcast. By __Emanuele Laface__
-
-
 
 
 ---
@@ -336,8 +307,7 @@ Python modules:
   
     pip install -r requirements.txt
 
-  > [!NOTE]
-  > Wikipedia-API version is currently restricted to a version up to 0.6.0. If you're experiencing problems with the _Wikipedia_ plugin try either upgrading to the latest version, or downgrade to 0.5.8
+  ** Note: Wikipedia-API version is currently restricted to a version up to 0.6.0. If you're experiencing problems with the _Wikipedia_ plugin try either upgrading to the latest version, or downgrade to 0.5.8
 
 ### External software:
 
@@ -353,9 +323,6 @@ Python modules:
 # 2 Configuration file
 
 *RetroBBS* uses the standard INI format for its configuration file (accepts the extended value interpolation method as used by the _configparse_ Python module), the default file is `config.ini`, located in the root install directory:
-
-> [!TIP]
-> Is recommended to build your own configuration file and point RetroBBS to that file using the `-c` command line option
 
 ```ini 
 [SECTION]
@@ -379,12 +346,11 @@ Global BBS settings
 | `ip` | IP V4 address on which the BBS will be accessible, default is `127.0.0.1`
 | `port` | port number on which the BBS will be accessible
 | `lines` | Number of connection slots
-| `language` | language for transmitted texts, only partially implemented as of 0.60
+| `language` | language for transmitted texts, only partially implemented as of 0.25
 | `welcome` | Welcome message on connection
 | `goodbye` | Log off message
 | `busy` | Message shown when all the connection slots are in use
 | `dateformat` | Format in which dates will be printed out, client-side:<br>0 = dd/mm/yyyy<br>1 = mm/dd/yyyy<br>2 = yyyy/mm/dd
-| `template` | Teamplate to use, name of the subdirectory inside /templates/. `default` will be used if this entry not defined.
 
 ### **\[BOARDS\]**
 Settings for the available messaging boards
@@ -404,7 +370,7 @@ Directory paths to different BBS files, some are used internally, others are ref
 | `audio` | Path to files for the audio library
 | `images` | Path to pictures for the Image gallery
 | `downloads` | Path to files for the program library
-| `temp` | Path to temporal files created by the BBS or its plugins
+| `temp` | Path to temporal files created by the BBS or it's plugins
 
 Custom paths can be added here as needed
 
@@ -635,16 +601,6 @@ Retrieves and displays the text and picture from NASA's Astronomy Picture Of the
 - Configuration file parameters: NONE
 - Configuration file \[PLUGINS\] options: `nasakey` = Your NASA API key, obtained from https://api.nasa.gov/. Default is `DEMO_KEY`
 
-### CSDb (csdb.py):
-Browse, search and download files from the Commodore Scene Database.
-
-- Configuration file function: CSDB
-
-### File-hunter (filehunter.py):
-Search and download files from _download.file-hunter.com.
-
-- Configuration file function: FILEHUNTER
-
 ### IRC Client (irc_client.py):
 Basic and very experimental IRC client.
 
@@ -691,18 +647,9 @@ Retrieves the latest ten entries from the specified RSS feed, upon user selectio
 By __Emanuele Laface__</br>
 Uses Radio-browser.info API to search for and listen to internet radios.
 
-- Configuration file function: RADIO
-
 ### Search Podcasts (podcast.py):
 By __Emanuele Laface__</br>
 Search for and listen to podcasts.
-
-- Configuration file function: PODCAST
-
-### Tic-Tac-Toe (tictactoe.py):
-A simple game of Tic-Tac-Toe that uses drawing primitives when available.
-
-- Configuration file function: TICTACTOE
 
 ### Weather (weather.py) (new 0.25):
 Displays current weather and forecast for the next 2-3 days as a Hires image. On first run it will display the weather corresponding to the passed Connection object's IP. Further weather forecasts can be queried by typing a new location.
@@ -761,45 +708,45 @@ Other plug-ins not included in the distribution or by 3rd parties:
 
 ---
 # 4 Common modules
-Located inside the \<common\> directory you'll find modules which implement what could be called the BBS' API. The use of some of these modules is mandatory when writing a new plug-in.
+Located inside the \<common\> directory you'll find modules which integrate what could be called the BBS' API. The use of some of these modules is mandatory when writing a new plug-in.
 
 ## common.audio - Audio/SID streaming:
 
-#### AudioList(conn,title,speech,logtext,path):
+### AudioList(conn,title,speech,logtext,path):
 Creates and manages an PCM audio/SID file browser.
-  - `conn`: Connection object
-  - `title`: String to be used as the title for the file browser
-  - `speech`: Optional string for the voice synthesizer
-  - `logtext`: String to output in the log
-  - `path`: Path to the directory to browse
+  - **\<conn\>**: Connection object
+  - **\<title\>**: String to be used as the title for the file browser
+  - **\<speech\>**: Optional string for the voice synthesizer
+  - **\<logtext\>**: String to output in the log
+  - **\<path\>**: Path to the directory to browse
 
-#### PlayAudio(conn,filename, length = 60.0, dialog=False):
+### PlayAudio(conn,filename, length = 60.0, dialog=False):
 Converts and streams a PCM audio file to **\<conn\>**.
-- `filename`: Path to the file to stream, file can be any audio file format supported by audioread/*FFmpeg*
-- `length`: Length of the audio to stream in seconds
-- `dialog`: Boolean, display audio metadata and instructions before starting streaming
+- **\<filename\>**: Path to the file to stream, file can be any audio file format supported by audioread/*FFmpeg*
+- **\<length\>**: Length of the audio to stream in seconds
+- **\<dialog\>**: Boolean, display audio metadata and instructions before starting streaming
 
-#### CHIPStream(conn, filename,ptime, dialog=True):
+### CHIPStream(conn, filename,ptime, dialog=True):
 Stream register writes data to the guest's sound chip
-- `conn`: Destination
-- `filename`: Path to the SID file
-- `ptime`: Playtime in seconds
-- `dialog`: Display SID file metadata and instructions before starting streaming
+- **\<conn\>**: Destination
+- **\<filename\>**: Path to the SID file
+- **\<ptime\>**: Playtime in seconds
+- **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
 
-#### SIDStream(conn, filename,ptime, dialog=True): __-DEPRECATED-!__ Use CHIPStream instead
-Stream a SID file to `conn`
-- `filename`: Path to the SID file
-- `ptime`: Playtime in seconds
-- `dialog`: Display SID file metadata and instructions before starting streaming
+### SIDStream(conn, filename,ptime, dialog=True): __-DEPRECATED-!__ Use CHIPStream instead
+Stream a SID file to **\<conn\>**
+- **\<filename\>**: Path to the SID file
+- **\<ptime\>**: Playtime in seconds
+- **\<dialog\>**: Display SID file metadata and instructions before starting streaming
 
 check the [Chiptune streaming](docs/chiptune_streaming.md) protocol
 
 
 ### class PCMStream(fn, sr) :
 Receive an audio stream from *FFmpeg* in chunks.
-- `fn`: Path to the audio, can either be a local filename path or an online stream.
-- `sr`: Target sample rate
+- **fn**: Path to the audio, can either be a local filename path or an online stream.
+- **sr**: Target sample rate
 
 **PCMStream.read(size)**:
 Read a chunk of data **size** bytes in length. Returns a byte string
@@ -809,28 +756,28 @@ Terminates an audio stream, and closes *FFmpeg*.
 
 ## common.bbsdebug - Log output to stdout:
 
-#### _LOG(message, _end='\n', date=True, id=0, v=1):
-Prints `message` on stdout. `message` can be any expression valid for the print function.<br>The message will end in a newline by default, you can change this by passing a different end string in the `_end` parameter.<br>By default, the message will be preceded by the current date and time, disable this by passing `False` in the **\<date\>** parameter.
-- `id`: Should be the connection id corresponding to this message. Defaults to 0 -> general message.
-- `v`: Verbosity level for this message. If greater than the level selected on startup, the log message will not be printed.
+### _LOG(message, _end='\n', date=True, id=0, v=1):
+Prints **\<message\>** on stdout. **\<message\>** can be any expression valid for the print function.<br>The message will end in a newline by default, you can change this by passing a different end string in the **\<_end\>** parameter.<br>By default, the message will be preceded by the current date and time, disable this by passing `False` in the **\<date\>** parameter.
+- **\<id\>**: Should be the connection id corresponding to this message. Defaults to 0 -> general message.
+- **\<v\>**: Verbosity level for this message. If greater than the level selected on startup, the log message will not be printed.
 
 Also defined in this module is the <bcolors> class, which enumerates a few ANSI codes for use in the log messages.
 
 ## common.c64cvt - Image conversion to raw C64 formats: (__-DEPRECATED-__)
 
-#### c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
+### c64imconvert(Source, gfxmode=1, lumaD=0, fullD=6, preproc=True):
 Converts PIL image object **\<Source\>** into C64 graphic data.
-- `gfxmode`: selects the C64 graphic mode to use:<br>`0` = HiRes<br>`1` = MultiColor (default)
-- `lumaD`: dithering type for the luminance channel, defaults 0, none
-- `fullD`: color dithering type, defaults to 6, bayer8x8
-- `preproc`: Auto preprocessing of the image brightness/contrast.
+- **\<gfxmode\>**: selects the C64 graphic mode to use:<br>`0` = HiRes<br>`1` = MultiColor (default)
+- **\<lumaD\>**: dithering type for the luminance channel, defaults 0, none
+- **\<fullD\>**: color dithering type, defaults to 6, bayer8x8
+- **\<preproc\>**: Auto preprocessing of the image brightness/contrast.
 
 Returns a tuple `(e_img,cells,screen,color,bg_color)` where:
-- `e_img`: PIL image object, rendering of the converted image
-- `cells`: C64 bitmap data (8000 bytes)
-- `screen`: C64 screen matrix color data (1000 bytes)
-- `color`: C64 color ram data (1000 bytes), used only in multicolor mode
-- `bg_color`: C64 background color (1 byte), used only in multicolor mode
+- **\<e_img\>**: PIL image object, rendering of the converted image
+- **\<cells\>**: C64 bitmap data (8000 bytes)
+- **\<screen\>**: C64 screen matrix color data (1000 bytes)
+- **\<color\>**: C64 color ram data (1000 bytes), used only in multicolor mode
+- **\<bg_color\>**: C64 background color (1 byte), used only in multicolor mode
 
 ## common.imgcvt - Image conversion to a native graphic format:
 
@@ -841,11 +788,6 @@ Current supported values:
 ```
 C64HI: Commodore 64 hires bitmap
 C64MULTI: Commodore 64 multicolor bitmap
-P4HI: Commodore Plus/4 hires bitmap
-P4MULTI: Commodore Plus/4 multicolor bitmap
-MSXSC2: MSX Screen 2 bitmap
-VTHI: VidTex hires bitmap
-VTMED: VidTex medres bitmap
 ```
 
 ### dithertype
@@ -893,23 +835,23 @@ A simple class defining the image processing values:
 
 Creating a ColorProcess without parameters and passing it to *`convert_To`* will result in no image processing being performed.
 
-#### convert_To(Source, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8, threshold=4, cmatch=1, g_colors=None)
+### convert_To(Source, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8, threshold=4, cmatch=1, g_colors=None)
 Convert a _PIL_ image to a native graphic format.
 
-- `Source`: PIL image source, it will automatically be scaled/cropped to fit the target graphic mode
-- `gfxmode`: Target graphic mode
-- `preproc`: Image preprocessing, pass `None` for automatic image adjustment.
-- `dither`: Dither method
-- `threshold`: Dither threshold
-- `cmatch`: Color matching method
-- `gcolors`: Global colors list, pass `None` for best guess
+- **\<Source\>**: PIL image source, it will automatically be scaled/cropped to fit the target graphic mode
+- **\<gfxmode\>**: Target graphic mode
+- **\<preproc\>**: Image preprocessing, pass `None` for automatic image adjustment.
+- **\<dither\>**: Dither method
+- **\<threshold\>**: Dither threshold
+- **\<cmatch\>**: Color matching method
+- **\<gcolors\>**: Global colors list, pass `None` for best guess
 
 Returns a PIL image rendering of the result, a list of buffers containing the native data (platform/mode dependent), and a list of global colors
 
-#### get_IndexedImg(mode:gfxmodes, bgcolor=0)
+### get_IndexedImg(mode:gfxmodes, bgcolor=0)
 Returns a PIL "P" image with the dimensions and palette of `mode`, filled with `bgcolor` color index.
 
-#### open_Image(filename)
+### open_Image(filename)
 Open a native image file, returns a PIL image object, native image data and graphic mode
 
 ## common.classes - Internal use only
@@ -918,34 +860,30 @@ Open a native image file, returns a PIL image object, native image data and grap
 Implements the Connection class, this is the class used to communicate with clients, all plug-ins must include this module. Only properties and methods to be used by plug-ins are described below.
 
 ### Connection class properties:
-- `socket`: Socket object for this connection. The socket is set to blocking mode by default, with a timeout of 5 minutes.
-- `addr`: Client's IP address **-READ ONLY-**
-- `id`: ID for this connection **-READ ONLY-**
-- `outbytes`: Total number of bytes sent to this client **-READ ONLY-**
-- `inbytes`: Total number of bytes received from this client **-READ ONLY-**
-- `samplerate`: Supported PCM sample rate **-READ ONLY-**
-- `TermString`: Client's terminal ID string **-READ ONLY-**
-- `T56KVer`: Client's terminal reported _Turbo56K_ version **-READ ONLY-**
+- **\<socket\>**: Socket object for this connection. The socket is set to blocking mode by default, with a timeout of 5 minutes.
+- **\<addr\>**: Client's IP address **-READ ONLY-**
+- **\<id\>**: ID for this connection **-READ ONLY-**
+- **\<outbytes\>**: Total number of bytes sent to this client **-READ ONLY-**
+- **\<inbytes\>**: Total number of bytes received from this client **-READ ONLY-**
+- **\<samplerate\>**: Supported PCM sample rate **-READ ONLY-**
+- **\<TermString\>**: Client's terminal ID string **-READ ONLY-**
+- **\<T56KVer\>**: Client's terminal reported _Turbo56K_ version **-READ ONLY-**
 
 ### Connection class methods:
 
-**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.<br>If the command exist the returned value is the number of parameter bytes needed (up to 127). Otherwise the return value will have its 7th bit set.
+**QueryFeature(cmd)**: Query the client's terminal if command `cmd` is supported. Returned value is saved during the client's session. The query transaction will happen only the first time for each command.<br>If the command exist the returned value is the number of parameter bytes needed (up to 127). Otherwise the return value will have it's 7th bit set.
 
-**QueryClient(subsystem)**: Query the client system setup, where `subsystem` is the specific system feature area, such as text screen dimensions, RAM or VRAM amount, etc.  
+**Sendall(cadena)**: Converts string **\<cadena\>** to a binary string and sends it to the client.
 
-**Sendall(_string)**: Converts string `_string` to a binary string and sends it to the client.
+**Sendallbin(cadena)**: Sends binary string **\<cadena\>** to the client.
 
-**Sendallbin(_string)**: Sends binary string `_string` to the client.
+**Flush(ftime)**: Flush the receiving buffer for **\<ftime\>** seconds.
 
-**Flush(ftime)**: Flush the receiving buffer for `ftime` seconds.
+**Receive(count)**: Receives **\<count\>** binary chars from the client.<br>Returns: binary string.
 
-**FlushAll()**: Flush the receiving buffer until it is empty.
+**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to **\<count\>** within the time specified by **\<timeout\>** (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
 
-**Receive(count)**: Receives `count` binary chars from the client.<br>Returns: binary string.
-
-**NBReceive(count=1, timeout=3)**: Non-blocking version of _Receive()_, receives up to `count` binary chars within the time specified by `timeout` (in seconds).<br>Return: binary string. May be empty if no character was received within the given time.
-
-**ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the `keys` parameter.<br>`keys` can be:
+**ReceiveKey(keys=b'\r')**: Wait for a received character from the client matching any of the characters in the **\<keys\>** parameter.<br>**\<keys\>** can be:
  - A binary string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, no conversion performed before or after.
  - A normal string: _ReceiveKey_ will wait for any character matching any one of the characters in passed parameter, the passed parameter is encoded before comparison, and the received character is decoded before returning.
  - A list of strings: _ReceiveKey_ will wait for any character matching any one of the individual strings in the passed list. Only single character alphanumerical strings are encoded before comparison and decoded before returning. Strings containing control codes are left untouched. This option is useful for receiving control sequences, ie: ANSI escape codes.
@@ -955,100 +893,102 @@ Implements the Connection class, this is the class used to communicate with clie
 
 **ReceiveStr(keys, maxlen = 20, pw = False)**: Interactive reception with echo. The call is completed on reception of a carriage return.
 
-- `keys` is a binary or normal string with the accepted input characters. Use binary string for characters in the native encoding. Normal string for unencoded characters.
-- `maxlen` is the maximum input string length
+- **\<keys\>** is a binary or normal string with the accepted input characters. Use binary string for characters in the native encoding. Normal string for unencoded characters.
+- **\<maxlen\>** is the maximum input string length
 
-Set `pw` to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
+Set **\<pw\>** to `True` to echo `*` for each character received, ie, for password entry.<br>Returns: *ASCII* string received.
 
-**ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between `minv` and `maxv`, if the user presses `RETURN` instead, the function will return `defv`.<br> If `auto` is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
+**ReceiveInt(minv, maxv, defv, auto = False)**: Interactive reception of a positive integer with echo. The user will be restricted to entering a number between **\<minv\>** and **\<maxv\>**, if the user presses `RETURN` instead, the function will return **\<defv\>**.<br> If **\<auto\>** is `True`, the function will return automatically when the user enters the maximum number of digits possible within the limits, or by pressing `DEL` when there's no digit entered. In which case, this function will return `None`.
 
-**ReceiveDate(prompt, mindate, maxdate, defdate)**: Interactive reception of a calendar date with echo. The user will be restricted to enter a date between `mindate` and `maxdate`, if the user presses `RETURN` instead, the function will return `defdate`. The date format will follow the user preference if set, otherwise the global BBS date format will be used. Returns a _datetime.date_ object
+**ReceiveDate(prompt, mindate, maxdate, defdate)**: Interactive reception of a calendar date with echo. The user will be restricted to enter a date between **\<mindate\>** and **\<maxdate\>**, if the user presses `RETURN` instead, the function will return **\<defdate\>**. The date format will follow the user preference if set, otherwise the global BBS date format will be used. Returns a _datetime.date_ object
 
-**SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a `data` **TML** script to the client, optionally initialize the TML parser `registers`. Returns a dictionary with the last states of the TML parser registers.
+**SendTML(data, registers: dict = {'_A':None,'_S':'','_I':0})**: Parse and send a **\<data\>** **TML** script to the client, optionally initialize the TML parser **\<registers\>**. Returns a dictionary with the last states of the TML parser registers.
 
 ## common.dbase - Database management:
-#### getUsers(): 
+### getUsers(): 
 Get a list of (id, username) pairs. Both `id` and `username` are strings.
 
-#### getUserPrefs(id, defaults={}):
-Get a dictionary containing the preferences corresponding to the user `id`. Pass the `defaults` values in case the user has no/incomplete preferences.
+### getUserPrefs(id, defaults={}):
+Get a dictionary containing the preferences corresponding to the user **\<id\>**. Pass the **\<defaults\>** values in case the user has no/incomplete preferences.
 
-#### updateUserPrefs(id,prefs:dict):
-Update the preferences corresponding to user `id` with the contents of the `prefs` dictionary
+### updateUserPrefs(id,prefs:dict):
+Update the preferences corresponding to user **\<id\>** with the contents of the **\<prefs\>** dictionary
 
 ## common.filetools - Functions related to file transfer:
-#### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
+### SendBitmap(conn, filename, dialog=False, save= False, lines=25, display=True, gfxmode:gfxmodes=gfxmodes.C64MULTI, preproc:ColorProcess=None, dither:dithertype=dithertype.BAYER8):
 Convert image to C64 mode and send it to the client.
 __Important: The parameter order has changed since v0.25__
 
-- `conn`: Connection object
-- `filename`: Path to image file/bytes object/PIL image object
-- `save`: Set to `True` to save the image to disk. Default `False`
-- `lines`: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
-- `display`: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
-- `dialog`: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
-- `gfxmode`: Target graphic mode. Might be overridden by user selection if `dialog` is `True`
-- `preproc`: Image processing parameters prior to conversion. Pass `None` for automatic processing.
-- `dither`: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to image file/bytes object/PIL image object
+- **\<save\>**: Set to `True` to save the image to disk. Default `False`
+- **\<lines\>**: Total number of lines (1 line = 8 pixels) to transfer starting from the top of the screen, max/default = `25`
+- **\<display\>**: Set to `True` to send *Turbo56K* commands to display the image after the transfer is completed
+- **\<dialog\>**: Set to `True` to send a dialog asking for graphics mode selection before converting and transferring the image
+- **\<gfxmode\>**: Target graphic mode. Overridden by user selection if **\<dialog\>** = `True`
+- **\<preproc\>**: Image processing parameters prior to conversion. Pass `None` for automatic processing.
+- **\<dither>\>**: Dither method to use _if_ the image needs to be converted to `gfxmode`. 
 
-#### SendProgram(conn:Connection, filename):
+### SendProgram(conn:Connection, filename):
 Sends program file into the client memory at the correct address in turbo mode
 
-- `conn`: Connection object
-- `filename`: Path of the program file to be sent
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path of the program file to be sent
 
-#### SendFile(conn:Connection, filename, dialog = False, save = False):
+### SendFile(conn:Connection, filename, dialog = False, save = False):
 Calls the right transfer function for each supported file type. If selected, will display a dialog beforehand.
 
-- `conn`: Connection object
-- `filename`: Path of the file to be sent
-- `dialog`: Set to `True` to send a dialog asking the action to take. Default `False`
-- `save`: Set to `True` to transfer the file to disk. If `dialog` is `True`, then the _save_ option will be added.
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path of the file to be sent
+- **\<dialog\>**: Set to `True` to send a dialog asking the action to take. Default `False`
+- **\<save\>**: Set to `True` to transfer the file to disk. If `dialog` is `True`, then the _save_ option will be added.
 
-#### SendRAWFile(conn:Connection, filename, wait = True):
+### SendRAWFile(conn:Connection, filename, wait = True):
 Sends a file directly without processing
 
-- `conn`: Connection object
-- `filename`: Path of the file to be sent
-- `wait`: Boolean, wait for `RETURN` after sending the file
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path of the file to be sent
+- **\<wait\>**: Boolean, wait for `RETURN` after sending the file
 
-#### TransferFile(conn:Connection, file, savename, seq = False):
+### TransferFile(conn:Connection, file, savename, seq = False):
 Starts a file transfer to disk, pending the client acceptance.
 
-- `conn`: Connection object
-- `file`: Either the path string to the file to transfer. Or a _bytes_ object with the actual data to be transferred.
-- `savename`: The name used to save the file on the disk. Mandatory if `file` is a _bytes_ object.
-- `seq`: Set to `True` to save the file as a _SEQ_ file. Otherwise, it will be saved as a _PRG_ file.
+- **\<conn\>**: Connection object
+- **\<file\>**: Either the path string to the file to transfer. Or a _bytes_ object with the actual data to be transferred.
+- **\<savename\>**: The name used to save the file on the disk. Mandatory if `file` is a _bytes_ object.
+- **\<seq\>**: Set to `True` to save the file as a _SEQ_ file. Otherwise, it will be saved as a _PRG_ file.
 
-#### SendText(conn:Connection, filename, title = '', lines = 25):
+### SendText(conn:Connection, filename, title = '', lines = 25):
 Display a text (.txt) or sequential (.seq) file.
 
 Text files are displayed through `common.helpers.More`.
 
 Sequential files are scanned for _PETSCII_ control codes and interpreted accordingly.
 
-- `conn`: Connection object
-- `filename`: Path to the file to display
-- `title`: If not empty, will be used to display a title bar. Otherwise, no title bar will be rendered.
-- `lines`: Number if lines available before scrolling.
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to the file to display
+- **\<title\>**: If not empty, will be used to display a title bar. Otherwise, no title bar will be rendered.
+- **\<lines\>**: Number if lines available before scrolling.
 
-#### SendCPetscii(conn:Connection, filename, pause = 0):
+### SendCPetscii(conn:Connection, filename, pause = 0):
 Display a _.c_ formatted C64 text screen, as exported by _PETSCII_ or _PETMate_. Multiple frames per file are supported
 
-- `conn`: Connection object
-- `filename`: Path to the file to display
-- `pause`: Seconds to pause between frames. Default: 0, wait for user to press RETURN.
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to the file to display
+- **\<pause\>**: Seconds to pause between frames. Default: 0, wait for user to press RETURN.
 
-#### SendPETPetscii(conn:Connection, filename):
+### SendPETPetscii(conn:Connection, filename):
 Display a _.PET_ formatted C64 text screen, as exported by _PETMate_. Returns immediately
 
-- `conn`: Connection object
-- `filename`: Path to the file to display
+- **\<conn\>**: Connection object
+- **\<filename\>**: Path to the file to display
 
 ## common.helpers
 Misc functions that do not fit anywhere else at this point. Functions might get deprecated and/or moved to other modules in the future.
 
 **valid_keys**: A string containing the valid characters to be used as user input.
+
+**menu_colors**: List containing the odd/even color pairs for menu entries __-DEPRECATED-__.
 
 **font_bold**: Default bold Imagefont for use on bitmaps, 16px height.
 
@@ -1057,60 +997,69 @@ Misc functions that do not fit anywhere else at this point. Functions might get 
 **font_text**: Default text Imagefont for use on bitmaps, 16px height.
 
 
-#### formatX(text, columns = 40, convert = True)
-Formats the `text` into `columns` columns with word wrapping, `convert` selects if *PETSCII* conversion is performed (`convert` is deprecated).
+### formatX(text, columns = 40, convert = True)
+Formats the **\<text\>** into **\<columns\>** columns with word wrapping, **\<convert\>** selects if *PETSCII* conversion is performed.
 
-#### More(conn, text, lines, colors=default_style):
-Paginates `text`, sends it to `conn`, the user must press `RETURN` to get next page(s). Supports most control codes, including color and cursor movement.
-- `lines`: how many lines per page to transfer. Useful when using the windowing commands.
-- `colors`: a `bbsstyle` object defining the color set to use.
+### More(conn, text, lines, colors=default_style):
+Paginates **\<text\>**, sends it to **\<conn\>**, the user must press `RETURN` to get next page(s). Supports most *PETSCII* control codes, including color and cursor movement.
+- **\<lines\>**: how many lines per page to transfer. Useful when using the windowing commands of *Turbo56K*.
+- **\<colors\>**: a `bbsstyle` object defining the color set to use.
 
-#### text_displayer(conn, text, lines, colors=default_style):
+### text_displayer(conn, text, lines, colors=default_style):
 Displays `text` in a text window `lines` in height. Scrolling up and down with the cursor keys.
-- `conn`: Connection object
-- `text`: Preformatted text list, as returned by `formatX`
-- `lines`: How tall is the text window in use. Text window limits must be set before calling `text_displayer`. Actual displayed text lines is `lines`-1
-- `colors`: Color style to use for rendering the text.
+- **\<conn\>**: Connection object
+- **\<text\>**: Preformatted text list, as returned by `formatX`
+- **\<lines\>**: How tall is the text window in use. Text window limits must be set before calling `text_displayer`. Actual displayed text lines is `lines`-1
+- **\<colors\>**: Color style to use for rendering the text.
 
-#### crop(text, length)
-Cuts `text` to a maximum of `length` characters, adding an ellipsis to the end if needed.
+### crop(text, length)
+Cuts **\<text\>** to max **\<length\>** characters, adding an ellipsis to the end if needed.
 
-#### gfxcrop(text, width, font = font_text):
-Cuts `text` to max `width` pixels using `font`, adding an ellipsis to the end if needed.
+### gfxcrop(text, width, font = font_text):
+Cuts **\<text\>** to max **\<width\>** pixels using **\<font\>**, adding an ellipsis to the end if needed.
 
-#### format_bytes(b):
-Convert an integer `b` depicting a size in bytes to a string rounded up to B/KB/MB/GB or TB
+### format_bytes(b):
+Convert an integer **\<b\>** depicting a size in bytes to a string rounded up to B/KB/MB/GB or TB
 
-#### catalog(path, dirs = False, full = True):
+### catalog(path, dirs = False, full = True):
 Return a list of files (and subdirectories) in the specified top directory
-- `path`: Top directory
-- `dirs`: Include subdirectories? Default False
-- `full`: Each entry in the list includes the full path. Default True
-
-#### is_local(url):
-Returns `True` if the parameter passed exists as a local path
+- **\<path\>**: Top directory
+- **\<dirs\>**: Include subdirectories? Default False
+- **\<full\>**: Each entry in the list includes the full path. Default True
   
 ## common.petscii - *PETSCII* <-> *ASCII* tools and constants
-**DEPRECATED** - Superceded by the encoder class.
+Many control codes and graphic characters are defined as constants in this module, it is recommended to inspect it to learn more.
+
+**PALETTE**: A tuple containing the C64 palette control codes in the correct order
+
+**NONPRINTABLE**: A list of all the non-printable *PETSCII* characters
+
+### toPETSCII(text, full = True):
+Converts **\<text\>** from *UTF-8* to *PETSCII*, if **\<full\>** is `True`, some characters are replaced with a visually similar *PETSCII* equivalent.
+
+### toASCII(text):
+Converts **\<text\>** from *PETSCII* to plain *ASCII*, no extra care is taken to convert *PETSCII* graphic characters to their *ASCII* equivalents
 
 ## common.style:
-Some basic routines to render UI elements using the style/template system.
+Defines the BBS style, this module is in a very early stage.
 
-#### RenderMenuTitle(conn,title,style):
-Sends the menu title header with text `title` to `conn`, using the `style` title template or the default style template of none is passed.
+The `bbsstyle` class is defined here, and the default_style instance of this class is initialized. Read the module source to find about the different class properties.
 
-#### KeyPrompt(text,style=default_style,TML=False):
-Returns the key prompt string for `text`. The prompt takes the form `[<text>]` using the colors defined by the `style`.</br>
+### RenderMenuTitle(conn,title):
+Sends the menu title header with text **\<title\>** to **\<conn\>**, using the default style. The client screen is cleared and charset is switched to lowercase. Text mode is not enforced, the caller must ensure that text mode or a text window is active on the client.
+
+### KeyPrompt(text,style=default_style,TML=False):
+Returns the key prompt string for **\<text\>**. The prompt takes the form `[<text>]` using the colors defined by **\<style\>**</br>
 Set `TML` to `True` to return a _TML_ string instead. **IMPORTANT**: _TML_ string output will become the default in the future.
 
-#### KeyLabel(conn,key,label,toggle,style=default_style):
-Renders menu option `label` for assigned `key` in the selected `style` keylabel template, the `toggle` boolean switches between odd/even styles.<br>The result is sent to `conn`
+### KeyLabel(conn,key,label,toggle,style=default_style):
+Renders menu option **\<label\>** for assigned **\<key\>** in the selected **\<style\>**, boolean **\<toggle\>** switches between odd/even styles.<br>The result is sent to **\<conn\>**
 
-#### RenderDialog(conn,height,title):
-Renders the background/area for file view/play/transfer dialogs.
-`conn`: Connection object
-`height`: Desired height in rows for the dialog
-`title`: Optional title string
+### RenderDialog(conn,height,title):
+Renders the background for file view/play/transfer dialogs.
+**\<conn\>** Connection object
+**\<height\>** Desired height rows for the dialog in screen
+**\<title>\>** Optional title string
 
 ## common.turbo56k:
 Defines the *[Turbo56k](turbo56k.md)* protocol constants and helper functions
@@ -1118,128 +1067,90 @@ Defines the *[Turbo56k](turbo56k.md)* protocol constants and helper functions
 The following functions return either a string or a binary string for
 use with the Connection.Sendall() or Connection.Sendallbin() methods.
 
-#### to_Text(page, border, background, bin = False):
+### to_Text(page, border, background, bin = False):
 Switch the client screen to text mode.
-- `page` is the text memory page to use
-- `border` and `background` set the corresponding client screen colors
-- `bin` selects the return string type
+- **\<page\>** is the text memory page to use
+- **\<border\>** and **\<background\>** set the corresponding client screen colors
+- **\<bin\>** selects the return string type
 
-#### to_Hires(page,border, bin = False):
+### to_Hires(page,border, bin = False):
 Switch the client screen to Hires graphic mode.
-- `page` is the bitmap memory page to use
-- `border` is the client screen border color
-- `bin` selects the return string type
+- **\<page\>** is the bitmap memory page to use
+- **\<border\>** is the client screen border color
+- **\<bin\>** selects the return string type
 
-#### to_Multi(page, border, background, bin = False):
+### to_Multi(page, border, background, bin = False):
 Switch the client screen to multicolor graphic mode.
-- `page` is the bitmap memory page to use
-- `border` and `background` set the corresponding client screen colors
-- `bin` selects the return string type
+- **\<page\>** is the bitmap memory page to use
+- **\<border\>** and **\<background\>** set the corresponding client screen colors
+- **\<bin\>** selects the return string type
 
-#### customTransfer(address, bin = False):
+### customTransfer(address, bin = False):
 Sets the destination address for the next block transfer command.
-- `address` a valid 16-bit integer value for the destination memory address
-- `bin` selects the return string type
+- **\<address\>** a valid 16-bit integer value for the destination memory address
+- **\<bin\>** selects the return string type
 
-#### presetTransfer(preset, bin= False):
-Set the destination address for the next block transfer to the one defined by `preset`
-- `bin` selects the return string type
+### presetTransfer(preset, bin= False):
+Set the destination address for the next block transfer to the one defined by **\<preset\>**
+- **\<bin\>** selects the return string type
 
-#### blockTransfer(data):
-Transfer the binary string `data` to the client.<br>This function returns the entire command sequence to complete the transfer as a byte string, including `data`. Normal usage is calling `SendAllbin` with the result of this function as the parameter
+### blockTransfer(data):
+Transfer the binary string <data> to the client.<br>This function returns the entire command sequence to complete the transfer as a byte string, including **\<data\>**. Normal usage is calling `SendAllbin` with the result of this function as the parameter
 
-#### to_Screen(bin = False):
+### to_Screen(bin = False):
 Selects the client screen as the output.
-- `bin` selects the return string type
+- **\<bin\>** selects the return string type
 
-#### to_Speech(bin = False):
+### to_Speech(bin = False):
 Selects the optional hardware speech synthesizer as text output.
-- `bin` selects the return string type
+- **\<bin\>** selects the return string type
 
-#### reset_Turbo56K(bin = False):
+### reset_Turbo56K(bin = False):
 Return a command sequence that enables the cursor, disables split screen and resets text window limits.
-- `bin` selects the return string type
+- **\<bin\>** selects the return string type
 
-#### set_CRSR(column, row, bin= False):
-Sets the client's text cursor position to `column`, `row` coordinates
-- `bin` selects the return string type
+### set_CRSR(column, row, bin= False):
+Sets the client's text cursor position to **\<column\>**, **\<row\>** coordinates
+- **\<bin\>** selects the return string type
 
-#### Fill_Line(row, char, bin= False):
-Fill the client screen `row` with `char` (in C64 or MSX screencode), fill color is the last used.
-- `bin` selects the return string type
+### Fill_Line(row, char, bin= False):
+Fill the client screen **\<row\>** with **\<char\>** (in C64 screencode), fill color is the last used.
+- **\<bin\>** selects the return string type
 
-#### enable_CRSR(bin = False):
+### enable_CRSR(bin = False):
 Enables the client's text cursor.
-- `bin` selects the return string type
+- **\<bin\>** selects the return string type
 
-#### disable_CRSR(bin = False):
+### disable_CRSR(bin = False):
 Disables the client's text cursor.
-- `bin` selects the return string type
+- **\<bin\>** selects the return string type
 
-#### split_Screen(line, multi, bgtop, bgbottom, bin = False):
+### split_Screen(line, multi, bgtop, bgbottom, bin = False):
 Splits the client's screen into a bitmap top and a text bottom parts.
-- `line` the text screen row on which the split occurs
-- `multi` boolean, `True` for Multicolor mode on the top part, `False` for Hires
-- `bgtop`: Background color for the top part, only used when Multicolor mode is selected
-- `bgbottom`: Background color for the bottom part
-- `bin` selects the return string type
+- **\<line\>** the text screen row on which the split occurs
+- **\<multi\>** boolean, `True` for Multicolor mode on the top part, `False` for Hires
+- **\<bgtop\>** Background color for the top part, only used when Multicolor mode is selected
+- **\<bgbottom\>** Background color for the bottom part
+- **\<bin\>** selects the return string type
 
-#### set_Window(top, bottom, bin = False):
-Set the `top` and `bottom` limits for the client text output, this includes scrolling and screen clearing.
-- `bin` selects the return string type
-
-#### scroll(rows, bin = False):
-Scroll up or down `rows` number of times. Positive values scroll up, negative scroll down.
-- `bin` selects the return string type
-
-#### set_ink(color, bin = False):
-Set the text in color to `color` index.
-- `bin` selects the return string type
-
-#### screen_clear(bin = False):
-Clear the graphic screen.
-- `bin` selects the return string type
-
-#### pen_color(pen, color, bin = False):
-Set the graphic `pen` to `color` index.
-- `bin` selects the return string type
-
-#### plot(pen, x, y, bin = False):
-Plot a point on the graphic screen at the `x`,`y` coordinates, using the `pen` color.
-- `bin` selects the return string type
-
-#### line(pen, x1, y1, x2, y2, bin = False):
-Draw a line in the graphic screen, from `x1`,`y1` to `x2`,`y2`, using the `pen` color.
-- `bin` selects the return string type
-
-#### box(pen, x1, y2, x2, y2, fill = False, bin = False):
-Draw a box delimited by the coordintates `x1`,`y1`,`x2`,`y2`, using the `pen` color.
-- `fill` the box if True.
-- `bin` selects the return string type
-
-#### circle(pen, x, y, rx, ry, pen, bin = False):
-Draw a circle or ellipse centered at `x`,`y` with radii `rx` and `ry`, using the `pen` color.
-- `bin` selects the return string type
-
-#### fill(pen, x, y, pen, bin = False):
-Perform a flood fill starting at coordinates `x`,`y`, using the `pen` color.
-- `bin` selects the return string type
-
+### set_Window(top, bottom,bin = False):
+Set the **\<top\>** and **\<bottom\>** limits for the client text output, this includes scrolling and screen clearing.
+- **\<bin\>** selects the return string type
 
 ## common.video:
 Video related routines.
 
-#### Grabframe(conn:Connection, path, crop, length = None, pos = None):
+### Grabframe(conn:Connection, path, crop, length = None, pos = None):
 Grab's a frame from the specified video file/stream.
-- `conn`: connection to send the image to
-- `path`: video file/stream path or URL
-- `crop`: a tuple with the 4 corners coordinates for cropping the video frame, or None
-- `length`: video playtime in milliseconds. Pass None to let _Grabframe_ to figure the playtime, or 0 to indicate a live stream
-- `pos`: Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
+- **\<conn\>** connection to send the image to
+- **\<path\>** video file/stream path or URL
+- **\<crop\>** a tuple with the 4 corners coordinates for cropping the video frame, or None
+- **\<length\>** video playtime in milliseconds. Pass None to let _Grabframe_ to figure the playtime, or 0 to indicate a live stream
+- **\<pos>\>** Grab the frame at `pos` milliseconds. Pass None for random frame. Ignored if the video is a live stream
 
 ---
 # 5 Encoders
-RetroBBS v0.50 started moving towards an encoding agnostic implementation. This means reducing to a minimum instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
+Starting on v0.50 RetroBBS is moving towards an encoding agnostic implementation. This means reducing to a minimum instances of hard coded platform specific strings and control codes, replacing them with generic ASCII/Unicode strings and _TML_ tags.
 
 For this purpose a new `Encoder` class has been created.</br>
 This class provides platform specific encoding/decoding of strings, as well as defining the basic control codes and color palette.
@@ -1256,17 +1167,12 @@ For an extensive description of the currently supported encoders check the dedic
 
 ---
 # 6 Installation/Usage
-
-1. Just unpack this archive into a directory of your choice.
-2. Install the required [python modules](#15-requirements) and [extra software](#external-software).
-
+After ensuring you have installed all the required python modules and extra software, just unpack this archive into a directory of your choice.<br>
 If you're upgrading a previous installation, make sure to not overwrite your configuration files with the ones included as example.
 
-> [!IMPORTANT]
-> For v0.20 and above, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
+  **NOTICE**: Starting at v0.20, all text parameters in the config file are expected to be encoded in *ASCII*, if you're updating from v0.10, remember to convert your *PETSCII* parameters.
 
-> [!IMPORTANT]
-> If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and vice versa)
+  **NOTICE**: If you're upgrading from a version older than v0.50 you'll need to change the case of your menu entries in your `config.ini` (If you were using uppercase, switch to lowercase and viceversa)
 
 
 You can run this script from a command line by navigating to the Installation
@@ -1284,23 +1190,12 @@ Optional arguments:
  - `-v[1-4]` sets the verbosity of the log messages, a value of 1 will only output error messages, while a value of 4 will output every log line.
  - `-c [file name]` sets the configuration file to be used, defaults to `config.ini`
 
-### Upgrading
-On most cases upgrading can be done by simply extracting the new version over the previously installed.</br>
-
-But you might need to be aware to not overwrite these files:
-
-- `config.ini` if you're using an edited version of this default file instead of file with another name.
-- The contents of the `bbsfiles` subdirectory, if you have customized the any of the default splash graphics, the `terms/rules.txt` or `logoff.tml` files, or changed the files in the `intro` subdirectory but still use the same default filenames.
-- The contents of the `templates/default` subdirectory if you have customized the default template instead of making your own copy.
-
 ---
 # 6.1 The intro/login/logout sequences
-Once a connection is established and a supported client is detected/selected, the login/guest screen will be displayed.
-
-_Turbo56K_ compatible clients will enter into split screen mode and display the `splash` bitmap file found in the `bbsfiles` path preset.
+Once a connection with a client is established and a supported version of *Retroterm* is detected, the client will enter into split screen mode and display the `splash`* bitmap file found in the `bbsfiles` path preset.
 The user will then be asked if he wants to log in or continue as a guest.
 
-* The actual `splash` file depends on the detected client, and the `main/splash.j2` template:
+* The actual `splash` file depends on the detected client:
  - `splash.art` for Commodore 64 clients
  - `splash.boti` for Plus/4 clients
  - `splash.sc2` for MSX1 clients
@@ -1309,14 +1204,14 @@ After a successful login or directly after choosing guest access, the supported 
 
 Starting in v0.50 an example _TML_ script is placed at the end of the `[bbsfiles]/intro` sequence. This script will greet a logged-in user and show the amount of unread public and private messages if any.
 
-From v0.60 two additional TML scripts can be placed in the `[bbsfiles]` directory:
+From v0.60 additional TML scripts can be placed in the `[bbsfiles]` directory:
 
- - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the _oneliner_ plugin.
+ - `newsession.tml` will run for every new connection right before the main menu is displayed, regardless if the intro sequence has been skipped. Useful if you want to trigger certain actions at login time, such as display news, or the oneliner plugin.
  - `logoff.tml` will run when the client closes the connection the proper way, can be used to display connection statistics or display a goodbye image/text. 
 
 ---
 # 6.2 SID SongLength
-Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the song length by searching for the `.ssl` files corresponding to the `.sid` files found, defaulting to 3 minutes when not found.<br>
+Currently, the SID streaming routines are only accessed from the `AUDIOLIBRARY` and `SLIDESHOW` internal functions. These functions will set the song length by searching for the `.ssl` files corresponding the `.sid` files found, defaulting to 3 minutes when not found.<br>
 The `.ssl` format is used by the songlength files part of the *High Voltage SID Collection* (http://hvsc.c64.com). *HVSC* uses a `SONGLENGTHS` subdirectory to store the `.ssl` files, *RetroBBS* can also read these files in the same directory where the `.sid` files are located.
 
 ---
@@ -1355,8 +1250,7 @@ With this script you can:
 
 The script will also do a quick integrity check on the database file.
 
-> [!IMPORTANT]
-> When setting up a new BBS (or upgrading from v0.10) use dbmaintenance.py to create your account and set your class as 10 to assign yourself as admin/sysop.
+**IMPORTANT**: When setting up a new BBS (or upgrading from v0.10) use dbmaintenance.py to create your account and set your class as 10 to assign yourself as admin/sysop.
 
 ---
 # 6.4 Messaging system
@@ -1371,9 +1265,9 @@ A user with admin/sysop user class (10) can delete threads or individual message
 
 ---
 # 6.5 Temporal directory
-The path preset `temp` is used by the BBS or its plugins to store temporal files.
+The path preset `temp` is used by the BBS or it's plugins to store temporal files.
 
-Currently, the file browser, the SID streaming function and the _CSDb_ and _file-hunter_ plugins make use of this path.
+Currently, only the SID streaming function makes use of this path.
 
 If you're running the BBS from a Raspberry Pi or other SBC that uses an SD card as main storage we recommend creating a RAM disk and point the `temp` path to it. This will reduce the wear on your SD card.
 
@@ -1389,7 +1283,7 @@ Next you have to mount your new RAM disk:
 ```
 sudo mount -t tmpfs -o rw,size=1M tmpfs /mnt/ramdisk
 ```
-Here the "1M" means the RAM disk will have a size of 1 Megabyte, this is more than enough for most use cases, but take into account that files downloaded from _CSDb_ or _file-hunter_ can be larger than this limit and will be saved here if the user decided to browse a .zip archive instead of direct download.
+Here the "1M" means the RAM disk will have a size of 1 Megabyte, this is more than enough for most use cases, but take into account that files downloaded from CSDb can be larger than this limit and will be saved here if the user decided to browse a .zip archive instead of direct download.
 
 To make this change permanent you'll need to add the previous command to your fstab file.
 
@@ -1413,147 +1307,21 @@ Lastly change the `temp` path in your configuration file:
 temp = /mnt/ramdisk/
 ...
 ```
----
-# 6.6 The template system
-
-In v0.6 a template system based on _Jinja2_ has been introduced.
-The templates reside on the `templates` directory.
-
-An example directory tree:
-```
-templates
-├── default
-│   ├── csdb
-│   │   └── menutitle.j2
-│   ├── default.json
-│   ├── main
-│   │   ├── dialog.j2
-│   │   ├── keylabel.j2
-│   │   ├── menusection1col.j2
-│   │   ├── menusection2col.j2
-│   │   ├── menusection_macros.j2
-│   │   ├── menutitle.j2
-│   │   ├── navbar.j2
-│   │   └── splash.j2
-│   ├── mindle
-│   │   ├── default.json
-│   │   └── title.j2
-│   ├── oneliner
-│   │   └── title.j2
-│   └── wiki
-│       └── default.json
-└── theme2
-    └── main
-        └── splash.j2
-
-```
-
-In this example, there are two template themes, the `default` theme and a custom theme named `theme2`.
-
-A theme directory contains a subdirectory called `main` which contains the default templates for the BBS core, such as menus, navigation bar, splash screen, etc.
-If a plugin supports templates, it will have its own subdirectory, the templates can be made ad-hoc for the plugin, or override core functions, such as the title bar.
-
-Besides the _Jinja2_(.j2) template files there is also a `.json` file that contains the color style (preset screen and text colors) to be used by the BBS
-
-## Template variables:
-The following variables are always available to the templates:
-
-- conn: The _Connection_ object
-- st: A _bbsstyle_ object
-- mode: The connection _mode_ string
-- scwidth: The client's text screen width in columns
-- scheight: The client's text screen height in lines
-
-Specific variables can and are of course be passed from the code if needed, read below and the _Jinja2_ documentation for more info.
-
-## Basic template structure:
-
-Although a template can be as simple as a plain text that will show for every supported client. The preferred structure is to use Jinja's conditionals to customize the rendering to each client type, for example:
-
-```jinja
-<CLR>
-{% if 'PET' in mode %}
-	<GREY3><RVSON>
-  This text will show on Commodore clients
-{% elif mode == 'MSX1' %}
-	<WHITE><RVSON>
-  And this text will show on MSX clients
-{% elif mode in ['ANSI','ATRSTL'] %}
-  This other text will show for ANSI and Atari ST on low res mode
-{% else %}
-  For everything else, this will be the text.
-{% endif %}
-```
-
-## Core templates
-
-### Splash screen (splash.j2):
-This is called when displaying the __Login/Guest__ prompt.
-
-### Key label (keylabel.j2):
-Defines how to display a menu entry, consisting of the key to press and the menu name/label.
-#### Additional parameters passed:
-- key: A single character
-- label: The menu name/label string
-- toggle: A boolean, define if the menu entry will use the odd or even color style
-
-### Menu section, one column (menusection1col.j2):
-Called for each menu section with menu entries arranged in a single column.
-#### Additional parameters passed:
-- section: The menu section dictionary
-- scount: Section number
-#### Functions passed:
-- `formatX()`
-- `crop()`
-- `unescape()`
-
-### Menu section, two columns (menusection2col.j2):
-The same as `menusection1col.j2` but for menu entries arranges in two columns.
-
-### Menu title (menutitle.j2):
-Defines the title bar of a menu screen, usually the three topmost screen lines.
-
-### Navigation bar (navbar.j2):
-Defines the navigation bar usually displayed at the second to last screen line, displaying the control keys available.
-
-#### Additional parameters passed:
-- barline: Preferred screen line to display the navbar on
-- pages: The keys assigned for the page up/down function
-- crsr: The keys assigned for single line up/down function
-- keys: A list of `(key,function)` tuples, with custom key functions
-  
-### File dialog (dialog.j2):
-Defines the aspect of the dialog shown when the user is given an option to display, open, play or download a file.
-
-#### Additional parameters passed:
-- height: The dialog height in text lines
-- title: The title to display at the top of the dialog
-
-### Function passed:
-- `crop()`
-
-</br>
 
 ---
 # 7 TO-DO List
 
  * More code cleanup, move more functions out of the main script and into their corresponding modules.
- * Complete user style customization
+ * Work towards user style customization
  * Localization
- * Figure out a way to remove hard-coded file type handling.
- * Add RIPscrip/Skypix support for ANSI terminals.
- * Add _Latin1_ ANSI variant for Amiga terminals.
- * Implement @idolpx's dockerization of the BBS.
- * Set on an API naming convention. Right now function names are all over the place.
+ * Figure out a way to remove hard-coded filetype handling.
 
 ---
 # 7.1 Known bugs/issues
 
-  * Config file parser still doesn't check for all errors, a poorly built configuration file will cause a crash on startup.
+  * Config file parser still doesn't check for errors, a poorly built configuration file will cause a crash on startup.
   * If updating from v0.10, the messages already existing in the oneliners.json file will have the wrong encoding. New messages will display correctly.
   * When downloading a file using XMODEM in VIP Terminal, transfer will fail around block 46.
-  * VTX files cannot be opened when running RetroBBS with some Python 3.12 distributions, upgrading to Python 3.13 or above should solve the problem.
-  * When connecting to the BBS with the _CCGMS Future_ terminal in 80 column mode and 2400bps (userport), deleting characters might cause loss of data, this can cause problems when displaying text with the MORE function. This is a limitation of _CCGMS Future_ , not _RetroBBS_, and can be avoided by reducing the connection speed to 1200bps.
 
 
 ---
@@ -1577,7 +1345,6 @@ Thanks go to the following persons who helped in the testing of *RetroBBS*
   * ChrisKewl - [twitter.com/chriskewltv](http://twitter.com/chriskewltv)
 
 Also many thanks to __Emanuele Laface__ for the *Radio* and *Podcast* plugins.
-And _Jaime Idolpx_ for fixing audio streaming under Mac.
 
 ## External software, support files
 
@@ -1590,6 +1357,5 @@ And _Jaime Idolpx_ for fixing audio streaming under Mac.
 ## Contains code from:
 
   * sid2psg.py by simondotm under MIT license (https://github.com/simondotm/ym2149f/tree/master)
-  * turbomodem.py from PYCGMS by L.A.Style (https://csdb.dk/release/?id=258681)
 
 ---

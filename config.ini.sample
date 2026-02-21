@@ -1,6 +1,6 @@
 [MAIN]
 bbsname = Retro64 BBS
-menus = 10
+menues = 8
 ip = 0.0.0.0
 port = 6400
 ; Number of simultaneous incoming connections
@@ -32,7 +32,7 @@ board2post  = 1
 
 [PATHS]
 bbsfiles = bbsfiles/
-audio = sound/
+audio = audio/
 images = images/
 downloads = programs/
 temp = tmp/
@@ -47,7 +47,7 @@ wxunits = C
 wxdefault = Trelew
 ; Geocoding server used by Weather and Maps plugins
 ; Valid values: Nominatim (default), Photon
-geoserver = Nominatim
+geoserver = Photon
 ; Stadiamaps, needed for the Maps plugin to work
 stadiakey = DEMO_KEY
 ; YouTube and Webaudio, needed if yt_dlp ask for cookies, see readme
@@ -87,10 +87,9 @@ entry4title = Oneliner
 entry4key   = d
 entry4func  = ONELINER
 
-entry5title = Play Games
+entry5title = Play Mindle
 entry5key   = e
-entry5func  = SWITCHMENU
-entry5id    = 9
+entry5func  = MINDLE
 
 entry6title = Graphic test
 entry6key   = p
@@ -98,51 +97,55 @@ entry6func  = 3DGRAPH
 
 [MAINMENUSECTION2]
 title       = Web Services
-entries     = 9
+entries     = 10
 
 entry1title = NASA APOD
 entry1key   = f
 entry1func  = APOD
 
-entry2title = Search Wikipedia
+entry2title = Pitch Drop Experiment
+entry2func  = GRABYT
 entry2key   = g
-entry2func  = WIKI
+entry2url   = https://vimeo.com/1033751844
 
-entry3title = IRC #retrocomputacion
+entry3title = Search Wikipedia
 entry3key   = h
-entry3level = 1
-entry3func  = IRC
-entry3server = irc.libera.chat
-entry3port  = 6667
-entry3channel = #retrocomputacion
+entry3func  = WIKI
 
-entry4title = YouTube
+entry4title = IRC #retrocomputacion
 entry4key   = i
-entry4func  = SWITCHMENU
-entry4id    = 3
+entry4level = 1
+entry4func  = IRC
+entry4server = irc.libera.chat
+entry4port  = 6667
+entry4channel = #retrocomputacion
 
-entry5title = Radios
+entry5title = YouTube
 entry5key   = j
 entry5func  = SWITCHMENU
-entry5id    = 4
+entry5id    = 3
 
-entry6title = Newsfeeds
+entry6title = Radios
 entry6key   = k
 entry6func  = SWITCHMENU
-entry6id    = 5
+entry6id    = 4
 
-entry7title = Maps
+entry7title = Newsfeeds
 entry7key   = l
-entry7func  = MAPS
+entry7func  = SWITCHMENU
+entry7id    = 5
 
-entry8title = Weather
+entry8title = Maps
 entry8key   = m
-entry8func  = WEATHER
+entry8func  = MAPS
 
-entry9title = Web files
+entry9title = Weather
 entry9key   = n
-entry9func  = SWITCHMENU
-entry9id    = 10
+entry9func  = WEATHER
+
+entry10title = CSDb
+entry10key   = o
+entry10func  = CSDB
 
 [MAINMENUSECTION3]
 title =
@@ -152,6 +155,7 @@ entry1title = User area
 entry1key = u
 entry1func = SWITCHMENU
 entry1id    = 6
+entry1level = 1
 
 entry2title = Logoff BBS
 entry2key   = x
@@ -192,14 +196,12 @@ entries = 7
 entry1title = PCM streaming
 entry1key   = c
 entry1func  = AUDIOLIBRARY
-entry1path  = ${PATHS:audio}
-entry1save  = True
+entry1path  = ${PATHS:audio}pcm/
 
 entry2title = Chiptunes
 entry2key   = d
 entry2func  = AUDIOLIBRARY
-entry2path  = chiptunes/
-entry2save  = True
+entry2path  = ${PATHS:audio}chiptunes/
 
 entry3title   = Downloads
 entry3key     = e
@@ -269,7 +271,7 @@ entries = 4
 entry1title = ISS
 entry1func  = GRABYT
 entry1key   = a
-entry1url   = https://www.youtube.com/watch?v=iYmvCUonukw
+entry1url   = https://www.youtube.com/watch?v=OCem0E-0Q6Y
 
 entry2title = Times Square
 entry2func  = GRABYT
@@ -285,7 +287,7 @@ entry3crop  = 100,130,1800,960
 entry4title = Tokyo Walk
 entry4func  = GRABYT
 entry4key   = d
-entry4url   = https://www.youtube.com/watch?v=QNp2w5oVxPY
+entry4url   = https://www.youtube.com/watch?v=cH7VBI4QQzA
 
 [MENU3SECTION2]
 title = Grab a random frame
@@ -318,7 +320,7 @@ entries = 3
 entry1title = Nightride FM
 entry1key   = i
 entry1func  = WEBAUDIO
-entry1url   = https://www.youtube.com/watch?v=UjlMEqTu2KI
+entry1url   = https://www.youtube.com/watch?v=uYfxDF_QR94
 
 entry2title = Baroque music
 entry2key   = j
@@ -328,7 +330,7 @@ entry2url   = https://www.youtube.com/watch?v=2gO1v2GPMFk
 entry3title = Chiptune Radio
 entry3key   = k
 entry3func  = WEBAUDIO
-entry3url   = https://www.youtube.com/watch?v=UOKIwhy3uKs
+entry3url   = https://www.youtube.com/watch?v=TuBGi4E8M5Y
 
 [MENU3SECTION4]
 title =
@@ -370,7 +372,7 @@ entry4url   = http://stream.live.vc.bbcmedia.co.uk/bbc_world_service
 entry5title = Proyecto Return Radio
 entry5key   = e
 entry5func  = WEBAUDIO
-entry5url   = https://stream.zeno.fm/zxt0gp0zeratv
+entry5url   = https://stream-151.zeno.fm/na1wytrn9hhvv
 
 entry6title = Radio P.S.F. (Twitch)
 entry6key   = f
@@ -441,22 +443,18 @@ prompt = Your choice:
 
 [MENU6SECTION1]
 title =
-entries = 4
+entries = 3
 entry1title = Edit profile
 entry1key   = a
 entry1func  = USEREDIT
-entry1level = 1
+
 entry2title = User list
 entry2key   = b
 entry2func  = USERLIST
-entry2level = 1
+
 entry3title = Private messages
 entry3key   = c
 entry3func  = INBOX
-entry3level = 1
-entry4title = Term info
-entry4key   = d
-entry4func  = RTERMSETUP
 
 [MENU6SECTION2]
 title =
@@ -536,56 +534,6 @@ entry6func  = STATS
 [MENU8SECTION2]
 title =
 entries = 1
-entry1title = Previous Menu
-entry1key = _
-entry1func = BACK
-
-[MENU9]
-title = Games
-sections = 2
-prompt = Your choice:
-
-[MENU9SECTION1]
-title =
-entries = 2
-
-entry1title = Mindle
-entry1key   = a
-entry1func  = MINDLE
-
-entry2title = TIC-TAC-TOE
-entry2key   = b
-entry2func  = TICTACTOE
-
-[MENU9SECTION2]
-title =
-entries = 1
-columns = 1
-entry1title = Previous Menu
-entry1key = _
-entry1func = BACK
-
-[MENU10]
-title = Web Files
-sections = 2
-prompt = Your choice:
-
-[MENU10SECTION1]
-title =
-entries = 2
-
-entry1title = CSDb
-entry1key   = a
-entry1func  = CSDB
-
-entry2title = file-hunter
-entry2key   = b
-entry2func  = FILEHUNTER
-
-[MENU10SECTION2]
-title =
-entries = 1
-columns = 1
 entry1title = Previous Menu
 entry1key = _
 entry1func = BACK

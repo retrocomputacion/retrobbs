@@ -1,9 +1,9 @@
-#############################################
+###########################################################
 # Extensions module
 # Import and initialize extension modules
 # Plugins and encoders
 # Fill in TML tag dictionary
-#############################################
+###########################################################
 from common.bbsdebug import _LOG
 from common.classes import Encoder 
 import importlib
@@ -16,9 +16,9 @@ import plugins
 t_mono = {}
 t_block = {}
 
-##########################################
+#######################################
 # Register TML tags for common modules
-##########################################
+#######################################
 def RegisterTMLtags():
     global t_mono
     for module in os.listdir(os.path.dirname(__file__)):
@@ -37,9 +37,9 @@ def RegisterTMLtags():
 
         del(m)
 
-######################
+#######################
 # Register plugins
-######################
+#######################
 def RegisterPlugins():
     global t_mono
     Plugins = {}
@@ -56,9 +56,9 @@ def RegisterPlugins():
             t_mono[fname] = (a.plugFunction,[('c','_C')]+parms)
     return Plugins
 
-#######################
+########################
 # Register encoders
-#######################
+########################
 def RegisterEncoders():
     Encoders = {}
     e_mods = [importlib.import_module(name) for finder, name, ispkg in pkgutil.iter_modules(encoders.__path__, encoders.__name__ + ".")]

@@ -5,7 +5,7 @@
 
 </div>
 
-# Turbo56K v0.8
+# Turbo56K v0.7
 
 
 **Turbo56K** was created by **Jorge Castillo** as a simple protocol to provide high speed file transfer functionality to his bit-banging `57600bps` **RS232** routine for the **Commodore 64**.
@@ -155,7 +155,7 @@ Reply length: 2 bytes
 | 8 | `reserved` Amstrad
 | 9 | `reserved` Amiga
 | 10 | `reserved` PET
-
+|
 
 ###### Refresh rate:
 
@@ -174,9 +174,9 @@ Reply length: 3 bytes
 | 0 | 2
 | 1 | Columns
 | 2 | Rows
+|
 
-
-##### `$02`: Bit rate
+##### `$02`: Connection speed
 
 Reply length: 2 bytes
 
@@ -184,7 +184,7 @@ Reply length: 2 bytes
 |:---:|:---
 | 0 | 1
 | 1 | <br>0: Network<br>1: 300bps<br>2: 600bps<br>3: 1200bps<br>4: 1800bps<br>5: 2400bps<br>6: 4800bps<br>7: 9600bps<br>8: 19200bps<br>9: 28800bps<br>10: 38400bps<br>11: 57600bps<br>12: 76800bps<br>13: 115200bps
-
+|
 
 ##### `$03`: RAM size
 
@@ -193,8 +193,8 @@ Reply length: 3 bytes
 | Position | Value
 |:---:|:---
 | 0 | 2
-| 1-2 | RAM size in Kilobytes (little-endian)
-
+| 1-2 | RAM size in Kilobytes (big-endian)
+|
 
 ##### `$04`: VRAM size
 
@@ -203,8 +203,8 @@ Reply length: 3 bytes
 | Position | Value
 |:---:|:---
 | 0 | 2
-| 1-2 | VRAM size in Kilobytes (little-endian)
-
+| 1-2 | VRAM size in Kilobytes (big-endian)
+|
 
 ##### `$05`: Graphic modes (platform dependent)
 
@@ -214,7 +214,7 @@ Reply length: 2 bytes
 |:---:|:---
 | 0 | 1
 | 1 | Graphic modes available
-
+|
 
 ###### C64:
 
@@ -224,8 +224,7 @@ In addition to Hires and Multicolour
 |:---:|:---
 | 0 | FLI
 | 1 | AFLI
-
-
+|
 ###### C128:
 
 In addition to Hires and Multicolour

@@ -31,6 +31,7 @@ class BBS:
         self.PlugOptions = {}	#Plugins options from the config file
         self.BoardOptions = {}	#Message boards options from the config file
         self.Template = 'default/'   #Template in use
+        # self.Paths = {}			#Preset paths WHY WAS THIS HERE???!!!
         self.dateformat = 0		#Date format
         self.database = None	#Database
         self.version = 0		#BBS version
@@ -99,20 +100,16 @@ class Encoder:
                                                 # 2 = Arbitrary rectangular section
                          }
 
-    #########################################################################
     # Given a color control code, returns it's index in the color palette
     # or -1 if not found
-    #########################################################################
     def color_index(self, code):
         if type(code) == str:
             if len(code) == 1:
                 code = ord(code)
         return self.palette.get(code,-1)
 
-    ###################################################################
     # Given a palette index or color name, return the corresponding
     # control code string or an empty string
-    ###################################################################
     def color_code(self, color):
         code = ''
         if self.colors != {} or self.palette != {}:
@@ -125,34 +122,26 @@ class Encoder:
                     code = k[v.index(color)]
         return code
 
-    ###################################################################
     # Function to check if a file will fit into the client's buffer 
-    ###################################################################
     def check_fit(self, filename):
         stats = os.stat(filename)
         return stats.st_size <= (self.tbuffer-self.bbuffer)
     
-    ######################################################################
     # Returns the load address, binary data from an executable file
     # Strip headers/metadata if needed for direct transfer into memory
-    ######################################################################
     def get_exec(self, filename):
         return (0,None)
     
-    ##############################################################################
     # Sanitize a given filename for compatibility with the client's filesystem
     # Input and output strings are not encoded
-    ##############################################################################
     def sanitize_filename(self, filename):
         return filename
 
-    #####################################################
     # Wordwrap to the encoder/connection screen width
     # preserving control codes
     # text input must be already encoded
     # split: True to return a list of lines instead of
     # a string
-    #####################################################
     def wordwrap(self, text, split = False):
         lines = text.split(self.nl_out)
         if split:
@@ -266,11 +255,9 @@ class bbsstyle:
             self.WRNTxtColor    = 0     # Warning text
             self.BADTxtColor    = 0     # Bad/Error text
 
-    ####################################################################################
     # Set an style color, a section or the whole style
     # color : SCOLOR and index != None to set a single style color
     # color : dictionary with SCOLOR:int pairs to set the whole or part of the theme 
-    ####################################################################################
     def set(self, color:SCOLOR, index: int = None):
         if type(color) != dict:
             if index != None:
@@ -334,7 +321,6 @@ class template:
         self.j2env = Environment(loader=FileSystemLoader([tpath+mytemplate,tpath+'default/','templates/default/']))
         self.j2env.globals.update({'conn':conn,'st':conn.style,'mode':conn.mode,'scwidth':conn.encoder.txt_geo[0],'scheight':conn.encoder.txt_geo[1]})
 
-    ##########################################
     # Return a parsed template
     # Parameters:
     #
@@ -343,7 +329,6 @@ class template:
     #       ie: 'main/title'
     # conn: Connection object
     # **kwargs: Dictionary of parameters
-    ##########################################
     def GetTemplate(self, name:str, **kwargs):
         try:
             template = self.j2env.get_template(name+'.j2')
@@ -355,13 +340,11 @@ class template:
             _LOG(fname+'|'+str(exc_tb.tb_lineno),id=self.connection.id,v=1)
         return ''
     
-    ###################################################################################
     # Get a bbsstyle color set from the templates directory
     # if no style file is found, the connection default bbsstyle object is returned
-    ###################################################################################
     def GetStyle(self,name:str=''):
         tpath = self.connection.bbs.Paths['templates']
-        paths = [tpath+self.path,tpath+'default/','temnplates/default/']
+        paths = [tpath+self.path,tpath+'default/','templates/default/']
         for p in paths:
             if os.path.exists(p+name+'.json'):  # Look for the file in the valid paths
                 with open(p+name+'.json','r') as sf:

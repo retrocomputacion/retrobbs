@@ -42,7 +42,7 @@
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-NARROW><BACK>:exit<INK c={{st.NBarBG}}><L-NARROW><RVSOFF>
 {# MSX1 #}
-{% elif 'MSX1' in mode %}
+{% elif mode in 'MSX1' %}
 	{% if conn.QueryFeature(177) < 128 %}
 		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=219><AT x=0 y={{barline}}><RVSON>
 	{% else %}
@@ -62,25 +62,8 @@
 		<R-NARROW>
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-NARROW><BACK>:exit<INK c={{st.NBarBG}}><L-NARROW><RVSOFF>
-{# MSX standard #}
-{% elif 'MSXstd' in mode %}
-	<AT x=0 y={{barline}}>
-	<VLINE>{{pages}}
-	{% if crsr|length %}
-		/{{crsr}}
-	{% endif%}
-	:move
-	{% if kdef|length > 0 %}
-		<VLINE>{{kdef}}
-		{% if kdef|length-1 < spleft+1 %}
-			<VLINE>
-		{% endif %}
-	{% else %}
-		<VLINE>
-	{% endif %}
-	<CRSRR n={{spleft}}><VLINE><BACK>:exit<VLINE>
 {# ANSI #}
-{% elif 'ANSI' in mode %}
+{% elif mode in 'ANSI' %}
 	{% if conn.QueryFeature(177) < 128 %}
 		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=219><AT x=0 y={{barline}}><RVSON>
 	{% else %}
@@ -151,85 +134,6 @@
 		<VLINE>
 	{% endif %}
 	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><VLINE><BACK>:exit<INK c={{st.NBarBG}}><VLINE><RVSOFF>
-{# ZX Spectrum #}
-{% elif mode in ['ZXstd','TSstd','ZX1'] %}
-	{% if conn.QueryFeature(177) < 128 %}
-		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=143><AT x=0 y={{barline}}><RVSON>
-	{% else %}
-		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth-1}}><CRSRL><INS> <AT x=0 y={{barline}}>
-	{% endif %}
-	<R-HALF><INK c={{st.NBarMove}}>{{pages}}
-	{% if crsr|length %}
-		/{{crsr}}
-	{% endif%}
-	:move
-	{% if kdef|length > 0 %}
-		<INK c={{st.NBarKeys}}><L-HALF>{{kdef}}
-		{% if kdef|length-1 < spleft+1 %}
-			<R-HALF>
-		{% endif %}
-	{% else %}
-		<R-NARROW>
-	{% endif %}
-	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-HALF><BACK>:exit<INK c={{st.NBarBG}}><L-HALF><RVSOFF>
-
-{#
-	<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
-	<VLINE><INK c={{st.NBarMove}}>{{pages}}
-	{% if crsr|length %}
-		/{{crsr}}
-	{% endif%}
-	:move
-	{% if kdef|length > 0 %}
-		<INK c={{st.NBarKeys}}><VLINE>{{kdef}}
-		{% if kdef|length-1 < spleft+1 %}
-			<VLINE>
-		{% endif %}
-	{% else %}
-		<VLINE>
-	{% endif %}
-	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><VLINE><BACK>:exit<INK c={{st.NBarBG}}><VLINE><RVSOFF>
-#}
-{# TS2068 #}
-{% elif mode == 'TSstd' %}
-	{% if conn.QueryFeature(177) < 128 %}
-		<INK c={{st.NBarBG}}><LFILL row={{barline}} code=143><AT x=0 y={{barline}}><RVSON>
-	{% else %}
-		<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth-1}}><CRSRL><INS> <AT x=0 y={{barline}}>
-	{% endif %}
-	<R-HALF><INK c={{st.NBarMove}}>{{pages}}
-	{% if crsr|length %}
-		/{{crsr}}
-	{% endif%}
-	:move
-	{% if kdef|length > 0 %}
-		<INK c={{st.NBarKeys}}><L-HALF>{{kdef}}
-		{% if kdef|length-1 < spleft+1 %}
-			<R-HALF>
-		{% endif %}
-	{% else %}
-		<R-NARROW>
-	{% endif %}
-	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><L-HALF><BACK>:exit<INK c={{st.NBarBG}}><L-HALF><RVSOFF>
-
-
-{#
-	<INK c={{st.NBarBG}}><AT x=0 y={{barline}}><RVSON><SPC n={{scwidth}}><AT x=0 y={{barline}}>
-	<R-HALF><INK c={{st.NBarMove}}>{{pages}}
-	{% if crsr|length %}
-		/{{crsr}}
-	{% endif%}
-	:move
-	{% if kdef|length > 0 %}
-		<INK c={{st.NBarKeys}}><SPC>{{kdef}}
-		{% if kdef|length-1 < spleft+1 %}
-			<SPC>
-		{% endif %}
-	{% else %}
-		<SPC>
-	{% endif %}
-	<CRSRR n={{spleft}}><INK c={{st.NBarExit}}><SPC><BACK>:exit<INK c={{st.NBarBG}}><SPC><RVSOFF>
-#}
 {# Default #}
 {% else %}
 	<VLINE>{{pages}}

@@ -12,10 +12,13 @@ from common.bbsdebug import _LOG,bcolors
 from common.connection import Connection
 
 
-#####################################################################
+######################################################################
 # Grab a video frame from either a local file or an online source
-#####################################################################
+######################################################################
 def Grabframe(conn:Connection,path, crop, length = None, pos = None):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"Grabframe: path[{path}] crop[{crop}] length[{length}] pos[{pos}]")
 
     conn.SendTML('<YELLOW><SPINNER>')
     if length == None:
@@ -25,7 +28,7 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
                             universal_newlines=True)
         except:
             _LOG(bcolors.WARNING+"Error grabbing video frame"+bcolors.ENDC,id=conn.id,v=1)
-            conn.SendTML('...ERROR<CURSOR>') # Enable cursor
+            conn.SendTML('...ERROR<CURSOR>') #Enable cursor
             return
         try:
             length = int(float(process.stdout)*1000)
@@ -54,7 +57,7 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
         except Exception as e:
             print(e)
             _LOG(bcolors.WARNING+"Error grabbing video frame"+bcolors.ENDC,id=conn.id,v=1)
-            conn.SendTML('...ERROR<CURSOR>') # Enable cursor
+            conn.SendTML('...ERROR<CURSOR>') #Enable cursor
             return()
         if cimg != None:
             FT.SendBitmap(conn,cimg)
@@ -69,12 +72,12 @@ def Grabframe(conn:Connection,path, crop, length = None, pos = None):
                 break
         else:
             _LOG(bcolors.WARNING+"Error grabbing video frame"+bcolors.ENDC,id=conn.id,v=1)
-            conn.SendTML('...ERROR<CURSOR>') # Enable cursor
+            conn.SendTML('...ERROR<CURSOR>') #Enable cursor
             break
-    conn.SendTML('<CURSOR>') # Enable cursor
+    conn.SendTML('<CURSOR>') #Enable cursor
     return(1)
 
-#############
+##########
 # TML tag
-#############
+##########
 t_mono = {'GRABFRAME':(lambda c,path:Grabframe(c,path,None),[('c','_C'),('path','')])}

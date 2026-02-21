@@ -250,10 +250,10 @@ class SIDbits(IntEnum):
     FRES	= 23
     VOL		= 24
 
-###################################################
+######################################################
 # SIDParser using external SIDdumpHR or SIDdump
 # defaulting to Python version otherwise
-###################################################
+######################################################
 def SIDParser(filename,ptime,order = 0, subtune = 1):
 
     if which('siddumphr') != None:
@@ -500,9 +500,9 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
         dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(4,'big'),sidregs])
     return(dump)
 
-#############################################################
+##########################################################
 # Fallback internal SIDParser using Python 6502 simulator
-#############################################################
+##########################################################
 def SIDParser2(filename,ptime,order = 0, subtune = 1):
     MAX_INSTR = 0x100000
 
@@ -617,9 +617,9 @@ def SIDParser2(filename,ptime,order = 0, subtune = 1):
         _LOG(f'SIDParser error:{exc_type} on {fname} line {exc_tb.tb_lineno}')
     return out
 
-############################################
+#########################################
 # Convert AY register dump to SID stream
-############################################
+#########################################
 def AYtoSID(filename):
 
     sidsus = lambda i: round(2**(((i*2)+1-31)/4)*15)	# Converts the AY logarithmic volume level to SID linear sustain level

@@ -100,16 +100,16 @@ from common import audio as AA
 from common import messaging as MM
 from common import video as VV
 
-# File transfer functions
+#File transfer functions
 from common import filetools as FT
 
-# Image filename extensions
+#Image filename extensions
 from common.imgcvt import im_extensions
 
-###################
+##################################
 # BBS Version
-_version = 0.61
-###################
+_version = 0.60
+##################################
 
 # Threads running flag
 _run = True
@@ -117,12 +117,15 @@ _run = True
 # Timeout default value (secs)
 _tout = 60.0*5
 
+# Data base path
+base_path = 'data/'
+
 # Configuration file
 config_file = 'config.ini'
 
-##############################
+###########################
 # Reads Configuration file
-##############################
+###########################
 def ConfigRead():
     global bbs_instance
 
@@ -132,17 +135,17 @@ def ConfigRead():
         nchar = 0   # LABEL (no associated key) entries use chars 0x00 to 0x0c
         for e in range(0,sentry['entries']):
             try:
-                tentry = cfg[key][f'entry{e+1}title']	# Entry Title
+                tentry = cfg[key]['entry'+str(e+1)+'title']	# Entry Title
             except:
-                raise Exception(f'Configuration file error:\n entry{e+1}title not found')
+                raise Exception(f'Configuration file error:\n entry{str(e+1)}title not found')
             if sentry['columns'] < 2:
-                dentry = cfg.get(key, f'entry{e+1}desc', fallback = '')
+                dentry = cfg.get(key,'entry'+str(e+1)+'desc', fallback = '')
                 if dentry != '':
                     tentry = (tentry,dentry)
-            efunc = cfg.get(key, f'entry{e+1}func', fallback ='LABEL')		# Entry Internal function
+            efunc = cfg.get(key,'entry'+str(e+1)+'func', fallback ='LABEL')		# Entry Internal function
             if efunc != 'LABEL':
                 try:
-                    ekey = cfg[key][f'entry{e+1}key']		# Entry Key binding
+                    ekey = cfg[key]['entry'+str(e+1)+'key']		# Entry Key binding
                 except:
                     raise Exception('Configuration file error:\n Menu entry missing associated key')
             else:
@@ -152,13 +155,13 @@ def ConfigRead():
                     raise Exception('Configuration file - Too many LABEL entries')
             if ekey not in sentry['entrydefs']:
                 sentry['entrydefs'][ekey] = {}
-            emode = cfg.get(key, f'entry{e+1}mode', fallback ='')		    # Entry connection mode
-            level = cfg.getint(key, f'entry{e+1}level', fallback = 0)
+            emode = cfg.get(key,'entry'+str(e+1)+'mode', fallback ='')		    # Entry connection mode
+            level = cfg.getint(key,'entry'+str(e+1)+'level', fallback = 0)
             # Parse parameters
             parms = []
             if efunc == 'IMAGEGALLERY':		# Show image file list
-                p = cfg.get(key, f'entry{e+1}path', fallback='images/')
-                parms= [tentry,'','Displaying image list',p,tuple(['.GIF','.JPG','.PNG']+im_extensions),FT.SendBitmap,cfg.getboolean(key, f'entry{e+1}save',fallback=False)]
+                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='images/')
+                parms= [tentry,'','Displaying image list',p,tuple(['.GIF','.JPG','.PNG']+im_extensions),FT.SendBitmap,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False)]
             elif efunc == 'SWITCHMENU':		# Switch menu
                 parms = [cfg[key].getint('entry'+str(e+1)+'id')]
             elif efunc == 'FILES':			# Show file list
@@ -167,34 +170,34 @@ def ConfigRead():
                     exts = tuple(te.split(','))
                 else:
                     exts = ()
-                p = cfg.get(key, f'entry{e+1}path', fallback='programs/')
-                parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key, f'entry{e+1}save',fallback=False),cfg.getboolean(key, f'entry{e+1}subdirs',fallback=False)]
+                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='programs/')
+                parms = [tentry,'Displaying file list',p,exts,FT.SendFile,cfg.getboolean(key,'entry'+str(e+1)+'save',fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'subdirs',fallback=False)]
             elif efunc == 'AUDIOLIBRARY':	# Show audio file list
-                p = cfg.get(key, f'entry{e+1}path', fallback='sound/')
-                parms = [tentry,'','Displaying audio list',p,cfg.getboolean(key, f'entry{e+1}save', fallback=False)]
+                p = cfg.get(key, 'entry'+str(e+1)+'path', fallback='sound/')
+                parms = [tentry,'','Displaying audio list',p]
             elif efunc == 'PCMPLAY':		# Play PCM audio
-                parms = [cfg.get(key, f'entry{e+1}path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'bbsintroaudio-eng11K8b.wav'),None]
             elif efunc == 'GRABFRAME':		# Grab video frame
-                parms = [cfg.get(key, f'entry{e+1}path', fallback=''),None]
-            elif efunc == 'SIDPLAY' or efunc == 'CHIPPLAY':        # Play SID/MUS
-                parms = [cfg.get(key, f'entry{e+1}path', fallback = ''),cfg.getint(key, f'entry{e+1}playt',fallback=None),False,cfg.getint(key, f'entry{e+1}subt',fallback=None)]
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),None]
+            elif efunc == 'SIDPLAY' or efunc == 'CHIPPLAY':        #Play SID/MUS
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback = ''),cfg.getint(key,'entry'+str(e+1)+'playt',fallback=None),False,cfg.getint(key,'entry'+str(e+1)+'subt',fallback=None)]
             elif efunc == 'SLIDESHOW':		# Iterate through and show all supported files in a directory
-                parms = [tentry,cfg.get(key, f'entry{e+1}path', fallback=bbs_instance.Paths['bbsfiles']+'pictures'),1,True,cfg.getboolean(key, f'entry{e+1}shuffle', fallback=False)]
+                parms = [tentry,cfg.get(key, 'entry'+str(e+1)+'path', fallback=bbs_instance.Paths['bbsfiles']+'pictures'),1,True,cfg.getboolean(key,'entry'+str(e+1)+'shuffle', fallback=False)]
             elif efunc == 'SENDFILE':
-                parms = [cfg.get(key, f'entry{e+1}path', fallback=''),cfg.getboolean(key, f'entry{e+1}dialog', fallback=False),cfg.getboolean(key, f'entry{e+1}save', fallback=False)]
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback=''),cfg.getboolean(key,'entry'+str(e+1)+'dialog', fallback=False),cfg.getboolean(key,'entry'+str(e+1)+'save', fallback=False)]
             elif efunc == 'SENDRAW':
-                parms = [cfg.get(key, f'entry{e+1}path', fallback='')]
+                parms = [cfg.get(key, 'entry'+str(e+1)+'path', fallback='')]
             elif efunc == 'INBOX':
                 parms = [0]
             elif efunc == 'BOARD':
-                parms = [cfg.getint(key, f'entry{e+1}id', fallback = 1)]
+                parms = [cfg.getint(key,'entry'+str(e+1)+'id', fallback = 1)]
             # functions without parameters
             elif efunc in ['BACK','EXIT','USEREDIT','USERLIST','MESSAGE','LABEL','STATS']:
                 parms = []
             elif efunc in PlugDict:			# Plugin function
                 parms = []
                 for p in PlugDict[efunc][1]:	# Iterate parameters
-                    ep = cfg.get(key, f'entry{e+1}{p[0]}', fallback=p[1])
+                    ep = cfg.get(key, 'entry'+str(e+1)+p[0], fallback=p[1])
                     if isinstance(p[1],tuple) == True and isinstance(ep,tuple) == False:
                         ep = tuple([int(e) if e.isdigit() else 0 for e in ep.split(',')])
                     parms.append(ep)
@@ -209,21 +212,21 @@ def ConfigRead():
                 for mode in emode.split(','):
                     sentry['entrydefs'][ekey][mode] = [PlugDict[efunc][0],tuple(parms),tentry,level,False]
             else:
-                raise Exception(f'Configuration file - Unknown function at: entry{e+1}func')
+                raise Exception('Configuration file - Unknown function at: '+'entry'+str(e+1)+'func')
         return(sentry)
 
-    # Iterate Menu Sections
+    #Iterate Menu Sections
     def MIter(cfg, key, mentry):
         for s in range(0, mentry['sections']):
             skey = key+str(s+1)
-            tsection = cfg[skey]['title']						# Section Title
-            ecount = cfg[skey].getint('entries')				# Section number of entries
+            tsection = cfg[skey]['title']						#Section Title
+            ecount = cfg[skey].getint('entries')				#Section number of entries
             scolumns = cfg[skey].getint('columns', fallback= 2)
             mentry['entries'][s] = {'title':tsection,'entries':ecount,'columns':scolumns,'entrydefs':{}}
             mentry['entries'][s] = EIter(cfg, skey, mentry['entries'][s])
         return(mentry)
     
-    # Internal function dictionary
+    #Internal function dictionary
     func_dic = {'IMAGEGALLERY': Gallery,
                 'AUDIOLIBRARY': AA.AudioList,
                 'FILES': FT.FileList,
@@ -239,7 +242,6 @@ def ConfigRead():
                 'BACK': MenuBack,
                 'USEREDIT': EditUser,
                 'USERLIST': UserList,
-                'RTERMSETUP': RTermSetup,
                 'BOARD': MM.inbox,
                 'INBOX': MM.inbox,
                 'GRABFRAME': VV.Grabframe,
@@ -265,6 +267,10 @@ def ConfigRead():
     # Get any paths
     try:
         bbs_instance.Paths.update(dict(config.items('PATHS')))
+
+        #add base_path to all data paths
+        for k in bbs_instance.Paths:
+            bbs_instance.Paths[k] = base_path + bbs_instance.Paths[k]
     except:
         pass
     # Get any message boards options
@@ -278,29 +284,29 @@ def ConfigRead():
     except:
         bbs_instance.PlugOptions = {}
 
-    # Parse Menus
-    mcount = config['MAIN'].getint('menus',config['MAIN'].getint('menues',1))	# Number of menus
-    _bbs_menus = [None] * mcount
+    # Parse Menues
+    mcount = config['MAIN'].getint('menues')								#Number of menues
+    _bbs_menues = [None] * mcount
 
-    for m in range(0, mcount):		# Iterate menus
+    for m in range(0, mcount):		#Iterate menues
         if m == 0:
-            tmenu = config['MAINMENU']['title']								# MainMenu title
-            scount = config['MAINMENU'].getint('sections')					# MainMenu number of sections
+            tmenu = config['MAINMENU']['title']								#MainMenu title
+            scount = config['MAINMENU'].getint('sections')					#MainMenu number of sections
             tkey = 'MAINMENUSECTION'
-            prompt = config['MAINMENU'].get('prompt', fallback='Selection:')
-        elif f'MENU{m+1}' in config:
-            tmenu = config[f'MENU{m+1}']['title']						# Menu title
-            scount = config[f'MENU{m+1}'].getint('sections')				# Menu number of sections
-            prompt = config[f'MENU{m+1}'].get('prompt', fallback='Selection:')
+            prompt = config['MAINMENU'].get('prompt', fallback='sELECTION:')
+        else:
+            tmenu = config['MENU'+str(m+1)]['title']						#Menu title
+            scount = config['MENU'+str(m+1)].getint('sections')				#Menu number of sections
+            prompt = config['MENU'+str(m+1)].get('prompt', fallback='sELECTION:')
             tkey = 'MENU'+str(m+1)+'SECTION'
-        _bbs_menus[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
-        _bbs_menus[m] = MIter(config,tkey,_bbs_menus[m])
-        _bbs_menus[m]['entries'][0]['entrydefs']['\r']={'':[SendMenu,(),'',0,False]}
-    bbs_instance.MenuList = _bbs_menus
+        _bbs_menues[m] = {'title':tmenu, 'sections':scount, 'prompt':prompt, 'type':0, 'entries':[{}]*scount}
+        _bbs_menues[m] = MIter(config,tkey,_bbs_menues[m])
+        _bbs_menues[m]['entries'][0]['entrydefs']['\r']={'':[SendMenu,(),'',0,False]}
+    bbs_instance.MenuList = _bbs_menues
 
-####################
-# Handles CTRL-C
-####################
+################################
+#Handles CTRL-C
+################################
 def signal_handler(sig, frame):
     global _run
     global conlist
@@ -325,16 +331,24 @@ def signal_handler(sig, frame):
     del bbs_instance
     sys.exit(0)
 
-#######################################################################
+#########################################################################################
 # Show a menu with a list of files, call fhandler on user selection
-#######################################################################
+#########################################################################################
 def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=False):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"Gallery: path[{path}] ffilter[{ffilter}] fhandler[{fhandler.__name__}] transfer[{transfer}]")
+
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
     # Init Menu parameter dictionary if needed
     if conn.MenuParameters == {}:
         conn.MenuParameters['current'] = 0
+
+    st = conn.style
+
+    # transfer &= conn.QueryFeature(TT.FILETR) < 0x80
 
     scwidth,scheight = conn.encoder.txt_geo
 
@@ -368,7 +382,7 @@ def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=
                 programs.append(f)
     else:
         programs = files
-    programs.sort()	# Sort list
+    programs.sort()	#Sort list
     pages = int((len(programs)-1) / max_e) + 1
     count = len(programs)
     start = conn.MenuParameters['current'] * max_e
@@ -418,9 +432,9 @@ def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=
     return MenuDic
 
 
-#########################################
+######################################
 # Render Menu from MenuList structure
-#########################################
+######################################
 def SendMenu(conn:Connection):
     if conn.menu < 0:
         return()
@@ -428,12 +442,12 @@ def SendMenu(conn:Connection):
     scwidth = conn.encoder.txt_geo[0]
     scheight = conn.encoder.txt_geo[1]
     conn.SendTML(f'<SETOUTPUT><TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><CURSOR>')
-    tmenu = conn.bbs.MenuList[conn.menu]	# Change to simply tmenu = conn.MenuDefs
+    tmenu = conn.bbs.MenuList[conn.menu]	#Change to simply tmenu = conn.MenuDefs
     _LOG("Sending menu: "+tmenu['title'],id=conn.id,v=4)
     RenderMenuTitle(conn,tmenu['title'])
     conn.SendTML('<BR>')
     for scount, s in enumerate(tmenu['entries']):
-        # Sections
+        #Sections
         parms = {'section': s, 'scount':scount, 'formatX':formatX, 'crop':crop, 'unescape':unescape}
         if s['columns'] == 1:
             conn.SendTML(conn.templates.GetTemplate('main/menusection1col',**parms))
@@ -441,14 +455,18 @@ def SendMenu(conn:Connection):
             conn.SendTML(conn.templates.GetTemplate('main/menusection2col',**parms))
     conn.SendTML(f'<AT x=0 y={scheight-1}><WHITE> {tmenu["prompt"]} ')
 
-################################################################
+#####################################################################
 # Sequentially display all matching files inside a directory
-################################################################
+#####################################################################
 def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = False):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"SlideShow called with: title={title}, path={path}, delay={delay}, waitkey={waitkey}, shuffle={shuffle}")
+
     # Sends menu options
-    files = []	# all files
-    slides = []	# filtered list
-    # Read all the files from 'path'
+    files = []	#all files
+    slides = []	#filtered list
+    #Read all the files from 'path'
     for entries in walk(path):
         files.extend(entries[2])
         break
@@ -460,7 +478,7 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = Fa
     aud_e = ('.MP3','.WAV')
     chip_e = ('.SID','.MUS','.YM','.VTX','.VGZ')
 
-    # Keeps only the files with matching extension 
+    #Keeps only the files with matching extension 
     for f in files:
         if splitext(f)[1].upper() in pics_e + text_e + bin_e + pet_e + aud_e + chip_e + ('.TML',):
             slides.append(f)
@@ -468,11 +486,11 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = Fa
     if shuffle:
         random.shuffle(slides)
     else:
-        slides.sort()	# Sort list
+        slides.sort()	#Sort list
 
     turbo = conn.T56KVer > 0
 
-    # Iterate through files
+    #Iterate through files
     for p in slides:
         w = 0
         conn.SendTML('<CURSOR><CLR>')
@@ -513,9 +531,9 @@ def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = Fa
         conn.SendTML(f'<TEXT page=0 border={conn.style.BoColor} backgroud={conn.style.BgColor}>')
     conn.SendTML('<CURSOR>')
 
-###################################
+################################################
 # Wait for user to press RETURN
-###################################
+################################################
 def WaitRETURN(conn:Connection,timeout = 60.0):
     _LOG('Waiting for the user to press RETURN...',id=conn.id,v=4)
     tecla = b''
@@ -532,9 +550,9 @@ def WaitRETURN(conn:Connection,timeout = 60.0):
             pass
     _LOG(bcolors.OKBLUE+str(tecla)+bcolors.ENDC,id=conn.id,v=4)
 
-#################################################
+##############################################
 # Wait 1 minute for the user to press any key
-#################################################
+##############################################
 def WaitKey(conn:Connection):
     _LOG('Waiting for the user to press a key...',id=conn.id,v=4)
     tecla = b''
@@ -548,9 +566,9 @@ def WaitKey(conn:Connection):
             pass
     conn.socket.settimeout(_tout)
 
-############
+################################################
 # Logoff
-############
+################################################
 def LogOff(conn:Connection, confirmation=True):
 
     lan = {'en':['Are you sure (Y/N)? ','yn','Disconnected'],'es':['Esta seguro (S/N)? ','sn','Desconectado']}
@@ -584,9 +602,9 @@ def LogOff(conn:Connection, confirmation=True):
         conn.connected = False
         return True
 
-#################
+#####################################
 # Switch menu
-#################
+#####################################
 def SwitchMenu(conn:Connection, id):
     if id-1 != conn.menu:
         if len(conn.MenuDefs) != 0:
@@ -594,9 +612,9 @@ def SwitchMenu(conn:Connection, id):
         conn.menu = id-1
         conn.MenuDefs = GetKeybindings(conn,id-1)
 
-###############################
+########################################
 # Generate menu keybindings
-###############################
+########################################
 def GetKeybindings(conn:Connection,id):
 
     menu = conn.bbs.MenuList[id]
@@ -615,9 +633,9 @@ def GetKeybindings(conn:Connection,id):
                 kb[e][1] = (conn,)+kb[e][1]
     return kb
 
-##############################
+############################
 # Show BBS/User statistics
-##############################
+############################
 def Stats(conn:Connection):
     _LOG("Displaying stats",v=4,id=conn.id)
     conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} bgtop={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>') # Cancel any split screen/window
@@ -687,9 +705,9 @@ def Stats(conn:Connection):
     More(conn,text,scheight-3)
     conn.SendTML(f'<WINDOW top=0 bottom={scheight-1}>')
 
-###################
+#############################
 # SignIn/SignUp
-###################
+#############################
 def SignIn(conn:Connection):
     _dec = conn.encoder.decode
     st = conn.style
@@ -788,10 +806,10 @@ def SignIn(conn:Connection):
         else:
             Done = True
 
-#########################################################################
+######################################################################
 # Edit logged in user
 # This always runs outside the mainloop regardless of where is called
-#########################################################################
+######################################################################
 def EditUser(conn:Connection):
     u_items = [('a','Username','uname'),('b','First name','fname'),('c','Last name','lname'),('d','Birthdate','bday'),('e','Country','country')]
 
@@ -955,108 +973,10 @@ def EditUser(conn:Connection):
         elif k == 'g': # Preferences
             EditPrefs(conn)
 
-###################################
-# Retroterm Setup display/reset
-###################################
-def RTermSetup(conn:Connection):
 
-    def print_features():
-        b = [1,4,8,16]
-
-        if b'-' in conn.TermString:
-            client = conn.encoder.clients.get(conn.TermString.split(b' ')[0].split(b'-')[1],'Retroterm compatible')
-        else:
-            client = 'Retroterm 64'
-        conn.SendTML(f'<HLCOLOR> Client:<TXTCOLOR> {client}<BR><HLCOLOR> Turbo56K version:<TXTCOLOR> {conn.T56KVer}<BR><BR>')
-        bits = 4
-        if conn.QueryFeature(TT.QUERYCLIENT) < 128:    # Check client subsystems if available
-            conn.SendTML('<WRNCOLOR>Your system:<BR>')
-            p = None
-            for sub in range(7):
-                resp = conn.QueryClient(sub)
-                if resp != None:
-                    for i in resp:
-                        rval = resp[i]
-                        if i == 'Platform':
-                            p = rval
-                        if i == 'Refresh':
-                            rval = f'{rval}Hz'
-                        elif 'RAM' in i:
-                            rval = f'{rval}KBytes'
-                        elif i == 'Text':
-                            rval = f'{rval[0]}x{rval[1]}'
-                        elif i == 'Bitrate':
-                            rval = f'{rval}bps'
-                        elif i == 'GFXModes':
-                            if p != None:
-                                if p == 'Commodore 64':
-                                    rval = f'<BR> FLI {"<OKCOLOR><CHECKMARK>" if rval & 1 != 0 else "<BADCOLOR>x"}<BR><TXTCOLOR> AFLI {"<OKCOLOR><CHECKMARK>" if rval & 2 != 0 else "<BADCOLOR>x"}'
-                                elif p == 'MSX':
-                                    tmp = ''
-                                    for j in range(8):
-                                        tmp += f'<BR> Screen{j+3 if j < 6 else 10 if j == 6 else 12} {"<OKCOLOR>+" if rval & 2**j != 0 else "<BADCOLOR>x"}<TXTCOLOR>'
-                                    rval = tmp
-                                else:
-                                    continue
-                            else:
-                                continue
-                        elif i == 'Synths':
-                            if p != None:
-                                if p == 'Commodore 64':
-                                    rval = f'<BR> Total SID installed: {(rval & 7)+1}<BR>{"OPL installed<OKCOLOR><CHECKMARK>" if rval & 16 != 0 else ""}'
-                        elif i == 'PCM':
-                            if p != None:
-                                bits = b[rval&3]
-                        conn.SendTML(f'<WRNCOLOR>{i}: <TXTCOLOR>{rval}<BR>')
-        conn.SendTML('<BR><KPROMPT><INKEYS><DEL n=8>')
-        conn.SendTML('<WRNCOLOR> Current detected features:<BR><BR>')
-        for i in T56Groups:
-            conn.SendTML(f'<WRNCOLOR>{T56Groups[i][0]}:<BR>')
-            for j in range(T56Groups[i][1]):
-                cmd = (i+j)
-                conn.SendTML(f'<TXTCOLOR>{TT.T56K_CMD[cmd]}: ')
-                feature = conn.TermFt[cmd]
-                if feature != None:
-                    if feature < 128:
-                        conn.SendTML('<OKCOLOR><CHECKMARK>')
-                        if cmd == TT.STREAM:
-                            conn.SendTML(f'<BR><TXTCOLOR>({bits}-bit/{conn.samplerate}Hz)')
-                    else:
-                        conn.SendTML('<BADCOLOR>x')
-                elif cmd in TT.T56K_CMD:
-                    conn.SendTML('<TXTCOLOR>?')
-                else:
-                    conn.SendTML('<TXTCOLOR>.')
-                conn.SendTML('<BR>')
-            conn.SendTML('<BR><KPROMPT><INKEYS><DEL n=8>')
-
-
-    T56Groups = {0x80:['Data Transfer',7], 0x90:['Graphics mode',3], 0x98:['Drawing primitives',7], 0xA0:['Connection management',5], 0xB0:['Screen management',8]}
-
-    conn.SendTML(f'<SPLIT row=0 multi=False bgtop={conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>') # Cancel any split screen/window
-    if conn.T56KVer > 0:
-        RenderMenuTitle(conn,"RetroTerm Info")
-        print_features()
-        conn.SendTML('<KPROMPT t=x><TXTCOLOR> to exit <KPROMPT t=r><TXTCOLOR> to reescan')
-        if conn.ReceiveKey(['x','r']) == 'r':
-            conn.ResetFeatures()
-            conn.SendTML('<BR>Please wait')
-            for cmd in TT.T56K_CMD:
-                conn.QueryFeature(cmd)
-                time.sleep(0.5)
-                conn.SendTML('.')
-            conn.SendTML('<BR><BR>')
-            print_features()
-        else:
-            return
-        conn.SendTML('<KPROMPT> to exit <INKEYS>')
-    else:
-        conn.SendTML('<CLR><ORANGE><FORMAT>This section is only available for RetroTerm users</FORMAT><PAUSE n=5>')
-
-
-###########################
+###############################
 # Edit user preferences
-###########################
+###############################
 def EditPrefs(conn:Connection):
     conn.SendTML(f'<SPLIT row=0 multi=False btop=f{conn.encoder.colors.get("BLACK",0)} bgbottom={conn.encoder.colors.get("BLACK",0)} mode={conn.mode}>')    # Cancel any split screen/window
     done = False
@@ -1145,9 +1065,9 @@ def EditPrefs(conn:Connection):
             time.sleep(2)
 
 
-#######################
+###############################
 # Display user list
-#######################
+###############################
 def UserList(conn:Connection):
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
@@ -1166,14 +1086,8 @@ def UserList(conn:Connection):
     users = sorted(users, key= lambda l:l[0])
     digits = len(str(max(users[:])[0]))
     tml = '<WHITE> ID         Username<BR><BR><LTGREEN>'
-    if 'PET' in conn.mode:
-        hcode = 0x40
-    elif 'ZX' in conn.mode:
-        hcode = ord('-')
-    else:
-        hcode = 0x17
     if conn.QueryFeature(TT.LINE_FILL) < 0x80:
-        tml += f'<LFILL row=4 code={hcode}>'
+        tml += f'<LFILL row=4 code={64 if "PET" in conn.mode else 0x17}>'
     else:
         tml += f'<CRSRU><HLINE n={conn.encoder.txt_geo[0]}>'
     conn.SendTML(tml)
@@ -1216,11 +1130,8 @@ def UserList(conn:Connection):
 # Check terminal for some basic features on connection
 ##########################################################
 def GetTerminalFeatures(conn:Connection, display = True):
-    b = [1,4,8,16]
-    bits = 4
-
     conn.SendTML(f'<RESET><SETOUTPUT o=True><TEXT border={conn.style.BoColor} background={conn.style.BgColor}>'
-                 f'<CLR><LOWER><LTBLUE><FORMAT>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR></FORMAT>'
+                 f'<CLR><LOWER><LTBLUE>Terminal ID: <WHITE>{conn.TermString.decode("utf-8")}<BR>'
                 f'<LTBLUE>Turbo56K version: <WHITE>{conn.T56KVer}<BR><PAUSE n=0.5>')
     if b"RETROTERM-SL" in conn.TermString:
         _LOG('SwiftLink mode, audio streaming at 7680Hz',id=conn.id,v=3)
@@ -1229,7 +1140,7 @@ def GetTerminalFeatures(conn:Connection, display = True):
         if b'M138' in conn.TermString:
             _LOG('MSX 38K mode, audio streaming at 7680Hz',id=conn.id,v=3)
             conn.samplerate = 7680
-        elif b'M1BD' not in conn.TermString:
+        else:
             _LOG('Plus/4 / MSX mode, audio streaming at 3840Hz',id=conn.id,v=3)
             conn.samplerate = 3840
     elif b'UNKNOWN-' in conn.TermString:   # Unknown Turbo56k terminal
@@ -1240,21 +1151,16 @@ def GetTerminalFeatures(conn:Connection, display = True):
     if conn.T56KVer > 0.5:
         good = f"<INK c={conn.style.OKTxtColor}>+" if "MSX" in conn.mode else f"<INK c={conn.style.OKTxtColor}><CHECKMARK>"
         conn.SendTML(f'<LTBLUE>{conn.encoder.nl.join(formatX("Checking some terminal features...",conn.encoder.txt_geo[0]),)}<BR>')
-        for cmd in [TT.PRADDR,TT.BLKTR,TT.SPLIT_SCR]:
+        for cmd in [129,130,179]:
             conn.SendTML(f'{grey}{TT.T56K_CMD[cmd]}: {good if conn.QueryFeature(cmd)< 0x80 else f"<INK c={conn.style.BADTxtColor}>x"}<BR>')
     conn.SendTML('<BR>')
-    if conn.QueryFeature(TT.STREAM) < 0x80:
-        if conn.QueryFeature(TT.QUERYCLIENT) < 0x80:
-            res = conn.QueryClient(6)  # Query audio setup
-            if res != None:
-                if res['PCM'] != None:
-                    bits = b[res['PCM']&3]
-        conn.SendTML(f'<FORMAT>{grey}PCM audio samplerate <YELLOW>{bits}bit {conn.samplerate}Hz<BR></FORMAT>')
+    if conn.QueryFeature(131) < 0x80:
+        conn.SendTML(f'{grey}PCM audio samplerate <YELLOW>{conn.samplerate}Hz<BR>')
     time.sleep(0.5)
 
-###################
+##############################
 # Main BBS Loop
-###################
+##############################
 def BBSLoop(conn:Connection):
 
     try:
@@ -1291,12 +1197,13 @@ RUNNING UNDER:<BR>
                break
            n += 1
            if n < 3:
-               conn.SendTML(f'<FORMAT>{pt.upper()}</FORMAT>')
+               conn.SendTML(pt.upper())
            else:
                conn.SendTML('SORRY, UNKNOWN TERMINAL - DISCONNECTED')
                conn.connected = False
                return
 
+        # WaitRETURN(conn)
         conn.Flush(0.5) # Flush for 0.5 seconds
 
         # Ask for ID and supported TURBO56K version
@@ -1431,7 +1338,7 @@ RUNNING UNDER:<BR>
                                 if wait and (res != False):
                                     WaitRETURN(conn,60.0*5)
                                     if conn.T56KVer > 0:
-                                        conn.SendTML('<NUL n=2><CURSOR>')   # Enable cursor blink just in case
+                                        conn.SendTML('<NUL n=2><CURSOR>')   #Enable cursor blink just in case
                                 Function = conn.MenuDefs[conn.encoder.nl][0]
                                 res = Function(*conn.MenuDefs[conn.encoder.nl][1])
                                 if isinstance(res,dict):
@@ -1444,17 +1351,19 @@ RUNNING UNDER:<BR>
                 else:
                     _LOG('no more data from', conn.addr, id=conn.id)
                     break
+
+
     finally:
         # Clean up the connection
         conn.socket.close()
         _LOG('Disconnected',id=conn.id,v=3)
 
-######################################################
+###################################################
 # Connection management thread
 # Checks if connections are alive, once per second
 # Reloads configuration file if it's modified and
 # the BBS is idling
-######################################################
+###################################################
 def ConnTask():
     global conlist
     global bbs_instance
@@ -1469,7 +1378,7 @@ def ConnTask():
                 _LOG('Config file modified',v=2)
                 _semaphore = True
                 ConfigRead()
-                bbs_instance.start()    # Restart
+                bbs_instance.start()    #Restart
                 _semaphore = False
 
         for t in range(1,bbs_instance.lines+1):
@@ -1492,13 +1401,14 @@ def ConnTask():
                             conn._HoldUpdate()
 
 
-##########
+#######################################################
 # MAIN
-##########
+#######################################################
 
 # Initialize variables
 parser = argparse.ArgumentParser(description='Python BBS server for Turbo56K enabled terminals')
-parser.add_argument('-v', dest='verb', type=int, choices=range(1,5),nargs='?', const=1, default=1, help='Verbosity level (1-4): 1 = Errors only | 4 = All logs')
+parser.add_argument('-v', dest='verb', type=int, choices=range(1,5),nargs='?', const=1, default=4, help='Verbosity level (1-4): 1 = Errors only | 4 = All logs')
+parser.add_argument('-b', dest='base', type=str, nargs='?', const='data/', default='data/', help='Base path to data and configuration files')
 parser.add_argument('-c', dest='config', type=str, nargs='?', const='config.ini', default='config.ini', help='Path to the configuration file to be used')
 
 if AA.wavs != True:
@@ -1509,25 +1419,32 @@ if AA.meta != True:
 args = parser.parse_args()
 set_verbosity(args.verb)
 
+# Set base path
+base_path = args.base
+
 # Set configuration file
-config_file = args.config
+config_file = base_path + args.config
 
 _semaphore = False  #
 
 bbs_instance = BBS('','',0)
 bbs_instance.version = _version
-# Check OS type
+bbs_instance.base_path = base_path
+
+#Check OS type
 bbs_instance.OSText = platform.system()
 if 'Linux' in bbs_instance.OSText:
-    # Get distro
-    mi = subprocess.check_output(["hostnamectl", "status"], universal_newlines=True)
-    m = re.search('Operating System: (.+?)\n', mi)
+    #Get distro
+    # mi = subprocess.check_output(["hostnamectl", "status"], universal_newlines=True)
+    # m = re.search('Operating System: (.+?)\n', mi)
+    mi = subprocess.check_output(["cat", "/etc/os-release"], universal_newlines=True)
+    m = re.search('PRETTY_NAME=\"(.+?)\"', mi)
     bbs_instance.OSText = m.group(1)
 else:
-    # Add OS version
-    bbs_instance.OSText = bbs_instance.OSText + platform.release()
+    #Add OS version
+    bbs_instance.OSText = bbs_instance.OSText + " " + platform.release()
 
-print('\n\nRetroBBS v%.2f (c)2021-2026\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
+print('\n\nRetroBBS v%.2f (c)2021-2025\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
 
 # Init plugins
 bbs_instance.plugins = EX.RegisterPlugins()
@@ -1537,8 +1454,13 @@ bbs_instance.encoders = EX.RegisterEncoders()
 for encoder in bbs_instance.encoders:
     for client in bbs_instance.encoders[encoder].clients:
         bbs_instance.clients[client] = encoder
+        # if bbs_instance.encoders[encoder].minT56Kver > 0:
+        #     _LOG(f'Turbo56K client: {client}',v=4)
+        # else:
+        #     _LOG(f'Standard client: {client}',v=4)
 # Register TML tags
 EX.RegisterTMLtags()
+
 # Read config file
 ConfigRead()
 
@@ -1555,7 +1477,7 @@ _LOG('Initializing server on %s port %s' % server_address,v=3)
 sock.bind(server_address)
 # Listen for incoming connections. Max 2 connections in queue
 sock.listen(2)
-# List of current active connections
+#List of current active connections
 conlist = {}
 conthread = threading.Thread(target = ConnTask, args = ())
 conthread.start()

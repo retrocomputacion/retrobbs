@@ -1,7 +1,7 @@
-###############################
+##############################
 # YM2149 filetypes parser
 # Support .YM .VTX and .VGZ
-###############################
+##############################
 
 import lhafile
 import gzip
@@ -10,31 +10,31 @@ import os
 import sys
 from common.bbsdebug import _LOG
 
-# YM formats magic strings
+#YM formats magic strings
 magicYM = [b'YM2!',b'YM3!',b'YM3b',b'YM4!',b'YM5!',b'YM6!']
-# VTX format magic strings
+#VTX format magic strings
 magicVTX = [b'ym',b'ay']
 
 #YM frequency -> platform dict
 platform = {2000000:' - Atari', 1000000:' - Amstrad'}
 
-################################################################################################
+#############################################################################################
 # Decode BCD number
 # https://stackoverflow.com/questions/11668969/python-how-to-decode-binary-coded-decimal-bcd
-################################################################################################
+#############################################################################################
 def bcd_decode(data: bytes, decimals: int):
     res = 0
-    for n, b in enumerate(data):	# reversed(data) for big endian
+    for n, b in enumerate(data):	#reversed(data) for big endian
         res += (b & 0x0F) * 10 ** (n * 2 - decimals)
         res += (b >> 4) * 10 ** (n * 2 + 1 - decimals)
     return res
 
-###################################
+################################
 # Open file, returns data
 # Depack file if its lha packed
-###################################
+################################
 def YMOpen(filename:str):
-    # Try for unpacked file first
+    #Try for unpacked file first
     try:
         data = None
         with open(filename,'rb') as ymf:
@@ -44,7 +44,7 @@ def YMOpen(filename:str):
     except:
         _LOG('YMOpen: File not found')
         return None
-    # Try for lha packed file
+    #Try for lha packed file
     if lhafile.is_lhafile(filename):
         try:
             ymf = lhafile.Lhafile(filename)
@@ -54,20 +54,20 @@ def YMOpen(filename:str):
         except Exception as e:
             pass
     else:
-        # Try for VTX file
+        #Try for VTX file
         try:
             data = None
             with open(filename,'rb') as ymf:
                 data = ymf.read()
                 offset = 16
-                for i in range(5):	# skip header
+                for i in range(5):	#skip header
                     while data[offset] != 0:
                         offset += 1
                     offset += 1
-                xhdr = data[:offset]	# VTX header
-                xlha = data[offset:]	# VTX compressed data
+                xhdr = data[:offset]	#VTX header
+                xlha = data[offset:]	#VTX compressed data
                 lhah =	b'-lh5-'+len(xlha).to_bytes(4,'little')+data[12:16]+	\
-                        b'\x00\x08\x4C\x14\x00\x00\x0AYM_0001.YM'+ lhafile.crc16(xlha).to_bytes(2,'little')	# <<< file crc
+                        b'\x00\x08\x4C\x14\x00\x00\x0AYM_0001.YM'+ lhafile.crc16(xlha).to_bytes(2,'little')	#<<< file crc
                 lhah = bytes(chr(len(lhah)),'latin1')+bytes(chr(sum(lhah)&255),'latin1')+lhah + xlha + b'\x00'
                 lf = lhafile.Lhafile(BytesIO(lhah))
                 info = lf.NameToInfo[lf.infolist()[0].filename]
@@ -82,7 +82,7 @@ def YMOpen(filename:str):
             return data
         except Exception as e:
             pass
-        # Try for Gzipped VGM file
+        #Try for Gzipped VGM file
         try:
             with gzip.open(filename, 'rb') as vgf:
                 data = vgf.read()
@@ -90,12 +90,12 @@ def YMOpen(filename:str):
                 return data
         except:
             pass
-    _LOG('YMOpen: Unsupported file format',v=2)
+    _LOG('YMOpen: Unsupported file format. [',filename,']',v=2)
     return None
 
-#################################
+##############################
 # Get metadata if there's any
-#################################
+##############################
 def YMGetMeta(data):
     if data != None:
         out = {'clock':2000000, 'interleave':True, 'frames':0, 'offset':4, 'title':'???', 'artist':'???','comments':'','copyright':'???', 'rate':50, 'type':'YM', 'subsongs':1, 'startsong':1}
@@ -108,24 +108,24 @@ def YMGetMeta(data):
         else:
             version = 10
         # Read header if needed
-        if version < 2: # YM2 YM3
+        if version < 2: #YM2 YM3
             out['frames'] = int((len(data)-4)/14)
             out['offset'] = 4
-        elif version == 2: # YM3b
+        elif version == 2: #YM3b
             out['frames'] = int((len(data)-8)/14)
             out['offset'] = 4
-        elif (version < 6) and (data[4:12] == b'LeOnArD!'):   # YM4 YM5 YM6
-            out['frames'] = int.from_bytes(data[12:16],'big')
+        elif (version < 6) and (data[4:12] == b'LeOnArD!'):   #YM4 YM5 YM6
+            out['frames'] = int.from_bytes(data[12:16],'big')	#(data[12]*16777216)+(data[13]*65526)+(data[14]*256)+data[15]
             out['interleave'] = (data[19]&1)==1
-            ddrums = int.from_bytes(data[20:22],'big')
-            if version == 3:    # YM4
+            ddrums = int.from_bytes(data[20:22],'big')	#(data[20]*256)+data[21]
+            if version == 3:    #YM4
                 offset = 28
-            else:	# YM5 YM6
+            else:	#YM5 YM6
                 offset = 34
-                out['rate'] = int.from_bytes(data[26:28],'big')
-            out['clock'] = int.from_bytes(data[22:26],'big')
-            for x in range(ddrums):	# Iterate digidrums to get register data offset
-                offset += int.from_bytes(data[offset:offset+4],'big')+4
+                out['rate'] = int.from_bytes(data[26:28],'big')		#(data[26]*256)+data[27]
+            out['clock'] = int.from_bytes(data[22:26],'big')	#(data[22]*16777216)+(data[23]*65526)+(data[24]*256)+data[25]
+            for x in range(ddrums):	#Iterate digidrums to get register data offset
+                offset += int.from_bytes(data[offset:offset+4],'big')+4		#(data[offset]*16777216)+(data[offset+1]*65536)+(data[offset+2]*256)+data[offset+3]+4
             tmp = ''
             while data[offset] != 0:
                 tmp += chr(data[offset])
@@ -145,10 +145,10 @@ def YMGetMeta(data):
             offset += 1
             out['comments'] = tmp
             out['offset'] = offset
-        elif version == 6:	# VTX
+        elif version == 6:	#VTX
             offset = 16
             tmp = ['']*5
-            for i in range(5):	# skip header
+            for i in range(5):	#skip header
                 while data[offset] != 0:
                     tmp[i] += chr(data[offset])
                     offset += 1
@@ -156,12 +156,12 @@ def YMGetMeta(data):
             out['title'] = tmp[0]
             out['artist'] = tmp[1]
             out['comments'] =  tmp[4]
-            out['copyright'] = str(int.from_bytes(data[10:12],'little'))
+            out['copyright'] = str(int.from_bytes(data[10:12],'little'))	#(data[11]*256)+data[10]
             out['frames'] = int((len(data)-offset)/14)
-            out['clock'] = int.from_bytes(data[5:9],'little')
+            out['clock'] = int.from_bytes(data[5:9],'little')	#(data[8]*16777216)+(data[7]*65526)+(data[6]*256)+data[5]
             out['rate'] = data[9]
             out['offset'] = offset
-        elif version == 7:	# VGM
+        elif version == 7:	#VGM
             out['rate'] = int.from_bytes(data[0x24:0x28],'little')
             out['clock'] = int.from_bytes(data[0x74:0x78],'little')
             if out['clock'] == 0:
@@ -200,9 +200,9 @@ def YMGetMeta(data):
     else:
         return None
 
-###########################################################################
+#########################################################################
 # Dump YM file, return list of frames with register values and Metadata
-###########################################################################
+#########################################################################
 def YMDump(data):
     meta = YMGetMeta(data)
     if meta != None:
@@ -310,17 +310,17 @@ def YMDump(data):
                     ix += 2
                 count +=1
                 if samples >= (44100/meta['rate']):
-                    for i in range(round(samples/(44100/meta['rate']))):
+                    for i in range(round(samples/(44100/meta['rate']))):	#
                         frames.append(regs.copy())
                         regs[13] = 0xff
                     samples = 0
             ...
-        else:					# .YM .VTX
+        else:					#.YM .VTX
             frcnt = meta['frames']
             ymclk = meta['clock']
             offset = meta['offset']
             frames = [[0]*14 for i in range(frcnt)]
-            # Iterate frames
+            #Iterate frames
             if meta['interleave']:
                 for reg in range(14):
                     for f in range(frcnt):
@@ -333,10 +333,10 @@ def YMDump(data):
     else:
         return None, None
     
-######################################################################
+#####################################################################
 # Parse a YM file register dump into a Retroterm compatible stream
 # t_freq: target PSG frequency
-######################################################################
+#####################################################################
 def YMParser(filename, t_freq=1789773):
     dump = None
     frame = None
@@ -347,16 +347,20 @@ def YMParser(filename, t_freq=1789773):
                 frames,meta = YMDump(data)
                 ymfreq = meta['clock']
         elif type(filename) == list:
+            # data = filename
             frames = filename
             ymfreq = t_freq
 
         if frames != None:
+            # frames,meta = YMDump(data)
+            # ymfreq = meta['clock']
+            # print(ymfreq)
             if frames != None:
                 dump = []
                 p_regs = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
                 rcount = 16 # 14 registers + 2 bytes from the bitmap
                 rbitmap = 0b0011111111111111
-                psg_regs = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # Init PSG
+                psg_regs = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'          #Init PSG
                 # print(f'Frame #\trcount\t BM\t Regs')
                 # print(f'0\t16\t{rbitmap}\t{psg_regs}')
                 dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(2,'big'),psg_regs])
@@ -405,10 +409,12 @@ def YMParser(filename, t_freq=1789773):
                             tmp = frame[rn]
                             if rn == 7:
                                 tmp = (tmp & 0x3F)|0x80
-                            psg_regs += tmp.to_bytes(1,'little')
+                            psg_regs += tmp.to_bytes(1,'little')    #frame[rn].to_bytes(1,'little')
                             rcount +=1
                     dump.append([rcount.to_bytes(1,'little'),rbitmap.to_bytes(2,'big'),psg_regs])
                     p_regs = frame
+                    # print(f'{fn}\t{rcount}\t{rbitmap}\t{psg_regs}')
+
         else:
             _LOG('YMParser: Error opening file')
     except Exception as e:
@@ -424,6 +430,7 @@ def SIDtoYM(filename, ptime, order = 0, subtune = 1, t_freq=1789773):
             f = 1
         return float(f) * float(SID_CLOCK) / 16777216.0
 
+    # try:
     data_out = []
     siddump = SID.SIDParser(filename, ptime, order, subtune)
     psize = 0       # packet size
@@ -446,7 +453,7 @@ def SIDtoYM(filename, ptime, order = 0, subtune = 1, t_freq=1789773):
             pregs = frame[2]
             reg = 0
 
-            # Handle hard-restart
+            #Handle hard-restart
             # Gate restart
             if pbm & (1<<31) != 0:
                 sid_voice3.set_control(pgate[2] & 0xFE)
@@ -462,25 +469,33 @@ def SIDtoYM(filename, ptime, order = 0, subtune = 1, t_freq=1789773):
                 sid_voice3.set_ad(0)
                 sid_voice3.set_sr(0)
                 sid_voice3.tick(4)
+                # print('RA3 ',end='')
             if pbm & (1<<27) != 0:
                 sid_voice2.set_ad(0)
                 sid_voice2.set_sr(0)
                 sid_voice2.tick(4)
+                # print('RA2 ',end='')
             if pbm & (1<<26) != 0:
                 sid_voice1.set_ad(0)
                 sid_voice1.set_sr(0)
                 sid_voice1.tick(4)
+                # print('RA1 ',end='')
 
-            # unpack frame packets
+            #unpack frame packets
             while len(pregs) > 0:
                 for b in range(reg,26):
                     if pbm & (1 << b) != 0:
                         if b in [4,11,18]:
                             pgate[(b-4)//7] = pregs[0]  # save gate state
+                            # print(f' ${pregs[0]:02x} ',end='')
                         sid.set_register(b,pregs[0])
                         pregs = pregs[1:]
                         reg = b + 1
                         break
+                    # else:
+                        # if b in [4,11,18]:
+                        #     print(' --- ',end='')
+            # print()
             vf = int(round(float(t_freq)/(sid_freq(sid_voice1.get_frequency())*16.0)))
             psg_regs[0] = vf & 0xff
             psg_regs[1] = (vf>>8) & 0xff
@@ -513,17 +528,23 @@ def SIDtoYM(filename, ptime, order = 0, subtune = 1, t_freq=1789773):
             psg_regs[9] = get_ym_volume(float((sid_voice2.get_envelope_level()*sid.get_master_volume())/15.0)/255.0)>>1
             psg_regs[10] = get_ym_volume(float((sid_voice3.get_envelope_level()*sid.get_master_volume())/15.0)/255.0)>>1
 
+            # print(psg_regs[8:11])
             sid.tick(int(SID_CLOCK/50))
             data_out.append(psg_regs.copy())
         else:
             break
+    # print()
     return YMParser(data_out,t_freq)
+    # except Exception as e:
+    #     exc_type, exc_obj, exc_tb = sys.exc_info()
+    #     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    #     _LOG(f'SIDtoYM error:{exc_type} on {fname} line {exc_tb.tb_lineno}')
 
     return []
 
 ####### ---- SNIP ---- #######
 # Following code adapted from:
-#
+
 # sid2ym.py
 # SID to .YM files (YM2149 sound chip) music file format conversion utility
 #
@@ -592,6 +613,9 @@ def get_ym_volume(a):
             v = 0
         else:
             v = int( 31 - ( (10*math.log(a, 10)) / -0.75 ) )
+        #print "  Volume of amplitude " + str(a) + " is " + str(v)
+        #if v > 31:
+        #    print "TITS"
         v = min(31, v)
         v = max(0, v)
         return v 
@@ -730,7 +754,7 @@ class SidVoice(object):
 
     # get the current envelope level / amplitude for this voice (0-255)
     def get_envelope_level(self):
-        return self.__envelope_level
+        return self.__envelope_level #(self.__envelope_level >> 16) & 255
         #if self.__noise:
         #    return 0
         if self.__test:

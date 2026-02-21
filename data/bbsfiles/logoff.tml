@@ -19,9 +19,6 @@
 <MODE m='PET64XG'>
 	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
 </MODE>
-<MODE m='PET128std'>
-	<SENDRAW file='bbsfiles/logout/logout.seq' wait=False>
-</MODE>
 <MODE m='ANSI'>
 	<SENDRAW file='bbsfiles/logout/logout.ans' wait=False>
 </MODE>
