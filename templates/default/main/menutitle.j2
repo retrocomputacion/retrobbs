@@ -61,7 +61,8 @@
 		<INK c={{st.MenuTColor1}}><UL-LL-LR-QUAD><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><CRSRR><B-HALF><INC></WHILE><INK c={{st.MenuTColor2}}><LL-LR-UR-QUAD>
 	{% else %}
 		<INK c={{st.MenuTColor1}}><UL-LL-LR-QUAD><LET _R=_I x=0><WHILE c='_I<{{(scwidth//2)-1}}'><INK c={{st.MenuTColor2}}><B-HALF><INK c={{st.MenuTColor1}}><B-HALF><INC></WHILE><INK c={{st.MenuTColor2}}><LL-LR-UR-QUAD>
-	{% endif %}{# MSX comterm #}
+	{% endif %}
+{# MSX comterm #}
 {% elif mode == 'MSXstd' %}
 	<B-HALF><HLINE n={{scwidth-2}}><B-HALF>
 	<BLOCK> {{(conn.bbs.name[:(scwidth//2)-1]+" - "+title+(" "*(scwidth-7))[:scwidth-3]+"  ")[:scwidth-4]}} <BLOCK>

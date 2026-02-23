@@ -141,7 +141,9 @@ def plugFunction(conn:Connection):
                     conn.SendTML('<CLR>')
                     header()
                 conn.SendTML(f'<AT x={(scwidth-10)//2} y=7><LTGREEN>Top Scores<INK c={mcolors.TxtColor}><BR><BR>')
-                ulist = dict(dbase.getUsers())
+                tmp = dbase.getUsers()
+                tmp = [(x[0],x[1]) for x in tmp]
+                ulist = dict(tmp)
                 j = len(tops) if len(tops)<=10 else 10
                 for i in range(j):
                     uname = ulist[int(tops[i][0])]
