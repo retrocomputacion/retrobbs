@@ -234,6 +234,7 @@ def plugFunction(conn:Connection):
     moves=list(set(itertools.combinations_with_replacement(range(3),2))|set(itertools.combinations_with_replacement(range(2,-1,-1),2)))
 
     # Start screen
+    border = conn.encoder.colors.get("BLACK",0)
     if gfxok:
         if 'MSX' in conn.mode:
             scwidth = 256
@@ -241,7 +242,6 @@ def plugFunction(conn:Connection):
         elif 'PET' in conn.mode:
             scwidth = 320
             scheight = 200
-        border = conn.encoder.colors.get("BLACK",0)
         pen = conn.encoder.colors.get("WHITE",0)
         exs = conn.encoder.colors.get("PINK",0)
         os = conn.encoder.colors.get("LTBLUE",0)

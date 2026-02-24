@@ -255,7 +255,7 @@ class VT52encoder(Encoder):
         filename = '_'.join(tmp).replace(' ','_')[:8]
         if ext != '':
             filename += '.'+ext
-        print(filename)
+        # print(filename)
         return filename
 
 
@@ -360,7 +360,7 @@ class VT52encoder(Encoder):
             while True:
                 if ix < len(escpos):    # Re-insert escape sequences
                     if escpos[ix][0]-ll+t2 < len(l):
-                        print([escpos[ix][2]])
+                        # print([escpos[ix][2]])
                         l = l[0:escpos[ix][0]-ll+t2]+escpos[ix][2]+l[escpos[ix][0]-ll+t2:]
                         t2 += escpos[ix][1]
                         ix += 1
@@ -384,7 +384,7 @@ class VT52encoder(Encoder):
             ix = 0  # escpos index
             ll = 0  # line lenght counter
             for l in wlines:
-                print([l], len(l)<self.txt_geo[0])
+                # print([l], len(l)<self.txt_geo[0])
                 tmp = len(l)
                 t2 = 0
                 if len(l)<self.txt_geo[0]:

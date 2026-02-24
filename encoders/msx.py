@@ -72,10 +72,14 @@ UL_CORNER = 0x58     # Box corners --|
 UR_CORNER = 0x59     #              -|
 LL_CORNER = 0x5A     #              -|
 LR_CORNER = 0x5B     #              -|
-V_RIGHT = 0x54       # Box borders  -|
+V_RIGHT = 0x54       # Box borders --|
 V_LEFT  = 0x53       #              -|
 H_UP    = 0x51       #              -|
-H_DOWN  = 0x52       #              /
+H_DOWN  = 0x52       #              -|
+HEART   = 0x43       # Card suits  --|
+DIAMOND = 0x44       #              -|
+CLUB    = 0x45       #              -|
+SPADE   = 0x46       #               /
 UL_QUAD = 0xD3  # Semigraphics
 UR_QUAD = 0xD5
 LL_QUAD = 0xD6
@@ -126,7 +130,8 @@ t_multi =	{'MSX1':{'CRSRL':chr(CRSR_LEFT),'CRSRU':chr(CRSR_UP),'CRSRR':chr(CRSR_
             'UL-QUAD':chr(UL_QUAD),'UR-QUAD':chr(UR_QUAD),'LL-QUAD':chr(LL_QUAD),'LR-QUAD':chr(LR_QUAD),'UL-LR-QUAD':chr(UL_LR_QUAD),
             'L-HALF':chr(L_HALF),'B-HALF':chr(B_HALF),'L-NARROW':chr(L_NARROW),'R-NARROW':chr(R_NARROW),'U-NARROW':chr(U_NARROW),'B-NARROW':chr(B_NARROW),
             'U-HALF':'\xDF','R-HALF':'\xDE',
-            'TRI-LEFT':chr(TRI_LEFT),'TRI-RIGHT':chr(TRI_RIGHT),'TRI-UP':chr(TRI_UP),'TRI-DOWN':chr(TRI_DOWN)}}
+            'TRI-LEFT':chr(TRI_LEFT),'TRI-RIGHT':chr(TRI_RIGHT),'TRI-UP':chr(TRI_UP),'TRI-DOWN':chr(TRI_DOWN),
+            'HEART':chr(1)+chr(HEART),'DIAMOND':chr(1)+chr(DIAMOND),'CLUB':chr(1)+chr(CLUB),'SPADE':chr(1)+chr(SPADE)}}
 
 
 ######### MSX encoder subclass #########
