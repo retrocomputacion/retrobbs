@@ -35,7 +35,7 @@ def plugFunction(conn:Connection,url, crop):
 
     tmsecs = None
     slsession = streamlink.Streamlink()
-    ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
+    ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True, 'remote_components':['ejs:npm']}
     cookies = conn.bbs.PlugOptions.get('ytcookies','')
     if cookies != '':
         ydl_opts['cookiefile'] = cookies
@@ -48,6 +48,7 @@ def plugFunction(conn:Connection,url, crop):
                 try:
                     res = 320*200   # Hardcoded pixel count
                     for f in formats:
+                        print(f['resolution'], f['format_id'])
                         if f['resolution'] not in ['none','audio only']:
                             if eval(f['resolution'].replace('x','*')) >= res:
                                 best = f['url']

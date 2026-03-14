@@ -339,7 +339,7 @@ def ytdlp_resolve(conn,url,title):
     sTitle = None
     sChapters = None
     sThumb = None
-    ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True}
+    ydl_opts = {'quiet':True, 'socket_timeout':15, 'listformats':True,  'remote_components':['ejs:npm']}
     cookies = conn.bbs.PlugOptions.get('ytcookies','')
     if cookies != '':
         ydl_opts['cookiefile'] = cookies
