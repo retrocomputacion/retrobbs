@@ -64,9 +64,8 @@ __New features__:
 __Changes/Bug fixes__:
  - Fixed overzealous timeout parameters for chiptune streaming
  - Fixed crashes on TICTACTOE and MINDLE games
-
-__Changes/Bug fixes__:
  - FILEHUNTER: Fixed inconsistent quotes on f-string (syntax error on Python below 3.12)
+ - Fixed BACK key render on KeyLabel template
 
 ### **v0.60** (10/January/2026):
 __New features__:
