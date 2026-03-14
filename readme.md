@@ -66,6 +66,7 @@ __Changes/Bug fixes__:
  - Fixed crashes on TICTACTOE and MINDLE games
  - FILEHUNTER: Fixed inconsistent quotes on f-string (syntax error on Python below 3.12)
  - Fixed BACK key render on KeyLabel template
+ - Added yt_dlp parameters needed for resolving YouTube's Javascript challenges
 
 ### **v0.60** (10/January/2026):
 __New features__:
@@ -348,6 +349,8 @@ Python modules:
 ### External software:
 
   * *FFmpeg* >= 4.0 (for PCM audio streaming)
+
+  * *[Deno](https://docs.deno.com/runtime/getting_started/installation/)* (for YouTube frame grabbing and audio streaming)
 
 - Optional but recommended:
 
