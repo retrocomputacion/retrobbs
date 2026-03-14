@@ -57,6 +57,13 @@ v0.60 introduces support for many normal, non-Turbo65K compatible terminals. Get
 ### **v0.61**:
 __New features__:
  - Added TurboModem transfer protocol, by L.A.Style
+ - Added basic Sinclair ZX Spectrum/Timex TS-2068 encoder and support
+ - Added support for Sinclar ZX Spectrum SCR bitmap files
+ - Added WordFit game 
+
+__Changes/Bug fixes__:
+ - Fixed overzealous timeout parameters for chiptune streaming
+ - Fixed crashes on TICTACTOE and MINDLE games
 
 __Changes/Bug fixes__:
  - FILEHUNTER: Fixed inconsistent quotes on f-string (syntax error on Python below 3.12)

@@ -1,0 +1,67 @@
+{# WordFIT template #}
+{# Parameters: secret, clue, soup, lives, count, redraw #}
+{% if secret != None %}
+	{% set wx = ((secret|count)*2)+1 %}
+{% endif %}
+{% if mode == 'ATRSTM' %}
+	{% set secretcolor = '<WHITE>' %}
+{% else %}
+	{% set secretcolor = '<YELLOW>' %}
+{% endif %}
+{% if redraw == True %}
+	{# Redraw gamefield #}
+	<CLR><GREEN>
+	<AT x={{(scwidth-wx)//2}} y=5><UL-CORNER>
+	{% for c in range(secret|count) %}
+		<HLINE>
+		{% if loop.last == False %}
+			<H-DOWN>
+		{% endif %}
+	{% endfor %}
+	<UR-CORNER>
+	<AT x={{(scwidth-wx)//2}} y=6><VLINE>
+	{% for c in range(secret|count) %}
+		<SPC>
+		{% if loop.last == False %}
+			<VLINE>
+		{% endif %}
+	{% endfor %}
+	<VLINE>
+	<AT x={{(scwidth-wx)//2}} y=7><LL-CORNER>
+	{% for c in range(secret|count) %}
+		<HLINE>
+		{% if loop.last == False %}
+			<H-UP>
+		{% endif %}
+	{% endfor %}
+	<LR-CORNER><BR>
+	<AT x=0 y={{scheight-2}}>Lives:<BR>
+{% endif %}
+{% if clue != None %}
+	<AT x=0 y=1><FORMAT><YELLOW><BR>{{count+1}}.<WHITE>{{clue}}</FORMAT>
+{% endif%}
+{% if secret != None %}
+	<AT x={{((scwidth-wx)//2)+1}} y=6>{{secretcolor}}
+	{% for char in secret %}
+		{{char}}<CRSRR>
+	{% endfor %}
+{% endif %}
+{% if soup != None %}
+	<AT x={{(scwidth-soup|count)//2}} y=10><GREY2>
+	{% for i in soup %}
+		{{i}}
+	{% endfor%}
+{% endif%}
+{% if lives != None %}
+	<AT x=8 y={{scheight-2}}>
+	<RED>
+	{% if 'MSX1' in mode %}
+		<HEARt n={{lives}}><GREY><HEART n={{10-lives}}>
+	{% elif mode == 'VidTex' and scwidth == 40 %}
+		<L-HALF n={{lives}}><SPC n={{10-lives}}>
+	{% elif 'PET' in mode %}
+		<L-HALF n={{lives}}><GREY1><L-HALF n={{10-lives}}>
+	{% else %}
+		<VLINE n={{lives}}><SPC n={{10-lives}}>
+	{% endif %}
+{% endif%}

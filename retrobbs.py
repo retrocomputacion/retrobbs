@@ -70,8 +70,6 @@
 #                       MenuDef index 3 now stores the minimun user class needed to access menu #
 #################################################################################################
 
-from __future__ import print_function
-
 import argparse
 import time
 import socket
