@@ -167,11 +167,11 @@ def plugFunction(conn:Connection):
             tloc = do_geocode(locqry['city'])
         except:
             _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
-            conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=3>')
+            conn.SendTML('<CLR><FORMAT><RED>ERROR,<YELLOW>geoloc service might be unavailable<BR>If this persist, contact the sysop.</FORMAT><PAUSE n=3>')
             return
         if tloc == None:
             _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
-            conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=3>')
+            conn.SendTML('<CLR><FORMAT><RED>ERROR,<YELLOW>geoloc service might be unavailable<BR>If this persist, contact the sysop.</FORMAT><PAUSE n=3>')
             return
         locqry['latitude'] = tloc.latitude
         locqry['longitude'] = tloc.longitude
@@ -183,7 +183,8 @@ def plugFunction(conn:Connection):
         try:
             img, img2, series = loop.run_until_complete(getweather(conn,locqry,geoLoc))
         except:
-            conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
+            _LOG("Weather: ERROR - getweather failed",id=conn.id,v=1)
+            conn.SendTML('<CLR><FORMAT><RED>ERROR,<YELLOW> weather service might be unavailable<BR>If this persist, contact the sysop.</FORMAT><PAUSE n=2>')
             break
         if img != None:
             if conn.QueryFeature(TT.PRADDR) < 0x80:
@@ -212,7 +213,7 @@ def plugFunction(conn:Connection):
                 tloc = do_geocode(_locqry['city'])
             except:
                 _LOG("Weather: ERROR - Can't access geocoder",id=conn.id,v=1)
-                conn.SendTML('<CLR><RED>ERROR,<YELLOW> service might be unavailable<BR>If this persist, contact the sysop.<PAUSE n=2>')
+                conn.SendTML('<CLR><FORMAT><RED>ERROR,<YELLOW>geoloc service might be unavailable<BR>If this persist, contact the sysop.</FORMAT><PAUSE n=2>')
                 continue
             if tloc != None:
                 _locqry['latitude'] = tloc.latitude

@@ -420,7 +420,7 @@ class PcmStream:
     def __init__(self, fn, sr,lineal=True, ss = 0):
         self.lineal = lineal
         crusher = ["-af","acrusher=bits=4:mode=lin,acontrast=contrast=50"] if lineal else ['-af',"acontrast=contrast=50"]
-        if platform.system() in ["Linux","Darwin"]:
+        if platform.system() in ["Linux","Darwin","Android"]:
             self.pcm_stream = subprocess.Popen(["ffmpeg", "-ss", str(ss), "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, preexec_fn=os.setsid)
         else:
@@ -447,7 +447,7 @@ class PcmStream:
     
     def stop(self):
         self.pcm_stream.stdout.flush()
-        if platform.system() in ["Linux","Darwin"]:
+        if platform.system() in ["Linux","Darwin","Android"]:
             self.pcm_stream.send_signal(signal.SIGINT)
             self.pcm_stream.terminate()
         else:
@@ -466,17 +466,18 @@ def _GetCHIPLength(filename):
     elif os.path.isfile(os.path.dirname(filename)+'/SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') == True:
         with open(os.path.dirname(filename)+'/SONGLENGTHS/'+os.path.basename(filename)[:-3]+'ssl') as tf:
             tstr = tf.read()
-    data = ym.YMOpen(filename)
     if tstr != None:
         length = []
         for i in range(0,len(tstr),2):
             tmins = int(hex(ord(tstr[i]))[2:])
             tsecs = int(hex(ord(tstr[i+1]))[2:])
             length.append((tmins*60)+tsecs) # Playtime for the 1st subtune
-    elif data != None:
-        meta= ym.YMGetMeta(data)
-        if meta != None:
-            length = meta['songlength']
+    else:
+        data = ym.YMOpen(filename)
+        if data != None:
+                meta= ym.YMGetMeta(data)
+                if meta != None:
+                    length = meta['songlength']
     
     return length
 

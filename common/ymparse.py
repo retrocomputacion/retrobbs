@@ -15,6 +15,9 @@ magicYM = [b'YM2!',b'YM3!',b'YM3b',b'YM4!',b'YM5!',b'YM6!']
 # VTX format magic strings
 magicVTX = [b'ym',b'ay']
 
+# lha signatures
+magicLHA = [b'-lhd-', b'-lh0-', b'-lh5-', b'-lh6-', b'-lh7-']
+
 #YM frequency -> platform dict
 platform = {2000000:' - Atari', 1000000:' - Amstrad'}
 
@@ -34,31 +37,26 @@ def bcd_decode(data: bytes, decimals: int):
 # Depack file if its lha packed
 ###################################
 def YMOpen(filename:str):
-    # Try for unpacked file first
     try:
         data = None
         with open(filename,'rb') as ymf:
             data = ymf.read()
-        if data[0:4] in magicYM:
+        if data[0:4] in magicYM:        # Try for unpacked file first
             return data
-    except:
-        _LOG('YMOpen: File not found')
-        return None
-    # Try for lha packed file
-    if lhafile.is_lhafile(filename):
-        try:
+        elif data[2:7] in magicLHA:     # Try for lha packed file
             ymf = lhafile.Lhafile(filename)
             data = ymf.read(ymf.infolist()[0].filename)
             if data[0:4] in magicYM:
                 return data
-        except Exception as e:
-            pass
-    else:
-        # Try for VTX file
-        try:
-            data = None
-            with open(filename,'rb') as ymf:
-                data = ymf.read()
+    except:
+        _LOG('YMOpen: File not found')
+        return None
+    # Try for VTX file
+    try:
+        data = None
+        with open(filename,'rb') as ymf:
+            data = ymf.read()
+            if data[0:2] in magicVTX:
                 offset = 16
                 for i in range(5):	# skip header
                     while data[offset] != 0:
@@ -79,17 +77,17 @@ def YMOpen(filename:str):
                     pass
                 fout.seek(0)
                 data = xhdr + fout.read()
-            return data
-        except Exception as e:
-            pass
-        # Try for Gzipped VGM file
-        try:
-            with gzip.open(filename, 'rb') as vgf:
-                data = vgf.read()
-            if data[:4] == b'Vgm ':
                 return data
-        except:
-            pass
+    except Exception as e:
+        pass
+    # Try for Gzipped VGM file
+    try:
+        with gzip.open(filename, 'rb') as vgf:
+            data = vgf.read()
+        if data[:4] == b'Vgm ':
+            return data
+    except:
+        pass
     _LOG('YMOpen: Unsupported file format',v=2)
     return None
 

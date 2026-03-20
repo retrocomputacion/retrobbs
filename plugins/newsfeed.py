@@ -45,7 +45,14 @@ def plugFunction(conn:Connection,url):
               }
     # Text mode
     conn.SendTML(f'<TEXT border={conn.style.BoColor} background={conn.style.BgColor}><CLR><MTITLE t=Newsfeed><SPINNER>')
-    nfeed = feedparser.parse(url)
+    try:
+        nfeed = feedparser.parse(url)
+    except:
+        try:
+            feedparser.api._XML_AVAILABLE = False
+            nfeed = feedparser.parse(url)
+        except:
+            feedparser.api._XML_AVAILABLE = True
     try:
         lines = 5
         _LOG('NewsFeeds - Feed: '+nfeed.feed.get('title','-no title-'),id=conn.id,v=2)
