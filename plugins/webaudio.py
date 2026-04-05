@@ -21,7 +21,7 @@ from common import connection
 from common.helpers import formatX, crop
 from common import helpers as H
 from common import audio as AA
-from common.imgcvt import convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
+from common.imgcvt import GFX_MODES, convert_To, cropmodes, PreProcess, gfxmodes, dithertype, get_ColorIndex
 from common.filetools import SendBitmap
 import common.turbo56k as TT
 
@@ -125,6 +125,36 @@ def setup():
     slsession = streamlink.Streamlink()
     return(fname,parpairs)
 
+
+def _choose_gfxmode(conn:connection.Connection):
+    if conn.mode == "PET64":
+        return gfxmodes.C64HI
+    if conn.mode == "PET264":
+        return gfxmodes.P4HI
+    return conn.encoder.def_gfxmode
+
+
+def _supports_split_preview(conn:connection.Connection):
+    return conn.QueryFeature(TT.PRADDR) < 0x80 and conn.QueryFeature(TT.SPLIT_SCR) < 0x80
+
+
+def _build_split_logo(im:Image.Image, gfxmode, logo_lines:int=12):
+    width, height = GFX_MODES[gfxmode]['in_size']
+    top_height = min(height, logo_lines * 8)
+    canvas = Image.new('RGB', (width, height), (0, 0, 0))
+    icon = im.convert('RGB').copy()
+    icon.thumbnail((max(16, width - 16), max(16, top_height - 8)), Image.LANCZOS)
+    x = (width - icon.size[0]) // 2
+    y = max(0, (top_height - icon.size[1]) // 2)
+    canvas.paste(icon, (x, y))
+    icon.close()
+    return canvas
+
+
+def _disable_split_preview(conn:connection.Connection):
+    if conn.T56KVer > 0 and conn.QueryFeature(TT.SPLIT_SCR) < 0x80:
+        conn.SendTML(f'<NUL n=2><SPLIT row=0 multi=False bgtop=0 bgbottom=0 mode={conn.mode}><CURSOR>')
+
 #####################
 # Plugin function
 #####################
@@ -132,6 +162,7 @@ def plugFunction(conn:connection.Connection,url,image,title):
     CHUNK = 16384
     bnoise = b'\x10\x01\x11'
     conn.SendTML('<PAUSE n=1><SPINNER>')
+    split_active = False
 
     # Streaming mode
     binario = b'\xFF\x83'
@@ -196,7 +227,8 @@ def plugFunction(conn:connection.Connection,url,image,title):
         return
     # try to open image if any
     img = None
-    if image != '' and conn.QueryFeature(TT.PRADDR) < 0x80:
+    gm = _choose_gfxmode(conn)
+    if image != '' and conn.QueryFeature(TT.PRADDR) < 0x80 and gm != None:
         im = None
         if validators.url(image):
             try:
@@ -210,16 +242,48 @@ def plugFunction(conn:connection.Connection,url,image,title):
             except:
                 pass
         if im != None:
-            im.thumbnail((128,128))
-            if conn.mode == "PET64":
-                gm = gfxmodes.C64HI
-            elif conn.mode == "PET264":
-                gm = gfxmodes.P4HI
-            else:
-                gm = conn.encoder.def_gfxmode
-            img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
+            try:
+                if sChapters == None and _supports_split_preview(conn):
+                    img = _build_split_logo(im, gm)
+                else:
+                    im.thumbnail((128,128))
+                    img = convert_To(im, cropmode=cropmodes.LEFT, preproc=PreProcess(contrast=1.5,saturation=1.5), gfxmode=gm)
+            finally:
+                im.close()
     # Display info
-    if img != None and sChapters == None:
+    if isinstance(img, Image.Image) and sChapters == None:
+        logo_lines = 12
+        top_bg = conn.encoder.colors.get("BLACK",0)
+        if SendBitmap(
+            conn,
+            img,
+            lines=logo_lines,
+            display=False,
+            gfxmode=gm,
+            preproc=PreProcess(contrast=1.5,saturation=1.5),
+            dither=dithertype.BAYER2
+        ) is not False:
+            split_active = True
+            conn.SendTML(
+                f'<SPLIT row={logo_lines} multi=False '
+                f'bgtop={top_bg} bgbottom={conn.encoder.colors.get("BLACK",0)} '
+                f'mode={conn.mode}><CURSOR><CLR><WHITE>'
+            )
+            for l in sTitle:
+                conn.SendTML(l)
+            conn.SendTML(f'<BR>Press <KPROMPT t=RETURN><YELLOW> to play<BR>')
+            if 'MSX' in conn.mode:
+                conn.SendTML(f'Press <KPROMPT t=STOP><YELLOW> and wait to stop<BR>')
+                conn.SendTML(f'Press <KPROMPT t=X><YELLOW> to cancel<BR>')
+            else:
+                conn.SendTML(f'Press <KPROMPT t=X><YELLOW> and wait to stop or cancel<BR>')
+        else:
+            conn.SendTML(f'<TEXT border={conn.encoder.colors.get("BLUE",0)} background={conn.encoder.colors.get("BLUE",0)}><CLR><YELLOW>')
+            for l in sTitle:
+                conn.SendTML(l)
+            conn.SendTML(f'<BR><BR>Press <KPROMPT t=RETURN><YELLOW> to start<BR>')
+            conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
+    elif img != None and sChapters == None:
         c_black = (0,0,0)
         c_white = (0xff,0xff,0xff)
         c_yellow = (0xff,0xff,0x55)
@@ -267,72 +331,78 @@ def plugFunction(conn:connection.Connection,url,image,title):
             else:
                 conn.SendTML(f'<BR>Press <KPROMPT t=X><YELLOW> to stop/cancel<BR>')
 
-    if conn.ReceiveKey('\rx') == 'x':
-        return
+    try:
+        if conn.ReceiveKey('\rx') == 'x':
+            return
 
-    if conn.QueryFeature(TT.STREAM) >= 0x80:
-        conn.SendTML('<FORMAT>Your terminal does not support audio streaming!</FORMAT><PAUSE n=2>')
-        return
+        if conn.QueryFeature(TT.STREAM) >= 0x80:
+            conn.SendTML('<FORMAT>Your terminal does not support audio streaming!</FORMAT><PAUSE n=2>')
+            return
 
-    conn.SendTML('<SPINNER>')
+        conn.SendTML('<SPINNER>')
 
-    #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
-    pcm_stream = AA.PcmStream(sURL,conn.samplerate,b'RETROTERM-M38' not in conn.TermString, ss)
-    CHUNK = 1<<int(conn.samplerate*1.5).bit_length()
-    t0 = time.time()
-    streaming = True
-    while streaming == True:
-        t1 = time.time()
-        try:
-            audio = asyncio.run(pcm_stream.read(CHUNK))   #pcm_stream.get(True, 15)
-        except:
-            audio = []
-        t2 = time.time()-t1
-        if t2 > 15:
-            streaming = False
-        a_len = len(audio)
-        if a_len == 0:
-            streaming = False
-        for b in range(0,a_len,2):
-            lnibble = int(audio[b])
-            if b+1 <= a_len:
-                hnibble = int(audio[b+1])
-            else:
-                hnibble = 0
-            binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
-            conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,2)].to_bytes(1,'little'), binario))
-            streaming = conn.connected
-            sys.stderr.flush()
-            # Check for user cancellation
-            conn.socket.setblocking(0)	# Change socket to non-blocking
+        #pcm_stream,skey = AStreams.new(sURL,conn.samplerate, conn.id)
+        pcm_stream = AA.PcmStream(sURL,conn.samplerate,b'RETROTERM-M38' not in conn.TermString, ss)
+        CHUNK = 1<<int(conn.samplerate*1.5).bit_length()
+        t0 = time.time()
+        streaming = True
+        while streaming == True:
+            t1 = time.time()
             try:
-                hs = conn.socket.recv(1)
-                if hs == b'\xff':
-                    binario = b''
-                    try:
-                        t3 = time.time()
-                        while time.time()-t3 < 1:   # Flush receive buffer for 1 second
-                            conn.socket.recv(10)
-                    except:
-                        pass
-                    _LOG('USER CANCEL',id=conn.id,v=3)
-                    streaming = False
-                    conn.socket.setblocking(1)
-                    break
+                audio = asyncio.run(pcm_stream.read(CHUNK))   #pcm_stream.get(True, 15)
             except:
-                pass
-            conn.socket.setblocking(1)
-            binario = b''
-        ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
-        time.sleep(ts if ts>=0 else 0)
-    binario += b'\x00\x00\x00\x00\x00\x00\xFE'
-    t = time.time() - t0
-    pcm_stream.stop()
-    #AStreams.delete(skey,conn.id)
-    _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
-    conn.Sendallbin(binario)
-    time.sleep(1)
-    conn.socket.settimeout(conn.bbs.TOut)
+                audio = []
+            t2 = time.time()-t1
+            if t2 > 15:
+                streaming = False
+            a_len = len(audio)
+            if a_len == 0:
+                streaming = False
+            for b in range(0,a_len,2):
+                lnibble = int(audio[b])
+                if b+1 <= a_len:
+                    hnibble = int(audio[b+1])
+                else:
+                    hnibble = 0
+                binario += (lnibble+(16*hnibble)).to_bytes(1,'big')
+                conn.Sendallbin(re.sub(b'\\x00', lambda x:bnoise[random.randint(0,2)].to_bytes(1,'little'), binario))
+                streaming = conn.connected
+                sys.stderr.flush()
+                # Check for user cancellation
+                conn.socket.setblocking(0)	# Change socket to non-blocking
+                try:
+                    hs = conn.socket.recv(1)
+                    if hs == b'\xff':
+                        binario = b''
+                        try:
+                            t3 = time.time()
+                            while time.time()-t3 < 1:   # Flush receive buffer for 1 second
+                                conn.socket.recv(10)
+                        except:
+                            pass
+                        _LOG('USER CANCEL',id=conn.id,v=3)
+                        streaming = False
+                        conn.socket.setblocking(1)
+                        break
+                except:
+                    pass
+                conn.socket.setblocking(1)
+                binario = b''
+            ts = ((CHUNK/conn.samplerate)-(time.time()-t1))*0.95
+            time.sleep(ts if ts>=0 else 0)
+        binario += b'\x00\x00\x00\x00\x00\x00\xFE'
+        t = time.time() - t0
+        pcm_stream.stop()
+        #AStreams.delete(skey,conn.id)
+        _LOG('Stream completed in '+bcolors.OKGREEN+str(round(t,2))+bcolors.ENDC+' seconds',id=conn.id,v=4)
+        conn.Sendallbin(binario)
+        time.sleep(1)
+        conn.socket.settimeout(conn.bbs.TOut)
+    finally:
+        if split_active:
+            _disable_split_preview(conn)
+        if isinstance(img, Image.Image):
+            img.close()
 
 def ytdlp_resolve(conn,url,title):
     sURL = None
