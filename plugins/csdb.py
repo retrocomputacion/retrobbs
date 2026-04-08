@@ -69,7 +69,15 @@ def plugFunction(conn:Connection):
                     conn.SendTML('<CLR>')
                 if entries == []:
                     conn.SendTML('<SPINNER>')
-                    nfeed = feedparser.parse(url)
+                    try:
+                        nfeed = feedparser.parse(url)
+                    except:
+                        try:
+                            feedparser.api._XML_AVAILABLE = False
+                            nfeed = feedparser.parse(url)
+                        except:
+                            feedparser.api._XML_AVAILABLE = True
+
                     title = H.formatX(nfeed.feed.get('title','No title'),scwidth)
                     lines = scheight-(8+len(title))
                     for ix, e in enumerate(nfeed.entries):

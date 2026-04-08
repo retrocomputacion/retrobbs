@@ -67,6 +67,8 @@ __Changes/Bug fixes__:
  - FILEHUNTER: Fixed inconsistent quotes on f-string (syntax error on Python below 3.12)
  - Fixed BACK key render on KeyLabel template
  - Added yt_dlp parameters needed for resolving YouTube's Javascript challenges
+ - Fixed 503 error when trying to view CSDb search results
+ - Added optional parameter on filetools.SendBitmap() to return the converted Image (as PIL.Image object)
 
 ### **v0.60** (10/January/2026):
 __New features__:

@@ -60,7 +60,7 @@ def build_modes():
 ###########################
 # Image crop and resize
 ###########################
-def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
+def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL, bgcolor=(0,0,0)):
     i_ratio = i_image.size[0] / i_image.size[1]
     in_size = GFX_MODES[gfxmode]['in_size']
     dst_ratio = in_size[0]/in_size[1]
@@ -87,11 +87,11 @@ def frameResize(i_image, gfxmode:gfxmodes, mode:cropmodes=cropmodes.FILL):
             box = ((i_image.size[0]-in_size[0])//2,0,(i_image.size[0]+in_size[0])//2,i_image.size[1])
     elif mode == cropmodes.H_FIT:
         scale = i_image.size[0]/in_size[0]
-        i_image = i_image.resize((in_size[0],i_image.size[1]//scale), Image.LANCZOS)
+        i_image = i_image.resize((in_size[0],int(i_image.size[1]//scale)), Image.LANCZOS)
         box = (0,(i_image.size[1]-in_size[1])//2,i_image.size[0],(i_image.size[1]+in_size[1])//2)
     elif mode == cropmodes.V_FIT:
         scale = i_image.size[1]/in_size[1]
-        i_image = i_image.resize((i_image.size[0]//scale,in_size[1]), Image.LANCZOS)
+        i_image = i_image.resize((int(i_image.size[0]//scale),in_size[1]), Image.LANCZOS)
         box = ((i_image.size[0]-in_size[0])/2,0,(i_image.size[0]+in_size[0])/2,i_image.size[1])
     elif mode == cropmodes.LEFT:
         box = (0,(i_image.size[1]-in_size[1])/2,in_size[0],(i_image.size[1]+in_size[1])/2)
