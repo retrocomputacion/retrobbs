@@ -162,9 +162,7 @@ def apod_info(idate, key='DEMO_KEY', retry = False):
     while resp == None:
         try :
             rq = requests.get(url, params=param, timeout=8, headers=hdrs)
-            print(rq)
             resp = rq.json()
-            print(resp)
             if "media_type" in resp:
                 m_type = resp["media_type"]
             else:
