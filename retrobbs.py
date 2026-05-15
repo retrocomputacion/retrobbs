@@ -1260,41 +1260,20 @@ def BBSLoop(conn:Connection):
         # Sync
         conn.SendTML('<NUL n=2>')
         if conn.bbs.lang == 'es':
-            pt = "intentando detectar terminal,<BR>presione su tecla BACKSPACE (INS/DEL en Commodore)...<BR>"
+            pt = "intentando detectar terminal...<BR>"
+            bsp = "presione su tecla BACKSPACE (INS/DEL en Commodore)...<BR>"
         else:
-            pt = "trying to detect terminal,<BR>press your BACKSPACE key, (INS/DEL on Commodore)...<BR>"
+            pt = "trying to detect terminal...<BR>"
+            bsp = "press your BACKSPACE key, (INS/DEL on Commodore)...<BR>"
 
         welcome = f'''<FORMAT>{conn.bbs.WMess.upper()}<BR>
 RETROBBS V{conn.bbs.version:.2f}<BR>
 RUNNING UNDER:<BR>
 {conn.bbs.OSText.upper()}<BR>
-{pt.upper()}<BR></FORMAT>'''
+{pt.upper()}</FORMAT>'''
 
         conn.Flush(0.5) # Flush for 0.5 seconds
         conn.SendTML(welcome)
-        backspaces = []
-        for encoder in conn.bbs.encoders:
-            if conn.bbs.encoders[encoder].bs not in backspaces:
-                backspaces.append(conn.bbs.encoders[encoder].bs)
-
-        n = 0
-        backspace = ''
-        while conn.connected:
-           data = conn.NBReceive(1,10)
-           if len(data) == 0:
-               conn.SendTML('\nTIMEOUT - DISCONNECTED\n')
-               conn.connected = False
-               return
-           elif chr(data[0]) in backspaces:
-               backspace = chr(data[0])
-               break
-           n += 1
-           if n < 3:
-               conn.SendTML(f'<FORMAT>{pt.upper()}</FORMAT>')
-           else:
-               conn.SendTML('SORRY, UNKNOWN TERMINAL - DISCONNECTED')
-               conn.connected = False
-               return
 
         conn.Flush(0.5) # Flush for 0.5 seconds
 
@@ -1343,6 +1322,30 @@ RUNNING UNDER:<BR>
             conn.SendTML(   '<FORMAT><BR>FOR THE BEST EXPERIENCE, THIS BBS REQUIRES A TERMINAL COMPATIBLE WITH TURBO56K 0.3 OR NEWER.<BR>'
                             'FOR THE LATEST VERSION VISIT<BR>WWW.PASTBYTES.COM/RETROTERM<BR><BR></FORMAT>')
             conn.Flush(1)
+            # Backspace key detection
+            backspaces = []
+            for encoder in conn.bbs.encoders:
+                if conn.bbs.encoders[encoder].bs not in backspaces:
+                    backspaces.append(conn.bbs.encoders[encoder].bs)
+
+            n = 0
+            backspace = ''
+            while conn.connected:
+               conn.SendTML(f'<FORMAT>{bsp.upper()}</FORMAT>')
+               data = conn.NBReceive(1,10)
+               if len(data) == 0:
+                   conn.SendTML('\nTIMEOUT - DISCONNECTED\n')
+                   conn.connected = False
+                   return
+               elif chr(data[0]) in backspaces:
+                   backspace = chr(data[0])
+                   break
+               n += 1
+               if n >= 3:
+                   conn.SendTML('SORRY, UNKNOWN TERMINAL - DISCONNECTED')
+                   conn.connected = False
+                   return
+
             encoders = []
             for encoder in conn.bbs.encoders:       # Get encoders which use the same backspace character
                 if conn.bbs.encoders[encoder].bs == backspace and conn.bbs.encoders[encoder].minT56Kver == 0:
