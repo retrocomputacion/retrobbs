@@ -291,7 +291,9 @@ def SIDParser(filename,ptime,order = 0, subtune = 1):
     FilterMode = {'Off':b'\x00', 'Low':b'\x10', 'Bnd':b'\x20', 'L+B':b'\x30', 'Hi':b'\x40', 'L+H':b'\x50', 'B+H':b'\x60', 'LBH':b'\x70'}
 
     try:
-        sidsub = subprocess.Popen(_siddump+' '+filename+' -t'+str(ptime)+' -a'+str(subtune-1), shell=True, stdout=subprocess.PIPE)
+        # Argument list, no shell: a filename containing shell
+        # metacharacters must not be interpreted as commands.
+        sidsub = subprocess.Popen([_siddump, filename, '-t' + str(ptime), '-a' + str(subtune - 1)], stdout=subprocess.PIPE)
     except:
         return(None)
     output = sidsub.stdout.read()
